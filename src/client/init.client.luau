@@ -66,10 +66,16 @@ inputController:OnSlide(function()
 	playerController:Slide()
 end)
 
--- 테스트: 3초 후 자동으로 게임 시작 (임시)
-task.delay(3, function()
-	print("[Client] Auto-starting game for testing...")
+-- 서버로부터 게임 시작 응답 수신
+RemoteEvents.GameStart.OnClientEvent:Connect(function(data)
+	print("[Client] Game start confirmed by server")
 	playerController:StartGame()
+end)
+
+-- 테스트: 3초 후 자동으로 게임 시작 요청 (임시)
+task.delay(3, function()
+	print("[Client] Requesting game start from server...")
+	RemoteEvents.GameStart:FireServer()
 end)
 
 print("[Client] Coin Runner Client Ready")
