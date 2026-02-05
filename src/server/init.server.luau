@@ -11,13 +11,13 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local GameConstants = require(ReplicatedStorage.Shared.Constants.GameConstants)
 local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)
 
--- 서버 서비스 로드 (향후 구현)
+-- 서버 서비스 로드
+local GameManager = require(ServerScriptService.Server.Services.GameManager)
 -- local PlayerDataService = require(ServerScriptService.Server.Services.PlayerDataService)
--- local ChunkService = require(ServerScriptService.Server.Services.ChunkService)
--- local GameManager = require(ServerScriptService.Server.Services.GameManager)
 
 print("[Server] Game Constants Loaded")
 print("[Server] Remote Events Initialized")
+print("[Server] GameManager Loaded")
 
 -- 플레이어 참가 처리
 game.Players.PlayerAdded:Connect(function(player: Player)
