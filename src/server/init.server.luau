@@ -13,25 +13,29 @@ local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)
 
 -- 서버 서비스 로드
 local GameManager = require(ServerScriptService.Server.Services.GameManager)
--- local PlayerDataService = require(ServerScriptService.Server.Services.PlayerDataService)
+local PlayerDataService = require(ServerScriptService.Server.Services.PlayerDataService)
 
 print("[Server] Game Constants Loaded")
 print("[Server] Remote Events Initialized")
 print("[Server] GameManager Loaded")
+print("[Server] PlayerDataService Loaded")
 
 -- 플레이어 참가 처리
 game.Players.PlayerAdded:Connect(function(player: Player)
 	print(`[Server] Player {player.Name} joined`)
 
-	-- 플레이어 데이터 로드 (향후 구현)
-	-- PlayerDataService:LoadPlayerData(player)
+	-- 플레이어 데이터 로드
+	local playerData = PlayerDataService:LoadPlayerData(player)
+
+	if playerData then
+		-- 클라이언트에 데이터 전송
+		RemoteEvents.PlayerDataLoaded:FireClient(player, playerData)
+		print(`[Server] Sent player data to {player.Name}`)
+	end
 
 	-- 플레이어 캐릭터 설정 대기
 	player.CharacterAdded:Connect(function(character: Model)
 		print(`[Server] Character spawned for {player.Name}`)
-
-		-- 캐릭터 초기 설정 (향후 구현)
-		-- GameManager:SetupPlayerCharacter(player, character)
 	end)
 end)
 
@@ -39,16 +43,16 @@ end)
 game.Players.PlayerRemoving:Connect(function(player: Player)
 	print(`[Server] Player {player.Name} leaving`)
 
-	-- 플레이어 데이터 저장 (향후 구현)
-	-- PlayerDataService:SavePlayerData(player)
+	-- 플레이어 데이터 저장
+	PlayerDataService:OnPlayerRemoving(player)
 end)
 
 -- 서버 종료 시 모든 플레이어 데이터 저장
 game:BindToClose(function()
 	print("[Server] Server shutting down, saving all player data...")
 
-	-- 모든 플레이어 데이터 저장 (향후 구현)
-	-- PlayerDataService:SaveAllPlayers()
+	-- 모든 플레이어 데이터 저장
+	PlayerDataService:SaveAllPlayers()
 
 	wait(3) -- DataStore 저장 완료 대기
 end)
