@@ -89,4 +89,13 @@ RemoteEvents.TutorialCompleted = getOrCreateRemoteEvent("TutorialCompleted")
 RemoteEvents.ChunkSpawned = getOrCreateRemoteEvent("ChunkSpawned")
 -- 서버 → 클라이언트: 새 청크 생성 알림 (필요 시)
 
+-- NPC 등장
+RemoteEvents.NPCAppeared = getOrCreateRemoteEvent("NPCAppeared")
+-- 서버 → 클라이언트: NPC 등장 알림
+-- 파라미터: (npcType: string, npcPosition: Vector3, npcInstance: Model)
+
+-- NPC 상호작용
+RemoteEvents.NPCInteraction = getOrCreateRemoteEvent("NPCInteraction")
+-- 클라이언트 → 서버: NPC 상호작용 요청 (향후 확장용)
+
 return RemoteEvents

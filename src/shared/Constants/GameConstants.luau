@@ -168,4 +168,39 @@ GameConstants.DATA = {
 	SAVE_RETRY_COUNT = 3, -- 저장 실패 시 재시도 횟수
 }
 
+-- NPC (MVP: 토끼, 곰돌이, 부엉이)
+GameConstants.NPC = {
+	SPEECH_BUBBLE_DURATION = 1, -- 말풍선 표시 시간 (초)
+	WAVE_ANIMATION_DURATION = 2, -- 손흔들기 애니메이션 지속 시간 (초)
+	SPAWN_HEIGHT = 0, -- NPC 스폰 Y 위치 (바닥 기준)
+	Z_POSITION = -10, -- NPC Z 위치 (배경 레이어)
+
+	-- NPC 종류별 설정
+	TYPES = {
+		Rabbit = {
+			name = "Rabbit",
+			messages = { "화이팅!", "멋져!" },
+			color = Color3.fromRGB(255, 192, 203), -- 분홍
+			spawnChance = 0.50, -- NPC 청크 내 50% 확률
+		},
+		Bear = {
+			name = "Bear",
+			messages = { "잘하고 있어!" },
+			color = Color3.fromRGB(139, 69, 19), -- 갈색
+			spawnChance = 0.50, -- NPC 청크 내 50% 확률
+		},
+		Owl = {
+			name = "Owl",
+			messages = {
+				"자동으로 달려! 코인을 모아봐!",
+				"점프! ↑",
+				"슬라이드! ↓",
+				"공중에서 한 번 더 점프!",
+			},
+			color = Color3.fromRGB(160, 82, 45), -- 갈색 부엉이
+			spawnChance = 1.0, -- 튜토리얼 전용, 확정 등장
+		},
+	},
+}
+
 return GameConstants
