@@ -10,6 +10,7 @@ local GameConstants = require(ReplicatedStorage.Shared.Constants.GameConstants)
 local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)
 local ChunkService = require(script.Parent.ChunkService)
 local CoinService = require(script.Parent.CoinService)
+local ObstacleService = require(script.Parent.ObstacleService)
 
 local GameManager = {}
 
@@ -18,6 +19,7 @@ type GameSession = {
 	player: Player,
 	chunkService: any, -- ChunkService
 	coinService: any, -- CoinService
+	obstacleService: any, -- ObstacleService
 	isPlaying: boolean,
 	startTime: number,
 	score: number,
@@ -39,11 +41,13 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 	-- 새 세션 생성
 	local chunkService = ChunkService.new()
 	local coinService = CoinService.new(player)
+	local obstacleService = ObstacleService.new(player)
 
 	local session: GameSession = {
 		player = player,
 		chunkService = chunkService,
 		coinService = coinService,
+		obstacleService = obstacleService,
 		isPlaying = true,
 		startTime = tick(),
 		score = 0,
@@ -53,8 +57,9 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 
 	activeSessions[player] = session
 
-	-- 청크 서비스에 코인 서비스 연결
+	-- 청크 서비스에 코인/장애물 서비스 연결
 	chunkService:SetCoinService(coinService)
+	chunkService:SetObstacleService(obstacleService)
 	chunkService:StartGame()
 
 	-- 클라이언트에 게임 시작 알림
@@ -85,12 +90,15 @@ function GameManager.EndGame(player: Player)
 	local finalScore = session.score
 	local earnedCoins = session.coins
 
-	-- 청크 및 코인 정리
+	-- 청크, 코인, 장애물 정리
 	if session.chunkService then
 		session.chunkService:Destroy()
 	end
 	if session.coinService then
 		session.coinService:Destroy()
+	end
+	if session.obstacleService then
+		session.obstacleService:Destroy()
 	end
 
 	-- 클라이언트에 게임 오버 알림
@@ -134,6 +142,7 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 		-- 청크 관리
 		local chunkService = session.chunkService
 		local coinService = session.coinService
+		local obstacleService = session.obstacleService
 
 		-- 오래된 청크 정리
 		chunkService:CleanupOldChunks(hrp.Position)
@@ -158,6 +167,29 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 			})
 
 			print(`[GameManager] Player {player.Name} collected {coinData.type} coin (+{coinData.value})`)
+		end
+
+		-- 장애물 충돌 체크
+		local isSliding = hrp:GetAttribute("IsSliding") or false
+		local hitObstacle = obstacleService:CheckObstacleCollision(hrp.Position, isSliding)
+
+		if hitObstacle and session.lives > 0 then
+			-- 라이프 감소
+			session.lives -= 1
+			obstacleService:OnObstacleHit()
+
+			-- 클라이언트에 라이프 업데이트 알림
+			RemoteEvents.LifeUpdate:FireClient(player, {
+				lives = session.lives,
+			})
+
+			print(`[GameManager] Player {player.Name} hit obstacle! Lives: {session.lives}`)
+
+			-- 라이프 0이면 게임 오버
+			if session.lives <= 0 then
+				print(`[GameManager] Player {player.Name} has no lives left, ending game`)
+				GameManager.EndGame(player)
+			end
 		end
 
 		-- 점수 업데이트 (이동 거리 기반 - 향후 구현)

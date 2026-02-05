@@ -51,6 +51,7 @@ disableDefaultControls()
 local InputController = require(script.Parent.Controllers.InputController)
 local PlayerController = require(script.Parent.Controllers.PlayerController)
 local CoinController = require(script.Parent.Controllers.CoinController)
+local LifeController = require(script.Parent.Controllers.LifeController)
 -- local CameraController = require(script.Parent.Controllers.CameraController)
 -- local UIController = require(script.Parent.Controllers.UIController)
 
@@ -58,6 +59,7 @@ local CoinController = require(script.Parent.Controllers.CoinController)
 local inputController = InputController.new()
 local playerController = PlayerController.new(player, character)
 local coinController = CoinController.new()
+local lifeController = LifeController.new()
 
 -- 입력 콜백 연결
 inputController:OnJump(function()
@@ -81,4 +83,4 @@ task.delay(3, function()
 end)
 
 print("[Client] Coin Runner Client Ready")
-print("[Client] Controllers initialized: Input, Player, Coin")
+print("[Client] Controllers initialized: Input, Player, Coin, Life")
