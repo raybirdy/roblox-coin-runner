@@ -48,14 +48,14 @@ end)
 disableDefaultControls()
 
 -- 클라이언트 컨트롤러 로드
-local InputController = require(script.Parent.Controllers.InputController)
-local PlayerController = require(script.Parent.Controllers.PlayerController)
-local CoinController = require(script.Parent.Controllers.CoinController)
-local LifeController = require(script.Parent.Controllers.LifeController)
-local UIController = require(script.Parent.Controllers.UIController)
-local PowerupController = require(script.Parent.Controllers.PowerupController)
-local CameraController = require(script.Parent.Controllers.CameraController)
-local NPCController = require(script.Parent.Controllers.NPCController)
+local InputController = require(script.Controllers.InputController)
+local PlayerController = require(script.Controllers.PlayerController)
+local CoinController = require(script.Controllers.CoinController)
+local LifeController = require(script.Controllers.LifeController)
+local UIController = require(script.Controllers.UIController)
+local PowerupController = require(script.Controllers.PowerupController)
+local CameraController = require(script.Controllers.CameraController)
+local NPCController = require(script.Controllers.NPCController)
 
 -- 컨트롤러 인스턴스 생성
 local inputController = InputController.new()
