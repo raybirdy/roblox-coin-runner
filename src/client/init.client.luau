@@ -55,6 +55,7 @@ local LifeController = require(script.Parent.Controllers.LifeController)
 local UIController = require(script.Parent.Controllers.UIController)
 local PowerupController = require(script.Parent.Controllers.PowerupController)
 local CameraController = require(script.Parent.Controllers.CameraController)
+local NPCController = require(script.Parent.Controllers.NPCController)
 
 -- 컨트롤러 인스턴스 생성
 local inputController = InputController.new()
@@ -64,6 +65,7 @@ local lifeController = LifeController.new()
 local uiController = UIController.new(player)
 local powerupController = PowerupController.new()
 local cameraController = CameraController.new(player, character)
+local npcController = NPCController.new()
 
 -- 입력 콜백 연결
 inputController:OnJump(function()
@@ -82,4 +84,4 @@ RemoteEvents.GameStart.OnClientEvent:Connect(function(data)
 end)
 
 print("[Client] Coin Runner Client Ready")
-print("[Client] Controllers initialized: Input, Player, Coin, Life, UI, Powerup, Camera")
+print("[Client] Controllers initialized: Input, Player, Coin, Life, UI, Powerup, Camera, NPC")

@@ -12,6 +12,7 @@ local ChunkService = require(script.Parent.ChunkService)
 local CoinService = require(script.Parent.CoinService)
 local ObstacleService = require(script.Parent.ObstacleService)
 local PowerupService = require(script.Parent.PowerupService)
+local NPCService = require(script.Parent.NPCService)
 local PlayerDataService = require(script.Parent.PlayerDataService)
 
 local GameManager = {}
@@ -23,6 +24,7 @@ type GameSession = {
 	coinService: any, -- CoinService
 	obstacleService: any, -- ObstacleService
 	powerupService: any, -- PowerupService
+	npcService: any, -- NPCService
 	isPlaying: boolean,
 	startTime: number,
 	startPosition: Vector3, -- 시작 위치 (거리 계산용)
@@ -47,6 +49,7 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 	local coinService = CoinService.new(player)
 	local obstacleService = ObstacleService.new(player)
 	local powerupService = PowerupService.new(player)
+	local npcService = NPCService.new(player)
 
 	-- 시작 위치 가져오기
 	local character = player.Character
@@ -64,6 +67,7 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 		coinService = coinService,
 		obstacleService = obstacleService,
 		powerupService = powerupService,
+		npcService = npcService,
 		isPlaying = true,
 		startTime = tick(),
 		startPosition = startPosition,
@@ -74,10 +78,11 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 
 	activeSessions[player] = session
 
-	-- 청크 서비스에 코인/장애물/파워업 서비스 연결
+	-- 청크 서비스에 코인/장애물/파워업/NPC 서비스 연결
 	chunkService:SetCoinService(coinService)
 	chunkService:SetObstacleService(obstacleService)
 	chunkService:SetPowerupService(powerupService)
+	chunkService:SetNPCService(npcService)
 	chunkService:StartGame()
 
 	-- 파워업 서비스 시작
@@ -119,7 +124,7 @@ function GameManager.EndGame(player: Player)
 	local playerData = PlayerDataService:GetPlayerData(player)
 	local highScore = playerData and playerData.highScore or 0
 
-	-- 청크, 코인, 장애물, 파워업 정리
+	-- 청크, 코인, 장애물, 파워업, NPC 정리
 	if session.chunkService then
 		session.chunkService:Destroy()
 	end
@@ -131,6 +136,9 @@ function GameManager.EndGame(player: Player)
 	end
 	if session.powerupService then
 		session.powerupService:Destroy()
+	end
+	if session.npcService then
+		session.npcService:Destroy()
 	end
 
 	-- 클라이언트에 게임 오버 알림
