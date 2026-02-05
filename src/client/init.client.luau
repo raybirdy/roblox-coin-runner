@@ -50,12 +50,14 @@ disableDefaultControls()
 -- 클라이언트 컨트롤러 로드
 local InputController = require(script.Parent.Controllers.InputController)
 local PlayerController = require(script.Parent.Controllers.PlayerController)
+local CoinController = require(script.Parent.Controllers.CoinController)
 -- local CameraController = require(script.Parent.Controllers.CameraController)
 -- local UIController = require(script.Parent.Controllers.UIController)
 
 -- 컨트롤러 인스턴스 생성
 local inputController = InputController.new()
 local playerController = PlayerController.new(player, character)
+local coinController = CoinController.new()
 
 -- 입력 콜백 연결
 inputController:OnJump(function()
@@ -79,4 +81,4 @@ task.delay(3, function()
 end)
 
 print("[Client] Coin Runner Client Ready")
-print("[Client] Controllers initialized: Input, Player")
+print("[Client] Controllers initialized: Input, Player, Coin")
