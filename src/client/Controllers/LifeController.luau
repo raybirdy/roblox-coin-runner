@@ -43,15 +43,21 @@ function LifeController:OnLifeUpdate(data: { lives: number })
 	local previousLives = self._currentLives
 	self._currentLives = data.lives
 
-	-- 라이프 감소 피드백 (MVP: 콘솔 로그만)
+	-- 라이프 감소 피드백
 	if data.lives < previousLives then
 		print(`[LifeController] Lost a life! Remaining lives: {data.lives}`)
 
+		-- 화면 흔들림 트리거 (CameraController에 알림)
+		local ReplicatedStorage = game:GetService("ReplicatedStorage")
+		local cameraShakeEvent = ReplicatedStorage:FindFirstChild("CameraShake")
+		if cameraShakeEvent and cameraShakeEvent:IsA("BindableEvent") then
+			cameraShakeEvent:Fire(0.5) -- 중간 강도
+		end
+
 		-- TODO MVP 이후:
-		-- 1. 화면 흔들림 (Camera shake)
-		-- 2. 빨간 비네트 효과
-		-- 3. 사운드 효과
-		-- 4. UI 하트 애니메이션
+		-- 1. 빨간 비네트 효과
+		-- 2. 사운드 효과
+		-- 3. UI 하트 애니메이션
 	end
 
 	-- 라이프 0 경고
