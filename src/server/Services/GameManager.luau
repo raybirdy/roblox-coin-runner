@@ -11,6 +11,7 @@ local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)
 local ChunkService = require(script.Parent.ChunkService)
 local CoinService = require(script.Parent.CoinService)
 local ObstacleService = require(script.Parent.ObstacleService)
+local PowerupService = require(script.Parent.PowerupService)
 
 local GameManager = {}
 
@@ -20,6 +21,7 @@ type GameSession = {
 	chunkService: any, -- ChunkService
 	coinService: any, -- CoinService
 	obstacleService: any, -- ObstacleService
+	powerupService: any, -- PowerupService
 	isPlaying: boolean,
 	startTime: number,
 	startPosition: Vector3, -- 시작 위치 (거리 계산용)
@@ -43,6 +45,7 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 	local chunkService = ChunkService.new()
 	local coinService = CoinService.new(player)
 	local obstacleService = ObstacleService.new(player)
+	local powerupService = PowerupService.new(player)
 
 	-- 시작 위치 가져오기
 	local character = player.Character
@@ -59,6 +62,7 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 		chunkService = chunkService,
 		coinService = coinService,
 		obstacleService = obstacleService,
+		powerupService = powerupService,
 		isPlaying = true,
 		startTime = tick(),
 		startPosition = startPosition,
@@ -69,10 +73,14 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 
 	activeSessions[player] = session
 
-	-- 청크 서비스에 코인/장애물 서비스 연결
+	-- 청크 서비스에 코인/장애물/파워업 서비스 연결
 	chunkService:SetCoinService(coinService)
 	chunkService:SetObstacleService(obstacleService)
+	chunkService:SetPowerupService(powerupService)
 	chunkService:StartGame()
+
+	-- 파워업 서비스 시작
+	powerupService:StartGame()
 
 	-- 클라이언트에 게임 시작 알림
 	RemoteEvents.GameStart:FireClient(player, {
@@ -102,7 +110,7 @@ function GameManager.EndGame(player: Player)
 	local finalScore = session.score
 	local earnedCoins = session.coins
 
-	-- 청크, 코인, 장애물 정리
+	-- 청크, 코인, 장애물, 파워업 정리
 	if session.chunkService then
 		session.chunkService:Destroy()
 	end
@@ -111,6 +119,9 @@ function GameManager.EndGame(player: Player)
 	end
 	if session.obstacleService then
 		session.obstacleService:Destroy()
+	end
+	if session.powerupService then
+		session.powerupService:Destroy()
 	end
 
 	-- 클라이언트에 게임 오버 알림
@@ -155,6 +166,7 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 		local chunkService = session.chunkService
 		local coinService = session.coinService
 		local obstacleService = session.obstacleService
+		local powerupService = session.powerupService
 
 		-- 오래된 청크 정리
 		chunkService:CleanupOldChunks(hrp.Position)
@@ -164,8 +176,22 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 			chunkService:SpawnNextChunk()
 		end
 
-		-- 코인 수집 체크
-		local collectedCoins = coinService:CheckCoinCollection(hrp.Position)
+		-- 파워업 수집 체크
+		local collectedPowerups = powerupService:CheckPowerupCollection(hrp.Position)
+		for _, powerupData in collectedPowerups do
+			-- 파워업 효과 활성화
+			powerupService:ActivatePowerup(powerupData.powerupType)
+
+			-- 클라이언트에 수집 알림
+			RemoteEvents.PowerupCollected:FireClient(player, {
+				powerupType = powerupData.powerupType,
+			})
+
+			print(`[GameManager] Player {player.Name} collected {powerupData.powerupType} powerup`)
+		end
+
+		-- 코인 수집 체크 (자석 효과 적용)
+		local collectedCoins = coinService:CheckCoinCollection(hrp.Position, powerupService:GetMagnetRadius())
 		for _, coinData in collectedCoins do
 			-- 세션 데이터 업데이트
 			session.coins += coinData.value
@@ -186,21 +212,32 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 		local hitObstacle = obstacleService:CheckObstacleCollision(hrp.Position, isSliding)
 
 		if hitObstacle and session.lives > 0 then
-			-- 라이프 감소
-			session.lives -= 1
-			obstacleService:OnObstacleHit()
+			-- 쉴드 사용 시도
+			if powerupService:TryUseShield() then
+				-- 쉴드로 방어 성공
+				print(`[GameManager] Player {player.Name} blocked obstacle with shield!`)
 
-			-- 클라이언트에 라이프 업데이트 알림
-			RemoteEvents.LifeUpdate:FireClient(player, {
-				lives = session.lives,
-			})
+				-- 클라이언트에 쉴드 사용 알림
+				RemoteEvents.PowerupCollected:FireClient(player, {
+					powerupType = "ShieldUsed",
+				})
+			else
+				-- 라이프 감소
+				session.lives -= 1
+				obstacleService:OnObstacleHit()
 
-			print(`[GameManager] Player {player.Name} hit obstacle! Lives: {session.lives}`)
+				-- 클라이언트에 라이프 업데이트 알림
+				RemoteEvents.LifeUpdate:FireClient(player, {
+					lives = session.lives,
+				})
 
-			-- 라이프 0이면 게임 오버
-			if session.lives <= 0 then
-				print(`[GameManager] Player {player.Name} has no lives left, ending game`)
-				GameManager.EndGame(player)
+				print(`[GameManager] Player {player.Name} hit obstacle! Lives: {session.lives}`)
+
+				-- 라이프 0이면 게임 오버
+				if session.lives <= 0 then
+					print(`[GameManager] Player {player.Name} has no lives left, ending game`)
+					GameManager.EndGame(player)
+				end
 			end
 		end
 

@@ -179,15 +179,21 @@ function CoinService:_setupCollisionHandlers()
 end
 
 -- 플레이어 위치로 코인 수집 체크 (GameManager에서 호출)
-function CoinService:CheckCoinCollection(playerPosition: Vector3): { CoinData }
+function CoinService:CheckCoinCollection(playerPosition: Vector3, magnetRadius: number?): { CoinData }
 	local collectedCoins = {}
+
+	-- 기본 수집 반경 (캐릭터 크기 + 약간의 여유)
+	local baseRadius = 3
+
+	-- 자석 효과가 있으면 반경 증가
+	local collectionRadius = baseRadius
+	if magnetRadius and magnetRadius > 0 then
+		collectionRadius = magnetRadius
+	end
 
 	for i = #self._activeCoins, 1, -1 do
 		local coinData = self._activeCoins[i]
 		local distance = (coinData.part.Position - playerPosition).Magnitude
-
-		-- 수집 반경 (캐릭터 크기 + 약간의 여유)
-		local collectionRadius = 3
 
 		if distance < collectionRadius then
 			-- 코인 수집
