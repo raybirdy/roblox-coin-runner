@@ -22,6 +22,7 @@ type GameSession = {
 	obstacleService: any, -- ObstacleService
 	isPlaying: boolean,
 	startTime: number,
+	startPosition: Vector3, -- 시작 위치 (거리 계산용)
 	score: number,
 	coins: number,
 	lives: number,
@@ -43,6 +44,16 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 	local coinService = CoinService.new(player)
 	local obstacleService = ObstacleService.new(player)
 
+	-- 시작 위치 가져오기
+	local character = player.Character
+	local startPosition = Vector3.new(0, 0, 0)
+	if character then
+		local hrp = character:FindFirstChild("HumanoidRootPart") :: BasePart?
+		if hrp then
+			startPosition = hrp.Position
+		end
+	end
+
 	local session: GameSession = {
 		player = player,
 		chunkService = chunkService,
@@ -50,6 +61,7 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 		obstacleService = obstacleService,
 		isPlaying = true,
 		startTime = tick(),
+		startPosition = startPosition,
 		score = 0,
 		coins = 0,
 		lives = GameConstants.LIFE.STARTING_LIVES,
@@ -192,8 +204,22 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 			end
 		end
 
-		-- 점수 업데이트 (이동 거리 기반 - 향후 구현)
-		-- session.score = calculateScore(session)
+		-- 점수 업데이트 (이동 거리 기반)
+		local distanceTraveled = hrp.Position.X - session.startPosition.X
+		local distanceScore = math.max(0, math.floor(distanceTraveled * GameConstants.SCORE.DISTANCE_MULTIPLIER))
+
+		-- 총 점수 = 거리 점수 + 코인 점수 (코인 수집 시 이미 추가됨)
+		local previousScore = session.score
+		session.score = distanceScore + session.coins
+
+		-- 점수 변경 시 클라이언트에 업데이트 알림 (0.5초마다)
+		if tick() % 0.5 < deltaTime then
+			RemoteEvents.ScoreUpdate:FireClient(player, {
+				score = session.score,
+				distance = math.floor(distanceTraveled),
+				coins = session.coins,
+			})
+		end
 	end
 end)
 
