@@ -20,6 +20,7 @@ export type UIController = typeof(setmetatable(
 		_coinsLabel: TextLabel?,
 		_livesLabel: TextLabel?,
 		_gameOverFrame: Frame?,
+		_startMenuFrame: Frame?,
 		_connections: { RBXScriptConnection },
 	},
 	UIController
@@ -34,11 +35,13 @@ function UIController.new(player: Player): UIController
 		_coinsLabel = nil,
 		_livesLabel = nil,
 		_gameOverFrame = nil,
+		_startMenuFrame = nil,
 		_connections = {},
 	}, UIController)
 
 	self:_createUI()
 	self:_setupEventHandlers()
+	self:ShowStartMenu() -- 시작 시 메뉴 표시
 
 	return self
 end
@@ -141,17 +144,86 @@ function UIController:_createUI()
 	earnedCoinsLabel.Text = "Coins: 0"
 	earnedCoinsLabel.Parent = gameOverFrame
 
-	-- 재시작 안내 (MVP: 텍스트만)
-	local restartLabel = Instance.new("TextLabel")
-	restartLabel.Name = "Restart"
-	restartLabel.Size = UDim2.new(1, 0, 0, 40)
-	restartLabel.Position = UDim2.new(0, 0, 0, 220)
-	restartLabel.BackgroundTransparency = 1
-	restartLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-	restartLabel.TextSize = 18
-	restartLabel.Font = Enum.Font.Gotham
-	restartLabel.Text = "Respawn to play again"
-	restartLabel.Parent = gameOverFrame
+	-- 재시작 버튼
+	local restartButton = Instance.new("TextButton")
+	restartButton.Name = "RestartButton"
+	restartButton.Size = UDim2.new(0, 200, 0, 50)
+	restartButton.Position = UDim2.new(0.5, -100, 0, 210)
+	restartButton.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+	restartButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+	restartButton.TextSize = 24
+	restartButton.Font = Enum.Font.GothamBold
+	restartButton.Text = "PLAY AGAIN"
+	restartButton.Parent = gameOverFrame
+
+	-- 버튼 클릭 이벤트
+	restartButton.MouseButton1Click:Connect(function()
+		self:OnRestartButtonClicked()
+	end)
+
+	-- 시작 메뉴 프레임 (초기 화면)
+	local startMenuFrame = Instance.new("Frame")
+	startMenuFrame.Name = "StartMenuFrame"
+	startMenuFrame.Size = UDim2.new(0, 500, 0, 400)
+	startMenuFrame.Position = UDim2.new(0.5, -250, 0.5, -200)
+	startMenuFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	startMenuFrame.BackgroundTransparency = 0.3
+	startMenuFrame.Visible = false
+	startMenuFrame.Parent = screenGui
+	self._startMenuFrame = startMenuFrame
+
+	-- 게임 타이틀
+	local titleLabel = Instance.new("TextLabel")
+	titleLabel.Name = "Title"
+	titleLabel.Size = UDim2.new(1, 0, 0, 80)
+	titleLabel.Position = UDim2.new(0, 0, 0, 30)
+	titleLabel.BackgroundTransparency = 1
+	titleLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
+	titleLabel.TextSize = 48
+	titleLabel.Font = Enum.Font.GothamBold
+	titleLabel.Text = "COIN RUNNER"
+	titleLabel.Parent = startMenuFrame
+
+	-- 부제목
+	local subtitleLabel = Instance.new("TextLabel")
+	subtitleLabel.Name = "Subtitle"
+	subtitleLabel.Size = UDim2.new(1, 0, 0, 30)
+	subtitleLabel.Position = UDim2.new(0, 0, 0, 120)
+	subtitleLabel.BackgroundTransparency = 1
+	subtitleLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+	subtitleLabel.TextSize = 20
+	subtitleLabel.Font = Enum.Font.Gotham
+	subtitleLabel.Text = "Collect coins, dodge obstacles!"
+	subtitleLabel.Parent = startMenuFrame
+
+	-- 플레이 버튼
+	local playButton = Instance.new("TextButton")
+	playButton.Name = "PlayButton"
+	playButton.Size = UDim2.new(0, 250, 0, 60)
+	playButton.Position = UDim2.new(0.5, -125, 0, 200)
+	playButton.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+	playButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+	playButton.TextSize = 32
+	playButton.Font = Enum.Font.GothamBold
+	playButton.Text = "PLAY"
+	playButton.Parent = startMenuFrame
+
+	-- 플레이 버튼 클릭
+	playButton.MouseButton1Click:Connect(function()
+		self:OnPlayButtonClicked()
+	end)
+
+	-- 조작법 안내
+	local controlsLabel = Instance.new("TextLabel")
+	controlsLabel.Name = "Controls"
+	controlsLabel.Size = UDim2.new(1, 0, 0, 80)
+	controlsLabel.Position = UDim2.new(0, 0, 0, 290)
+	controlsLabel.BackgroundTransparency = 1
+	controlsLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
+	controlsLabel.TextSize = 16
+	controlsLabel.Font = Enum.Font.Gotham
+	controlsLabel.Text = "Controls:\nJUMP: Space / W / ↑\nSLIDE: S / ↓"
+	controlsLabel.Parent = startMenuFrame
 
 	print("[UIController] UI created")
 end
@@ -228,6 +300,64 @@ function UIController:ShowGameOver(finalScore: number, earnedCoins: number)
 	self._gameOverFrame.Visible = true
 
 	print(`[UIController] Game Over displayed - Score: {finalScore}, Coins: {earnedCoins}`)
+end
+
+-- 플레이 버튼 클릭 처리
+function UIController:OnPlayButtonClicked()
+	print("[UIController] Play button clicked")
+
+	-- 시작 메뉴 숨기기
+	self:HideStartMenu()
+
+	-- 서버에 게임 시작 요청
+	RemoteEvents.GameStart:FireServer()
+end
+
+-- 재시작 버튼 클릭 처리
+function UIController:OnRestartButtonClicked()
+	print("[UIController] Restart button clicked")
+
+	-- 게임 오버 화면 숨기기
+	self:HideGameOver()
+
+	-- 서버에 게임 시작 요청
+	RemoteEvents.GameStart:FireServer()
+end
+
+-- 시작 메뉴 표시
+function UIController:ShowStartMenu()
+	if self._startMenuFrame then
+		self._startMenuFrame.Visible = true
+	end
+
+	-- 게임 UI 숨기기
+	if self._scoreLabel then
+		self._scoreLabel.Visible = false
+	end
+	if self._coinsLabel then
+		self._coinsLabel.Visible = false
+	end
+	if self._livesLabel then
+		self._livesLabel.Visible = false
+	end
+end
+
+-- 시작 메뉴 숨기기
+function UIController:HideStartMenu()
+	if self._startMenuFrame then
+		self._startMenuFrame.Visible = false
+	end
+
+	-- 게임 UI 표시
+	if self._scoreLabel then
+		self._scoreLabel.Visible = true
+	end
+	if self._coinsLabel then
+		self._coinsLabel.Visible = true
+	end
+	if self._livesLabel then
+		self._livesLabel.Visible = true
+	end
 end
 
 -- 게임 오버 화면 숨기기 (재시작 시)
