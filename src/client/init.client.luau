@@ -78,12 +78,7 @@ end)
 RemoteEvents.GameStart.OnClientEvent:Connect(function(data)
 	print("[Client] Game start confirmed by server")
 	playerController:StartGame()
-end)
-
--- 테스트: 3초 후 자동으로 게임 시작 요청 (임시)
-task.delay(3, function()
-	print("[Client] Requesting game start from server...")
-	RemoteEvents.GameStart:FireServer()
+	uiController:HideGameOver() -- 게임 오버 화면 숨기기
 end)
 
 print("[Client] Coin Runner Client Ready")
