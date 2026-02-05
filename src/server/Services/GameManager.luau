@@ -12,6 +12,7 @@ local ChunkService = require(script.Parent.ChunkService)
 local CoinService = require(script.Parent.CoinService)
 local ObstacleService = require(script.Parent.ObstacleService)
 local PowerupService = require(script.Parent.PowerupService)
+local PlayerDataService = require(script.Parent.PlayerDataService)
 
 local GameManager = {}
 
@@ -109,6 +110,14 @@ function GameManager.EndGame(player: Player)
 	-- 최종 점수 계산
 	local finalScore = session.score
 	local earnedCoins = session.coins
+	local distance = math.max(0, math.floor(session.startPosition.X - (player.Character and player.Character:FindFirstChild("HumanoidRootPart") and (player.Character.HumanoidRootPart :: BasePart).Position.X or 0)))
+
+	-- 플레이어 데이터 업데이트 및 저장
+	PlayerDataService:OnGameEnd(player, finalScore, earnedCoins, distance)
+
+	-- 최고 점수 가져오기
+	local playerData = PlayerDataService:GetPlayerData(player)
+	local highScore = playerData and playerData.highScore or 0
 
 	-- 청크, 코인, 장애물, 파워업 정리
 	if session.chunkService then
@@ -128,13 +137,13 @@ function GameManager.EndGame(player: Player)
 	RemoteEvents.GameOver:FireClient(player, {
 		finalScore = finalScore,
 		earnedCoins = earnedCoins,
-		-- highScore는 DataStore에서 가져올 예정
+		highScore = highScore,
 	})
 
 	-- 세션 제거
 	activeSessions[player] = nil
 
-	print(`[GameManager] Game ended for {player.Name}: Score={finalScore}, Coins={earnedCoins}`)
+	print(`[GameManager] Game ended for {player.Name}: Score={finalScore}, Coins={earnedCoins}, HighScore={highScore}`)
 end
 
 -- 플레이어 퇴장 시 세션 정리
