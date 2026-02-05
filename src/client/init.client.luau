@@ -47,9 +47,30 @@ end)
 -- 초기 설정
 disableDefaultControls()
 
--- 클라이언트 컨트롤러 로드 (향후 구현)
--- local InputController = require(script.Parent.Controllers.InputController)
+-- 클라이언트 컨트롤러 로드
+local InputController = require(script.Parent.Controllers.InputController)
+local PlayerController = require(script.Parent.Controllers.PlayerController)
 -- local CameraController = require(script.Parent.Controllers.CameraController)
 -- local UIController = require(script.Parent.Controllers.UIController)
 
+-- 컨트롤러 인스턴스 생성
+local inputController = InputController.new()
+local playerController = PlayerController.new(player, character)
+
+-- 입력 콜백 연결
+inputController:OnJump(function()
+	playerController:Jump()
+end)
+
+inputController:OnSlide(function()
+	playerController:Slide()
+end)
+
+-- 테스트: 3초 후 자동으로 게임 시작 (임시)
+task.delay(3, function()
+	print("[Client] Auto-starting game for testing...")
+	playerController:StartGame()
+end)
+
 print("[Client] Coin Runner Client Ready")
+print("[Client] Controllers initialized: Input, Player")
