@@ -274,6 +274,9 @@ function PlayerController:Slide()
 	self.isSliding = true
 	self.state = "Sliding"
 
+	-- 서버에 슬라이딩 상태 전달 (Attribute 사용)
+	self.humanoidRootPart:SetAttribute("IsSliding", true)
+
 	-- 히트박스 축소
 	-- TODO: 실제 히트박스 변경 (CharacterMesh 또는 Accessory 처리 필요)
 
@@ -296,6 +299,9 @@ end
 function PlayerController:_endSlide()
 	self.isSliding = false
 	self.state = "Running"
+
+	-- 서버에 슬라이딩 종료 전달
+	self.humanoidRootPart:SetAttribute("IsSliding", false)
 
 	-- 히트박스 복구
 	-- TODO: 실제 히트박스 복구
