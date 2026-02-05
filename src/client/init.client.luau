@@ -53,6 +53,7 @@ local PlayerController = require(script.Parent.Controllers.PlayerController)
 local CoinController = require(script.Parent.Controllers.CoinController)
 local LifeController = require(script.Parent.Controllers.LifeController)
 local UIController = require(script.Parent.Controllers.UIController)
+local PowerupController = require(script.Parent.Controllers.PowerupController)
 -- local CameraController = require(script.Parent.Controllers.CameraController)
 
 -- 컨트롤러 인스턴스 생성
@@ -61,6 +62,7 @@ local playerController = PlayerController.new(player, character)
 local coinController = CoinController.new()
 local lifeController = LifeController.new()
 local uiController = UIController.new(player)
+local powerupController = PowerupController.new()
 
 -- 입력 콜백 연결
 inputController:OnJump(function()
@@ -84,4 +86,4 @@ task.delay(3, function()
 end)
 
 print("[Client] Coin Runner Client Ready")
-print("[Client] Controllers initialized: Input, Player, Coin, Life, UI")
+print("[Client] Controllers initialized: Input, Player, Coin, Life, UI, Powerup")

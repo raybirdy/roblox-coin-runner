@@ -28,6 +28,7 @@ export type ChunkService = typeof(setmetatable(
 		_gameStartTime: number, -- 게임 시작 시간
 		_coinService: any?, -- CoinService 참조 (코인 생성용)
 		_obstacleService: any?, -- ObstacleService 참조 (장애물 생성용)
+		_powerupService: any?, -- PowerupService 참조 (파워업 생성용)
 	},
 	ChunkService
 ))
@@ -41,6 +42,7 @@ function ChunkService.new(): ChunkService
 		_gameStartTime = 0,
 		_coinService = nil,
 		_obstacleService = nil,
+		_powerupService = nil,
 	}, ChunkService)
 
 	self:_loadChunkTemplates()
@@ -56,6 +58,11 @@ end
 -- ObstacleService 설정 (GameManager에서 호출)
 function ChunkService:SetObstacleService(obstacleService: any)
 	self._obstacleService = obstacleService
+end
+
+-- PowerupService 설정 (GameManager에서 호출)
+function ChunkService:SetPowerupService(powerupService: any)
+	self._powerupService = powerupService
 end
 
 -- 청크 템플릿 로드
@@ -133,6 +140,11 @@ function ChunkService:SpawnNextChunk(): Model?
 	-- 청크 내 장애물 생성
 	if self._obstacleService then
 		self._obstacleService:SpawnObstaclesInChunk(chunk, difficulty)
+	end
+
+	-- 청크 내 파워업 생성 (확률적)
+	if self._powerupService then
+		self._powerupService:TrySpawnPowerupInChunk(chunk, difficulty)
 	end
 
 	print(`[ChunkService] Spawned chunk #{self._chunkCounter}: {difficulty} at {spawnPosition}`)
