@@ -10,8 +10,16 @@ local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)
 
 local PlayerDataService = {}
 
--- DataStore
-local playerDataStore = DataStoreService:GetDataStore(GameConstants.DATA.DATASTORE_NAME)
+-- DataStore (Studio에서는 사용 불가, 에러 무시)
+local playerDataStore = nil
+local success, err = pcall(function()
+	playerDataStore = DataStoreService:GetDataStore(GameConstants.DATA.DATASTORE_NAME)
+end)
+
+if not success then
+	warn("[PlayerDataService] DataStore unavailable (Studio mode): " .. tostring(err))
+	warn("[PlayerDataService] Player data will not be saved")
+end
 
 -- 기본 플레이어 데이터 구조
 type PlayerData = {
@@ -36,6 +44,14 @@ local playerDataCache: { [Player]: PlayerData } = {}
 
 -- 플레이어 데이터 로드
 function PlayerDataService:LoadPlayerData(player: Player): PlayerData?
+	-- DataStore 사용 불가 시 기본값 사용 (Studio 모드)
+	if not playerDataStore then
+		print(`[PlayerDataService] Studio mode - using default data for {player.Name}`)
+		local newData = self:_copyTable(DEFAULT_DATA)
+		playerDataCache[player] = newData
+		return newData
+	end
+
 	local userId = player.UserId
 	local success, data = pcall(function()
 		return playerDataStore:GetAsync("Player_" .. userId)
@@ -68,6 +84,12 @@ function PlayerDataService:SavePlayerData(player: Player): boolean
 	if not playerData then
 		warn(`[PlayerDataService] No data to save for {player.Name}`)
 		return false
+	end
+
+	-- DataStore 사용 불가 시 저장 스킵 (Studio 모드)
+	if not playerDataStore then
+		print(`[PlayerDataService] Studio mode - skipping save for {player.Name}`)
+		return true
 	end
 
 	local userId = player.UserId
