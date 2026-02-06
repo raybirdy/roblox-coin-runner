@@ -51,13 +51,15 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 	local powerupService = PowerupService.new(player)
 	local npcService = NPCService.new(player)
 
-	-- 시작 위치 가져오기
+	-- 시작 위치 설정 및 플레이어 텔레포트
+	local startPosition = Vector3.new(0, 2.5, GameConstants.PLAYER.Z_POSITION)
 	local character = player.Character
-	local startPosition = Vector3.new(0, 0, 0)
 	if character then
 		local hrp = character:FindFirstChild("HumanoidRootPart") :: BasePart?
 		if hrp then
-			startPosition = hrp.Position
+			-- 플레이어를 시작 위치로 텔레포트 (게임 재시작 시 필수)
+			hrp.CFrame = CFrame.new(startPosition) * CFrame.Angles(0, math.rad(-90), 0)
+			print(`[GameManager] Teleported {player.Name} to start position`)
 		end
 	end
 
@@ -115,7 +117,8 @@ function GameManager.EndGame(player: Player)
 	-- 최종 점수 계산
 	local finalScore = session.score
 	local earnedCoins = session.coins
-	local distance = math.max(0, math.floor(session.startPosition.X - (player.Character and player.Character:FindFirstChild("HumanoidRootPart") and (player.Character.HumanoidRootPart :: BasePart).Position.X or 0)))
+	local currentX = (player.Character and player.Character:FindFirstChild("HumanoidRootPart") and (player.Character.HumanoidRootPart :: BasePart).Position.X or session.startPosition.X)
+	local distance = math.max(0, math.floor(currentX - session.startPosition.X))
 
 	-- 플레이어 데이터 업데이트 및 저장
 	PlayerDataService:OnGameEnd(player, finalScore, earnedCoins, distance)

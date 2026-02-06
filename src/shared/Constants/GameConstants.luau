@@ -34,8 +34,8 @@ GameConstants.PHYSICS = {
 GameConstants.CHUNK = {
 	LENGTH = 80, -- 청크 길이 (studs)
 	HEIGHT = 40, -- 청크 높이 (studs)
-	MAX_LOADED = 3, -- 동시 로드 최대 청크 수
-	PRELOAD_THRESHOLD = 0.75, -- 청크의 75% 지점에서 다음 청크 로드
+	MAX_LOADED = 4, -- 동시 로드 최대 청크 수
+	PRELOAD_THRESHOLD = 0.5, -- 청크의 50% 지점에서 다음 청크 로드
 	DELETE_DISTANCE = 100, -- 캐릭터 뒤 이 거리 초과 시 청크 삭제
 
 	-- 높이 태그

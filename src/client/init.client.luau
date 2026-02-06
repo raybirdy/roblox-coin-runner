@@ -83,5 +83,11 @@ RemoteEvents.GameStart.OnClientEvent:Connect(function(data)
 	uiController:HideGameOver() -- 게임 오버 화면 숨기기
 end)
 
+-- 서버로부터 게임 종료 수신
+RemoteEvents.GameOver.OnClientEvent:Connect(function(data)
+	print("[Client] Game ended by server")
+	playerController:StopGame()
+end)
+
 print("[Client] Coin Runner Client Ready")
 print("[Client] Controllers initialized: Input, Player, Coin, Life, UI, Powerup, Camera, NPC")

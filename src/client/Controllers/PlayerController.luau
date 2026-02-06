@@ -90,6 +90,13 @@ function PlayerController:StartGame()
 	print(`[PlayerController] Game started for {self.player.Name}`)
 end
 
+-- 게임 종료
+function PlayerController:StopGame()
+	self.state = "Idle"
+	self.currentSpeed = 0
+	print(`[PlayerController] Game stopped for {self.player.Name}`)
+end
+
 -- Z축 고정 설정 (2D 평면 유지)
 function PlayerController:_setupZAxisConstraint()
 	local attachment = Instance.new("Attachment")
@@ -128,8 +135,8 @@ function PlayerController:_setupPhysics()
 	self.humanoid.JumpPower = 0 -- 커스텀 점프 사용
 	self.humanoid.AutoRotate = false -- 회전 고정 (오른쪽 보기)
 
-	-- 캐릭터 회전 고정 (오른쪽 향하기)
-	self.humanoidRootPart.CFrame = CFrame.new(self.humanoidRootPart.Position) * CFrame.Angles(0, math.rad(90), 0)
+	-- 캐릭터 회전 고정 (오른쪽을 향하기)
+	self.humanoidRootPart.CFrame = CFrame.new(self.humanoidRootPart.Position) * CFrame.Angles(0, math.rad(-90), 0)
 
 	print("[PlayerController] Physics set up")
 end
@@ -181,27 +188,30 @@ function PlayerController:_moveForward(deltaTime: number)
 
 	-- X축으로 이동 (오른쪽)
 	local newPos = currentPos + Vector3.new(moveDistance, 0, 0)
-	self.humanoidRootPart.CFrame = CFrame.new(newPos) * CFrame.Angles(0, math.rad(90), 0)
+	self.humanoidRootPart.CFrame = CFrame.new(newPos) * CFrame.Angles(0, math.rad(-90), 0)
 end
 
--- 바닥 감지 (Raycast)
+-- 바닥 감지 (Y 위치 기반)
 function PlayerController:_checkGrounded()
-	local rayOrigin = self.humanoidRootPart.Position
-	local rayDirection = Vector3.new(0, -3, 0) -- 아래로 3 studs
+	local currentY = self.humanoidRootPart.Position.Y
+	local groundHeight = 2.5 -- 캐릭터 높이의 절반 (바닥에 서 있을 때 중심 높이)
+	local tolerance = 1.0 -- 허용 오차 (증가)
 
-	local raycastParams = RaycastParams.new()
-	raycastParams.FilterDescendantsInstances = { self.character }
-	raycastParams.FilterType = Enum.RaycastFilterType.Exclude
-
-	local raycastResult = workspace:Raycast(rayOrigin, rayDirection, raycastParams)
-
-	self.isGrounded = raycastResult ~= nil
+	local wasGrounded = self.isGrounded
+	self.isGrounded = math.abs(currentY - groundHeight) < tolerance
 
 	-- 착지 시
-	if self.isGrounded and self.state == "Jumping" or self.state == "Falling" then
+	if self.isGrounded and not wasGrounded and (self.state == "Jumping" or self.state == "Falling") then
 		self.state = "Running"
 		self.canDoubleJump = false
 		self.verticalVelocity = 0
+		print(`[PlayerController] Landed - Y: {currentY}`)
+	end
+
+	-- 공중으로 올라갔을 때
+	if not self.isGrounded and wasGrounded and self.state == "Running" then
+		self.state = "Falling"
+		print(`[PlayerController] Airborne - Y: {currentY}`)
 	end
 end
 
@@ -217,7 +227,7 @@ function PlayerController:Jump()
 	if self.isGrounded then
 		self:_performJump(GameConstants.PHYSICS.JUMP_HEIGHT_FIRST)
 		self.canDoubleJump = true
-		print("[PlayerController] First jump")
+		print(`[PlayerController] First jump - Y: {self.humanoidRootPart.Position.Y}`)
 		return
 	end
 
@@ -225,9 +235,12 @@ function PlayerController:Jump()
 	if self.canDoubleJump then
 		self:_performJump(GameConstants.PHYSICS.JUMP_HEIGHT_SECOND)
 		self.canDoubleJump = false
-		print("[PlayerController] Second jump")
+		print(`[PlayerController] Second jump - Y: {self.humanoidRootPart.Position.Y}`)
 		return
 	end
+
+	-- 점프 불가 상태
+	print(`[PlayerController] Cannot jump - Grounded: {self.isGrounded}, CanDoubleJump: {self.canDoubleJump}, State: {self.state}`)
 end
 
 -- 점프 실행
@@ -253,15 +266,16 @@ function PlayerController:_applyGravity(deltaTime: number)
 	local currentPos = self.humanoidRootPart.Position
 	local newY = currentPos.Y + (self.verticalVelocity * deltaTime)
 
-	-- 바닥 아래로 떨어지지 않도록
-	if newY < 0 then
-		newY = 0
+	-- 최소 높이 제한 (바닥 아래로 떨어지지 않도록)
+	local minHeight = 2.5 -- 캐릭터 높이의 절반
+	if newY < minHeight then
+		newY = minHeight
 		self.verticalVelocity = 0
 		self.isGrounded = true
 	end
 
 	self.humanoidRootPart.CFrame = CFrame.new(currentPos.X, newY, GameConstants.PLAYER.Z_POSITION)
-		* CFrame.Angles(0, math.rad(90), 0)
+		* CFrame.Angles(0, math.rad(-90), 0)
 end
 
 -- 슬라이드
