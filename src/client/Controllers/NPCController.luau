@@ -14,18 +14,24 @@ NPCController.__index = NPCController
 export type NPCController = typeof(setmetatable(
 	{} :: {
 		_player: Player,
+		_playerGui: PlayerGui,
+		_tutorialGui: ScreenGui?,
 		_connections: { RBXScriptConnection },
 	},
 	NPCController
 ))
 
 function NPCController.new(): NPCController
+	local player = Players.LocalPlayer
 	local self = setmetatable({
-		_player = Players.LocalPlayer,
+		_player = player,
+		_playerGui = player:WaitForChild("PlayerGui") :: PlayerGui,
+		_tutorialGui = nil,
 		_connections = {},
 	}, NPCController)
 
 	self:_setupEventHandlers()
+	self:_createTutorialGui()
 
 	return self
 end
@@ -119,6 +125,97 @@ function NPCController:ShowSpeechBubble(npcModel: Model, npcType: string, messag
 	end)
 
 	print(`[NPCController] Displayed speech bubble: "{message}"`)
+end
+
+-- 튜토리얼 GUI 생성
+function NPCController:_createTutorialGui()
+	local tutorialGui = Instance.new("ScreenGui")
+	tutorialGui.Name = "TutorialGui"
+	tutorialGui.ResetOnSpawn = false
+	tutorialGui.Enabled = false
+	tutorialGui.Parent = self._playerGui
+	self._tutorialGui = tutorialGui
+
+	-- 부엉이 아이콘 (왼쪽 상단)
+	local owlIcon = Instance.new("Frame")
+	owlIcon.Name = "OwlIcon"
+	owlIcon.Size = UDim2.new(0, 80, 0, 80)
+	owlIcon.Position = UDim2.new(0, 20, 0, 120)
+	owlIcon.BackgroundColor3 = GameConstants.NPC.TYPES.Owl.color
+	owlIcon.BackgroundTransparency = 0.2
+	owlIcon.Parent = tutorialGui
+
+	local owlCorner = Instance.new("UICorner")
+	owlCorner.CornerRadius = UDim.new(1, 0) -- 원형
+	owlCorner.Parent = owlIcon
+
+	-- 부엉이 이모지
+	local owlEmoji = Instance.new("TextLabel")
+	owlEmoji.Size = UDim2.new(1, 0, 1, 0)
+	owlEmoji.BackgroundTransparency = 1
+	owlEmoji.Text = "🦉"
+	owlEmoji.TextSize = 48
+	owlEmoji.Parent = owlIcon
+
+	-- 메시지 프레임
+	local messageFrame = Instance.new("Frame")
+	messageFrame.Name = "MessageFrame"
+	messageFrame.Size = UDim2.new(0, 300, 0, 80)
+	messageFrame.Position = UDim2.new(0, 110, 0, 130)
+	messageFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	messageFrame.BackgroundTransparency = 0.1
+	messageFrame.Parent = tutorialGui
+
+	local messageCorner = Instance.new("UICorner")
+	messageCorner.CornerRadius = UDim.new(0, 12)
+	messageCorner.Parent = messageFrame
+
+	local messageStroke = Instance.new("UIStroke")
+	messageStroke.Color = Color3.fromRGB(160, 82, 45)
+	messageStroke.Thickness = 3
+	messageStroke.Parent = messageFrame
+
+	-- 메시지 텍스트
+	local messageLabel = Instance.new("TextLabel")
+	messageLabel.Name = "MessageLabel"
+	messageLabel.Size = UDim2.new(1, -20, 1, -20)
+	messageLabel.Position = UDim2.new(0, 10, 0, 10)
+	messageLabel.BackgroundTransparency = 1
+	messageLabel.Text = ""
+	messageLabel.TextColor3 = Color3.fromRGB(0, 0, 0)
+	messageLabel.TextSize = 20
+	messageLabel.Font = Enum.Font.GothamBold
+	messageLabel.TextWrapped = true
+	messageLabel.TextXAlignment = Enum.TextXAlignment.Left
+	messageLabel.TextYAlignment = Enum.TextYAlignment.Center
+	messageLabel.Parent = messageFrame
+
+	print("[NPCController] Tutorial GUI created")
+end
+
+-- 부엉이 메시지 표시 (튜토리얼용)
+function NPCController:ShowOwlMessage(message: string)
+	if not self._tutorialGui then
+		return
+	end
+
+	-- GUI 활성화
+	self._tutorialGui.Enabled = true
+
+	-- 메시지 업데이트
+	local messageLabel = self._tutorialGui.MessageFrame:FindFirstChild("MessageLabel") :: TextLabel?
+	if messageLabel then
+		messageLabel.Text = message
+	end
+
+	-- 3초 후 숨김
+	task.delay(3, function()
+		if self._tutorialGui then
+			self._tutorialGui.Enabled = false
+		end
+	end)
+
+	print(`[NPCController] Showed owl message: "{message}"`)
 end
 
 -- 정리

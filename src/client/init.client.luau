@@ -56,6 +56,7 @@ local UIController = require(script.Controllers.UIController)
 local PowerupController = require(script.Controllers.PowerupController)
 local CameraController = require(script.Controllers.CameraController)
 local NPCController = require(script.Controllers.NPCController)
+local TutorialController = require(script.Controllers.TutorialController)
 
 -- 컨트롤러 인스턴스 생성
 local inputController = InputController.new()
@@ -66,23 +67,31 @@ local uiController = UIController.new(player)
 local powerupController = PowerupController.new()
 local cameraController = CameraController.new(player, character)
 local npcController = NPCController.new()
+local tutorialController = TutorialController.new()
+
+-- 튜토리얼 컨트롤러에 NPCController 연결
+tutorialController:SetNPCController(npcController)
 
 -- 입력 콜백 연결 (키보드)
 inputController:OnJump(function()
 	playerController:Jump()
+	tutorialController:OnPlayerAction("jump")
 end)
 
 inputController:OnSlide(function()
 	playerController:Slide()
+	tutorialController:OnPlayerAction("slide")
 end)
 
 -- UI 모바일 버튼 콜백 연결 (터치)
 uiController:OnJump(function()
 	playerController:Jump()
+	tutorialController:OnPlayerAction("jump")
 end)
 
 uiController:OnSlide(function()
 	playerController:Slide()
+	tutorialController:OnPlayerAction("slide")
 end)
 
 -- 서버로부터 게임 시작 응답 수신
@@ -90,13 +99,44 @@ RemoteEvents.GameStart.OnClientEvent:Connect(function(data)
 	print("[Client] Game start confirmed by server")
 	playerController:StartGame()
 	uiController:HideGameOver() -- 게임 오버 화면 숨기기
+
+	-- 튜토리얼 시작 (필요 시)
+	if data.startTutorial then
+		tutorialController:Start(data.startPosition)
+	end
+end)
+
+-- 튜토리얼 모드 전환 (슬로모션)
+RemoteEvents.TutorialMode.OnClientEvent:Connect(function(data)
+	if data.active then
+		print(`[Client] Tutorial mode enabled - speed: {data.speedMultiplier * 100}%`)
+		playerController:SetSpeedMultiplier(data.speedMultiplier)
+	else
+		print("[Client] Tutorial mode disabled - normal speed")
+		playerController:SetSpeedMultiplier(1.0)
+	end
 end)
 
 -- 서버로부터 게임 종료 수신
 RemoteEvents.GameOver.OnClientEvent:Connect(function(data)
 	print("[Client] Game ended by server")
 	playerController:StopGame()
+
+	-- 튜토리얼 종료 (활성화된 경우)
+	if tutorialController:IsActive() then
+		tutorialController:Stop()
+	end
+end)
+
+-- 튜토리얼 거리 업데이트 (RunService)
+RunService.Heartbeat:Connect(function(deltaTime: number)
+	if tutorialController:IsActive() and character then
+		local hrp = character:FindFirstChild("HumanoidRootPart") :: BasePart?
+		if hrp then
+			tutorialController:UpdateDistance(hrp.Position)
+		end
+	end
 end)
 
 print("[Client] Coin Runner Client Ready")
-print("[Client] Controllers initialized: Input, Player, Coin, Life, UI, Powerup, Camera, NPC")
+print("[Client] Controllers initialized: Input, Player, Coin, Life, UI, Powerup, Camera, NPC, Tutorial")

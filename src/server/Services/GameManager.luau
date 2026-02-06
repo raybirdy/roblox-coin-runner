@@ -13,6 +13,7 @@ local CoinService = require(script.Parent.CoinService)
 local ObstacleService = require(script.Parent.ObstacleService)
 local PowerupService = require(script.Parent.PowerupService)
 local NPCService = require(script.Parent.NPCService)
+local TutorialService = require(script.Parent.TutorialService)
 local PlayerDataService = require(script.Parent.PlayerDataService)
 
 local GameManager = {}
@@ -25,6 +26,7 @@ type GameSession = {
 	obstacleService: any, -- ObstacleService
 	powerupService: any, -- PowerupService
 	npcService: any, -- NPCService
+	tutorialService: any, -- TutorialService
 	isPlaying: boolean,
 	startTime: number,
 	startPosition: Vector3, -- 시작 위치 (거리 계산용)
@@ -34,6 +36,10 @@ type GameSession = {
 }
 
 local activeSessions: { [Player]: GameSession } = {}
+local globalTutorialService = TutorialService.new()
+
+-- TutorialService에 PlayerDataService 연결
+globalTutorialService:SetPlayerDataService(PlayerDataService)
 
 -- 게임 시작 요청 처리
 RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
@@ -70,6 +76,7 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 		obstacleService = obstacleService,
 		powerupService = powerupService,
 		npcService = npcService,
+		tutorialService = globalTutorialService,
 		isPlaying = true,
 		startTime = tick(),
 		startPosition = startPosition,
@@ -90,10 +97,15 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 	-- 파워업 서비스 시작
 	powerupService:StartGame()
 
+	-- 튜토리얼 필요 여부 확인
+	local needsTutorial = globalTutorialService:NeedsTutorial(player)
+
 	-- 클라이언트에 게임 시작 알림
 	RemoteEvents.GameStart:FireClient(player, {
 		startTime = session.startTime,
 		lives = session.lives,
+		startTutorial = needsTutorial,
+		startPosition = startPosition,
 	})
 
 	print(`[GameManager] Game started for {player.Name}`)

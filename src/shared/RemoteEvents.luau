@@ -81,6 +81,19 @@ RemoteEvents.PlayerDataLoaded = getOrCreateRemoteEvent("PlayerDataLoaded")
 -- 서버 → 클라이언트: 플레이어 데이터 로드 완료
 -- 파라미터: (playerData: table)
 
+-- 튜토리얼 시작
+RemoteEvents.TutorialStart = getOrCreateRemoteEvent("TutorialStart")
+-- 클라이언트 → 서버: 튜토리얼 시작 알림
+
+-- 튜토리얼 종료
+RemoteEvents.TutorialEnd = getOrCreateRemoteEvent("TutorialEnd")
+-- 클라이언트 → 서버: 튜토리얼 종료 알림
+
+-- 튜토리얼 모드
+RemoteEvents.TutorialMode = getOrCreateRemoteEvent("TutorialMode")
+-- 서버 → 클라이언트: 튜토리얼 모드 전환 (슬로모션)
+-- 파라미터: { active: boolean, speedMultiplier: number }
+
 -- 튜토리얼 완료
 RemoteEvents.TutorialCompleted = getOrCreateRemoteEvent("TutorialCompleted")
 -- 클라이언트 → 서버: 튜토리얼 완료 알림

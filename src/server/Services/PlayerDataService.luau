@@ -28,6 +28,7 @@ type PlayerData = {
 	gamesPlayed: number,
 	totalDistance: number,
 	totalCoinsCollected: number,
+	tutorialCompleted: boolean,
 	-- 향후 추가: 스킨, 펫, 레벨 등
 }
 
@@ -37,6 +38,7 @@ local DEFAULT_DATA: PlayerData = {
 	gamesPlayed = 0,
 	totalDistance = 0,
 	totalCoinsCollected = 0,
+	tutorialCompleted = false,
 }
 
 -- 메모리 캐시 (활성 플레이어)
@@ -174,6 +176,21 @@ function PlayerDataService:OnGameEnd(player: Player, finalScore: number, earnedC
 
 	-- 클라이언트에 업데이트된 데이터 전송
 	RemoteEvents.PlayerDataLoaded:FireClient(player, playerData)
+end
+
+-- 튜토리얼 완료 상태 설정
+function PlayerDataService:SetTutorialCompleted(player: Player, completed: boolean)
+	local playerData = playerDataCache[player]
+	if not playerData then
+		return
+	end
+
+	playerData.tutorialCompleted = completed
+
+	-- 즉시 저장
+	self:SavePlayerData(player)
+
+	print(`[PlayerDataService] Tutorial completed for {player.Name}: {completed}`)
 end
 
 -- 플레이어 퇴장 시 정리

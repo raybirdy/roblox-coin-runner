@@ -28,6 +28,7 @@ export type PlayerController = typeof(setmetatable(
 
 		-- 속도
 		currentSpeed: number,
+		speedMultiplier: number, -- 튜토리얼 슬로모션용
 		gameStartTime: number,
 
 		-- 점프
@@ -59,6 +60,7 @@ function PlayerController.new(player: Player, character: Model): PlayerControlle
 		isSliding = false,
 
 		currentSpeed = GameConstants.PHYSICS.SPEED_MIN,
+		speedMultiplier = 1.0, -- 기본 속도
 		gameStartTime = 0,
 
 		jumpVelocity = nil,
@@ -95,6 +97,12 @@ function PlayerController:StopGame()
 	self.state = "Idle"
 	self.currentSpeed = 0
 	print(`[PlayerController] Game stopped for {self.player.Name}`)
+end
+
+-- 속도 배율 설정 (튜토리얼 슬로모션용)
+function PlayerController:SetSpeedMultiplier(multiplier: number)
+	self.speedMultiplier = multiplier
+	print(`[PlayerController] Speed multiplier set to {multiplier * 100}%`)
 end
 
 -- Z축 고정 설정 (2D 평면 유지)
@@ -184,7 +192,7 @@ end
 -- 전진 이동
 function PlayerController:_moveForward(deltaTime: number)
 	local currentPos = self.humanoidRootPart.Position
-	local moveDistance = self.currentSpeed * deltaTime
+	local moveDistance = self.currentSpeed * self.speedMultiplier * deltaTime
 
 	-- X축으로 이동 (오른쪽)
 	local newPos = currentPos + Vector3.new(moveDistance, 0, 0)
