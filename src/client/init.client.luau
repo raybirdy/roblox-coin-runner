@@ -67,12 +67,21 @@ local powerupController = PowerupController.new()
 local cameraController = CameraController.new(player, character)
 local npcController = NPCController.new()
 
--- 입력 콜백 연결
+-- 입력 콜백 연결 (키보드)
 inputController:OnJump(function()
 	playerController:Jump()
 end)
 
 inputController:OnSlide(function()
+	playerController:Slide()
+end)
+
+-- UI 모바일 버튼 콜백 연결 (터치)
+uiController:OnJump(function()
+	playerController:Jump()
+end)
+
+uiController:OnSlide(function()
 	playerController:Slide()
 end)
 
