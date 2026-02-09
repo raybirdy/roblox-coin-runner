@@ -101,13 +101,18 @@ end)
 -- 서버로부터 게임 시작 응답 수신
 RemoteEvents.GameStart.OnClientEvent:Connect(function(data)
 	print("[Client] Game start confirmed by server")
-	playerController:StartGame()
 	uiController:HideGameOver() -- 게임 오버 화면 숨기기
 
-	-- 튜토리얼 시작 (필요 시)
-	if data.startTutorial then
-		tutorialController:Start(data.startPosition)
-	end
+	-- 카운트다운 후 게임 시작
+	uiController:ShowCountdown(function()
+		playerController:StartGame()
+
+		-- 튜토리얼 시작 (필요 시)
+		if data.startTutorial then
+			tutorialController:Start(data.startPosition)
+			uiController:ShowTutorialBanner() -- 튜토리얼 배너 표시
+		end
+	end)
 end)
 
 -- 튜토리얼 모드 전환 (슬로모션)
@@ -115,9 +120,11 @@ RemoteEvents.TutorialMode.OnClientEvent:Connect(function(data)
 	if data.active then
 		print(`[Client] Tutorial mode enabled - speed: {data.speedMultiplier * 100}%`)
 		playerController:SetSpeedMultiplier(data.speedMultiplier)
+		uiController:ShowTutorialBanner() -- 튜토리얼 배너 표시
 	else
 		print("[Client] Tutorial mode disabled - normal speed")
 		playerController:SetSpeedMultiplier(1.0)
+		uiController:ShowTutorialComplete() -- 튜토리얼 완료 알림
 	end
 end)
 
@@ -130,6 +137,9 @@ RemoteEvents.GameOver.OnClientEvent:Connect(function(data)
 	if tutorialController:IsActive() then
 		tutorialController:Stop()
 	end
+
+	-- 튜토리얼 UI 숨기기
+	uiController:HideTutorialBanner()
 end)
 
 -- 튜토리얼 거리 업데이트 (RunService)

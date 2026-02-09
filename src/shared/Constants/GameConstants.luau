@@ -24,10 +24,10 @@ GameConstants.PHYSICS = {
 	SLIDE_DURATION = 0.6, -- 슬라이드 지속 시간 (초)
 	SLIDE_COOLDOWN = 0.2, -- 슬라이드 후 쿨다운 (초)
 
-	-- 이동 속도
-	SPEED_MIN = 70, -- 최소 속도 (studs/s) - 러너 게임 기본
-	SPEED_MAX = 100, -- 최대 속도 (studs/s) - 빠른 속도
-	SPEED_RAMP_TIME = 60, -- 최대 속도 도달 시간 (초) - 1분
+	-- 이동 속도 (저연령층 6~12세 기준)
+	SPEED_MIN = 35, -- 최소 속도 (studs/s) - 느리고 편안함
+	SPEED_MAX = 55, -- 최대 속도 (studs/s) - 적당한 속도
+	SPEED_RAMP_TIME = 90, -- 최대 속도 도달 시간 (초) - 1분 30초
 }
 
 -- 청크 시스템
@@ -151,9 +151,9 @@ GameConstants.REVIVE = {
 
 -- 튜토리얼
 GameConstants.TUTORIAL = {
-	SLOWMO_SPEED_MULTIPLIER = 0.20, -- 슬로모션 속도 (20%)
+	SLOWMO_SPEED_MULTIPLIER = 0.60, -- 슬로모션 속도 (60%) - 너무 느리지 않게
 	SLOWMO_TRANSITION_TIME = 0.3, -- 슬로모션 전환 시간 (초)
-	SKIP_AFTER_DISTANCE = 200, -- 200 studs 이동 시 자동 종료
+	SKIP_AFTER_DISTANCE = 150, -- 150 studs 이동 시 자동 종료 (빠르게)
 }
 
 -- UI

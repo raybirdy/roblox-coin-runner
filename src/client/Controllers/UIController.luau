@@ -24,6 +24,9 @@ export type UIController = typeof(setmetatable(
 		_startMenuFrame: Frame?,
 		_jumpButton: TextButton?,
 		_slideButton: TextButton?,
+		_tutorialBanner: Frame?, -- 튜토리얼 배너
+		_tutorialNotification: Frame?, -- 튜토리얼 종료 알림
+		_countdownLabel: TextLabel?, -- 카운트다운 표시
 		_connections: { RBXScriptConnection },
 		_onJumpCallback: (() -> ())?,
 		_onSlideCallback: (() -> ())?,
@@ -44,6 +47,9 @@ function UIController.new(player: Player): UIController
 		_startMenuFrame = nil,
 		_jumpButton = nil,
 		_slideButton = nil,
+		_tutorialBanner = nil,
+		_tutorialNotification = nil,
+		_countdownLabel = nil,
 		_connections = {},
 		_onJumpCallback = nil,
 		_onSlideCallback = nil,
@@ -303,6 +309,83 @@ function UIController:_createUI()
 	controlsLabel.Font = Enum.Font.Gotham
 	controlsLabel.Text = "Controls:\nJUMP: Space / W / ↑\nSLIDE: S / ↓"
 	controlsLabel.Parent = startMenuFrame
+
+	-- 튜토리얼 배너 (화면 상단)
+	local tutorialBanner = Instance.new("Frame")
+	tutorialBanner.Name = "TutorialBanner"
+	tutorialBanner.Size = UDim2.new(0, 300, 0, 50)
+	tutorialBanner.Position = UDim2.new(0.5, -150, 0, 120)
+	tutorialBanner.BackgroundColor3 = Color3.fromRGB(50, 150, 255)
+	tutorialBanner.BackgroundTransparency = 0.2
+	tutorialBanner.Visible = false
+	tutorialBanner.Parent = screenGui
+	self._tutorialBanner = tutorialBanner
+
+	local tutorialCorner = Instance.new("UICorner")
+	tutorialCorner.CornerRadius = UDim.new(0, 12)
+	tutorialCorner.Parent = tutorialBanner
+
+	local tutorialStroke = Instance.new("UIStroke")
+	tutorialStroke.Color = Color3.fromRGB(255, 255, 255)
+	tutorialStroke.Thickness = 2
+	tutorialStroke.Parent = tutorialBanner
+
+	local tutorialLabel = Instance.new("TextLabel")
+	tutorialLabel.Name = "Label"
+	tutorialLabel.Size = UDim2.new(1, 0, 1, 0)
+	tutorialLabel.BackgroundTransparency = 1
+	tutorialLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	tutorialLabel.TextSize = 22
+	tutorialLabel.Font = Enum.Font.GothamBold
+	tutorialLabel.Text = "연습 모드"
+	tutorialLabel.Parent = tutorialBanner
+
+	-- 튜토리얼 종료 알림 (화면 중앙)
+	local tutorialNotification = Instance.new("Frame")
+	tutorialNotification.Name = "TutorialNotification"
+	tutorialNotification.Size = UDim2.new(0, 400, 0, 100)
+	tutorialNotification.Position = UDim2.new(0.5, -200, 0.4, -50)
+	tutorialNotification.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
+	tutorialNotification.BackgroundTransparency = 0.1
+	tutorialNotification.Visible = false
+	tutorialNotification.Parent = screenGui
+	self._tutorialNotification = tutorialNotification
+
+	local notificationCorner = Instance.new("UICorner")
+	notificationCorner.CornerRadius = UDim.new(0, 16)
+	notificationCorner.Parent = tutorialNotification
+
+	local notificationStroke = Instance.new("UIStroke")
+	notificationStroke.Color = Color3.fromRGB(255, 255, 255)
+	notificationStroke.Thickness = 3
+	notificationStroke.Parent = tutorialNotification
+
+	local notificationLabel = Instance.new("TextLabel")
+	notificationLabel.Name = "Label"
+	notificationLabel.Size = UDim2.new(1, 0, 1, 0)
+	notificationLabel.BackgroundTransparency = 1
+	notificationLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	notificationLabel.TextSize = 28
+	notificationLabel.Font = Enum.Font.GothamBold
+	notificationLabel.Text = "연습 완료! 게임 시작!"
+	notificationLabel.Parent = tutorialNotification
+
+	-- 카운트다운 표시 (화면 중앙, 크게)
+	local countdownLabel = Instance.new("TextLabel")
+	countdownLabel.Name = "CountdownLabel"
+	countdownLabel.Size = UDim2.new(0, 300, 0, 200)
+	countdownLabel.Position = UDim2.new(0.5, -150, 0.5, -100)
+	countdownLabel.BackgroundTransparency = 1
+	countdownLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	countdownLabel.TextSize = 120
+	countdownLabel.Font = Enum.Font.GothamBold
+	countdownLabel.Text = ""
+	countdownLabel.TextStrokeTransparency = 0.3
+	countdownLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+	countdownLabel.Visible = false
+	countdownLabel.ZIndex = 100 -- 다른 UI 위에 표시
+	countdownLabel.Parent = screenGui
+	self._countdownLabel = countdownLabel
 
 	print("[UIController] UI created")
 end
@@ -566,6 +649,83 @@ function UIController:HideGameOver()
 	self:UpdateScore(0, 0, 0)
 	self:UpdateCoins(0)
 	self:UpdateLives(GameConstants.LIFE.STARTING_LIVES)
+end
+
+-- 튜토리얼 배너 표시
+function UIController:ShowTutorialBanner()
+	if self._tutorialBanner then
+		self._tutorialBanner.Visible = true
+	end
+	print("[UIController] Tutorial banner shown")
+end
+
+-- 튜토리얼 배너 숨기기
+function UIController:HideTutorialBanner()
+	if self._tutorialBanner then
+		self._tutorialBanner.Visible = false
+	end
+end
+
+-- 튜토리얼 완료 알림 표시 (잠시 후 자동 숨김)
+function UIController:ShowTutorialComplete()
+	-- 배너 숨기기
+	self:HideTutorialBanner()
+
+	-- 완료 알림 표시
+	if self._tutorialNotification then
+		self._tutorialNotification.Visible = true
+
+		-- 2초 후 자동 숨김
+		task.delay(2, function()
+			if self._tutorialNotification then
+				self._tutorialNotification.Visible = false
+			end
+		end)
+	end
+	print("[UIController] Tutorial complete notification shown")
+end
+
+-- 카운트다운 표시 (3, 2, 1, 시작!)
+function UIController:ShowCountdown(onComplete: () -> ())
+	if not self._countdownLabel then
+		-- 카운트다운 UI 없으면 바로 시작
+		if onComplete then
+			onComplete()
+		end
+		return
+	end
+
+	local countdownLabel = self._countdownLabel
+	countdownLabel.Visible = true
+
+	-- 카운트다운 시퀀스
+	local sequence = {
+		{ text = "3", color = Color3.fromRGB(255, 100, 100), duration = 0.8 },
+		{ text = "2", color = Color3.fromRGB(255, 200, 100), duration = 0.8 },
+		{ text = "1", color = Color3.fromRGB(100, 255, 100), duration = 0.8 },
+		{ text = "시작!", color = Color3.fromRGB(100, 200, 255), duration = 0.6 },
+	}
+
+	local totalDelay = 0
+	for i, step in ipairs(sequence) do
+		task.delay(totalDelay, function()
+			countdownLabel.Text = step.text
+			countdownLabel.TextColor3 = step.color
+
+			-- 마지막 스텝에서 콜백 호출
+			if i == #sequence then
+				task.delay(step.duration, function()
+					countdownLabel.Visible = false
+					if onComplete then
+						onComplete()
+					end
+				end)
+			end
+		end)
+		totalDelay += step.duration
+	end
+
+	print("[UIController] Countdown started")
 end
 
 -- 정리

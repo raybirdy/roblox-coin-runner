@@ -8,9 +8,11 @@ local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local GameConstants = require(ReplicatedStorage.Shared.Constants.GameConstants)
+local AnimationController = require(script.Parent.AnimationController)
 
 -- 전역 연결 관리 (Rojo 업데이트 시 중복 방지)
 local _globalGameConnection: RBXScriptConnection? = nil
+local _lastUpdateTime: number = 0 -- 프레임당 한 번만 업데이트
 
 local PlayerController = {}
 PlayerController.__index = PlayerController
@@ -48,6 +50,9 @@ export type PlayerController = typeof(setmetatable(
 		-- 속도 제어
 		_linearVelocity: LinearVelocity?,
 
+		-- 애니메이션
+		_animationController: AnimationController.AnimationController?,
+
 		-- 연결
 		_connections: { RBXScriptConnection },
 		_gameConnection: RBXScriptConnection?, -- Heartbeat 게임 루프 연결
@@ -83,6 +88,8 @@ function PlayerController.new(player: Player, character: Model): PlayerControlle
 
 		_linearVelocity = nil,
 
+		_animationController = nil,
+
 		_connections = {},
 		_gameConnection = nil,
 
@@ -92,14 +99,24 @@ function PlayerController.new(player: Player, character: Model): PlayerControlle
 	self:_setupZAxisConstraint()
 	self:_setupPhysics()
 	self:_setupLinearVelocity()
+	self:_setupAnimations()
 
 	return self
+end
+
+-- 애니메이션 설정
+function PlayerController:_setupAnimations()
+	self._animationController = AnimationController.new(self.humanoid)
+	print("[PlayerController] Animation controller initialized")
 end
 
 -- 게임 시작
 function PlayerController:StartGame()
 	-- 이전 게임 연결 완전 정리 (중복 방지)
 	self:_cleanupGameConnection()
+
+	-- 전역 시간 초기화 (중복 업데이트 방지)
+	_lastUpdateTime = 0
 
 	-- 모든 상태 초기화
 	self.gameStartTime = tick()
@@ -123,6 +140,11 @@ function PlayerController:StartGame()
 	-- 전역과 인스턴스 모두에 저장
 	_globalGameConnection = connection
 	self._gameConnection = connection
+
+	-- 달리기 애니메이션 시작
+	if self._animationController then
+		self._animationController:PlayRun()
+	end
 
 	print(`[PlayerController] Game started for {self.player.Name} - Speed: {self.currentSpeed}`)
 end
@@ -159,13 +181,20 @@ function PlayerController:StopGame()
 	-- 속도 완전 정지
 	self.humanoidRootPart.AssemblyLinearVelocity = Vector3.zero
 
+	-- 애니메이션 정지
+	if self._animationController then
+		self._animationController:PlayIdle()
+	end
+
 	print(`[PlayerController] Game stopped for {self.player.Name}`)
 end
 
 -- 속도 배율 설정 (튜토리얼 슬로모션용)
 function PlayerController:SetSpeedMultiplier(multiplier: number)
+	local oldMultiplier = self.speedMultiplier
 	self.speedMultiplier = multiplier
-	print(`[PlayerController] Speed multiplier set to {multiplier * 100}%`)
+	local effectiveSpeed = self.currentSpeed * multiplier
+	print(`[PlayerController] Speed: {oldMultiplier * 100}% -> {multiplier * 100}% (effective: {math.floor(effectiveSpeed)} studs/s)`)
 end
 
 -- 캐릭터 업데이트 (리스폰 시 호출)
@@ -194,10 +223,17 @@ function PlayerController:UpdateCharacter(newCharacter: Model)
 		self._linearVelocity = nil
 	end
 
+	-- 애니메이션 컨트롤러 정리
+	if self._animationController then
+		self._animationController:Destroy()
+		self._animationController = nil
+	end
+
 	-- 물리 및 제약 조건 재설정
 	self:_setupZAxisConstraint()
 	self:_setupPhysics()
 	self:_setupLinearVelocity()
+	self:_setupAnimations()
 
 	print("[PlayerController] Character updated after respawn")
 end
@@ -261,6 +297,13 @@ end
 
 -- 메인 업데이트 루프
 function PlayerController:_update(deltaTime: number)
+	-- 프레임당 한 번만 업데이트 (중복 연결 방지)
+	local now = tick()
+	if now - _lastUpdateTime < 0.001 then
+		return -- 너무 빠른 업데이트는 무시 (1ms 이내)
+	end
+	_lastUpdateTime = now
+
 	if self.state == "Idle" then
 		return
 	end
@@ -349,6 +392,12 @@ function PlayerController:_checkGrounded()
 			-- Y 속도 리셋 (착지 시 바운스 방지)
 			local vel = self.humanoidRootPart.AssemblyLinearVelocity
 			self.humanoidRootPart.AssemblyLinearVelocity = Vector3.new(vel.X, 0, vel.Z)
+
+			-- 달리기 애니메이션 재생
+			if self._animationController then
+				self._animationController:PlayRun()
+			end
+
 			print(`[PlayerController] Landed - Y: {currentY}`)
 		end
 	end
@@ -357,6 +406,12 @@ function PlayerController:_checkGrounded()
 	if not self.isGrounded and wasGrounded and self.state == "Running" then
 		self.state = "Falling"
 		self.canDoubleJump = true -- 낙하 시에도 더블 점프 허용
+
+		-- 낙하 애니메이션 재생
+		if self._animationController then
+			self._animationController:PlayFall()
+		end
+
 		print(`[PlayerController] Airborne - Y: {currentY}`)
 	end
 end
@@ -415,6 +470,11 @@ function PlayerController:_performJump(jumpHeight: number)
 	local currentVel = self.humanoidRootPart.AssemblyLinearVelocity
 	self.humanoidRootPart.AssemblyLinearVelocity = Vector3.new(currentVel.X, jumpVelocity, 0)
 
+	-- 점프 애니메이션 재생
+	if self._animationController then
+		self._animationController:PlayJump()
+	end
+
 	print(`[PlayerController] Jump velocity: {jumpVelocity}`)
 end
 
@@ -443,8 +503,10 @@ function PlayerController:Slide()
 	-- 서버에 슬라이딩 상태 전달 (Attribute 사용)
 	self.humanoidRootPart:SetAttribute("IsSliding", true)
 
-	-- 히트박스 축소 (간단한 구현: 캐릭터 스케일 축소)
-	-- TODO: 실제 히트박스 변경 (CharacterMesh 또는 Accessory 처리 필요)
+	-- 슬라이드 애니메이션 재생
+	if self._animationController then
+		self._animationController:PlaySlide()
+	end
 
 	print("[PlayerController] Slide started")
 
@@ -462,6 +524,11 @@ function PlayerController:_updateSlide(deltaTime: number)
 	if not self.isGrounded then
 		self:_endSlide()
 		self.state = "Falling"
+
+		-- 낙하 애니메이션 재생
+		if self._animationController then
+			self._animationController:PlayFall()
+		end
 	end
 end
 
@@ -476,15 +543,22 @@ function PlayerController:_endSlide()
 	-- 바닥에 있으면 Running, 아니면 Falling
 	if self.isGrounded then
 		self.state = "Running"
+
+		-- 달리기 애니메이션 재생
+		if self._animationController then
+			self._animationController:PlayRun()
+		end
 	else
 		self.state = "Falling"
+
+		-- 낙하 애니메이션 재생
+		if self._animationController then
+			self._animationController:PlayFall()
+		end
 	end
 
 	-- 서버에 슬라이딩 종료 전달
 	self.humanoidRootPart:SetAttribute("IsSliding", false)
-
-	-- 히트박스 복구
-	-- TODO: 실제 히트박스 복구
 
 	print("[PlayerController] Slide ended")
 end
@@ -506,6 +580,12 @@ function PlayerController:Destroy()
 
 	if self._linearVelocity then
 		self._linearVelocity:Destroy()
+	end
+
+	-- 애니메이션 컨트롤러 정리
+	if self._animationController then
+		self._animationController:Destroy()
+		self._animationController = nil
 	end
 end
 
