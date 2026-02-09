@@ -416,6 +416,11 @@ function ChunkService:CheckSpawnNewChunk(playerPosition: Vector3): boolean
 		return true
 	end
 
+	-- 최대 청크 수 제한
+	if #self._activeChunks >= GameConstants.CHUNK.MAX_LOADED then
+		return false
+	end
+
 	-- 가장 앞(오른쪽)에 있는 청크 찾기
 	local frontmostChunk = self._activeChunks[1]
 	for _, chunkData in self._activeChunks do
@@ -424,11 +429,13 @@ function ChunkService:CheckSpawnNewChunk(playerPosition: Vector3): boolean
 		end
 	end
 
-	-- 플레이어가 청크의 75% 지점을 지났는지 확인
-	local chunkProgressThreshold = frontmostChunk.position.X
-		+ (GameConstants.CHUNK.LENGTH * GameConstants.CHUNK.PRELOAD_THRESHOLD)
+	-- 가장 앞 청크의 끝 위치
+	local frontmostChunkEnd = frontmostChunk.position.X + GameConstants.CHUNK.LENGTH
 
-	return playerPosition.X >= chunkProgressThreshold
+	-- 플레이어 앞에 최소 거리만큼 청크가 있는지 확인
+	local distanceAhead = frontmostChunkEnd - playerPosition.X
+
+	return distanceAhead < GameConstants.CHUNK.MIN_AHEAD_DISTANCE
 end
 
 -- 활성 청크 수 반환
