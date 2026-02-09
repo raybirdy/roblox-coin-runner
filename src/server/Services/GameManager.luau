@@ -156,11 +156,16 @@ function GameManager.EndGame(player: Player)
 		session.npcService:Destroy()
 	end
 
+	-- 신기록 여부 확인
+	local isNewRecord = finalScore > 0 and finalScore >= highScore
+
 	-- 클라이언트에 게임 오버 알림
 	RemoteEvents.GameOver:FireClient(player, {
 		finalScore = finalScore,
 		earnedCoins = earnedCoins,
 		highScore = highScore,
+		distance = distance,
+		isNewRecord = isNewRecord,
 	})
 
 	-- 세션 제거
@@ -224,19 +229,24 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 
 		-- 코인 수집 체크 (자석 효과 적용)
 		local collectedCoins = coinService:CheckCoinCollection(hrp.Position, powerupService:GetMagnetRadius())
+		local coinMultiplier = powerupService:GetCoinMultiplier()
 		for _, coinData in collectedCoins do
+			-- 2배 코인 적용
+			local actualValue = coinData.value * coinMultiplier
+
 			-- 세션 데이터 업데이트
-			session.coins += coinData.value
-			session.score += coinData.value
+			session.coins += actualValue
+			session.score += actualValue
 
 			-- 클라이언트에 수집 알림
 			RemoteEvents.CoinCollected:FireClient(player, {
 				coinType = coinData.type,
-				coinValue = coinData.value,
+				coinValue = actualValue,
 				totalCoins = session.coins,
+				isDoubled = coinMultiplier > 1,
 			})
 
-			print(`[GameManager] Player {player.Name} collected {coinData.type} coin (+{coinData.value})`)
+			print(`[GameManager] Player {player.Name} collected {coinData.type} coin (+{actualValue}){coinMultiplier > 1 and " (x2)" or ""}`)
 		end
 
 		-- 장애물 충돌 체크
@@ -244,8 +254,12 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 		local hitObstacle = obstacleService:CheckObstacleCollision(hrp.Position, isSliding)
 
 		if hitObstacle and session.lives > 0 then
+			-- 무적 상태 체크
+			if powerupService:IsInvincible() then
+				-- 무적으로 통과
+				print(`[GameManager] Player {player.Name} passed through obstacle (Invincible)!`)
 			-- 쉴드 사용 시도
-			if powerupService:TryUseShield() then
+			elseif powerupService:TryUseShield() then
 				-- 쉴드로 방어 성공
 				print(`[GameManager] Player {player.Name} blocked obstacle with shield!`)
 

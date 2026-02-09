@@ -28,6 +28,10 @@ export type PowerupService = typeof(setmetatable(
 		_magnetEndTime: number,
 		_shieldActive: boolean,
 		_shieldUses: number,
+		_invincibleActive: boolean,
+		_invincibleEndTime: number,
+		_doubleCoinActive: boolean,
+		_doubleCoinEndTime: number,
 	},
 	PowerupService
 ))
@@ -42,6 +46,10 @@ function PowerupService.new(player: Player): PowerupService
 		_magnetEndTime = 0,
 		_shieldActive = false,
 		_shieldUses = 0,
+		_invincibleActive = false,
+		_invincibleEndTime = 0,
+		_doubleCoinActive = false,
+		_doubleCoinEndTime = 0,
 	}, PowerupService)
 
 	return self
@@ -89,13 +97,28 @@ end
 -- 파워업 타입 선택 (가중 랜덤)
 function PowerupService:_selectPowerupType(): string
 	local rand = math.random()
+	local cumulative = 0
 
-	-- MVP: 자석 60%, 쉴드 40%
-	if rand < GameConstants.POWERUP.MAGNET_RATE then
+	-- 자석 35%
+	cumulative += GameConstants.POWERUP.MAGNET_RATE
+	if rand < cumulative then
 		return "Magnet"
-	else
+	end
+
+	-- 쉴드 25%
+	cumulative += GameConstants.POWERUP.SHIELD_RATE
+	if rand < cumulative then
 		return "Shield"
 	end
+
+	-- 무적 20%
+	cumulative += GameConstants.POWERUP.INVINCIBLE_RATE
+	if rand < cumulative then
+		return "Invincible"
+	end
+
+	-- 2배 코인 20%
+	return "DoubleCoin"
 end
 
 -- 파워업 생성 (BasePart)
@@ -115,6 +138,10 @@ function PowerupService:_spawnPowerup(position: Vector3, powerupType: string)
 		powerup.BrickColor = BrickColor.new("Bright blue")
 	elseif powerupType == "Shield" then
 		powerup.BrickColor = BrickColor.new("Bright green")
+	elseif powerupType == "Invincible" then
+		powerup.BrickColor = BrickColor.new("Bright yellow")
+	elseif powerupType == "DoubleCoin" then
+		powerup.BrickColor = BrickColor.new("Deep orange")
 	end
 
 	powerup:SetAttribute("PowerupType", powerupType)
@@ -164,6 +191,14 @@ function PowerupService:ActivatePowerup(powerupType: string)
 		self._shieldActive = true
 		self._shieldUses = GameConstants.POWERUP.SHIELD_USES
 		print(`[PowerupService] Shield activated ({self._shieldUses} uses)`)
+	elseif powerupType == "Invincible" then
+		self._invincibleActive = true
+		self._invincibleEndTime = tick() + GameConstants.POWERUP.INVINCIBLE_DURATION
+		print(`[PowerupService] Invincible activated for {GameConstants.POWERUP.INVINCIBLE_DURATION}s`)
+	elseif powerupType == "DoubleCoin" then
+		self._doubleCoinActive = true
+		self._doubleCoinEndTime = tick() + GameConstants.POWERUP.DOUBLE_COIN_DURATION
+		print(`[PowerupService] DoubleCoin activated for {GameConstants.POWERUP.DOUBLE_COIN_DURATION}s`)
 	end
 end
 
@@ -207,6 +242,40 @@ end
 -- 쉴드 활성 여부
 function PowerupService:HasShield(): boolean
 	return self._shieldActive and self._shieldUses > 0
+end
+
+-- 무적 활성 여부 체크
+function PowerupService:IsInvincible(): boolean
+	if self._invincibleActive then
+		if tick() >= self._invincibleEndTime then
+			self._invincibleActive = false
+			print("[PowerupService] Invincible expired")
+			return false
+		end
+		return true
+	end
+	return false
+end
+
+-- 2배 코인 활성 여부 체크
+function PowerupService:IsDoubleCoinActive(): boolean
+	if self._doubleCoinActive then
+		if tick() >= self._doubleCoinEndTime then
+			self._doubleCoinActive = false
+			print("[PowerupService] DoubleCoin expired")
+			return false
+		end
+		return true
+	end
+	return false
+end
+
+-- 코인 배수 반환 (2배 코인 활성화 시 2, 아니면 1)
+function PowerupService:GetCoinMultiplier(): number
+	if self:IsDoubleCoinActive() then
+		return 2
+	end
+	return 1
 end
 
 -- 청크 삭제 시 관련 파워업 정리
