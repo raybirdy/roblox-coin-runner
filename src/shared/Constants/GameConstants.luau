@@ -127,17 +127,21 @@ GameConstants.SCORE = {
 	COMBO_TIMEOUT = 2, -- 콤보 리셋 시간 (초)
 }
 
--- 파워업 (MVP: 자석, 쉴드)
+-- 파워업 (자석, 쉴드, 무적, 2배코인)
 GameConstants.POWERUP = {
 	MAGNET_DURATION = 5, -- 자석 지속 시간 (초)
 	MAGNET_RADIUS = 15, -- 자석 흡수 반경 (studs)
 	SHIELD_USES = 1, -- 쉴드 사용 횟수
+	INVINCIBLE_DURATION = 5, -- 무적 지속 시간 (초)
+	DOUBLE_COIN_DURATION = 8, -- 2배 코인 지속 시간 (초)
 	MIN_SPAWN_TIME = 20, -- 첫 파워업 등장 시간 (초)
 	MIN_INTERVAL = 15, -- 파워업 간 최소 간격 (초)
 
-	-- MVP 출현 확률 (자석, 쉴드만)
-	MAGNET_RATE = 0.60,
-	SHIELD_RATE = 0.40,
+	-- 출현 확률 (합계 1.0)
+	MAGNET_RATE = 0.35,
+	SHIELD_RATE = 0.25,
+	INVINCIBLE_RATE = 0.20,
+	DOUBLE_COIN_RATE = 0.20,
 }
 
 -- 부활
@@ -170,8 +174,8 @@ GameConstants.DATA = {
 
 -- NPC (MVP: 토끼, 곰돌이, 부엉이)
 GameConstants.NPC = {
-	SPEECH_BUBBLE_DURATION = 1, -- 말풍선 표시 시간 (초)
-	WAVE_ANIMATION_DURATION = 2, -- 손흔들기 애니메이션 지속 시간 (초)
+	SPEECH_BUBBLE_DURATION = 3, -- 말풍선 표시 시간 (초) - 더 오래 표시
+	WAVE_ANIMATION_DURATION = 4, -- 손흔들기 애니메이션 지속 시간 (초)
 	SPAWN_HEIGHT = 0, -- NPC 스폰 Y 위치 (바닥 기준)
 	Z_POSITION = -10, -- NPC Z 위치 (배경 레이어)
 
@@ -179,13 +183,27 @@ GameConstants.NPC = {
 	TYPES = {
 		Rabbit = {
 			name = "Rabbit",
-			messages = { "화이팅!", "멋져!" },
+			messages = {
+				"화이팅!",
+				"멋져!",
+				"최고야!",
+				"잘하고 있어!",
+				"파이팅!",
+				"너무 잘해!",
+			},
 			color = Color3.fromRGB(255, 192, 203), -- 분홍
 			spawnChance = 0.50, -- NPC 청크 내 50% 확률
 		},
 		Bear = {
 			name = "Bear",
-			messages = { "잘하고 있어!" },
+			messages = {
+				"잘하고 있어!",
+				"대단해!",
+				"굿잡!",
+				"계속 가자!",
+				"힘내!",
+				"코인 많이 모아!",
+			},
 			color = Color3.fromRGB(139, 69, 19), -- 갈색
 			spawnChance = 0.50, -- NPC 청크 내 50% 확률
 		},

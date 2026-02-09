@@ -177,24 +177,24 @@ function UIController:_createUI()
 	-- 게임 오버 프레임 (초기 숨김)
 	local gameOverFrame = Instance.new("Frame")
 	gameOverFrame.Name = "GameOverFrame"
-	gameOverFrame.Size = UDim2.new(0, 450, 0, 400)
-	gameOverFrame.Position = UDim2.new(0.5, -225, 0.5, -200)
+	gameOverFrame.Size = UDim2.new(0, 450, 0, 480)
+	gameOverFrame.Position = UDim2.new(0.5, -225, 0.5, -240)
 	gameOverFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-	gameOverFrame.BackgroundTransparency = 0.2
+	gameOverFrame.BackgroundTransparency = 0.15
 	gameOverFrame.Visible = false
 	gameOverFrame.Parent = screenGui
 	self._gameOverFrame = gameOverFrame
 
 	-- 둥근 모서리
 	local gameOverCorner = Instance.new("UICorner")
-	gameOverCorner.CornerRadius = UDim.new(0, 16)
+	gameOverCorner.CornerRadius = UDim.new(0, 20)
 	gameOverCorner.Parent = gameOverFrame
 
 	-- 테두리
 	local gameOverStroke = Instance.new("UIStroke")
 	gameOverStroke.Color = Color3.fromRGB(255, 255, 255)
 	gameOverStroke.Thickness = 3
-	gameOverStroke.Transparency = 0.5
+	gameOverStroke.Transparency = 0.3
 	gameOverStroke.Parent = gameOverFrame
 
 	-- 게임 오버 텍스트
@@ -204,28 +204,58 @@ function UIController:_createUI()
 	gameOverTitle.Position = UDim2.new(0, 0, 0, 20)
 	gameOverTitle.BackgroundTransparency = 1
 	gameOverTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-	gameOverTitle.TextSize = 36
+	gameOverTitle.TextSize = 42
 	gameOverTitle.Font = Enum.Font.GothamBold
 	gameOverTitle.Text = "GAME OVER"
 	gameOverTitle.Parent = gameOverFrame
 
+	-- NEW RECORD 배지 (초기 숨김)
+	local newRecordLabel = Instance.new("TextLabel")
+	newRecordLabel.Name = "NewRecord"
+	newRecordLabel.Size = UDim2.new(0, 200, 0, 40)
+	newRecordLabel.Position = UDim2.new(0.5, -100, 0, 75)
+	newRecordLabel.BackgroundColor3 = Color3.fromRGB(255, 215, 0)
+	newRecordLabel.BackgroundTransparency = 0.1
+	newRecordLabel.TextColor3 = Color3.fromRGB(0, 0, 0)
+	newRecordLabel.TextSize = 22
+	newRecordLabel.Font = Enum.Font.GothamBold
+	newRecordLabel.Text = "🎉 NEW RECORD! 🎉"
+	newRecordLabel.Visible = false
+	newRecordLabel.Parent = gameOverFrame
+
+	local newRecordCorner = Instance.new("UICorner")
+	newRecordCorner.CornerRadius = UDim.new(0, 8)
+	newRecordCorner.Parent = newRecordLabel
+
 	-- 최종 점수
 	local finalScoreLabel = Instance.new("TextLabel")
 	finalScoreLabel.Name = "FinalScore"
-	finalScoreLabel.Size = UDim2.new(1, 0, 0, 40)
-	finalScoreLabel.Position = UDim2.new(0, 0, 0, 100)
+	finalScoreLabel.Size = UDim2.new(1, 0, 0, 50)
+	finalScoreLabel.Position = UDim2.new(0, 0, 0, 130)
 	finalScoreLabel.BackgroundTransparency = 1
 	finalScoreLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-	finalScoreLabel.TextSize = 24
-	finalScoreLabel.Font = Enum.Font.Gotham
+	finalScoreLabel.TextSize = 32
+	finalScoreLabel.Font = Enum.Font.GothamBold
 	finalScoreLabel.Text = "Score: 0"
 	finalScoreLabel.Parent = gameOverFrame
+
+	-- 거리 표시
+	local distanceLabel = Instance.new("TextLabel")
+	distanceLabel.Name = "Distance"
+	distanceLabel.Size = UDim2.new(1, 0, 0, 35)
+	distanceLabel.Position = UDim2.new(0, 0, 0, 180)
+	distanceLabel.BackgroundTransparency = 1
+	distanceLabel.TextColor3 = Color3.fromRGB(100, 200, 255)
+	distanceLabel.TextSize = 20
+	distanceLabel.Font = Enum.Font.Gotham
+	distanceLabel.Text = "🏃 Distance: 0m"
+	distanceLabel.Parent = gameOverFrame
 
 	-- 획득 코인
 	local earnedCoinsLabel = Instance.new("TextLabel")
 	earnedCoinsLabel.Name = "EarnedCoins"
-	earnedCoinsLabel.Size = UDim2.new(1, 0, 0, 40)
-	earnedCoinsLabel.Position = UDim2.new(0, 0, 0, 150)
+	earnedCoinsLabel.Size = UDim2.new(1, 0, 0, 35)
+	earnedCoinsLabel.Position = UDim2.new(0, 0, 0, 220)
 	earnedCoinsLabel.BackgroundTransparency = 1
 	earnedCoinsLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
 	earnedCoinsLabel.TextSize = 20
@@ -237,10 +267,10 @@ function UIController:_createUI()
 	local highScoreLabel = Instance.new("TextLabel")
 	highScoreLabel.Name = "HighScore"
 	highScoreLabel.Size = UDim2.new(1, 0, 0, 40)
-	highScoreLabel.Position = UDim2.new(0, 0, 0, 200)
+	highScoreLabel.Position = UDim2.new(0, 0, 0, 270)
 	highScoreLabel.BackgroundTransparency = 1
 	highScoreLabel.TextColor3 = Color3.fromRGB(255, 200, 0)
-	highScoreLabel.TextSize = 22
+	highScoreLabel.TextSize = 24
 	highScoreLabel.Font = Enum.Font.GothamBold
 	highScoreLabel.Text = "🏆 High Score: 0"
 	highScoreLabel.Parent = gameOverFrame
@@ -248,19 +278,26 @@ function UIController:_createUI()
 	-- 재시작 버튼
 	local restartButton = Instance.new("TextButton")
 	restartButton.Name = "RestartButton"
-	restartButton.Size = UDim2.new(0, 250, 0, 60)
-	restartButton.Position = UDim2.new(0.5, -125, 0, 280)
-	restartButton.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+	restartButton.Size = UDim2.new(0, 280, 0, 70)
+	restartButton.Position = UDim2.new(0.5, -140, 0, 340)
+	restartButton.BackgroundColor3 = Color3.fromRGB(0, 180, 0)
 	restartButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-	restartButton.TextSize = 28
+	restartButton.TextSize = 32
 	restartButton.Font = Enum.Font.GothamBold
-	restartButton.Text = "PLAY AGAIN"
+	restartButton.Text = "▶ PLAY AGAIN"
 	restartButton.Parent = gameOverFrame
 
 	-- 둥근 모서리
 	local restartCorner = Instance.new("UICorner")
-	restartCorner.CornerRadius = UDim.new(0, 12)
+	restartCorner.CornerRadius = UDim.new(0, 16)
 	restartCorner.Parent = restartButton
+
+	-- 버튼 테두리
+	local restartStroke = Instance.new("UIStroke")
+	restartStroke.Color = Color3.fromRGB(255, 255, 255)
+	restartStroke.Thickness = 2
+	restartStroke.Transparency = 0.5
+	restartStroke.Parent = restartButton
 
 	-- 버튼 클릭 이벤트
 	restartButton.MouseButton1Click:Connect(function()
@@ -518,7 +555,7 @@ function UIController:_setupEventHandlers()
 
 	-- 게임 오버
 	local gameOverConnection = RemoteEvents.GameOver.OnClientEvent:Connect(function(data)
-		self:ShowGameOver(data.finalScore, data.earnedCoins, data.highScore)
+		self:ShowGameOver(data.finalScore, data.earnedCoins, data.highScore, data.distance, data.isNewRecord)
 	end)
 	table.insert(self._connections, gameOverConnection)
 
@@ -588,7 +625,7 @@ function UIController:OnSlide(callback: () -> ())
 end
 
 -- 게임 오버 화면 표시
-function UIController:ShowGameOver(finalScore: number, earnedCoins: number, highScore: number?)
+function UIController:ShowGameOver(finalScore: number, earnedCoins: number, highScore: number?, distance: number?, isNewRecord: boolean?)
 	if not self._gameOverFrame then
 		return
 	end
@@ -596,7 +633,13 @@ function UIController:ShowGameOver(finalScore: number, earnedCoins: number, high
 	-- 최종 점수 표시
 	local finalScoreLabel = self._gameOverFrame:FindFirstChild("FinalScore") :: TextLabel?
 	if finalScoreLabel then
-		finalScoreLabel.Text = `Final Score: {finalScore}`
+		finalScoreLabel.Text = `Score: {finalScore}`
+	end
+
+	-- 거리 표시
+	local distanceLabel = self._gameOverFrame:FindFirstChild("Distance") :: TextLabel?
+	if distanceLabel then
+		distanceLabel.Text = `🏃 Distance: {distance or 0}m`
 	end
 
 	local earnedCoinsLabel = self._gameOverFrame:FindFirstChild("EarnedCoins") :: TextLabel?
@@ -610,10 +653,42 @@ function UIController:ShowGameOver(finalScore: number, earnedCoins: number, high
 		highScoreLabel.Text = `🏆 High Score: {highScore}`
 	end
 
-	-- 게임 오버 프레임 표시
+	-- NEW RECORD 표시
+	local newRecordLabel = self._gameOverFrame:FindFirstChild("NewRecord") :: TextLabel?
+	if newRecordLabel then
+		newRecordLabel.Visible = isNewRecord == true
+	end
+
+	-- 게임 오버 프레임 표시 (등장 애니메이션)
+	self._gameOverFrame.Size = UDim2.new(0, 0, 0, 0)
+	self._gameOverFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
 	self._gameOverFrame.Visible = true
 
-	print(`[UIController] Game Over displayed - Score: {finalScore}, Coins: {earnedCoins}, HighScore: {highScore or 0}`)
+	local appearTween = TweenService:Create(self._gameOverFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+		Size = UDim2.new(0, 450, 0, 480),
+		Position = UDim2.new(0.5, -225, 0.5, -240),
+	})
+	appearTween:Play()
+
+	-- NEW RECORD 애니메이션 (깜빡임)
+	if isNewRecord and newRecordLabel then
+		task.spawn(function()
+			for i = 1, 6 do
+				if not newRecordLabel or not newRecordLabel.Parent then
+					break
+				end
+				newRecordLabel.BackgroundTransparency = 0.5
+				task.wait(0.2)
+				if not newRecordLabel or not newRecordLabel.Parent then
+					break
+				end
+				newRecordLabel.BackgroundTransparency = 0.1
+				task.wait(0.2)
+			end
+		end)
+	end
+
+	print(`[UIController] Game Over displayed - Score: {finalScore}, Coins: {earnedCoins}, Distance: {distance or 0}m, HighScore: {highScore or 0}, NewRecord: {isNewRecord or false}`)
 end
 
 -- 플레이 버튼 클릭 처리
@@ -696,6 +771,12 @@ end
 function UIController:HideGameOver()
 	if self._gameOverFrame then
 		self._gameOverFrame.Visible = false
+
+		-- NEW RECORD 숨기기
+		local newRecordLabel = self._gameOverFrame:FindFirstChild("NewRecord") :: TextLabel?
+		if newRecordLabel then
+			newRecordLabel.Visible = false
+		end
 	end
 
 	-- UI 초기화

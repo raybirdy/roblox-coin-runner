@@ -60,7 +60,7 @@ function CoinController:_createCoinSound()
 end
 
 -- 코인 팝업 표시 (+1, +5 등)
-function CoinController:_showCoinPopup(value: number, coinType: string)
+function CoinController:_showCoinPopup(value: number, coinType: string, isDoubled: boolean?)
 	if not self._popupGui then
 		return
 	end
@@ -73,24 +73,29 @@ function CoinController:_showCoinPopup(value: number, coinType: string)
 		color = Color3.fromRGB(0, 191, 255)
 	end
 
+	-- 2배 코인이면 주황색으로 강조
+	if isDoubled then
+		color = Color3.fromRGB(255, 140, 0)
+	end
+
 	-- 팝업 라벨 생성
 	local popup = Instance.new("TextLabel")
 	popup.Name = "CoinPopup"
-	popup.Size = UDim2.new(0, 100, 0, 50)
-	popup.Position = UDim2.new(0.5, -50, 0.4, 0)
+	popup.Size = UDim2.new(0, 150, 0, 50)
+	popup.Position = UDim2.new(0.5, -75, 0.4, 0)
 	popup.BackgroundTransparency = 1
 	popup.TextColor3 = color
 	popup.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
 	popup.TextStrokeTransparency = 0.3
-	popup.TextSize = 36
+	popup.TextSize = isDoubled and 42 or 36 -- 2배일 때 더 크게
 	popup.Font = Enum.Font.GothamBold
-	popup.Text = `+{value}`
+	popup.Text = isDoubled and `+{value} x2!` or `+{value}`
 	popup.Parent = self._popupGui
 
 	-- 위로 올라가면서 사라지는 애니메이션
 	local tweenInfo = TweenInfo.new(0.8, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 	local tween = TweenService:Create(popup, tweenInfo, {
-		Position = UDim2.new(0.5, -50, 0.3, 0),
+		Position = UDim2.new(0.5, -75, 0.3, 0),
 		TextTransparency = 1,
 		TextStrokeTransparency = 1,
 	})
@@ -111,7 +116,7 @@ function CoinController:_setupEventHandlers()
 end
 
 -- 코인 수집 시 호출
-function CoinController:OnCoinCollected(data: { coinType: string, coinValue: number, totalCoins: number })
+function CoinController:OnCoinCollected(data: { coinType: string, coinValue: number, totalCoins: number, isDoubled: boolean? })
 	self._totalCoins = data.totalCoins
 
 	-- 사운드 재생
@@ -119,10 +124,11 @@ function CoinController:OnCoinCollected(data: { coinType: string, coinValue: num
 		self._coinSound:Play()
 	end
 
-	-- 팝업 표시
-	self:_showCoinPopup(data.coinValue, data.coinType)
+	-- 팝업 표시 (2배 코인인 경우 특별 표시)
+	self:_showCoinPopup(data.coinValue, data.coinType, data.isDoubled)
 
-	print(`[CoinController] Collected {data.coinType} coin! +{data.coinValue} (Total: {data.totalCoins})`)
+	local doubledText = data.isDoubled and " (x2!)" or ""
+	print(`[CoinController] Collected {data.coinType} coin! +{data.coinValue}{doubledText} (Total: {data.totalCoins})`)
 end
 
 -- 현재 총 코인 수 반환

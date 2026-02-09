@@ -62,6 +62,7 @@ end
 
 -- 말풍선 표시
 function NPCController:ShowSpeechBubble(npcModel: Model, npcType: string, messageIndex: number?)
+	local TweenService = game:GetService("TweenService")
 	local npcConfig = GameConstants.NPC.TYPES[npcType]
 	if not npcConfig then
 		return
@@ -84,47 +85,69 @@ function NPCController:ShowSpeechBubble(npcModel: Model, npcType: string, messag
 	-- BillboardGui 생성
 	local billboardGui = Instance.new("BillboardGui")
 	billboardGui.Name = "SpeechBubble"
-	billboardGui.Size = UDim2.new(0, 200, 0, 60)
-	billboardGui.StudsOffset = Vector3.new(0, 3, 0)
+	billboardGui.Size = UDim2.new(0, 250, 0, 80) -- 더 크게
+	billboardGui.StudsOffset = Vector3.new(0, 4, 0) -- 더 높이
 	billboardGui.Adornee = head
 	billboardGui.AlwaysOnTop = true
 	billboardGui.Parent = head
 
 	-- 말풍선 배경 (프레임)
 	local frame = Instance.new("Frame")
+	frame.Name = "BubbleFrame"
 	frame.Size = UDim2.new(1, 0, 1, 0)
 	frame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	frame.BackgroundTransparency = 0.2
-	frame.BorderSizePixel = 2
-	frame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	frame.BackgroundTransparency = 0.1
 	frame.Parent = billboardGui
 
 	-- 둥근 모서리
 	local corner = Instance.new("UICorner")
-	corner.CornerRadius = UDim.new(0, 8)
+	corner.CornerRadius = UDim.new(0, 16)
 	corner.Parent = frame
+
+	-- NPC 색상 테두리
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = npcConfig.color
+	stroke.Thickness = 4
+	stroke.Parent = frame
+
+	-- 이모지 (NPC 종류에 따라)
+	local emoji = npcType == "Rabbit" and "🐰" or (npcType == "Bear" and "🐻" or "🦉")
 
 	-- 텍스트
 	local textLabel = Instance.new("TextLabel")
-	textLabel.Size = UDim2.new(1, -10, 1, -10)
-	textLabel.Position = UDim2.new(0, 5, 0, 5)
+	textLabel.Size = UDim2.new(1, -20, 1, -10)
+	textLabel.Position = UDim2.new(0, 10, 0, 5)
 	textLabel.BackgroundTransparency = 1
-	textLabel.Text = message
-	textLabel.TextColor3 = Color3.fromRGB(0, 0, 0)
-	textLabel.TextSize = 16
+	textLabel.Text = `{emoji} {message}`
+	textLabel.TextColor3 = Color3.fromRGB(50, 50, 50)
+	textLabel.TextSize = 22
 	textLabel.Font = Enum.Font.GothamBold
 	textLabel.TextWrapped = true
-	textLabel.TextScaled = true
 	textLabel.Parent = frame
 
-	-- 일정 시간 후 말풍선 제거
-	task.delay(GameConstants.NPC.SPEECH_BUBBLE_DURATION, function()
+	-- 등장 애니메이션
+	billboardGui.Size = UDim2.new(0, 0, 0, 0)
+	local appearTween = TweenService:Create(billboardGui, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+		Size = UDim2.new(0, 250, 0, 80),
+	})
+	appearTween:Play()
+
+	-- 일정 시간 후 말풍선 제거 (사라지는 애니메이션)
+	task.delay(GameConstants.NPC.SPEECH_BUBBLE_DURATION - 0.3, function()
 		if billboardGui and billboardGui.Parent then
-			billboardGui:Destroy()
+			local disappearTween = TweenService:Create(billboardGui, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+				Size = UDim2.new(0, 0, 0, 0),
+			})
+			disappearTween:Play()
+			disappearTween.Completed:Connect(function()
+				if billboardGui and billboardGui.Parent then
+					billboardGui:Destroy()
+				end
+			end)
 		end
 	end)
 
-	print(`[NPCController] Displayed speech bubble: "{message}"`)
+	print(`[NPCController] Displayed speech bubble: "{emoji} {message}"`)
 end
 
 -- 튜토리얼 GUI 생성
