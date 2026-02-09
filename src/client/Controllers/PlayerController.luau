@@ -130,6 +130,11 @@ function PlayerController:_cleanupGameConnection()
 		self._gameConnection = nil
 		print("[PlayerController] Game connection cleaned up")
 	end
+
+	-- LinearVelocity도 리셋
+	if self._linearVelocity then
+		self._linearVelocity.VectorVelocity = Vector3.zero
+	end
 end
 
 -- 게임 종료
@@ -211,6 +216,16 @@ end
 
 -- LinearVelocity 설정 (X축 이동 제어)
 function PlayerController:_setupLinearVelocity()
+	-- 기존 LinearVelocity 제거 (중복 방지)
+	local existingLV = self.humanoidRootPart:FindFirstChild("RunnerVelocity")
+	if existingLV then
+		existingLV:Destroy()
+	end
+	if self._linearVelocity then
+		self._linearVelocity:Destroy()
+		self._linearVelocity = nil
+	end
+
 	local attachment = self.humanoidRootPart:FindFirstChild("ZAxisAttachment")
 	if not attachment then
 		attachment = Instance.new("Attachment")
@@ -218,18 +233,19 @@ function PlayerController:_setupLinearVelocity()
 		attachment.Parent = self.humanoidRootPart
 	end
 
-	-- LinearVelocity로 X축 속도만 제어 (Y는 물리 엔진, Z는 0)
+	-- LinearVelocity로 X축 속도만 제어 (Y는 물리 엔진이 처리)
 	local linearVelocity = Instance.new("LinearVelocity")
 	linearVelocity.Name = "RunnerVelocity"
 	linearVelocity.Attachment0 = attachment
 	linearVelocity.RelativeTo = Enum.ActuatorRelativeTo.World
-	linearVelocity.MaxForce = 50000 -- 강한 힘으로 속도 유지
+	linearVelocity.ForceLimitsEnabled = true
+	linearVelocity.MaxAxesForce = Vector3.new(50000, 0, 50000) -- X, Z만 힘 적용, Y는 물리 엔진
 	linearVelocity.VectorVelocity = Vector3.zero -- 초기 속도 0
 	linearVelocity.Parent = self.humanoidRootPart
 
 	self._linearVelocity = linearVelocity
 
-	print("[PlayerController] LinearVelocity set up")
+	print("[PlayerController] LinearVelocity set up (X-axis only)")
 end
 
 -- 물리 설정
