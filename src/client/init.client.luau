@@ -36,13 +36,7 @@ local function disableDefaultControls()
 	print("[Client] Default Roblox controls disabled")
 end
 
--- 캐릭터 리스폰 시 재설정
-player.CharacterAdded:Connect(function(newCharacter: Model)
-	character = newCharacter
-	humanoid = character:WaitForChild("Humanoid") :: Humanoid
-	disableDefaultControls()
-	print("[Client] Character respawned, controls reset")
-end)
+-- 초기 캐릭터 설정 (컨트롤러 정의 후 리스폰 핸들러 추가)
 
 -- 초기 설정
 disableDefaultControls()
@@ -72,6 +66,16 @@ local tutorialController = TutorialController.new()
 -- 튜토리얼 컨트롤러에 NPCController 연결
 tutorialController:SetNPCController(npcController)
 
+-- 캐릭터 리스폰 시 PlayerController 업데이트
+player.CharacterAdded:Connect(function(newCharacter: Model)
+	character = newCharacter
+	humanoid = character:WaitForChild("Humanoid") :: Humanoid
+	disableDefaultControls()
+	playerController:UpdateCharacter(newCharacter)
+	cameraController:UpdateCharacter(newCharacter)
+	print("[Client] Character respawned, controllers updated")
+end)
+
 -- 입력 콜백 연결 (키보드)
 inputController:OnJump(function()
 	playerController:Jump()
@@ -97,13 +101,40 @@ end)
 -- 서버로부터 게임 시작 응답 수신
 RemoteEvents.GameStart.OnClientEvent:Connect(function(data)
 	print("[Client] Game start confirmed by server")
-	playerController:StartGame()
 	uiController:HideGameOver() -- 게임 오버 화면 숨기기
 
-	-- 튜토리얼 시작 (필요 시)
-	if data.startTutorial then
-		tutorialController:Start(data.startPosition)
+	-- 카운트다운 전 플레이어 고정 (이전 게임 상태 완전 정리)
+	playerController:StopGame()
+
+	-- 시작 위치로 이동 및 고정
+	if character then
+		local hrp = character:FindFirstChild("HumanoidRootPart") :: BasePart?
+		if hrp then
+			hrp.Anchored = true -- 카운트다운 중 고정
+			hrp.AssemblyLinearVelocity = Vector3.zero
+			hrp.CFrame = CFrame.new(data.startPosition or Vector3.new(0, 2.5, 0))
+				* CFrame.Angles(0, math.rad(-90), 0)
+		end
 	end
+
+	-- 카운트다운 후 게임 시작
+	uiController:ShowCountdown(function()
+		-- 고정 해제
+		if character then
+			local hrp = character:FindFirstChild("HumanoidRootPart") :: BasePart?
+			if hrp then
+				hrp.Anchored = false
+			end
+		end
+
+		playerController:StartGame()
+
+		-- 튜토리얼 시작 (필요 시)
+		if data.startTutorial then
+			tutorialController:Start(data.startPosition)
+			uiController:ShowTutorialBanner() -- 튜토리얼 배너 표시
+		end
+	end)
 end)
 
 -- 튜토리얼 모드 전환 (슬로모션)
@@ -111,9 +142,11 @@ RemoteEvents.TutorialMode.OnClientEvent:Connect(function(data)
 	if data.active then
 		print(`[Client] Tutorial mode enabled - speed: {data.speedMultiplier * 100}%`)
 		playerController:SetSpeedMultiplier(data.speedMultiplier)
+		uiController:ShowTutorialBanner() -- 튜토리얼 배너 표시
 	else
 		print("[Client] Tutorial mode disabled - normal speed")
 		playerController:SetSpeedMultiplier(1.0)
+		uiController:ShowTutorialComplete() -- 튜토리얼 완료 알림
 	end
 end)
 
@@ -126,6 +159,9 @@ RemoteEvents.GameOver.OnClientEvent:Connect(function(data)
 	if tutorialController:IsActive() then
 		tutorialController:Stop()
 	end
+
+	-- 튜토리얼 UI 숨기기
+	uiController:HideTutorialBanner()
 end)
 
 -- 튜토리얼 거리 업데이트 (RunService)

@@ -164,6 +164,19 @@ function CameraController:Zoom(amount: number, duration: number)
 	end)
 end
 
+-- 캐릭터 업데이트 (리스폰 시 호출)
+function CameraController:UpdateCharacter(newCharacter: Model)
+	self._character = newCharacter
+	self._humanoidRootPart = newCharacter:WaitForChild("HumanoidRootPart") :: BasePart?
+
+	if self._humanoidRootPart then
+		-- 카메라 위치 즉시 업데이트
+		self._targetCFrame = self:_calculateCameraPosition()
+		self._camera.CFrame = self._targetCFrame
+		print("[CameraController] Character updated after respawn")
+	end
+end
+
 -- 정리
 function CameraController:Destroy()
 	-- 카메라 타입 복구

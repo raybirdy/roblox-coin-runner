@@ -1,17 +1,27 @@
 --!strict
 -- Player Controller
 -- 플레이어 캐릭터 이동 및 물리 제어
+-- 물리 엔진과 협력하는 방식으로 구현
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local GameConstants = require(ReplicatedStorage.Shared.Constants.GameConstants)
+local AnimationController = require(script.Parent.AnimationController)
+
+-- 전역 연결 관리 (Rojo 업데이트 시 중복 방지)
+local _globalGameConnection: RBXScriptConnection? = nil
+local _lastUpdateTime: number = 0 -- 프레임당 한 번만 업데이트
 
 local PlayerController = {}
 PlayerController.__index = PlayerController
 
 type State = "Idle" | "Running" | "Jumping" | "Sliding" | "Falling"
+
+-- 상수
+local GROUND_RAYCAST_DISTANCE = 3.5 -- 바닥 감지 레이캐스트 거리
+local GROUND_HEIGHT = 2.5 -- 캐릭터 중심 높이 (바닥에 서 있을 때)
 
 export type PlayerController = typeof(setmetatable(
 	{} :: {
@@ -32,14 +42,23 @@ export type PlayerController = typeof(setmetatable(
 		gameStartTime: number,
 
 		-- 점프
-		jumpVelocity: BodyVelocity?,
 		verticalVelocity: number,
 
 		-- Z축 고정
 		alignPosition: AlignPosition?,
 
+		-- 속도 제어
+		_linearVelocity: LinearVelocity?,
+
+		-- 애니메이션
+		_animationController: AnimationController.AnimationController?,
+
 		-- 연결
 		_connections: { RBXScriptConnection },
+		_gameConnection: RBXScriptConnection?, -- Heartbeat 게임 루프 연결
+
+		-- 디버그
+		_lastJumpTime: number,
 	},
 	PlayerController
 ))
@@ -63,87 +82,212 @@ function PlayerController.new(player: Player, character: Model): PlayerControlle
 		speedMultiplier = 1.0, -- 기본 속도
 		gameStartTime = 0,
 
-		jumpVelocity = nil,
 		verticalVelocity = 0,
 
 		alignPosition = nil,
 
+		_linearVelocity = nil,
+
+		_animationController = nil,
+
 		_connections = {},
+		_gameConnection = nil,
+
+		_lastJumpTime = 0,
 	}, PlayerController)
 
 	self:_setupZAxisConstraint()
 	self:_setupPhysics()
+	self:_setupLinearVelocity()
+	self:_setupAnimations()
 
 	return self
 end
 
+-- 애니메이션 설정
+function PlayerController:_setupAnimations()
+	self._animationController = AnimationController.new(self.humanoid)
+	print("[PlayerController] Animation controller initialized")
+end
+
 -- 게임 시작
 function PlayerController:StartGame()
+	-- 이전 게임 연결 완전 정리 (중복 방지)
+	self:_cleanupGameConnection()
+
+	-- 전역 시간 초기화 (중복 업데이트 방지)
+	_lastUpdateTime = 0
+
+	-- 모든 상태 초기화
 	self.gameStartTime = tick()
 	self.currentSpeed = GameConstants.PHYSICS.SPEED_MIN
+	self.speedMultiplier = 1.0
 	self.state = "Running"
+	self.isGrounded = true
+	self.canDoubleJump = false
+	self.isSliding = false
+	self.verticalVelocity = 0
+	self._lastJumpTime = 0
 
-	-- RunService 루프 시작
+	-- 속도 완전 초기화
+	self.humanoidRootPart.AssemblyLinearVelocity = Vector3.zero
+
+	-- RunService 루프 시작 (전역 연결 사용 - 중복 방지)
 	local connection = RunService.Heartbeat:Connect(function(deltaTime: number)
 		self:_update(deltaTime)
 	end)
-	table.insert(self._connections, connection)
 
-	print(`[PlayerController] Game started for {self.player.Name}`)
+	-- 전역과 인스턴스 모두에 저장
+	_globalGameConnection = connection
+	self._gameConnection = connection
+
+	-- Humanoid 상태를 Running으로 설정 (애니메이션 트리거)
+	self.humanoid:ChangeState(Enum.HumanoidStateType.Running)
+
+	print(`[PlayerController] Game started for {self.player.Name} - Speed: {self.currentSpeed}`)
+end
+
+-- 게임 연결 정리 (중복 호출 방지)
+function PlayerController:_cleanupGameConnection()
+	-- 전역 연결 해제 (Rojo 업데이트 시에도 확실히 해제)
+	if _globalGameConnection then
+		_globalGameConnection:Disconnect()
+		_globalGameConnection = nil
+	end
+
+	if self._gameConnection then
+		self._gameConnection:Disconnect()
+		self._gameConnection = nil
+	end
+
+	print("[PlayerController] Game connection cleaned up")
 end
 
 -- 게임 종료
 function PlayerController:StopGame()
+	-- 게임 루프 연결 해제 (먼저!)
+	self:_cleanupGameConnection()
+
+	-- 상태 초기화
 	self.state = "Idle"
 	self.currentSpeed = 0
+	self.speedMultiplier = 1.0
+	self.isSliding = false
+	self.canDoubleJump = false
+	self.verticalVelocity = 0
+
+	-- 속도 완전 정지
+	self.humanoidRootPart.AssemblyLinearVelocity = Vector3.zero
+
+	-- 애니메이션 정지
+	if self._animationController then
+		self._animationController:PlayIdle()
+	end
+
 	print(`[PlayerController] Game stopped for {self.player.Name}`)
 end
 
 -- 속도 배율 설정 (튜토리얼 슬로모션용)
 function PlayerController:SetSpeedMultiplier(multiplier: number)
+	local oldMultiplier = self.speedMultiplier
 	self.speedMultiplier = multiplier
-	print(`[PlayerController] Speed multiplier set to {multiplier * 100}%`)
+	local effectiveSpeed = self.currentSpeed * multiplier
+	print(`[PlayerController] Speed: {oldMultiplier * 100}% -> {multiplier * 100}% (effective: {math.floor(effectiveSpeed)} studs/s)`)
 end
 
--- Z축 고정 설정 (2D 평면 유지)
+-- 캐릭터 업데이트 (리스폰 시 호출)
+function PlayerController:UpdateCharacter(newCharacter: Model)
+	-- 기존 연결 정리
+	self:StopGame()
+
+	-- 새 캐릭터 참조 업데이트
+	self.character = newCharacter
+	self.humanoidRootPart = newCharacter:WaitForChild("HumanoidRootPart") :: BasePart
+	self.humanoid = newCharacter:WaitForChild("Humanoid") :: Humanoid
+
+	-- 영구 연결 정리 (Z축 고정 등)
+	for _, connection in self._connections do
+		connection:Disconnect()
+	end
+	self._connections = {}
+
+	if self.alignPosition then
+		self.alignPosition:Destroy()
+		self.alignPosition = nil
+	end
+
+	if self._linearVelocity then
+		self._linearVelocity:Destroy()
+		self._linearVelocity = nil
+	end
+
+	-- 애니메이션 컨트롤러 정리
+	if self._animationController then
+		self._animationController:Destroy()
+		self._animationController = nil
+	end
+
+	-- 물리 및 제약 조건 재설정
+	self:_setupZAxisConstraint()
+	self:_setupPhysics()
+	self:_setupLinearVelocity()
+	self:_setupAnimations()
+
+	print("[PlayerController] Character updated after respawn")
+end
+
+-- Z축 고정 설정 (2D 평면 유지) - AlignPosition 대신 직접 제어
 function PlayerController:_setupZAxisConstraint()
+	-- Attachment 생성 (회전 고정용)
 	local attachment = Instance.new("Attachment")
 	attachment.Name = "ZAxisAttachment"
 	attachment.Parent = self.humanoidRootPart
 
-	local alignPosition = Instance.new("AlignPosition")
-	alignPosition.Name = "ZAxisAlign"
-	alignPosition.Attachment0 = attachment
-	alignPosition.Mode = Enum.PositionAlignmentMode.OneAttachment
-	alignPosition.ApplyAtCenterOfMass = true
-	alignPosition.MaxForce = 10000
-	alignPosition.MaxVelocity = math.huge
-	alignPosition.Responsiveness = 200
-	alignPosition.Parent = self.humanoidRootPart
+	-- AlignPosition 제거 - Y축에도 힘을 가해서 캐릭터가 떠오르는 문제 발생
+	-- 대신 _moveForward()에서 Z축 속도를 0으로 유지하고, 필요시 위치 보정
 
-	-- 목표 위치 설정 (X, Y는 자유, Z는 0 고정)
-	local function updatePosition()
-		local currentPos = self.humanoidRootPart.Position
-		alignPosition.Position = Vector3.new(currentPos.X, currentPos.Y, GameConstants.PLAYER.Z_POSITION)
+	self.alignPosition = nil
+
+	print("[PlayerController] Z-axis constraint set up (velocity-based)")
+end
+
+-- LinearVelocity 제거 (더 이상 사용하지 않음)
+function PlayerController:_setupLinearVelocity()
+	-- 기존 LinearVelocity 제거
+	local existingLV = self.humanoidRootPart:FindFirstChild("RunnerVelocity")
+	if existingLV then
+		existingLV:Destroy()
+	end
+	if self._linearVelocity then
+		self._linearVelocity:Destroy()
+		self._linearVelocity = nil
 	end
 
-	-- 지속적으로 Z축 위치 업데이트
-	local conn = RunService.Heartbeat:Connect(updatePosition)
-	table.insert(self._connections, conn)
-
-	self.alignPosition = alignPosition
-
-	print("[PlayerController] Z-axis constraint set up")
+	-- 이제 CFrame + AssemblyLinearVelocity 하이브리드 방식 사용
+	print("[PlayerController] Using CFrame hybrid movement")
 end
 
 -- 물리 설정
 function PlayerController:_setupPhysics()
 	-- Humanoid 설정
-	self.humanoid.WalkSpeed = 0 -- 자동 전진을 사용하므로 걷기 비활성화
+	self.humanoid.WalkSpeed = 16 -- 애니메이션 재생용 (실제 이동은 CFrame으로)
 	self.humanoid.JumpPower = 0 -- 커스텀 점프 사용
 	self.humanoid.AutoRotate = false -- 회전 고정 (오른쪽 보기)
 
-	-- 캐릭터 회전 고정 (오른쪽을 향하기)
+	-- 회전 고정 (오른쪽을 향하기) - AlignOrientation 사용
+	local attachment = self.humanoidRootPart:FindFirstChild("ZAxisAttachment")
+	if attachment then
+		local alignOrientation = Instance.new("AlignOrientation")
+		alignOrientation.Name = "RotationLock"
+		alignOrientation.Attachment0 = attachment
+		alignOrientation.Mode = Enum.OrientationAlignmentMode.OneAttachment
+		alignOrientation.MaxTorque = 100000
+		alignOrientation.Responsiveness = 200
+		alignOrientation.CFrame = CFrame.Angles(0, math.rad(-90), 0) -- 오른쪽 바라보기
+		alignOrientation.Parent = self.humanoidRootPart
+	end
+
+	-- 초기 회전 설정
 	self.humanoidRootPart.CFrame = CFrame.new(self.humanoidRootPart.Position) * CFrame.Angles(0, math.rad(-90), 0)
 
 	print("[PlayerController] Physics set up")
@@ -151,6 +295,13 @@ end
 
 -- 메인 업데이트 루프
 function PlayerController:_update(deltaTime: number)
+	-- 프레임당 한 번만 업데이트 (중복 연결 방지)
+	local now = tick()
+	if now - _lastUpdateTime < 0.001 then
+		return -- 너무 빠른 업데이트는 무시 (1ms 이내)
+	end
+	_lastUpdateTime = now
+
 	if self.state == "Idle" then
 		return
 	end
@@ -158,16 +309,11 @@ function PlayerController:_update(deltaTime: number)
 	-- 속도 업데이트 (시간에 따라 증가)
 	self:_updateSpeed()
 
-	-- 전진 이동
-	self:_moveForward(deltaTime)
-
-	-- 바닥 감지
+	-- 바닥 감지 (Raycast)
 	self:_checkGrounded()
 
-	-- 점프 물리 (공중에 있을 때)
-	if not self.isGrounded then
-		self:_applyGravity(deltaTime)
-	end
+	-- 전진 이동 (CFrame으로 X축 직접 이동)
+	self:_moveForward(deltaTime)
 
 	-- 슬라이드 종료 체크
 	if self.isSliding then
@@ -189,45 +335,111 @@ function PlayerController:_updateSpeed()
 	self.currentSpeed = minSpeed + (maxSpeed - minSpeed) * easedT
 end
 
--- 전진 이동
+-- 전진 이동 (CFrame으로 X축 직접 이동)
 function PlayerController:_moveForward(deltaTime: number)
-	local currentPos = self.humanoidRootPart.Position
-	local moveDistance = self.currentSpeed * self.speedMultiplier * deltaTime
+	local targetSpeedX = self.currentSpeed * self.speedMultiplier
 
-	-- X축으로 이동 (오른쪽)
-	local newPos = currentPos + Vector3.new(moveDistance, 0, 0)
-	self.humanoidRootPart.CFrame = CFrame.new(newPos) * CFrame.Angles(0, math.rad(-90), 0)
+	-- 속도 상한선 (버그 방지)
+	local maxSpeed = GameConstants.PHYSICS.SPEED_MAX
+	targetSpeedX = math.min(targetSpeedX, maxSpeed)
+
+	-- 이동 거리 계산
+	local moveDistance = targetSpeedX * deltaTime
+
+	-- 현재 위치
+	local pos = self.humanoidRootPart.Position
+	local newX = pos.X + moveDistance
+
+	-- X축 이동, Y는 현재 위치 유지 (물리 엔진이 처리), Z는 고정
+	if self.isSliding then
+		-- 슬라이드 중: 앞으로 기울인 상태 유지 (낮은 자세)
+		self.humanoidRootPart.CFrame = CFrame.new(newX, pos.Y, GameConstants.PLAYER.Z_POSITION)
+			* CFrame.Angles(math.rad(-45), math.rad(-90), 0)
+	else
+		-- 일반 상태: 정상 자세
+		self.humanoidRootPart.CFrame = CFrame.new(newX, pos.Y, GameConstants.PLAYER.Z_POSITION)
+			* CFrame.Angles(0, math.rad(-90), 0)
+
+		-- 달리기 애니메이션 트리거 (Humanoid에게 이동 중임을 알림)
+		self.humanoid:Move(Vector3.new(1, 0, 0), false)
+	end
 end
 
--- 바닥 감지 (Y 위치 기반)
+-- 바닥 감지 (Raycast 사용)
 function PlayerController:_checkGrounded()
-	local currentY = self.humanoidRootPart.Position.Y
-	local groundHeight = 2.5 -- 캐릭터 높이의 절반 (바닥에 서 있을 때 중심 높이)
-	local tolerance = 1.5 -- 허용 오차 (물리 진동 대응)
+	local rayOrigin = self.humanoidRootPart.Position
+	local rayDirection = Vector3.new(0, -GROUND_RAYCAST_DISTANCE, 0)
+
+	-- 자기 자신 제외
+	local raycastParams = RaycastParams.new()
+	raycastParams.FilterDescendantsInstances = { self.character }
+	raycastParams.FilterType = Enum.RaycastFilterType.Exclude
+
+	local result = workspace:Raycast(rayOrigin, rayDirection, raycastParams)
 
 	local wasGrounded = self.isGrounded
-	self.isGrounded = math.abs(currentY - groundHeight) < tolerance
+	local currentY = self.humanoidRootPart.Position.Y
+	local currentVelY = self.humanoidRootPart.AssemblyLinearVelocity.Y
 
-	-- 착지 시
-	if self.isGrounded and not wasGrounded and (self.state == "Jumping" or self.state == "Falling") then
-		self.state = "Running"
-		self.canDoubleJump = false
-		self.verticalVelocity = 0
-		print(`[PlayerController] Landed - Y: {currentY}`)
+	-- 바닥 감지: Raycast 히트 또는 Y 위치가 충분히 낮음
+	-- Y 속도 조건 완화: 위로 강하게 올라가는 중이 아니면 바닥 판정
+	if result then
+		-- Raycast로 바닥 감지 (거리 3.0 이하이고 위로 빠르게 올라가지 않으면)
+		local distanceToGround = result.Distance
+		self.isGrounded = distanceToGround < 3.0 and currentVelY < 5.0
+	else
+		-- Raycast 실패 시 Y 위치로 판정 (조건 완화)
+		self.isGrounded = currentY <= GROUND_HEIGHT + 1.0 and currentVelY < 5.0
 	end
 
-	-- 공중으로 올라갔을 때
+	-- 착지 시
+	if self.isGrounded and not wasGrounded then
+		if self.state == "Jumping" or self.state == "Falling" then
+			self.state = "Running"
+			self.canDoubleJump = false
+			-- Y 속도 리셋 (착지 시 바운스 방지)
+			local vel = self.humanoidRootPart.AssemblyLinearVelocity
+			self.humanoidRootPart.AssemblyLinearVelocity = Vector3.new(vel.X, 0, vel.Z)
+
+			-- 달리기 애니메이션 재생
+			if self._animationController then
+				self._animationController:PlayRun()
+			end
+
+			print(`[PlayerController] Landed - Y: {currentY}`)
+		end
+	end
+
+	-- 공중으로 떨어졌을 때 (점프가 아닌 자연 낙하)
 	if not self.isGrounded and wasGrounded and self.state == "Running" then
 		self.state = "Falling"
+		self.canDoubleJump = true -- 낙하 시에도 더블 점프 허용
+
+		-- 낙하 애니메이션 재생
+		if self._animationController then
+			self._animationController:PlayFall()
+		end
+
 		print(`[PlayerController] Airborne - Y: {currentY}`)
 	end
 end
 
 -- 점프
 function PlayerController:Jump()
+	-- 게임이 시작되지 않았으면 무시
+	if self.state == "Idle" then
+		return
+	end
+
 	-- 슬라이드 중에는 점프 불가
 	if self.isSliding then
 		print("[PlayerController] Cannot jump while sliding")
+		return
+	end
+
+	-- 점프 쿨다운 (연타 방지) - 0.1초로 단축
+	local now = tick()
+	if now - self._lastJumpTime < 0.1 then
 		return
 	end
 
@@ -235,6 +447,7 @@ function PlayerController:Jump()
 	if self.isGrounded then
 		self:_performJump(GameConstants.PHYSICS.JUMP_HEIGHT_FIRST)
 		self.canDoubleJump = true
+		self._lastJumpTime = now
 		print(`[PlayerController] First jump - Y: {self.humanoidRootPart.Position.Y}`)
 		return
 	end
@@ -243,53 +456,52 @@ function PlayerController:Jump()
 	if self.canDoubleJump then
 		self:_performJump(GameConstants.PHYSICS.JUMP_HEIGHT_SECOND)
 		self.canDoubleJump = false
+		self._lastJumpTime = now
 		print(`[PlayerController] Second jump - Y: {self.humanoidRootPart.Position.Y}`)
 		return
 	end
 
-	-- 점프 불가 상태
-	print(`[PlayerController] Cannot jump - Grounded: {self.isGrounded}, CanDoubleJump: {self.canDoubleJump}, State: {self.state}`)
+	-- 점프 불가 상태 (로그 빈도 줄이기)
+	-- print(`[PlayerController] Cannot jump - Grounded: {self.isGrounded}, CanDoubleJump: {self.canDoubleJump}, State: {self.state}`)
 end
 
--- 점프 실행
+-- 점프 실행 (AssemblyLinearVelocity 사용)
 function PlayerController:_performJump(jumpHeight: number)
 	self.state = "Jumping"
 	self.isGrounded = false
 
 	-- 점프 초기 속도 계산 (v = sqrt(2 * g * h))
 	local gravity = GameConstants.PHYSICS.GRAVITY
-	self.verticalVelocity = math.sqrt(2 * gravity * jumpHeight)
+	local jumpVelocity = math.sqrt(2 * gravity * jumpHeight)
 
-	print(`[PlayerController] Jump velocity: {self.verticalVelocity}`)
-end
+	-- AssemblyLinearVelocity로 점프 (X 속도 유지, Y 설정)
+	local currentVel = self.humanoidRootPart.AssemblyLinearVelocity
+	self.humanoidRootPart.AssemblyLinearVelocity = Vector3.new(currentVel.X, jumpVelocity, 0)
 
--- 중력 적용
-function PlayerController:_applyGravity(deltaTime: number)
-	local gravity = GameConstants.PHYSICS.GRAVITY
-
-	-- 수직 속도 감소 (중력)
-	self.verticalVelocity -= gravity * deltaTime
-
-	-- Y축 이동
-	local currentPos = self.humanoidRootPart.Position
-	local newY = currentPos.Y + (self.verticalVelocity * deltaTime)
-
-	-- 최소 높이 제한 (바닥 아래로 떨어지지 않도록)
-	local minHeight = 2.5 -- 캐릭터 높이의 절반
-	if newY < minHeight then
-		newY = minHeight
-		self.verticalVelocity = 0
-		self.isGrounded = true
+	-- 점프 애니메이션 재생
+	if self._animationController then
+		self._animationController:PlayJump()
 	end
 
-	self.humanoidRootPart.CFrame = CFrame.new(currentPos.X, newY, GameConstants.PLAYER.Z_POSITION)
-		* CFrame.Angles(0, math.rad(-90), 0)
+	print(`[PlayerController] Jump velocity: {jumpVelocity}`)
 end
 
 -- 슬라이드
 function PlayerController:Slide()
+	-- 게임이 시작되지 않았으면 무시
+	if self.state == "Idle" then
+		return
+	end
+
+	-- 이미 슬라이드 중이면 무시
 	if self.isSliding then
 		print("[PlayerController] Already sliding")
+		return
+	end
+
+	-- 공중에서는 슬라이드 불가
+	if not self.isGrounded then
+		print("[PlayerController] Cannot slide while airborne")
 		return
 	end
 
@@ -299,8 +511,19 @@ function PlayerController:Slide()
 	-- 서버에 슬라이딩 상태 전달 (Attribute 사용)
 	self.humanoidRootPart:SetAttribute("IsSliding", true)
 
-	-- 히트박스 축소
-	-- TODO: 실제 히트박스 변경 (CharacterMesh 또는 Accessory 처리 필요)
+	-- AlignOrientation 비활성화 (슬라이드 기울기 허용)
+	local rotationLock = self.humanoidRootPart:FindFirstChild("RotationLock")
+	if rotationLock then
+		rotationLock.Enabled = false
+	end
+
+	-- 슬라이드 시각 효과: 캐릭터를 앞으로 기울이기
+	local pos = self.humanoidRootPart.Position
+	self.humanoidRootPart.CFrame = CFrame.new(pos.X, pos.Y - 0.5, GameConstants.PLAYER.Z_POSITION)
+		* CFrame.Angles(math.rad(-45), math.rad(-90), 0) -- 앞으로 45도 기울임
+
+	-- 달리기 애니메이션 정지
+	self.humanoid:Move(Vector3.zero, false)
 
 	print("[PlayerController] Slide started")
 
@@ -314,25 +537,45 @@ end
 
 -- 슬라이드 업데이트
 function PlayerController:_updateSlide(deltaTime: number)
-	-- 슬라이드 중 추가 로직 (예: 애니메이션 재생)
+	-- 슬라이드 중 바닥을 벗어나면 즉시 종료
+	if not self.isGrounded then
+		self:_endSlide()
+	end
 end
 
 -- 슬라이드 종료
 function PlayerController:_endSlide()
+	if not self.isSliding then
+		return
+	end
+
 	self.isSliding = false
-	self.state = "Running"
+
+	-- AlignOrientation 다시 활성화
+	local rotationLock = self.humanoidRootPart:FindFirstChild("RotationLock")
+	if rotationLock then
+		rotationLock.Enabled = true
+	end
+
+	-- 바닥에 있으면 Running, 아니면 Falling
+	if self.isGrounded then
+		self.state = "Running"
+	else
+		self.state = "Falling"
+	end
 
 	-- 서버에 슬라이딩 종료 전달
 	self.humanoidRootPart:SetAttribute("IsSliding", false)
-
-	-- 히트박스 복구
-	-- TODO: 실제 히트박스 복구
 
 	print("[PlayerController] Slide ended")
 end
 
 -- 정리
 function PlayerController:Destroy()
+	-- 게임 루프 연결 해제
+	self:_cleanupGameConnection()
+
+	-- 영구 연결 (Z축 고정 등) 해제
 	for _, connection in self._connections do
 		connection:Disconnect()
 	end
@@ -340,6 +583,16 @@ function PlayerController:Destroy()
 
 	if self.alignPosition then
 		self.alignPosition:Destroy()
+	end
+
+	if self._linearVelocity then
+		self._linearVelocity:Destroy()
+	end
+
+	-- 애니메이션 컨트롤러 정리
+	if self._animationController then
+		self._animationController:Destroy()
+		self._animationController = nil
 	end
 end
 
