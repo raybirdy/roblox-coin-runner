@@ -4,6 +4,7 @@
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
 
 local GameConstants = require(ReplicatedStorage.Shared.Constants.GameConstants)
 local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)
@@ -19,6 +20,9 @@ export type UIController = typeof(setmetatable(
 		_scoreLabel: TextLabel?,
 		_coinsLabel: TextLabel?,
 		_livesLabel: TextLabel?,
+		_livesContainer: Frame?,
+		_heartLabels: { TextLabel },
+		_currentLives: number,
 		_distanceLabel: TextLabel?,
 		_gameOverFrame: Frame?,
 		_startMenuFrame: Frame?,
@@ -42,6 +46,9 @@ function UIController.new(player: Player): UIController
 		_scoreLabel = nil,
 		_coinsLabel = nil,
 		_livesLabel = nil,
+		_livesContainer = nil,
+		_heartLabels = {},
+		_currentLives = GameConstants.LIFE.STARTING_LIVES,
 		_distanceLabel = nil,
 		_gameOverFrame = nil,
 		_startMenuFrame = nil,
@@ -110,24 +117,43 @@ function UIController:_createUI()
 	coinsCorner.CornerRadius = UDim.new(0, 8)
 	coinsCorner.Parent = coinsLabel
 
-	-- 라이프 표시 (상단 오른쪽)
-	local livesLabel = Instance.new("TextLabel")
-	livesLabel.Name = "LivesLabel"
-	livesLabel.Size = UDim2.new(0, 150, 0, 40)
-	livesLabel.Position = UDim2.new(1, -160, 0, 10)
-	livesLabel.BackgroundTransparency = 0.3
-	livesLabel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-	livesLabel.TextColor3 = Color3.fromRGB(255, 0, 0) -- 빨간색
-	livesLabel.TextSize = 20
-	livesLabel.Font = Enum.Font.GothamBold
-	livesLabel.Text = "❤️ 3"
-	livesLabel.Parent = screenGui
-	self._livesLabel = livesLabel
+	-- 라이프 컨테이너 (상단 오른쪽)
+	local livesContainer = Instance.new("Frame")
+	livesContainer.Name = "LivesContainer"
+	livesContainer.Size = UDim2.new(0, 150, 0, 50)
+	livesContainer.Position = UDim2.new(1, -160, 0, 10)
+	livesContainer.BackgroundTransparency = 0.3
+	livesContainer.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	livesContainer.Parent = screenGui
+	self._livesContainer = livesContainer
 
 	-- 둥근 모서리
 	local livesCorner = Instance.new("UICorner")
 	livesCorner.CornerRadius = UDim.new(0, 8)
-	livesCorner.Parent = livesLabel
+	livesCorner.Parent = livesContainer
+
+	-- 개별 하트 생성
+	self._heartLabels = {}
+	for i = 1, GameConstants.LIFE.STARTING_LIVES do
+		local heart = Instance.new("TextLabel")
+		heart.Name = `Heart{i}`
+		heart.Size = UDim2.new(0, 40, 0, 40)
+		heart.Position = UDim2.new(0, 10 + (i - 1) * 45, 0.5, -20)
+		heart.BackgroundTransparency = 1
+		heart.TextColor3 = Color3.fromRGB(255, 50, 50)
+		heart.TextSize = 32
+		heart.Font = Enum.Font.GothamBold
+		heart.Text = "❤️"
+		heart.Parent = livesContainer
+		table.insert(self._heartLabels, heart)
+	end
+
+	-- 기존 livesLabel은 숨김 처리 (호환성)
+	local livesLabel = Instance.new("TextLabel")
+	livesLabel.Name = "LivesLabel"
+	livesLabel.Visible = false
+	livesLabel.Parent = screenGui
+	self._livesLabel = livesLabel
 
 	-- 거리 표시 (점수 아래)
 	local distanceLabel = Instance.new("TextLabel")
@@ -518,9 +544,36 @@ end
 
 -- 라이프 업데이트
 function UIController:UpdateLives(lives: number)
-	if self._livesLabel then
-		local hearts = string.rep("❤️", lives)
-		self._livesLabel.Text = hearts
+	local previousLives = self._currentLives
+	self._currentLives = lives
+
+	-- 개별 하트 업데이트
+	for i, heart in ipairs(self._heartLabels) do
+		if i <= lives then
+			-- 살아있는 하트
+			heart.Text = "❤️"
+			heart.TextTransparency = 0
+		else
+			-- 잃은 하트
+			heart.Text = "🖤"
+			heart.TextTransparency = 0.3
+		end
+	end
+
+	-- 라이프 감소 시 애니메이션
+	if lives < previousLives and lives > 0 then
+		local lostHeartIndex = lives + 1
+		if lostHeartIndex <= #self._heartLabels then
+			local heart = self._heartLabels[lostHeartIndex]
+
+			-- 하트가 커졌다가 작아지는 애니메이션
+			heart.TextSize = 48
+			local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Elastic, Enum.EasingDirection.Out)
+			local tween = TweenService:Create(heart, tweenInfo, {
+				TextSize = 32,
+			})
+			tween:Play()
+		end
 	end
 end
 
@@ -598,8 +651,8 @@ function UIController:ShowStartMenu()
 	if self._coinsLabel then
 		self._coinsLabel.Visible = false
 	end
-	if self._livesLabel then
-		self._livesLabel.Visible = false
+	if self._livesContainer then
+		self._livesContainer.Visible = false
 	end
 	if self._distanceLabel then
 		self._distanceLabel.Visible = false
@@ -625,8 +678,8 @@ function UIController:HideStartMenu()
 	if self._coinsLabel then
 		self._coinsLabel.Visible = true
 	end
-	if self._livesLabel then
-		self._livesLabel.Visible = true
+	if self._livesContainer then
+		self._livesContainer.Visible = true
 	end
 	if self._distanceLabel then
 		self._distanceLabel.Visible = true
