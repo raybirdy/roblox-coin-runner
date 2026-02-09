@@ -9,6 +9,9 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local GameConstants = require(ReplicatedStorage.Shared.Constants.GameConstants)
 
+-- 전역 연결 관리 (Rojo 업데이트 시 중복 방지)
+local _globalGameConnection: RBXScriptConnection? = nil
+
 local PlayerController = {}
 PlayerController.__index = PlayerController
 
@@ -112,21 +115,32 @@ function PlayerController:StartGame()
 	-- 속도 완전 초기화
 	self.humanoidRootPart.AssemblyLinearVelocity = Vector3.zero
 
-	-- RunService 루프 시작 (새 연결)
-	self._gameConnection = RunService.Heartbeat:Connect(function(deltaTime: number)
+	-- RunService 루프 시작 (전역 연결 사용 - 중복 방지)
+	local connection = RunService.Heartbeat:Connect(function(deltaTime: number)
 		self:_update(deltaTime)
 	end)
+
+	-- 전역과 인스턴스 모두에 저장
+	_globalGameConnection = connection
+	self._gameConnection = connection
 
 	print(`[PlayerController] Game started for {self.player.Name} - Speed: {self.currentSpeed}`)
 end
 
 -- 게임 연결 정리 (중복 호출 방지)
 function PlayerController:_cleanupGameConnection()
+	-- 전역 연결 해제 (Rojo 업데이트 시에도 확실히 해제)
+	if _globalGameConnection then
+		_globalGameConnection:Disconnect()
+		_globalGameConnection = nil
+	end
+
 	if self._gameConnection then
 		self._gameConnection:Disconnect()
 		self._gameConnection = nil
-		print("[PlayerController] Game connection cleaned up")
 	end
+
+	print("[PlayerController] Game connection cleaned up")
 end
 
 -- 게임 종료
