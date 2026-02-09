@@ -89,12 +89,8 @@ end
 
 -- 게임 시작
 function PlayerController:StartGame()
-	-- 이전 게임 연결이 있으면 먼저 정리
-	if self._gameConnection then
-		self._gameConnection:Disconnect()
-		self._gameConnection = nil
-		print("[PlayerController] Previous game connection disconnected")
-	end
+	-- 이전 게임 연결 완전 정리 (중복 방지)
+	self:_cleanupGameConnection()
 
 	-- 모든 상태 초기화
 	self.gameStartTime = tick()
@@ -107,34 +103,40 @@ function PlayerController:StartGame()
 	self.verticalVelocity = 0
 	self._lastJumpTime = 0
 
-	-- 속도 초기화
+	-- 속도 완전 초기화
 	self.humanoidRootPart.AssemblyLinearVelocity = Vector3.zero
 
-	-- RunService 루프 시작
+	-- RunService 루프 시작 (새 연결)
 	self._gameConnection = RunService.Heartbeat:Connect(function(deltaTime: number)
 		self:_update(deltaTime)
 	end)
 
-	print(`[PlayerController] Game started for {self.player.Name}`)
+	print(`[PlayerController] Game started for {self.player.Name} - Speed: {self.currentSpeed}`)
+end
+
+-- 게임 연결 정리 (중복 호출 방지)
+function PlayerController:_cleanupGameConnection()
+	if self._gameConnection then
+		self._gameConnection:Disconnect()
+		self._gameConnection = nil
+		print("[PlayerController] Game connection cleaned up")
+	end
 end
 
 -- 게임 종료
 function PlayerController:StopGame()
 	-- 게임 루프 연결 해제 (먼저!)
-	if self._gameConnection then
-		self._gameConnection:Disconnect()
-		self._gameConnection = nil
-		print("[PlayerController] Game connection disconnected")
-	end
+	self:_cleanupGameConnection()
 
 	-- 상태 초기화
 	self.state = "Idle"
 	self.currentSpeed = 0
+	self.speedMultiplier = 1.0
 	self.isSliding = false
 	self.canDoubleJump = false
 	self.verticalVelocity = 0
 
-	-- 속도 정지
+	-- 속도 완전 정지
 	self.humanoidRootPart.AssemblyLinearVelocity = Vector3.zero
 
 	print(`[PlayerController] Game stopped for {self.player.Name}`)
@@ -253,6 +255,10 @@ end
 -- 전진 이동 (AssemblyLinearVelocity 사용)
 function PlayerController:_moveForward()
 	local targetSpeedX = self.currentSpeed * self.speedMultiplier
+
+	-- 속도 상한선 (버그 방지)
+	local maxSpeed = GameConstants.PHYSICS.SPEED_MAX
+	targetSpeedX = math.min(targetSpeedX, maxSpeed)
 
 	-- 현재 Y 속도 유지 (중력/점프), X 설정, Z는 0으로 고정
 	local currentVel = self.humanoidRootPart.AssemblyLinearVelocity

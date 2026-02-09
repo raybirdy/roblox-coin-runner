@@ -25,9 +25,9 @@ GameConstants.PHYSICS = {
 	SLIDE_COOLDOWN = 0.2, -- 슬라이드 후 쿨다운 (초)
 
 	-- 이동 속도
-	SPEED_MIN = 45, -- 최소 속도 (studs/s) - 러너 게임 기본
-	SPEED_MAX = 85, -- 최대 속도 (studs/s) - 빠른 속도
-	SPEED_RAMP_TIME = 120, -- 최대 속도 도달 시간 (초) - 2분
+	SPEED_MIN = 55, -- 최소 속도 (studs/s) - 러너 게임 기본
+	SPEED_MAX = 90, -- 최대 속도 (studs/s) - 빠른 속도
+	SPEED_RAMP_TIME = 90, -- 최대 속도 도달 시간 (초) - 1.5분
 }
 
 -- 청크 시스템
