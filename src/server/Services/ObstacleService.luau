@@ -93,20 +93,26 @@ function ObstacleService:_selectObstacleType(difficulty: string): string
 		-- Easy는 Low Wall만 (점프만 연습)
 		return "LowWall"
 	elseif difficulty == "Normal" then
-		-- Normal은 Low Wall + Tunnel
-		if rand < 0.60 then
+		-- Normal은 Low Wall + Tunnel + SpikeTrap
+		if rand < 0.50 then
 			return "LowWall"
-		elseif rand < 0.90 then
+		elseif rand < 0.80 then
 			return "Tunnel"
+		elseif rand < 0.95 then
+			return "SpikeTrap"
 		else
 			return "Gap"
 		end
 	elseif difficulty == "Hard" then
-		-- Hard는 모든 타입
-		if rand < 0.40 then
+		-- Hard는 모든 타입 (DoubleWall 포함)
+		if rand < 0.25 then
 			return "LowWall"
-		elseif rand < 0.70 then
+		elseif rand < 0.45 then
 			return "Tunnel"
+		elseif rand < 0.60 then
+			return "SpikeTrap"
+		elseif rand < 0.80 then
+			return "DoubleWall"
 		else
 			return "Gap"
 		end
@@ -163,6 +169,56 @@ function ObstacleService:_spawnObstacle(position: Vector3, obstacleType: string)
 		tunnelGuide.Anchored = true
 		tunnelGuide.Material = Enum.Material.Neon
 		tunnelGuide.Parent = workspace
+	elseif obstacleType == "SpikeTrap" then
+		-- 가시 함정 (바닥에 설치, 점프로 회피)
+		obstacle = Instance.new("Part")
+		obstacle.Name = "Obstacle_SpikeTrap"
+		obstacle.Size = Vector3.new(4, 2, 8)
+		obstacle.Position = position + Vector3.new(0, 1, 0)
+		obstacle.BrickColor = BrickColor.new("Bright red")
+		obstacle.Material = Enum.Material.DiamondPlate
+
+		-- 가시 시각 효과 (상단에 뾰족한 파트들)
+		for i = 1, 3 do
+			local spike = Instance.new("Part")
+			spike.Name = `Spike{i}`
+			spike.Size = Vector3.new(0.8, 1.5, 0.8)
+			spike.Position = position + Vector3.new(-1.2 + (i - 1) * 1.2, 2.5, 0)
+			spike.BrickColor = BrickColor.new("Really red")
+			spike.Material = Enum.Material.Metal
+			spike.Anchored = true
+			spike.CanCollide = false
+			spike.Parent = workspace
+		end
+
+	elseif obstacleType == "DoubleWall" then
+		-- 이중 벽 (두 번 점프 필요)
+		obstacle = Instance.new("Part")
+		obstacle.Name = "Obstacle_DoubleWall"
+		obstacle.Size = Vector3.new(2, GameConstants.OBSTACLE.LOW_WALL_HEIGHT, 8)
+		obstacle.Position = position + Vector3.new(0, GameConstants.OBSTACLE.LOW_WALL_HEIGHT / 2, 0)
+		obstacle.BrickColor = BrickColor.new("Bright red")
+
+		-- 두 번째 벽 (첫 번째 벽 뒤에)
+		local secondWall = Instance.new("Part")
+		secondWall.Name = "Obstacle_DoubleWall_2"
+		secondWall.Size = Vector3.new(2, GameConstants.OBSTACLE.LOW_WALL_HEIGHT + 1, 8)
+		secondWall.Position = position + Vector3.new(5, (GameConstants.OBSTACLE.LOW_WALL_HEIGHT + 1) / 2, 0)
+		secondWall.BrickColor = BrickColor.new("Bright red")
+		secondWall.Anchored = true
+		secondWall.CanCollide = true
+		secondWall.Material = Enum.Material.SmoothPlastic
+		secondWall:SetAttribute("ObstacleType", "DoubleWall")
+		secondWall.Parent = workspace
+
+		-- 두 번째 벽도 장애물 데이터에 추가
+		local secondWallData: ObstacleData = {
+			part = secondWall,
+			obstacleType = "DoubleWall",
+			spawnTime = tick(),
+		}
+		table.insert(self._activeObstacles, secondWallData)
+
 	elseif obstacleType == "Gap" then
 		-- 구덩이 (점프로 건너기)
 		obstacle = Instance.new("Part")
@@ -249,6 +305,24 @@ function ObstacleService:CheckObstacleCollision(playerPosition: Vector3, isSlidi
 				else
 					-- 충돌 (서 있거나 점프 중인데 터널 높이 이상)
 					print(`[ObstacleService] {self._player.Name} hit Tunnel! (Y: {playerHeight}, sliding: {isSliding})`)
+					return true
+				end
+			elseif obstacleType == "SpikeTrap" then
+				-- SpikeTrap: 점프로 회피 (가시 함정 높이 3.5 이상)
+				if playerPosition.Y > 3.5 then
+					print(`[ObstacleService] {self._player.Name} jumped over SpikeTrap!`)
+					continue
+				else
+					-- 충돌
+					return true
+				end
+			elseif obstacleType == "DoubleWall" then
+				-- DoubleWall: 점프로 회피 (연속 점프 필요)
+				if playerPosition.Y > GameConstants.OBSTACLE.LOW_WALL_HEIGHT then
+					print(`[ObstacleService] {self._player.Name} jumped over DoubleWall!`)
+					continue
+				else
+					-- 충돌
 					return true
 				end
 			elseif obstacleType == "Gap" then

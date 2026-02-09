@@ -33,6 +33,7 @@ type GameSession = {
 	score: number,
 	coins: number,
 	lives: number,
+	reviveCount: number, -- 부활 횟수
 }
 
 local activeSessions: { [Player]: GameSession } = {}
@@ -83,6 +84,7 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 		score = 0,
 		coins = 0,
 		lives = GameConstants.LIFE.STARTING_LIVES,
+		reviveCount = 0,
 	}
 
 	activeSessions[player] = session
@@ -115,6 +117,47 @@ end)
 RemoteEvents.GameOver.OnServerEvent:Connect(function(player: Player)
 	print(`[GameManager] Game over requested by {player.Name}`)
 	GameManager.EndGame(player)
+end)
+
+-- 부활 요청 처리
+RemoteEvents.Revive.OnServerEvent:Connect(function(player: Player)
+	local session = activeSessions[player]
+	if not session then
+		warn(`[GameManager] No session found for {player.Name} to revive`)
+		RemoteEvents.Revive:FireClient(player, { success = false, reason = "no_session" })
+		return
+	end
+
+	-- 부활 횟수 체크
+	if session.reviveCount >= GameConstants.REVIVE.MAX_REVIVES then
+		print(`[GameManager] {player.Name} has no revives left`)
+		RemoteEvents.Revive:FireClient(player, { success = false, reason = "no_revives" })
+		return
+	end
+
+	-- 부활 처리
+	session.reviveCount += 1
+	session.lives = 1 -- 라이프 1개로 부활
+	session.isPlaying = true
+
+	-- 무적 상태 설정
+	if session.obstacleService then
+		session.obstacleService:OnObstacleHit() -- 무적 시간 활성화
+	end
+
+	print(`[GameManager] {player.Name} revived! (Revive #{session.reviveCount})`)
+
+	-- 클라이언트에 부활 성공 알림
+	RemoteEvents.Revive:FireClient(player, {
+		success = true,
+		lives = session.lives,
+		revivesLeft = GameConstants.REVIVE.MAX_REVIVES - session.reviveCount,
+	})
+
+	-- 라이프 업데이트 알림
+	RemoteEvents.LifeUpdate:FireClient(player, {
+		lives = session.lives,
+	})
 end)
 
 -- 게임 종료
@@ -279,10 +322,24 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 
 				print(`[GameManager] Player {player.Name} hit obstacle! Lives: {session.lives}`)
 
-				-- 라이프 0이면 게임 오버
+				-- 라이프 0이면 부활 제안 또는 게임 오버
 				if session.lives <= 0 then
-					print(`[GameManager] Player {player.Name} has no lives left, ending game`)
-					GameManager.EndGame(player)
+					local canRevive = session.reviveCount < GameConstants.REVIVE.MAX_REVIVES
+
+					if canRevive then
+						-- 부활 가능 - 게임 일시정지하고 부활 제안
+						session.isPlaying = false
+						print(`[GameManager] Player {player.Name} can revive - offering revive`)
+
+						RemoteEvents.GameOver:FireClient(player, {
+							canRevive = true,
+							revivesLeft = GameConstants.REVIVE.MAX_REVIVES - session.reviveCount,
+						})
+					else
+						-- 부활 불가 - 게임 오버
+						print(`[GameManager] Player {player.Name} has no lives or revives left, ending game`)
+						GameManager.EndGame(player)
+					end
 				end
 			end
 		end

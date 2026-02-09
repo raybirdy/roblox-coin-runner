@@ -194,6 +194,11 @@ function PowerupController:OnPowerupCollected(data: { powerupType: string })
 		self._powerupSound:Play()
 	end
 
+	-- 파티클 효과 재생
+	if powerupType ~= "ShieldUsed" then
+		self:_playPowerupParticle(powerupType)
+	end
+
 	if powerupType == "Magnet" then
 		print(`[PowerupController] Magnet activated! (Duration: {GameConstants.POWERUP.MAGNET_DURATION}s)`)
 		self._activePowerups["Magnet"] = true
@@ -232,6 +237,7 @@ function PowerupController:OnPowerupCollected(data: { powerupType: string })
 	elseif powerupType == "ShieldUsed" then
 		print("[PowerupController] Shield blocked an obstacle!")
 		self._activePowerups["Shield"] = false
+		self:_playShieldBreakParticle()
 
 		-- 쉴드 아이콘 제거
 		if self._powerupIcons["Shield"] then
@@ -239,6 +245,108 @@ function PowerupController:OnPowerupCollected(data: { powerupType: string })
 			self._powerupIcons["Shield"] = nil
 		end
 	end
+end
+
+-- 파워업 획득 파티클 효과
+function PowerupController:_playPowerupParticle(powerupType: string)
+	local Players = game:GetService("Players")
+	local player = Players.LocalPlayer
+	local character = player.Character
+	if not character then
+		return
+	end
+
+	local hrp = character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	if not hrp then
+		return
+	end
+
+	-- 파워업별 색상 설정
+	local colorData = {
+		Magnet = Color3.fromRGB(50, 150, 255),
+		Shield = Color3.fromRGB(50, 200, 50),
+		Invincible = Color3.fromRGB(255, 215, 0),
+		DoubleCoin = Color3.fromRGB(255, 165, 0),
+	}
+	local color = colorData[powerupType] or Color3.fromRGB(255, 255, 255)
+
+	-- 파티클 이미터 생성
+	local attachment = Instance.new("Attachment")
+	attachment.Parent = hrp
+
+	local particle = Instance.new("ParticleEmitter")
+	particle.Color = ColorSequence.new(color)
+	particle.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 1),
+		NumberSequenceKeypoint.new(0.5, 2),
+		NumberSequenceKeypoint.new(1, 0),
+	})
+	particle.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0),
+		NumberSequenceKeypoint.new(0.5, 0.2),
+		NumberSequenceKeypoint.new(1, 1),
+	})
+	particle.Lifetime = NumberRange.new(0.8, 1.5)
+	particle.Speed = NumberRange.new(10, 25)
+	particle.SpreadAngle = Vector2.new(360, 360)
+	particle.Rate = 0
+	particle.LightEmission = 0.5
+	particle.Parent = attachment
+
+	-- 파티클 버스트
+	particle:Emit(40)
+
+	-- 정리
+	task.delay(2, function()
+		attachment:Destroy()
+	end)
+end
+
+-- 쉴드 파괴 파티클 효과
+function PowerupController:_playShieldBreakParticle()
+	local Players = game:GetService("Players")
+	local player = Players.LocalPlayer
+	local character = player.Character
+	if not character then
+		return
+	end
+
+	local hrp = character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	if not hrp then
+		return
+	end
+
+	-- 파티클 이미터 생성
+	local attachment = Instance.new("Attachment")
+	attachment.Parent = hrp
+
+	local particle = Instance.new("ParticleEmitter")
+	particle.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(50, 200, 50)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(200, 255, 200)),
+	})
+	particle.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 2),
+		NumberSequenceKeypoint.new(1, 0),
+	})
+	particle.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0),
+		NumberSequenceKeypoint.new(1, 1),
+	})
+	particle.Lifetime = NumberRange.new(0.3, 0.6)
+	particle.Speed = NumberRange.new(20, 40)
+	particle.SpreadAngle = Vector2.new(360, 360)
+	particle.Rate = 0
+	particle.LightEmission = 0.8
+	particle.Parent = attachment
+
+	-- 파티클 버스트 (파괴 효과)
+	particle:Emit(50)
+
+	-- 정리
+	task.delay(1, function()
+		attachment:Destroy()
+	end)
 end
 
 -- 파워업 활성 여부 확인

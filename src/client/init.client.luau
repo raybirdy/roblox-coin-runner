@@ -51,6 +51,7 @@ local PowerupController = require(script.Controllers.PowerupController)
 local CameraController = require(script.Controllers.CameraController)
 local NPCController = require(script.Controllers.NPCController)
 local TutorialController = require(script.Controllers.TutorialController)
+local MusicController = require(script.Controllers.MusicController)
 
 -- 컨트롤러 인스턴스 생성
 local inputController = InputController.new()
@@ -62,6 +63,10 @@ local powerupController = PowerupController.new()
 local cameraController = CameraController.new(player, character)
 local npcController = NPCController.new()
 local tutorialController = TutorialController.new()
+local musicController = MusicController.new()
+
+-- 배경 음악 시작
+musicController:Start()
 
 -- 튜토리얼 컨트롤러에 NPCController 연결
 tutorialController:SetNPCController(npcController)
@@ -152,16 +157,32 @@ end)
 
 -- 서버로부터 게임 종료 수신
 RemoteEvents.GameOver.OnClientEvent:Connect(function(data)
-	print("[Client] Game ended by server")
-	playerController:StopGame()
+	-- 부활 가능한 경우 게임 일시정지만 (완전 종료 아님)
+	if data.canRevive then
+		print("[Client] Game paused - revive available")
+		playerController:StopGame()
+	else
+		print("[Client] Game ended by server")
+		playerController:StopGame()
 
-	-- 튜토리얼 종료 (활성화된 경우)
-	if tutorialController:IsActive() then
-		tutorialController:Stop()
+		-- 튜토리얼 종료 (활성화된 경우)
+		if tutorialController:IsActive() then
+			tutorialController:Stop()
+		end
+
+		-- 튜토리얼 UI 숨기기
+		uiController:HideTutorialBanner()
 	end
+end)
 
-	-- 튜토리얼 UI 숨기기
-	uiController:HideTutorialBanner()
+-- 부활 응답 수신
+RemoteEvents.Revive.OnClientEvent:Connect(function(data)
+	if data.success then
+		print(`[Client] Revive successful! Resuming game...`)
+		playerController:StartGame()
+	else
+		print(`[Client] Revive failed: {data.reason}`)
+	end
 end)
 
 -- 튜토리얼 거리 업데이트 (RunService)
@@ -175,4 +196,4 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 end)
 
 print("[Client] Coin Runner Client Ready")
-print("[Client] Controllers initialized: Input, Player, Coin, Life, UI, Powerup, Camera, NPC, Tutorial")
+print("[Client] Controllers initialized: Input, Player, Coin, Life, UI, Powerup, Camera, NPC, Tutorial, Music")
