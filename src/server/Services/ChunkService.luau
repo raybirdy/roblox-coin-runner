@@ -243,13 +243,16 @@ function ChunkService:SpawnNextChunk(): Model?
 		self._coinService:SpawnCoinsInChunk(chunk, difficulty)
 	end
 
-	-- 청크 내 장애물 생성
-	if self._obstacleService then
+	-- 청크 내 장애물 생성 (안전 구역 이후부터)
+	local isInSafeZone = self._chunkCounter <= GameConstants.CHUNK.SAFE_ZONE_CHUNKS
+	if self._obstacleService and not isInSafeZone then
 		self._obstacleService:SpawnObstaclesInChunk(chunk, difficulty)
+	elseif isInSafeZone then
+		print(`[ChunkService] Chunk #{self._chunkCounter} is in safe zone - no obstacles`)
 	end
 
-	-- 청크 내 파워업 생성 (확률적)
-	if self._powerupService then
+	-- 청크 내 파워업 생성 (확률적, 안전 구역 이후부터)
+	if self._powerupService and not isInSafeZone then
 		self._powerupService:TrySpawnPowerupInChunk(chunk, difficulty)
 	end
 

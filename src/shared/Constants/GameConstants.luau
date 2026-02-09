@@ -37,6 +37,7 @@ GameConstants.CHUNK = {
 	MAX_LOADED = 6, -- 동시 로드 최대 청크 수 (더 많이 미리 로드)
 	MIN_AHEAD_DISTANCE = 200, -- 플레이어 앞에 최소 이 거리만큼 청크 유지 (studs)
 	DELETE_DISTANCE = 100, -- 캐릭터 뒤 이 거리 초과 시 청크 삭제
+	SAFE_ZONE_CHUNKS = 2, -- 시작 안전 구역 (처음 N개 청크는 장애물 없음)
 
 	-- 높이 태그
 	HEIGHT_LOW = 0,
