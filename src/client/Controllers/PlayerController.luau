@@ -203,7 +203,7 @@ end
 function PlayerController:_checkGrounded()
 	local currentY = self.humanoidRootPart.Position.Y
 	local groundHeight = 2.5 -- 캐릭터 높이의 절반 (바닥에 서 있을 때 중심 높이)
-	local tolerance = 1.0 -- 허용 오차 (증가)
+	local tolerance = 1.5 -- 허용 오차 (물리 진동 대응)
 
 	local wasGrounded = self.isGrounded
 	self.isGrounded = math.abs(currentY - groundHeight) < tolerance
