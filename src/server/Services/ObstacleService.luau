@@ -127,22 +127,41 @@ function ObstacleService:_spawnObstacle(position: Vector3, obstacleType: string)
 		obstacle.Position = position + Vector3.new(0, GameConstants.OBSTACLE.LOW_WALL_HEIGHT / 2, 0)
 		obstacle.BrickColor = BrickColor.new("Bright red")
 	elseif obstacleType == "Tunnel" then
-		-- 높은 벽 + 터널 (슬라이드로 회피)
+		-- 공중 장애물 (슬라이드로 통과)
+		-- 아래 공간은 비워두고 위쪽만 장애물로 생성
+		local tunnelHeight = GameConstants.OBSTACLE.TUNNEL_HEIGHT -- 통과 가능한 높이 (3)
+		local obstacleHeight = 6 -- 장애물 높이
+
 		obstacle = Instance.new("Part")
 		obstacle.Name = "Obstacle_Tunnel"
-		obstacle.Size = Vector3.new(2, 10, 8) -- 높은 벽
-		obstacle.Position = position + Vector3.new(0, 5, 0)
-		obstacle.BrickColor = BrickColor.new("Bright red")
+		obstacle.Size = Vector3.new(3, obstacleHeight, 10)
+		-- Y 위치: 터널 높이 위에 장애물 배치
+		obstacle.Position = position + Vector3.new(0, tunnelHeight + obstacleHeight / 2, 0)
+		obstacle.BrickColor = BrickColor.new("Bright orange")
+		obstacle.Material = Enum.Material.Neon
 
-		-- 터널 공간 표시 (투명한 Part, 시각적 가이드)
+		-- 경고 표시 (슬라이드 필요)
+		local warningSign = Instance.new("Part")
+		warningSign.Name = "TunnelWarning"
+		warningSign.Size = Vector3.new(0.5, tunnelHeight - 0.5, 10)
+		warningSign.Position = position + Vector3.new(-3, tunnelHeight / 2, 0)
+		warningSign.Transparency = 0.3
+		warningSign.BrickColor = BrickColor.new("Bright yellow")
+		warningSign.CanCollide = false
+		warningSign.Anchored = true
+		warningSign.Material = Enum.Material.Neon
+		warningSign.Parent = workspace
+
+		-- 터널 입구 안내선 (초록색)
 		local tunnelGuide = Instance.new("Part")
 		tunnelGuide.Name = "TunnelGuide"
-		tunnelGuide.Size = Vector3.new(2, GameConstants.OBSTACLE.TUNNEL_HEIGHT, 8)
-		tunnelGuide.Position = position + Vector3.new(0, GameConstants.OBSTACLE.TUNNEL_HEIGHT / 2, 0)
-		tunnelGuide.Transparency = 0.7
+		tunnelGuide.Size = Vector3.new(3, 0.3, 10)
+		tunnelGuide.Position = position + Vector3.new(0, tunnelHeight, 0)
+		tunnelGuide.Transparency = 0.5
 		tunnelGuide.BrickColor = BrickColor.new("Bright green")
 		tunnelGuide.CanCollide = false
 		tunnelGuide.Anchored = true
+		tunnelGuide.Material = Enum.Material.Neon
 		tunnelGuide.Parent = workspace
 	elseif obstacleType == "Gap" then
 		-- 구덩이 (점프로 건너기)
@@ -215,12 +234,21 @@ function ObstacleService:CheckObstacleCollision(playerPosition: Vector3, isSlidi
 					return true
 				end
 			elseif obstacleType == "Tunnel" then
-				-- Tunnel: 슬라이드 중이면 회피 성공
-				if isSliding then
-					print(`[ObstacleService] {self._player.Name} slid through Tunnel!`)
+				-- Tunnel: 슬라이드 중이고 높이가 낮으면 회피 성공
+				local tunnelHeight = GameConstants.OBSTACLE.TUNNEL_HEIGHT
+				local playerHeight = playerPosition.Y
+
+				if isSliding and playerHeight < tunnelHeight then
+					-- 슬라이드로 통과 성공
+					print(`[ObstacleService] {self._player.Name} slid through Tunnel! (Y: {playerHeight})`)
+					continue
+				elseif playerHeight < tunnelHeight then
+					-- 슬라이드 안하고 낮은 위치 - 통과 (달리다가 우연히 통과)
+					print(`[ObstacleService] {self._player.Name} passed under Tunnel (Y: {playerHeight})`)
 					continue
 				else
-					-- 충돌
+					-- 충돌 (서 있거나 점프 중인데 터널 높이 이상)
+					print(`[ObstacleService] {self._player.Name} hit Tunnel! (Y: {playerHeight}, sliding: {isSliding})`)
 					return true
 				end
 			elseif obstacleType == "Gap" then
