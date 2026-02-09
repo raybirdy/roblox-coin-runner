@@ -174,36 +174,19 @@ function PlayerController:UpdateCharacter(newCharacter: Model)
 	print("[PlayerController] Character updated after respawn")
 end
 
--- Z축 고정 설정 (2D 평면 유지)
+-- Z축 고정 설정 (2D 평면 유지) - AlignPosition 대신 직접 제어
 function PlayerController:_setupZAxisConstraint()
+	-- Attachment 생성 (회전 고정용)
 	local attachment = Instance.new("Attachment")
 	attachment.Name = "ZAxisAttachment"
 	attachment.Parent = self.humanoidRootPart
 
-	-- AlignPosition으로 Z축만 고정 (X, Y는 물리 엔진이 처리)
-	local alignPosition = Instance.new("AlignPosition")
-	alignPosition.Name = "ZAxisAlign"
-	alignPosition.Attachment0 = attachment
-	alignPosition.Mode = Enum.PositionAlignmentMode.OneAttachment
-	alignPosition.ApplyAtCenterOfMass = true
-	alignPosition.MaxForce = 100000 -- 강한 힘으로 Z축 고정
-	alignPosition.MaxVelocity = math.huge
-	alignPosition.Responsiveness = 200
-	alignPosition.Parent = self.humanoidRootPart
+	-- AlignPosition 제거 - Y축에도 힘을 가해서 캐릭터가 떠오르는 문제 발생
+	-- 대신 _moveForward()에서 Z축 속도를 0으로 유지하고, 필요시 위치 보정
 
-	-- Z축 고정 위치 업데이트 (X, Y는 현재 위치 유지)
-	local function updateZPosition()
-		local currentPos = self.humanoidRootPart.Position
-		alignPosition.Position = Vector3.new(currentPos.X, currentPos.Y, GameConstants.PLAYER.Z_POSITION)
-	end
+	self.alignPosition = nil
 
-	-- Heartbeat에서 Z축 위치만 업데이트
-	local conn = RunService.Heartbeat:Connect(updateZPosition)
-	table.insert(self._connections, conn)
-
-	self.alignPosition = alignPosition
-
-	print("[PlayerController] Z-axis constraint set up")
+	print("[PlayerController] Z-axis constraint set up (velocity-based)")
 end
 
 -- 물리 설정
@@ -271,9 +254,17 @@ end
 function PlayerController:_moveForward()
 	local targetSpeedX = self.currentSpeed * self.speedMultiplier
 
-	-- 현재 Y 속도 유지 (중력/점프), X만 설정
+	-- 현재 Y 속도 유지 (중력/점프), X 설정, Z는 0으로 고정
 	local currentVel = self.humanoidRootPart.AssemblyLinearVelocity
 	self.humanoidRootPart.AssemblyLinearVelocity = Vector3.new(targetSpeedX, currentVel.Y, 0)
+
+	-- Z축 위치 보정 (드리프트 방지)
+	local pos = self.humanoidRootPart.Position
+	local targetZ = GameConstants.PLAYER.Z_POSITION
+	if math.abs(pos.Z - targetZ) > 0.1 then
+		self.humanoidRootPart.CFrame = CFrame.new(pos.X, pos.Y, targetZ)
+			* CFrame.Angles(0, math.rad(-90), 0)
+	end
 end
 
 -- 바닥 감지 (Raycast 사용)
