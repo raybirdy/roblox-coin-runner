@@ -40,6 +40,7 @@ export type PlayerController = typeof(setmetatable(
 
 		-- 연결
 		_connections: { RBXScriptConnection },
+		_gameConnection: RBXScriptConnection?, -- Heartbeat 게임 루프 연결
 	},
 	PlayerController
 ))
@@ -69,6 +70,7 @@ function PlayerController.new(player: Player, character: Model): PlayerControlle
 		alignPosition = nil,
 
 		_connections = {},
+		_gameConnection = nil,
 	}, PlayerController)
 
 	self:_setupZAxisConstraint()
@@ -83,11 +85,16 @@ function PlayerController:StartGame()
 	self.currentSpeed = GameConstants.PHYSICS.SPEED_MIN
 	self.state = "Running"
 
+	-- 이전 게임 연결이 있으면 먼저 정리
+	if self._gameConnection then
+		self._gameConnection:Disconnect()
+		print("[PlayerController] Previous game connection disconnected")
+	end
+
 	-- RunService 루프 시작
-	local connection = RunService.Heartbeat:Connect(function(deltaTime: number)
+	self._gameConnection = RunService.Heartbeat:Connect(function(deltaTime: number)
 		self:_update(deltaTime)
 	end)
-	table.insert(self._connections, connection)
 
 	print(`[PlayerController] Game started for {self.player.Name}`)
 end
@@ -96,6 +103,14 @@ end
 function PlayerController:StopGame()
 	self.state = "Idle"
 	self.currentSpeed = 0
+
+	-- 게임 루프 연결 해제
+	if self._gameConnection then
+		self._gameConnection:Disconnect()
+		self._gameConnection = nil
+		print("[PlayerController] Game connection disconnected")
+	end
+
 	print(`[PlayerController] Game stopped for {self.player.Name}`)
 end
 
@@ -206,7 +221,8 @@ function PlayerController:_checkGrounded()
 	local tolerance = 1.5 -- 허용 오차 (물리 진동 대응)
 
 	local wasGrounded = self.isGrounded
-	self.isGrounded = math.abs(currentY - groundHeight) < tolerance
+	local heightDiff = math.abs(currentY - groundHeight)
+	self.isGrounded = heightDiff < tolerance
 
 	-- 착지 시
 	if self.isGrounded and not wasGrounded and (self.state == "Jumping" or self.state == "Falling") then
@@ -216,10 +232,16 @@ function PlayerController:_checkGrounded()
 		print(`[PlayerController] Landed - Y: {currentY}`)
 	end
 
-	-- 공중으로 올라갔을 때
+	-- 공중으로 올라갔을 때 (높이 차이가 크게 날 때만 Falling 전환)
+	-- 물리 진동으로 인한 오판 방지
 	if not self.isGrounded and wasGrounded and self.state == "Running" then
-		self.state = "Falling"
-		print(`[PlayerController] Airborne - Y: {currentY}`)
+		if heightDiff > 2.5 then -- 2.5 studs 이상 차이날 때만
+			self.state = "Falling"
+			print(`[PlayerController] Airborne - Y: {currentY}`)
+		else
+			-- 작은 진동은 무시하고 grounded 상태 유지
+			self.isGrounded = true
+		end
 	end
 end
 
@@ -333,6 +355,13 @@ end
 
 -- 정리
 function PlayerController:Destroy()
+	-- 게임 루프 연결 해제
+	if self._gameConnection then
+		self._gameConnection:Disconnect()
+		self._gameConnection = nil
+	end
+
+	-- 영구 연결 (Z축 고정 등) 해제
 	for _, connection in self._connections do
 		connection:Disconnect()
 	end
