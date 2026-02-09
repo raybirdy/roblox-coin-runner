@@ -103,8 +103,30 @@ RemoteEvents.GameStart.OnClientEvent:Connect(function(data)
 	print("[Client] Game start confirmed by server")
 	uiController:HideGameOver() -- 게임 오버 화면 숨기기
 
+	-- 카운트다운 전 플레이어 고정 (이전 게임 상태 완전 정리)
+	playerController:StopGame()
+
+	-- 시작 위치로 이동 및 고정
+	if character then
+		local hrp = character:FindFirstChild("HumanoidRootPart") :: BasePart?
+		if hrp then
+			hrp.Anchored = true -- 카운트다운 중 고정
+			hrp.AssemblyLinearVelocity = Vector3.zero
+			hrp.CFrame = CFrame.new(data.startPosition or Vector3.new(0, 2.5, 0))
+				* CFrame.Angles(0, math.rad(-90), 0)
+		end
+	end
+
 	-- 카운트다운 후 게임 시작
 	uiController:ShowCountdown(function()
+		-- 고정 해제
+		if character then
+			local hrp = character:FindFirstChild("HumanoidRootPart") :: BasePart?
+			if hrp then
+				hrp.Anchored = false
+			end
+		end
+
 		playerController:StartGame()
 
 		-- 튜토리얼 시작 (필요 시)

@@ -141,10 +141,8 @@ function PlayerController:StartGame()
 	_globalGameConnection = connection
 	self._gameConnection = connection
 
-	-- 달리기 애니메이션 시작
-	if self._animationController then
-		self._animationController:PlayRun()
-	end
+	-- Humanoid 상태를 Running으로 설정 (애니메이션 트리거)
+	self.humanoid:ChangeState(Enum.HumanoidStateType.Running)
 
 	print(`[PlayerController] Game started for {self.player.Name} - Speed: {self.currentSpeed}`)
 end
@@ -272,7 +270,7 @@ end
 -- 물리 설정
 function PlayerController:_setupPhysics()
 	-- Humanoid 설정
-	self.humanoid.WalkSpeed = 0 -- 자동 전진을 사용하므로 걷기 비활성화
+	self.humanoid.WalkSpeed = 16 -- 애니메이션 재생용 (실제 이동은 CFrame으로)
 	self.humanoid.JumpPower = 0 -- 커스텀 점프 사용
 	self.humanoid.AutoRotate = false -- 회전 고정 (오른쪽 보기)
 
@@ -353,8 +351,18 @@ function PlayerController:_moveForward(deltaTime: number)
 	local newX = pos.X + moveDistance
 
 	-- X축 이동, Y는 현재 위치 유지 (물리 엔진이 처리), Z는 고정
-	self.humanoidRootPart.CFrame = CFrame.new(newX, pos.Y, GameConstants.PLAYER.Z_POSITION)
-		* CFrame.Angles(0, math.rad(-90), 0)
+	if self.isSliding then
+		-- 슬라이드 중: 앞으로 기울인 상태 유지 (낮은 자세)
+		self.humanoidRootPart.CFrame = CFrame.new(newX, pos.Y, GameConstants.PLAYER.Z_POSITION)
+			* CFrame.Angles(math.rad(-45), math.rad(-90), 0)
+	else
+		-- 일반 상태: 정상 자세
+		self.humanoidRootPart.CFrame = CFrame.new(newX, pos.Y, GameConstants.PLAYER.Z_POSITION)
+			* CFrame.Angles(0, math.rad(-90), 0)
+
+		-- 달리기 애니메이션 트리거 (Humanoid에게 이동 중임을 알림)
+		self.humanoid:Move(Vector3.new(1, 0, 0), false)
+	end
 end
 
 -- 바닥 감지 (Raycast 사용)
@@ -503,10 +511,19 @@ function PlayerController:Slide()
 	-- 서버에 슬라이딩 상태 전달 (Attribute 사용)
 	self.humanoidRootPart:SetAttribute("IsSliding", true)
 
-	-- 슬라이드 애니메이션 재생
-	if self._animationController then
-		self._animationController:PlaySlide()
+	-- AlignOrientation 비활성화 (슬라이드 기울기 허용)
+	local rotationLock = self.humanoidRootPart:FindFirstChild("RotationLock")
+	if rotationLock then
+		rotationLock.Enabled = false
 	end
+
+	-- 슬라이드 시각 효과: 캐릭터를 앞으로 기울이기
+	local pos = self.humanoidRootPart.Position
+	self.humanoidRootPart.CFrame = CFrame.new(pos.X, pos.Y - 0.5, GameConstants.PLAYER.Z_POSITION)
+		* CFrame.Angles(math.rad(-45), math.rad(-90), 0) -- 앞으로 45도 기울임
+
+	-- 달리기 애니메이션 정지
+	self.humanoid:Move(Vector3.zero, false)
 
 	print("[PlayerController] Slide started")
 
@@ -523,12 +540,6 @@ function PlayerController:_updateSlide(deltaTime: number)
 	-- 슬라이드 중 바닥을 벗어나면 즉시 종료
 	if not self.isGrounded then
 		self:_endSlide()
-		self.state = "Falling"
-
-		-- 낙하 애니메이션 재생
-		if self._animationController then
-			self._animationController:PlayFall()
-		end
 	end
 end
 
@@ -540,21 +551,17 @@ function PlayerController:_endSlide()
 
 	self.isSliding = false
 
+	-- AlignOrientation 다시 활성화
+	local rotationLock = self.humanoidRootPart:FindFirstChild("RotationLock")
+	if rotationLock then
+		rotationLock.Enabled = true
+	end
+
 	-- 바닥에 있으면 Running, 아니면 Falling
 	if self.isGrounded then
 		self.state = "Running"
-
-		-- 달리기 애니메이션 재생
-		if self._animationController then
-			self._animationController:PlayRun()
-		end
 	else
 		self.state = "Falling"
-
-		-- 낙하 애니메이션 재생
-		if self._animationController then
-			self._animationController:PlayFall()
-		end
 	end
 
 	-- 서버에 슬라이딩 종료 전달

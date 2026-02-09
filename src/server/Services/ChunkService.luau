@@ -94,6 +94,8 @@ end
 
 -- 게임 시작
 function ChunkService:StartGame()
+	print("[ChunkService] StartGame called")
+
 	self._gameStartTime = tick()
 	self._activeChunks = {}
 	self._chunkCounter = 0
@@ -102,16 +104,19 @@ function ChunkService:StartGame()
 	-- 시작 구역 생성 (출발선 포함)
 	self:_spawnStartZone()
 
-	-- 초기 3개 청크 생성
+	-- 초기 청크 생성
+	print("[ChunkService] Spawning initial chunks...")
 	for i = 1, GameConstants.CHUNK.MAX_LOADED do
 		self:SpawnNextChunk()
 	end
 
-	print("[ChunkService] Game started, initial chunks spawned")
+	print(`[ChunkService] Game started, {#self._activeChunks} chunks spawned`)
 end
 
 -- 시작 구역 생성 (출발선 + 바닥)
 function ChunkService:_spawnStartZone()
+	print("[ChunkService] _spawnStartZone called")
+
 	-- 기존 시작 구역 제거
 	if self._startZone then
 		self._startZone:Destroy()
@@ -126,19 +131,23 @@ function ChunkService:_spawnStartZone()
 	local floorLength = 100 -- 출발 전후 바닥 길이
 	local floor = Instance.new("Part")
 	floor.Name = "StartFloor"
-	floor.Size = Vector3.new(floorLength, 2, 30)
-	floor.Position = Vector3.new(-20, -1, GameConstants.PLAYER.Z_POSITION) -- X=-70 ~ X=30 범위
+	floor.Size = Vector3.new(floorLength, 1, 30)
+	floor.Position = Vector3.new(-20, 0.5, GameConstants.PLAYER.Z_POSITION) -- Y=0~1 (Baseplate 위)
 	floor.Anchored = true
-	floor.BrickColor = BrickColor.new("Dark stone grey")
+	floor.CanCollide = true
+	floor.BrickColor = BrickColor.new("Medium stone grey")
 	floor.Material = Enum.Material.Concrete
 	floor.Parent = startZone
+
+	print(`[ChunkService] Created floor at {floor.Position}`)
 
 	-- 출발선 (빨간색 라인)
 	local startLine = Instance.new("Part")
 	startLine.Name = "StartLine"
 	startLine.Size = Vector3.new(1, 0.3, 20)
-	startLine.Position = Vector3.new(0, 0.15, GameConstants.PLAYER.Z_POSITION)
+	startLine.Position = Vector3.new(0, 1.15, GameConstants.PLAYER.Z_POSITION) -- 바닥 위
 	startLine.Anchored = true
+	startLine.CanCollide = false
 	startLine.BrickColor = BrickColor.new("Bright red")
 	startLine.Material = Enum.Material.Neon
 	startLine.Parent = startZone
@@ -147,8 +156,9 @@ function ChunkService:_spawnStartZone()
 	local startSign = Instance.new("Part")
 	startSign.Name = "StartSign"
 	startSign.Size = Vector3.new(0.5, 8, 0.5)
-	startSign.Position = Vector3.new(-2, 4, GameConstants.PLAYER.Z_POSITION - 8)
+	startSign.Position = Vector3.new(-2, 5, GameConstants.PLAYER.Z_POSITION - 8)
 	startSign.Anchored = true
+	startSign.CanCollide = false
 	startSign.BrickColor = BrickColor.new("White")
 	startSign.Material = Enum.Material.SmoothPlastic
 	startSign.Parent = startZone
@@ -175,17 +185,23 @@ function ChunkService:_spawnStartZone()
 		local checker = Instance.new("Part")
 		checker.Name = `Checker{i}`
 		checker.Size = Vector3.new(2, 0.2, 2)
-		checker.Position = Vector3.new(-4 - (i * 2.5), 0.1, GameConstants.PLAYER.Z_POSITION - 6 + ((i % 2) * 4))
+		checker.Position = Vector3.new(-4 - (i * 2.5), 1.1, GameConstants.PLAYER.Z_POSITION - 6 + ((i % 2) * 4))
 		checker.Anchored = true
+		checker.CanCollide = false
 		checker.BrickColor = (i % 2 == 0) and BrickColor.new("White") or BrickColor.new("Really black")
 		checker.Material = Enum.Material.SmoothPlastic
 		checker.Parent = startZone
 	end
 
+	-- PrimaryPart 설정
+	startZone.PrimaryPart = floor
+
 	startZone.Parent = workspace
 	self._startZone = startZone
 
 	print("[ChunkService] Start zone spawned with starting line")
+	print(`[ChunkService] Floor position: {floor.Position}, Size: {floor.Size}`)
+	print(`[ChunkService] StartLine position: {startLine.Position}`)
 end
 
 -- 다음 청크 생성
