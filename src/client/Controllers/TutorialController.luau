@@ -37,7 +37,7 @@ function TutorialController.new(): TutorialController
 			{ message = "자동으로 달려! 코인을 모아봐!", trigger = "auto", delay = 2 },
 			{ message = "점프! ↑", trigger = "jump" },
 			{ message = "슬라이드! ↓", trigger = "slide" },
-			{ message = "공중에서 한 번 더 점프!", trigger = "doubleJump" },
+			{ message = "공중에서 한 번 더 점프!", trigger = "auto", delay = 3 },
 		},
 		_distanceTraveled = 0,
 		_startPosition = nil,
