@@ -36,13 +36,7 @@ local function disableDefaultControls()
 	print("[Client] Default Roblox controls disabled")
 end
 
--- 캐릭터 리스폰 시 재설정
-player.CharacterAdded:Connect(function(newCharacter: Model)
-	character = newCharacter
-	humanoid = character:WaitForChild("Humanoid") :: Humanoid
-	disableDefaultControls()
-	print("[Client] Character respawned, controls reset")
-end)
+-- 초기 캐릭터 설정 (컨트롤러 정의 후 리스폰 핸들러 추가)
 
 -- 초기 설정
 disableDefaultControls()
@@ -71,6 +65,16 @@ local tutorialController = TutorialController.new()
 
 -- 튜토리얼 컨트롤러에 NPCController 연결
 tutorialController:SetNPCController(npcController)
+
+-- 캐릭터 리스폰 시 PlayerController 업데이트
+player.CharacterAdded:Connect(function(newCharacter: Model)
+	character = newCharacter
+	humanoid = character:WaitForChild("Humanoid") :: Humanoid
+	disableDefaultControls()
+	playerController:UpdateCharacter(newCharacter)
+	cameraController:UpdateCharacter(newCharacter)
+	print("[Client] Character respawned, controllers updated")
+end)
 
 -- 입력 콜백 연결 (키보드)
 inputController:OnJump(function()
