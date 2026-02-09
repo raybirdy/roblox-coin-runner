@@ -28,6 +28,7 @@ export type UIController = typeof(setmetatable(
 		_startMenuFrame: Frame?,
 		_jumpButton: TextButton?,
 		_slideButton: TextButton?,
+		_reviveButton: TextButton?, -- 부활 버튼
 		_tutorialBanner: Frame?, -- 튜토리얼 배너
 		_tutorialNotification: Frame?, -- 튜토리얼 종료 알림
 		_countdownLabel: TextLabel?, -- 카운트다운 표시
@@ -54,6 +55,7 @@ function UIController.new(player: Player): UIController
 		_startMenuFrame = nil,
 		_jumpButton = nil,
 		_slideButton = nil,
+		_reviveButton = nil,
 		_tutorialBanner = nil,
 		_tutorialNotification = nil,
 		_countdownLabel = nil,
@@ -302,6 +304,34 @@ function UIController:_createUI()
 	-- 버튼 클릭 이벤트
 	restartButton.MouseButton1Click:Connect(function()
 		self:OnRestartButtonClicked()
+	end)
+
+	-- 부활 버튼 (초기 숨김)
+	local reviveButton = Instance.new("TextButton")
+	reviveButton.Name = "ReviveButton"
+	reviveButton.Size = UDim2.new(0, 280, 0, 70)
+	reviveButton.Position = UDim2.new(0.5, -140, 0, 340)
+	reviveButton.BackgroundColor3 = Color3.fromRGB(255, 180, 0)
+	reviveButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+	reviveButton.TextSize = 28
+	reviveButton.Font = Enum.Font.GothamBold
+	reviveButton.Text = "💫 REVIVE (FREE)"
+	reviveButton.Visible = false
+	reviveButton.Parent = gameOverFrame
+	self._reviveButton = reviveButton
+
+	local reviveCorner = Instance.new("UICorner")
+	reviveCorner.CornerRadius = UDim.new(0, 16)
+	reviveCorner.Parent = reviveButton
+
+	local reviveStroke = Instance.new("UIStroke")
+	reviveStroke.Color = Color3.fromRGB(255, 255, 255)
+	reviveStroke.Thickness = 2
+	reviveStroke.Transparency = 0.5
+	reviveStroke.Parent = reviveButton
+
+	reviveButton.MouseButton1Click:Connect(function()
+		self:OnReviveButtonClicked()
 	end)
 
 	-- 시작 메뉴 프레임 (초기 화면)
@@ -555,9 +585,20 @@ function UIController:_setupEventHandlers()
 
 	-- 게임 오버
 	local gameOverConnection = RemoteEvents.GameOver.OnClientEvent:Connect(function(data)
-		self:ShowGameOver(data.finalScore, data.earnedCoins, data.highScore, data.distance, data.isNewRecord)
+		self:ShowGameOver(data.finalScore, data.earnedCoins, data.highScore, data.distance, data.isNewRecord, data.canRevive)
 	end)
 	table.insert(self._connections, gameOverConnection)
+
+	-- 부활 응답
+	local reviveConnection = RemoteEvents.Revive.OnClientEvent:Connect(function(data)
+		if data.success then
+			print(`[UIController] Revive successful! Lives: {data.lives}`)
+			self:UpdateLives(data.lives)
+		else
+			print(`[UIController] Revive failed: {data.reason}`)
+		end
+	end)
+	table.insert(self._connections, reviveConnection)
 
 	print("[UIController] Event handlers set up")
 end
@@ -625,7 +666,7 @@ function UIController:OnSlide(callback: () -> ())
 end
 
 -- 게임 오버 화면 표시
-function UIController:ShowGameOver(finalScore: number, earnedCoins: number, highScore: number?, distance: number?, isNewRecord: boolean?)
+function UIController:ShowGameOver(finalScore: number, earnedCoins: number, highScore: number?, distance: number?, isNewRecord: boolean?, canRevive: boolean?)
 	if not self._gameOverFrame then
 		return
 	end
@@ -659,14 +700,33 @@ function UIController:ShowGameOver(finalScore: number, earnedCoins: number, high
 		newRecordLabel.Visible = isNewRecord == true
 	end
 
+	-- 부활 가능 시 버튼 표시/숨김
+	local restartButton = self._gameOverFrame:FindFirstChild("RestartButton") :: TextButton?
+	if restartButton then
+		restartButton.Visible = not canRevive
+		restartButton.Position = UDim2.new(0.5, -140, 0, 340)
+	end
+
+	if self._reviveButton then
+		self._reviveButton.Visible = canRevive == true
+		if canRevive then
+			-- 부활 버튼은 위에, 재시작 버튼은 아래에
+			self._reviveButton.Position = UDim2.new(0.5, -140, 0, 340)
+			if restartButton then
+				restartButton.Visible = true
+				restartButton.Position = UDim2.new(0.5, -140, 0, 420)
+			end
+		end
+	end
+
 	-- 게임 오버 프레임 표시 (등장 애니메이션)
 	self._gameOverFrame.Size = UDim2.new(0, 0, 0, 0)
 	self._gameOverFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
 	self._gameOverFrame.Visible = true
 
 	local appearTween = TweenService:Create(self._gameOverFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-		Size = UDim2.new(0, 450, 0, 480),
-		Position = UDim2.new(0.5, -225, 0.5, -240),
+		Size = UDim2.new(0, 450, 0, canRevive and 520 or 480),
+		Position = UDim2.new(0.5, -225, 0.5, canRevive and -260 or -240),
 	})
 	appearTween:Play()
 
@@ -711,6 +771,17 @@ function UIController:OnRestartButtonClicked()
 
 	-- 서버에 게임 시작 요청
 	RemoteEvents.GameStart:FireServer()
+end
+
+-- 부활 버튼 클릭 처리
+function UIController:OnReviveButtonClicked()
+	print("[UIController] Revive button clicked")
+
+	-- 게임 오버 화면 숨기기
+	self:HideGameOver()
+
+	-- 서버에 부활 요청
+	RemoteEvents.Revive:FireServer()
 end
 
 -- 시작 메뉴 표시
@@ -777,6 +848,18 @@ function UIController:HideGameOver()
 		if newRecordLabel then
 			newRecordLabel.Visible = false
 		end
+
+		-- 버튼 위치 초기화
+		local restartButton = self._gameOverFrame:FindFirstChild("RestartButton") :: TextButton?
+		if restartButton then
+			restartButton.Visible = true
+			restartButton.Position = UDim2.new(0.5, -140, 0, 340)
+		end
+	end
+
+	-- 부활 버튼 숨기기
+	if self._reviveButton then
+		self._reviveButton.Visible = false
 	end
 
 	-- UI 초기화

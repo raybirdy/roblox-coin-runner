@@ -127,8 +127,69 @@ function CoinController:OnCoinCollected(data: { coinType: string, coinValue: num
 	-- 팝업 표시 (2배 코인인 경우 특별 표시)
 	self:_showCoinPopup(data.coinValue, data.coinType, data.isDoubled)
 
+	-- 파티클 효과 재생
+	self:_playCoinParticle(data.coinType, data.isDoubled)
+
 	local doubledText = data.isDoubled and " (x2!)" or ""
 	print(`[CoinController] Collected {data.coinType} coin! +{data.coinValue}{doubledText} (Total: {data.totalCoins})`)
+end
+
+-- 코인 수집 파티클 효과
+function CoinController:_playCoinParticle(coinType: string, isDoubled: boolean?)
+	local player = Players.LocalPlayer
+	local character = player.Character
+	if not character then
+		return
+	end
+
+	local hrp = character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	if not hrp then
+		return
+	end
+
+	-- 파티클 색상 설정
+	local color = Color3.fromRGB(255, 215, 0) -- 기본 금색
+	if coinType == "Silver" then
+		color = Color3.fromRGB(192, 192, 192)
+	elseif coinType == "Diamond" then
+		color = Color3.fromRGB(0, 191, 255)
+	end
+
+	-- 2배 코인이면 주황색
+	if isDoubled then
+		color = Color3.fromRGB(255, 140, 0)
+	end
+
+	-- 파티클 이미터 생성
+	local attachment = Instance.new("Attachment")
+	attachment.Parent = hrp
+
+	local particle = Instance.new("ParticleEmitter")
+	particle.Color = ColorSequence.new(color)
+	particle.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.5),
+		NumberSequenceKeypoint.new(0.5, 1),
+		NumberSequenceKeypoint.new(1, 0),
+	})
+	particle.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0),
+		NumberSequenceKeypoint.new(0.8, 0.3),
+		NumberSequenceKeypoint.new(1, 1),
+	})
+	particle.Lifetime = NumberRange.new(0.5, 1)
+	particle.Speed = NumberRange.new(5, 15)
+	particle.SpreadAngle = Vector2.new(180, 180)
+	particle.Rate = 0
+	particle.Acceleration = Vector3.new(0, 10, 0)
+	particle.Parent = attachment
+
+	-- 파티클 버스트
+	particle:Emit(isDoubled and 30 or 15)
+
+	-- 정리
+	task.delay(1.5, function()
+		attachment:Destroy()
+	end)
 end
 
 -- 현재 총 코인 수 반환
