@@ -42,6 +42,9 @@ export type PlayerController = typeof(setmetatable(
 		-- Z축 고정
 		alignPosition: AlignPosition?,
 
+		-- 속도 제어
+		_linearVelocity: LinearVelocity?,
+
 		-- 연결
 		_connections: { RBXScriptConnection },
 		_gameConnection: RBXScriptConnection?, -- Heartbeat 게임 루프 연결
@@ -75,6 +78,8 @@ function PlayerController.new(player: Player, character: Model): PlayerControlle
 
 		alignPosition = nil,
 
+		_linearVelocity = nil,
+
 		_connections = {},
 		_gameConnection = nil,
 
@@ -83,6 +88,7 @@ function PlayerController.new(player: Player, character: Model): PlayerControlle
 
 	self:_setupZAxisConstraint()
 	self:_setupPhysics()
+	self:_setupLinearVelocity()
 
 	return self
 end
@@ -105,6 +111,9 @@ function PlayerController:StartGame()
 
 	-- 속도 완전 초기화
 	self.humanoidRootPart.AssemblyLinearVelocity = Vector3.zero
+	if self._linearVelocity then
+		self._linearVelocity.VectorVelocity = Vector3.zero
+	end
 
 	-- RunService 루프 시작 (새 연결)
 	self._gameConnection = RunService.Heartbeat:Connect(function(deltaTime: number)
@@ -138,6 +147,9 @@ function PlayerController:StopGame()
 
 	-- 속도 완전 정지
 	self.humanoidRootPart.AssemblyLinearVelocity = Vector3.zero
+	if self._linearVelocity then
+		self._linearVelocity.VectorVelocity = Vector3.zero
+	end
 
 	print(`[PlayerController] Game stopped for {self.player.Name}`)
 end
@@ -169,9 +181,15 @@ function PlayerController:UpdateCharacter(newCharacter: Model)
 		self.alignPosition = nil
 	end
 
+	if self._linearVelocity then
+		self._linearVelocity:Destroy()
+		self._linearVelocity = nil
+	end
+
 	-- 물리 및 제약 조건 재설정
 	self:_setupZAxisConstraint()
 	self:_setupPhysics()
+	self:_setupLinearVelocity()
 
 	print("[PlayerController] Character updated after respawn")
 end
@@ -189,6 +207,29 @@ function PlayerController:_setupZAxisConstraint()
 	self.alignPosition = nil
 
 	print("[PlayerController] Z-axis constraint set up (velocity-based)")
+end
+
+-- LinearVelocity 설정 (X축 이동 제어)
+function PlayerController:_setupLinearVelocity()
+	local attachment = self.humanoidRootPart:FindFirstChild("ZAxisAttachment")
+	if not attachment then
+		attachment = Instance.new("Attachment")
+		attachment.Name = "ZAxisAttachment"
+		attachment.Parent = self.humanoidRootPart
+	end
+
+	-- LinearVelocity로 X축 속도만 제어 (Y는 물리 엔진, Z는 0)
+	local linearVelocity = Instance.new("LinearVelocity")
+	linearVelocity.Name = "RunnerVelocity"
+	linearVelocity.Attachment0 = attachment
+	linearVelocity.RelativeTo = Enum.ActuatorRelativeTo.World
+	linearVelocity.MaxForce = 50000 -- 강한 힘으로 속도 유지
+	linearVelocity.VectorVelocity = Vector3.zero -- 초기 속도 0
+	linearVelocity.Parent = self.humanoidRootPart
+
+	self._linearVelocity = linearVelocity
+
+	print("[PlayerController] LinearVelocity set up")
 end
 
 -- 물리 설정
@@ -252,17 +293,20 @@ function PlayerController:_updateSpeed()
 	self.currentSpeed = minSpeed + (maxSpeed - minSpeed) * easedT
 end
 
--- 전진 이동 (AssemblyLinearVelocity 사용)
+-- 전진 이동 (LinearVelocity constraint 사용)
 function PlayerController:_moveForward()
+	if not self._linearVelocity then
+		return
+	end
+
 	local targetSpeedX = self.currentSpeed * self.speedMultiplier
 
 	-- 속도 상한선 (버그 방지)
 	local maxSpeed = GameConstants.PHYSICS.SPEED_MAX
 	targetSpeedX = math.min(targetSpeedX, maxSpeed)
 
-	-- 현재 Y 속도 유지 (중력/점프), X 설정, Z는 0으로 고정
-	local currentVel = self.humanoidRootPart.AssemblyLinearVelocity
-	self.humanoidRootPart.AssemblyLinearVelocity = Vector3.new(targetSpeedX, currentVel.Y, 0)
+	-- LinearVelocity로 X축 속도 설정 (Y는 물리 엔진이 처리, Z는 0)
+	self._linearVelocity.VectorVelocity = Vector3.new(targetSpeedX, 0, 0)
 
 	-- Z축 위치 보정 (드리프트 방지)
 	local pos = self.humanoidRootPart.Position
@@ -451,10 +495,7 @@ end
 -- 정리
 function PlayerController:Destroy()
 	-- 게임 루프 연결 해제
-	if self._gameConnection then
-		self._gameConnection:Disconnect()
-		self._gameConnection = nil
-	end
+	self:_cleanupGameConnection()
 
 	-- 영구 연결 (Z축 고정 등) 해제
 	for _, connection in self._connections do
@@ -464,6 +505,10 @@ function PlayerController:Destroy()
 
 	if self.alignPosition then
 		self.alignPosition:Destroy()
+	end
+
+	if self._linearVelocity then
+		self._linearVelocity:Destroy()
 	end
 end
 
