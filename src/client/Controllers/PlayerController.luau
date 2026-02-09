@@ -284,13 +284,14 @@ function PlayerController:_checkGrounded()
 	local currentVelY = self.humanoidRootPart.AssemblyLinearVelocity.Y
 
 	-- 바닥 감지: Raycast 히트 또는 Y 위치가 충분히 낮음
+	-- Y 속도 조건 완화: 위로 강하게 올라가는 중이 아니면 바닥 판정
 	if result then
-		-- Raycast로 바닥 감지
+		-- Raycast로 바닥 감지 (거리 3.0 이하이고 위로 빠르게 올라가지 않으면)
 		local distanceToGround = result.Distance
-		self.isGrounded = distanceToGround < 2.8 and currentVelY <= 0.1
+		self.isGrounded = distanceToGround < 3.0 and currentVelY < 5.0
 	else
-		-- Raycast 실패 시 Y 위치로 판정
-		self.isGrounded = currentY <= GROUND_HEIGHT + 0.5 and currentVelY <= 0.1
+		-- Raycast 실패 시 Y 위치로 판정 (조건 완화)
+		self.isGrounded = currentY <= GROUND_HEIGHT + 1.0 and currentVelY < 5.0
 	end
 
 	-- 착지 시
@@ -326,9 +327,9 @@ function PlayerController:Jump()
 		return
 	end
 
-	-- 점프 쿨다운 (연타 방지)
+	-- 점프 쿨다운 (연타 방지) - 0.1초로 단축
 	local now = tick()
-	if now - self._lastJumpTime < 0.15 then
+	if now - self._lastJumpTime < 0.1 then
 		return
 	end
 
