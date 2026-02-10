@@ -43,10 +43,13 @@ function LobbyService:Initialize()
 	-- 동물 NPC 생성
 	self:_createLobbyNPCs()
 
+	-- 리더보드 간판 생성
+	self:_createLeaderboard()
+
 	-- 스폰 포인트 설정
 	self:_setupSpawnPoint()
 
-	print("[LobbyService] Lobby initialized with decorations and NPCs")
+	print("[LobbyService] Lobby initialized with decorations, NPCs, and leaderboard")
 end
 
 -- 로비 바닥 생성
@@ -353,6 +356,169 @@ function LobbyService:_createShop()
 	particles.Speed = NumberRange.new(2, 4)
 	particles.SpreadAngle = Vector2.new(180, 180)
 	particles.Parent = shopRoof
+end
+
+-- 리더보드 간판 생성
+function LobbyService:_createLeaderboard()
+	if not lobbyFolder then
+		return
+	end
+
+	local leaderboardPos = GameConstants.LOBBY.LEADERBOARD_POSITION
+
+	-- 리더보드 기둥 (왼쪽)
+	local pillarLeft = Instance.new("Part")
+	pillarLeft.Name = "LeaderboardPillarL"
+	pillarLeft.Size = Vector3.new(1, 14, 1)
+	pillarLeft.Position = leaderboardPos + Vector3.new(-6, 7, 0)
+	pillarLeft.Anchored = true
+	pillarLeft.CanCollide = true
+	pillarLeft.Color = Color3.fromRGB(50, 50, 60)
+	pillarLeft.Material = Enum.Material.Metal
+	pillarLeft.Parent = lobbyFolder
+
+	-- 리더보드 기둥 (오른쪽)
+	local pillarRight = Instance.new("Part")
+	pillarRight.Name = "LeaderboardPillarR"
+	pillarRight.Size = Vector3.new(1, 14, 1)
+	pillarRight.Position = leaderboardPos + Vector3.new(6, 7, 0)
+	pillarRight.Anchored = true
+	pillarRight.CanCollide = true
+	pillarRight.Color = Color3.fromRGB(50, 50, 60)
+	pillarRight.Material = Enum.Material.Metal
+	pillarRight.Parent = lobbyFolder
+
+	-- 리더보드 배경 (검은색 보드)
+	local boardBackground = Instance.new("Part")
+	boardBackground.Name = "LeaderboardBackground"
+	boardBackground.Size = Vector3.new(12, 12, 0.5)
+	boardBackground.Position = leaderboardPos + Vector3.new(0, 8, 0)
+	boardBackground.Anchored = true
+	boardBackground.CanCollide = false
+	boardBackground.Color = Color3.fromRGB(20, 20, 30)
+	boardBackground.Material = Enum.Material.SmoothPlastic
+	boardBackground.Parent = lobbyFolder
+
+	-- 리더보드 테두리 (금색 네온)
+	local boardBorder = Instance.new("Part")
+	boardBorder.Name = "LeaderboardBorder"
+	boardBorder.Size = Vector3.new(12.5, 12.5, 0.3)
+	boardBorder.Position = leaderboardPos + Vector3.new(0, 8, -0.2)
+	boardBorder.Anchored = true
+	boardBorder.CanCollide = false
+	boardBorder.Color = Color3.fromRGB(255, 215, 0)
+	boardBorder.Material = Enum.Material.Neon
+	boardBorder.Parent = lobbyFolder
+
+	-- SurfaceGui로 리더보드 내용 표시
+	local surfaceGui = Instance.new("SurfaceGui")
+	surfaceGui.Name = "LeaderboardGui"
+	surfaceGui.Face = Enum.NormalId.Front
+	surfaceGui.CanvasSize = Vector2.new(600, 600)
+	surfaceGui.Parent = boardBackground
+
+	-- 타이틀
+	local titleLabel = Instance.new("TextLabel")
+	titleLabel.Name = "Title"
+	titleLabel.Size = UDim2.new(1, 0, 0, 70)
+	titleLabel.Position = UDim2.new(0, 0, 0, 10)
+	titleLabel.BackgroundTransparency = 1
+	titleLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
+	titleLabel.TextSize = 50
+	titleLabel.Font = Enum.Font.GothamBlack
+	titleLabel.Text = "LEADERBOARD"
+	titleLabel.Parent = surfaceGui
+
+	-- 순위 컨테이너
+	local rankContainer = Instance.new("Frame")
+	rankContainer.Name = "RankContainer"
+	rankContainer.Size = UDim2.new(1, -40, 0, 480)
+	rankContainer.Position = UDim2.new(0, 20, 0, 85)
+	rankContainer.BackgroundTransparency = 1
+	rankContainer.Parent = surfaceGui
+
+	-- 10개의 순위 슬롯 미리 생성
+	for i = 1, 10 do
+		local rankFrame = Instance.new("Frame")
+		rankFrame.Name = `Rank{i}`
+		rankFrame.Size = UDim2.new(1, 0, 0, 45)
+		rankFrame.Position = UDim2.new(0, 0, 0, (i - 1) * 48)
+		rankFrame.BackgroundTransparency = 1
+		rankFrame.Parent = rankContainer
+
+		-- 순위별 색상
+		local rankColors = {
+			[1] = Color3.fromRGB(255, 215, 0), -- 금
+			[2] = Color3.fromRGB(192, 192, 192), -- 은
+			[3] = Color3.fromRGB(205, 127, 50), -- 동
+		}
+		local textColor = rankColors[i] or Color3.fromRGB(255, 255, 255)
+
+		-- 순위 번호
+		local rankLabel = Instance.new("TextLabel")
+		rankLabel.Name = "RankNum"
+		rankLabel.Size = UDim2.new(0, 60, 1, 0)
+		rankLabel.Position = UDim2.new(0, 0, 0, 0)
+		rankLabel.BackgroundTransparency = 1
+		rankLabel.TextColor3 = textColor
+		rankLabel.TextSize = 32
+		rankLabel.Font = Enum.Font.GothamBold
+		rankLabel.Text = `#{i}`
+		rankLabel.TextXAlignment = Enum.TextXAlignment.Left
+		rankLabel.Parent = rankFrame
+
+		-- 이름
+		local nameLabel = Instance.new("TextLabel")
+		nameLabel.Name = "PlayerName"
+		nameLabel.Size = UDim2.new(0, 280, 1, 0)
+		nameLabel.Position = UDim2.new(0, 70, 0, 0)
+		nameLabel.BackgroundTransparency = 1
+		nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+		nameLabel.TextSize = 28
+		nameLabel.Font = Enum.Font.GothamBold
+		nameLabel.Text = "---"
+		nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+		nameLabel.TextTruncate = Enum.TextTruncate.AtEnd
+		nameLabel.Parent = rankFrame
+
+		-- 점수
+		local scoreLabel = Instance.new("TextLabel")
+		scoreLabel.Name = "Score"
+		scoreLabel.Size = UDim2.new(0, 150, 1, 0)
+		scoreLabel.Position = UDim2.new(1, -160, 0, 0)
+		scoreLabel.BackgroundTransparency = 1
+		scoreLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
+		scoreLabel.TextSize = 28
+		scoreLabel.Font = Enum.Font.GothamBold
+		scoreLabel.Text = "0"
+		scoreLabel.TextXAlignment = Enum.TextXAlignment.Right
+		scoreLabel.Parent = rankFrame
+	end
+
+	-- 트로피 장식 (상단)
+	local trophy = Instance.new("Part")
+	trophy.Name = "Trophy"
+	trophy.Size = Vector3.new(2, 3, 1)
+	trophy.Position = leaderboardPos + Vector3.new(0, 15, -0.5)
+	trophy.Anchored = true
+	trophy.CanCollide = false
+	trophy.Color = Color3.fromRGB(255, 215, 0)
+	trophy.Material = Enum.Material.Neon
+	trophy.Parent = lobbyFolder
+
+	print("[LobbyService] Leaderboard display created")
+end
+
+-- 리더보드 트리거 가져오기
+function LobbyService:GetLeaderboardGui(): SurfaceGui?
+	if not lobbyFolder then
+		return nil
+	end
+	local board = lobbyFolder:FindFirstChild("LeaderboardBackground") :: BasePart?
+	if board then
+		return board:FindFirstChild("LeaderboardGui") :: SurfaceGui?
+	end
+	return nil
 end
 
 -- 장식 코인 생성 (회전)

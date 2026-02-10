@@ -176,6 +176,74 @@ RemoteEvents.LeaderboardRequest.OnServerEvent:Connect(function(player: Player)
 	})
 end)
 
+-- 로비 리더보드 간판 업데이트
+function LeaderboardService:UpdateLobbyDisplay()
+	-- LobbyService에서 SurfaceGui 가져오기
+	local lobby = workspace:FindFirstChild("Lobby")
+	if not lobby then
+		return
+	end
+
+	local boardBackground = lobby:FindFirstChild("LeaderboardBackground") :: BasePart?
+	if not boardBackground then
+		return
+	end
+
+	local surfaceGui = boardBackground:FindFirstChild("LeaderboardGui") :: SurfaceGui?
+	if not surfaceGui then
+		return
+	end
+
+	local rankContainer = surfaceGui:FindFirstChild("RankContainer") :: Frame?
+	if not rankContainer then
+		return
+	end
+
+	-- 리더보드 데이터 가져오기
+	local leaderboard = self:GetLeaderboard(10)
+
+	-- 각 순위 슬롯 업데이트
+	for i = 1, 10 do
+		local rankFrame = rankContainer:FindFirstChild(`Rank{i}`) :: Frame?
+		if not rankFrame then
+			continue
+		end
+
+		local nameLabel = rankFrame:FindFirstChild("PlayerName") :: TextLabel?
+		local scoreLabel = rankFrame:FindFirstChild("Score") :: TextLabel?
+
+		if leaderboard[i] then
+			local entry = leaderboard[i]
+			if nameLabel then
+				nameLabel.Text = entry.name
+			end
+			if scoreLabel then
+				scoreLabel.Text = tostring(entry.score)
+			end
+		else
+			if nameLabel then
+				nameLabel.Text = "---"
+			end
+			if scoreLabel then
+				scoreLabel.Text = "0"
+			end
+		end
+	end
+
+	print("[LeaderboardService] Lobby display updated")
+end
+
+-- 주기적 업데이트 (30초마다)
+task.spawn(function()
+	-- 초기 대기 (LobbyService가 먼저 초기화되도록)
+	task.wait(3)
+
+	while true do
+		LeaderboardService:UpdateLobbyDisplay()
+		task.wait(30)
+	end
+end)
+
 print("[LeaderboardService] Initialized")
 
 return LeaderboardService
