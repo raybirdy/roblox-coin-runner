@@ -76,6 +76,7 @@ local TutorialController = require(script.Controllers.TutorialController)
 local MusicController = require(script.Controllers.MusicController)
 local ShopController = require(script.Controllers.ShopController)
 local SpeedEffectController = require(script.Controllers.SpeedEffectController)
+local LeaderboardController = require(script.Controllers.LeaderboardController)
 
 -- 컨트롤러 인스턴스 생성
 local inputController = InputController.new()
@@ -90,12 +91,16 @@ local tutorialController = TutorialController.new()
 local musicController = MusicController.new()
 local shopController = ShopController.new(player)
 local speedEffectController = SpeedEffectController.new(player)
+local leaderboardController = LeaderboardController.new(player)
 
 -- 배경 음악 시작
 musicController:Start()
 
 -- 초기 로비 모드 설정 (자유 회전 허용)
 playerController:SetLobbyMode()
+
+-- 리더보드 표시 (로비에서)
+leaderboardController:Show()
 
 -- 플레이어 데이터 로드 시 UI 업데이트
 RemoteEvents.PlayerDataLoaded.OnClientEvent:Connect(function(data)
@@ -118,6 +123,9 @@ RemoteEvents.ReturnToLobby.OnClientEvent:Connect(function()
 
 	-- PlayerController 로비 모드 (자유 회전)
 	playerController:SetLobbyMode()
+
+	-- 리더보드 표시
+	leaderboardController:Show()
 end)
 
 -- 포탈 진입 안내 (서버에서 포탈 감지 시)
@@ -181,6 +189,7 @@ RemoteEvents.GameStart.OnClientEvent:Connect(function(data)
 	-- 1. UI 전환: 로비 UI 숨기고 게임 UI 표시
 	uiController:HideGameOver()
 	uiController:HideLobbyUI()
+	leaderboardController:Hide()
 
 	-- 2. 컨트롤 전환: 기본 이동 비활성화
 	disableDefaultControls()
@@ -293,4 +302,4 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 end)
 
 print("[Client] Coin Runner Client Ready")
-print("[Client] Controllers initialized: Input, Player, Coin, Life, UI, Powerup, Camera, NPC, Tutorial, Music, Shop, SpeedEffect")
+print("[Client] Controllers initialized: Input, Player, Coin, Life, UI, Powerup, Camera, NPC, Tutorial, Music, Shop, SpeedEffect, Leaderboard")
