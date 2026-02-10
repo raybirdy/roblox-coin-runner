@@ -24,10 +24,14 @@ local PlayerGui = player:WaitForChild("PlayerGui")
 local controlModule = require(player.PlayerScripts:WaitForChild("PlayerModule"):WaitForChild("ControlModule"))
 
 local function disableDefaultControls()
+	-- 현재 캐릭터의 humanoid 가져오기
+	local currentCharacter = player.Character
+	local currentHumanoid = currentCharacter and currentCharacter:FindFirstChild("Humanoid") :: Humanoid?
+
 	-- 기본 점프 버튼 비활성화
-	if humanoid then
-		humanoid.JumpHeight = 0 -- 기본 점프 비활성화 (커스텀 점프 사용)
-		humanoid.AutoRotate = false -- 게임 중에는 자동 회전 비활성화
+	if currentHumanoid then
+		currentHumanoid.JumpHeight = 0 -- 기본 점프 비활성화 (커스텀 점프 사용)
+		currentHumanoid.AutoRotate = false -- 게임 중에는 자동 회전 비활성화
 	end
 
 	-- 기본 이동 조이스틱 비활성화 (모바일)
@@ -39,15 +43,19 @@ local function disableDefaultControls()
 end
 
 local function enableDefaultControls()
+	-- 현재 캐릭터의 humanoid 가져오기
+	local currentCharacter = player.Character
+	local currentHumanoid = currentCharacter and currentCharacter:FindFirstChild("Humanoid") :: Humanoid?
+
 	-- 기본 이동 활성화 (로비용)
 	if controlModule then
 		controlModule:Enable()
 	end
 
-	-- 점프는 로비에서도 허용
-	if humanoid then
-		humanoid.JumpHeight = 7.2 -- Roblox 기본값
-		humanoid.AutoRotate = true -- 카메라 방향으로 캐릭터 회전
+	-- 점프는 로비에서도 허용, 카메라 방향으로 캐릭터 회전
+	if currentHumanoid then
+		currentHumanoid.JumpHeight = 7.2 -- Roblox 기본값
+		currentHumanoid.AutoRotate = true -- 카메라 방향으로 캐릭터 회전
 	end
 
 	print("[Client] Default Roblox controls enabled (lobby mode)")
