@@ -300,12 +300,9 @@ end
 
 -- 스폰 포인트 설정
 function LobbyService:_setupSpawnPoint()
-	print("[LobbyService] Setting up spawn point...")
-
 	-- 기존 SpawnLocation 모두 제거 (충돌 방지)
 	for _, child in workspace:GetChildren() do
 		if child:IsA("SpawnLocation") then
-			print(`[LobbyService] Removing existing SpawnLocation: {child.Name} at {child.Position}`)
 			child:Destroy()
 		end
 	end
@@ -322,8 +319,6 @@ function LobbyService:_setupSpawnPoint()
 	spawnLocation.Transparency = 1 -- 숨김
 	spawnLocation.Neutral = true
 	spawnLocation.Duration = 0 -- 즉시 스폰
-
-	print(`[LobbyService] Spawn point set to lobby position: {GameConstants.LOBBY.SPAWN_POSITION}`)
 end
 
 -- 포탈 트리거 가져오기

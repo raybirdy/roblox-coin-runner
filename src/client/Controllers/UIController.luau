@@ -868,21 +868,12 @@ end
 
 -- 로비 UI 표시
 function UIController:ShowLobbyUI()
-	print("[UIController] ShowLobbyUI called")
-
 	-- 로비 안내 표시
 	if self._lobbyGuide then
 		self._lobbyGuide.Visible = true
-		print("[UIController] LobbyGuide shown")
-	else
-		print("[UIController] WARNING: LobbyGuide is nil!")
 	end
-
 	if self._highScoreDisplay then
 		self._highScoreDisplay.Visible = true
-		print("[UIController] HighScoreDisplay shown")
-	else
-		print("[UIController] WARNING: HighScoreDisplay is nil!")
 	end
 
 	-- 게임 UI 숨기기
@@ -908,14 +899,11 @@ function UIController:ShowLobbyUI()
 	-- 시작 메뉴 숨기기 (더 이상 사용 안 함)
 	if self._startMenuFrame then
 		self._startMenuFrame.Visible = false
-		print("[UIController] StartMenuFrame hidden")
 	end
 end
 
 -- 로비 UI 숨기기 (게임 시작 시)
 function UIController:HideLobbyUI()
-	print("[UIController] HideLobbyUI called - switching to game UI")
-
 	-- 로비 UI 숨기기
 	if self._lobbyGuide then
 		self._lobbyGuide.Visible = false
@@ -927,14 +915,12 @@ function UIController:HideLobbyUI()
 	-- 게임 UI 표시
 	if self._scoreLabel then
 		self._scoreLabel.Visible = true
-		print("[UIController] ScoreLabel shown")
 	end
 	if self._coinsLabel then
 		self._coinsLabel.Visible = true
 	end
 	if self._livesContainer then
 		self._livesContainer.Visible = true
-		print("[UIController] LivesContainer shown")
 	end
 	if self._distanceLabel then
 		self._distanceLabel.Visible = true

@@ -158,7 +158,6 @@ end)
 -- 서버로부터 게임 시작 응답 수신
 RemoteEvents.GameStart.OnClientEvent:Connect(function(data)
 	print("[Client] Game start confirmed by server")
-	print(`[Client] Start position: {data.startPosition}`)
 
 	-- 1. UI 전환: 로비 UI 숨기고 게임 UI 표시
 	uiController:HideGameOver()
@@ -182,27 +181,22 @@ RemoteEvents.GameStart.OnClientEvent:Connect(function(data)
 			hrp.Anchored = true
 			hrp.AssemblyLinearVelocity = Vector3.zero
 			hrp.CFrame = CFrame.new(startPos) * CFrame.Angles(0, math.rad(-90), 0)
-			print(`[Client] Teleported to: {startPos}`)
 		end
 	end
 
 	-- 6. 카운트다운 후 게임 시작
 	uiController:ShowCountdown(function()
-		print("[Client] Countdown finished, starting game...")
-
 		-- 고정 해제
 		local charNow = player.Character
 		if charNow then
 			local hrp = charNow:FindFirstChild("HumanoidRootPart") :: BasePart?
 			if hrp then
 				hrp.Anchored = false
-				print("[Client] Player unanchored")
 			end
 		end
 
 		-- 게임 시작!
 		playerController:StartGame()
-		print("[Client] PlayerController:StartGame() called")
 
 		-- 튜토리얼 시작 (필요 시)
 		if data.startTutorial then
