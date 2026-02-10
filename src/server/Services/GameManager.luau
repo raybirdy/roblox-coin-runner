@@ -494,6 +494,17 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 			print(`[GameManager] Player {player.Name} collected {coinData.type} coin (+{actualValue}){coinMultiplier > 1 and " (x2)" or ""}`)
 		end
 
+		-- 낙하 감지 (Y < -10 이면 낙사)
+		local FALL_THRESHOLD = -10
+		if hrp.Position.Y < FALL_THRESHOLD then
+			print(`[GameManager] Player {player.Name} fell off! Y: {hrp.Position.Y}`)
+
+			-- 즉시 게임 오버 (낙사는 부활 불가)
+			session.lives = 0
+			GameManager.EndGame(player)
+			continue
+		end
+
 		-- 장애물 충돌 체크
 		local isSliding = hrp:GetAttribute("IsSliding") or false
 		local hitObstacle = obstacleService:CheckObstacleCollision(hrp.Position, isSliding)
