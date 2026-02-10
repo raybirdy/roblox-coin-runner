@@ -150,31 +150,41 @@ function ObstacleService:_spawnObstacle(position: Vector3, obstacleType: string)
 			arrow.Parent = workspace
 		end
 
-		-- "JUMP!" 텍스트
+		-- "JUMP!" 텍스트 (잘 보이도록 배경 추가)
 		local signPart = Instance.new("Part")
 		signPart.Name = "JumpSign"
 		signPart.Size = Vector3.new(0.3, 2, 4)
-		signPart.Position = position + Vector3.new(-5, 5, 0)
+		signPart.Position = position + Vector3.new(-6, 6, 0)
 		signPart.Transparency = 1
 		signPart.CanCollide = false
 		signPart.Anchored = true
 		signPart.Parent = workspace
 
 		local billboard = Instance.new("BillboardGui")
-		billboard.Size = UDim2.new(0, 100, 0, 50)
+		billboard.Size = UDim2.new(0, 140, 0, 70)
 		billboard.Adornee = signPart
+		billboard.AlwaysOnTop = true
 		billboard.Parent = signPart
+
+		-- 배경 프레임 (검은색 반투명)
+		local bgFrame = Instance.new("Frame")
+		bgFrame.Size = UDim2.new(1, 0, 1, 0)
+		bgFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+		bgFrame.BackgroundTransparency = 0.3
+		bgFrame.BorderSizePixel = 3
+		bgFrame.BorderColor3 = Color3.fromRGB(255, 100, 100)
+		bgFrame.Parent = billboard
 
 		local jumpText = Instance.new("TextLabel")
 		jumpText.Size = UDim2.new(1, 0, 1, 0)
 		jumpText.BackgroundTransparency = 1
 		jumpText.Text = "JUMP!"
-		jumpText.TextColor3 = Color3.fromRGB(255, 200, 200)
-		jumpText.TextSize = 28
-		jumpText.Font = Enum.Font.GothamBold
-		jumpText.TextStrokeTransparency = 0.5
-		jumpText.TextStrokeColor3 = Color3.fromRGB(100, 0, 0)
-		jumpText.Parent = billboard
+		jumpText.TextColor3 = Color3.fromRGB(255, 255, 255) -- 흰색 글자
+		jumpText.TextSize = 36
+		jumpText.Font = Enum.Font.GothamBlack
+		jumpText.TextStrokeTransparency = 0
+		jumpText.TextStrokeColor3 = Color3.fromRGB(200, 0, 0) -- 빨간 테두리
+		jumpText.Parent = bgFrame
 	elseif obstacleType == "Tunnel" then
 		-- 공중 장애물 (슬라이드로 통과)
 		-- 아래 공간은 비워두고 위쪽만 장애물로 생성
@@ -206,32 +216,33 @@ function ObstacleService:_spawnObstacle(position: Vector3, obstacleType: string)
 			arrow.Parent = workspace
 		end
 
-		-- "SLIDE!" 텍스트 표시
+		-- "SLIDE!" 텍스트 표시 (잘 보이도록 배경 추가)
 		local signPart = Instance.new("Part")
 		signPart.Name = "SlideSign"
 		signPart.Size = Vector3.new(0.5, 3, 6)
-		signPart.Position = position + Vector3.new(-8, 4, 0)
-		signPart.Color = Color3.fromRGB(0, 100, 200)
-		signPart.Material = Enum.Material.SmoothPlastic
+		signPart.Position = position + Vector3.new(-10, 5, 0)
+		signPart.Transparency = 1
 		signPart.CanCollide = false
 		signPart.Anchored = true
 		signPart.Parent = workspace
 
 		local billboard = Instance.new("BillboardGui")
-		billboard.Size = UDim2.new(0, 120, 0, 60)
+		billboard.Size = UDim2.new(0, 140, 0, 70)
 		billboard.Adornee = signPart
+		billboard.AlwaysOnTop = true
 		billboard.Parent = signPart
 
-		local slideText = Instance.new("TextLabel")
-		slideText.Size = UDim2.new(1, 0, 1, 0)
-		slideText.BackgroundTransparency = 1
-		slideText.Text = "SLIDE!"
-		slideText.TextColor3 = Color3.fromRGB(100, 220, 255)
-		slideText.TextSize = 32
-		slideText.Font = Enum.Font.GothamBold
-		slideText.TextStrokeTransparency = 0.5
-		slideText.TextStrokeColor3 = Color3.fromRGB(0, 50, 100)
-		slideText.Parent = billboard
+		-- 배경 프레임 (검은색 반투명)
+		local bgFrame = Instance.new("Frame")
+		bgFrame.Size = UDim2.new(1, 0, 1, 0)
+		bgFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+		bgFrame.BackgroundTransparency = 0.3
+		bgFrame.BorderSizePixel = 3
+		bgFrame.BorderColor3 = Color3.fromRGB(0, 150, 255)
+		bgFrame.Parent = billboard
+
+		slideText.TextStrokeColor3 = Color3.fromRGB(0, 100, 200) -- 파란 테두리
+		slideText.Parent = bgFrame
 
 		-- 터널 통과 영역 표시 (초록색 바닥 라인)
 		local passZone = Instance.new("Part")
@@ -331,30 +342,41 @@ function ObstacleService:_spawnObstacle(position: Vector3, obstacleType: string)
 			edge.Parent = workspace
 		end
 
-		-- "DANGER!" 경고
+		-- "DANGER!" 경고 (잘 보이도록 배경 추가)
 		local dangerSign = Instance.new("Part")
 		dangerSign.Name = "GapDanger"
 		dangerSign.Size = Vector3.new(0.3, 2, 4)
-		dangerSign.Position = position + Vector3.new(-gapWidth / 2 - 3, 3, 0)
+		dangerSign.Position = position + Vector3.new(-gapWidth / 2 - 4, 4, 0)
 		dangerSign.Transparency = 1
 		dangerSign.CanCollide = false
 		dangerSign.Anchored = true
 		dangerSign.Parent = workspace
 
 		local billboard = Instance.new("BillboardGui")
-		billboard.Size = UDim2.new(0, 100, 0, 50)
+		billboard.Size = UDim2.new(0, 140, 0, 70)
 		billboard.Adornee = dangerSign
+		billboard.AlwaysOnTop = true
 		billboard.Parent = dangerSign
+
+		-- 배경 프레임 (검은색 반투명)
+		local bgFrame = Instance.new("Frame")
+		bgFrame.Size = UDim2.new(1, 0, 1, 0)
+		bgFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+		bgFrame.BackgroundTransparency = 0.3
+		bgFrame.BorderSizePixel = 3
+		bgFrame.BorderColor3 = Color3.fromRGB(255, 150, 0)
+		bgFrame.Parent = billboard
 
 		local dangerText = Instance.new("TextLabel")
 		dangerText.Size = UDim2.new(1, 0, 1, 0)
 		dangerText.BackgroundTransparency = 1
-		dangerText.Text = "JUMP!"
-		dangerText.TextColor3 = Color3.fromRGB(255, 150, 50)
-		dangerText.TextSize = 24
-		dangerText.Font = Enum.Font.GothamBold
-		dangerText.TextStrokeTransparency = 0.5
-		dangerText.Parent = billboard
+		dangerText.Text = "DANGER!"
+		dangerText.TextColor3 = Color3.fromRGB(255, 255, 255) -- 흰색 글자
+		dangerText.TextSize = 32
+		dangerText.Font = Enum.Font.GothamBlack
+		dangerText.TextStrokeTransparency = 0
+		dangerText.TextStrokeColor3 = Color3.fromRGB(255, 100, 0) -- 주황 테두리
+		dangerText.Parent = bgFrame
 	else
 		obstacle = Instance.new("Part")
 		obstacle.Size = Vector3.new(2, 4, 8)

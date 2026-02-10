@@ -173,20 +173,31 @@ function ChunkService:_spawnStartZone()
 
 	local billboard = Instance.new("BillboardGui")
 	billboard.Name = "StartText"
-	billboard.Size = UDim2.new(0, 200, 0, 100)
-	billboard.StudsOffset = Vector3.new(0, 2, 0)
+	billboard.Size = UDim2.new(0, 200, 0, 90)
+	billboard.StudsOffset = Vector3.new(0, 3, 0)
 	billboard.Adornee = startSign
+	billboard.AlwaysOnTop = true
 	billboard.Parent = startSign
+
+	-- 배경 프레임 (검은색 반투명)
+	local bgFrame = Instance.new("Frame")
+	bgFrame.Size = UDim2.new(1, 0, 1, 0)
+	bgFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	bgFrame.BackgroundTransparency = 0.3
+	bgFrame.BorderSizePixel = 4
+	bgFrame.BorderColor3 = Color3.fromRGB(0, 255, 0)
+	bgFrame.Parent = billboard
 
 	local textLabel = Instance.new("TextLabel")
 	textLabel.Size = UDim2.new(1, 0, 1, 0)
 	textLabel.BackgroundTransparency = 1
 	textLabel.Text = "START"
-	textLabel.TextColor3 = Color3.fromRGB(255, 255, 0)
+	textLabel.TextColor3 = Color3.fromRGB(255, 255, 255) -- 흰색 글자
 	textLabel.TextSize = 48
-	textLabel.Font = Enum.Font.GothamBold
-	textLabel.TextStrokeTransparency = 0.5
-	textLabel.Parent = billboard
+	textLabel.Font = Enum.Font.GothamBlack
+	textLabel.TextStrokeTransparency = 0
+	textLabel.TextStrokeColor3 = Color3.fromRGB(0, 150, 0) -- 초록 테두리
+	textLabel.Parent = bgFrame
 
 	-- 장식용 체커 패턴 (출발선 주변)
 	for i = 1, 6 do
