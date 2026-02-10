@@ -6,6 +6,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerStorage = game:GetService("ServerStorage")
 
 local GameConstants = require(ReplicatedStorage.Shared.Constants.GameConstants)
+local ProceduralChunkGenerator = require(script.Parent.ProceduralChunkGenerator)
 
 local ChunkService = {}
 ChunkService.__index = ChunkService
@@ -214,19 +215,22 @@ end
 -- 다음 청크 생성
 function ChunkService:SpawnNextChunk(): Model?
 	local difficulty = self:_selectDifficulty()
-	local chunkTemplate = self:_getChunkTemplate(difficulty, self._lastChunkEndHeight)
-
-	if not chunkTemplate then
-		warn(`[ChunkService] No suitable chunk template found for difficulty={difficulty}, height={self._lastChunkEndHeight}`)
-		return nil
-	end
-
-	-- 청크 복사 및 배치
-	local chunk = chunkTemplate:Clone()
 	local spawnPosition = self:_calculateSpawnPosition()
 
-	chunk:SetPrimaryPartCFrame(CFrame.new(spawnPosition))
-	chunk.Parent = workspace
+	-- 템플릿 찾기 시도
+	local chunkTemplate = self:_getChunkTemplate(difficulty, self._lastChunkEndHeight)
+	local chunk: Model
+
+	if chunkTemplate then
+		-- 템플릿 기반 생성
+		chunk = chunkTemplate:Clone()
+		chunk:SetPrimaryPartCFrame(CFrame.new(spawnPosition))
+		chunk.Parent = workspace
+	else
+		-- 절차적 생성 (템플릿 없을 때)
+		chunk = ProceduralChunkGenerator.Generate(difficulty, self._lastChunkEndHeight, spawnPosition)
+		print(`[ChunkService] Generated procedural chunk: {difficulty}`)
+	end
 
 	-- 청크 데이터 저장
 	local startHeight = chunk:GetAttribute("StartHeight") or "LOW"
