@@ -7,6 +7,13 @@ print("[Server] Coin Runner Server Starting...")
 local ServerScriptService = game:GetService("ServerScriptService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+-- 기본 Baseplate 제거 (우리만의 바닥 사용)
+local baseplate = workspace:FindFirstChild("Baseplate")
+if baseplate then
+	baseplate:Destroy()
+	print("[Server] Removed default Baseplate")
+end
+
 -- 공유 모듈 로드
 local GameConstants = require(ReplicatedStorage.Shared.Constants.GameConstants)
 local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)

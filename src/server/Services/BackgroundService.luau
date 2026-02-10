@@ -17,6 +17,7 @@ export type BackgroundService = typeof(setmetatable(
 		_crowdNPCs: { Model },
 		_scenery: { Model },
 		_speedLines: { Part },
+		_floorParts: { Part }, -- 게임 바닥 파트들
 		_isRunning: boolean,
 		_playerPosition: Vector3,
 	},
@@ -29,6 +30,7 @@ function BackgroundService.new(): BackgroundService
 		_crowdNPCs = {},
 		_scenery = {},
 		_speedLines = {},
+		_floorParts = {},
 		_isRunning = false,
 		_playerPosition = Vector3.zero,
 	}, BackgroundService)
@@ -58,6 +60,9 @@ function BackgroundService:AddBackgroundForChunk(chunkPosition: Vector3, chunkLe
 
 	local bgConfig = GameConstants.BACKGROUND
 
+	-- 게임 바닥 생성
+	self:_spawnFloorForChunk(chunkPosition, chunkLength)
+
 	-- 관중석 NPC 생성 (양쪽)
 	self:_spawnCrowdForChunk(chunkPosition, chunkLength)
 
@@ -68,6 +73,46 @@ function BackgroundService:AddBackgroundForChunk(chunkPosition: Vector3, chunkLe
 	if bgConfig.HILLS_ENABLED then
 		self:_spawnHillForChunk(chunkPosition, chunkLength)
 	end
+end
+
+-- 게임 바닥 생성 (청크별)
+function BackgroundService:_spawnFloorForChunk(chunkPosition: Vector3, chunkLength: number)
+	if not self._backgroundFolder then
+		return
+	end
+
+	-- 바닥 생성 (플레이어 Z 위치 중심으로)
+	local floor = Instance.new("Part")
+	floor.Name = "GameFloor"
+	floor.Size = Vector3.new(chunkLength + 5, 1, 40) -- 청크 길이 + 여유, 넓이 40
+	floor.Position = Vector3.new(
+		chunkPosition.X + chunkLength / 2,
+		0.5, -- Y = 0.5 (바닥)
+		GameConstants.PLAYER.Z_POSITION
+	)
+	floor.Anchored = true
+	floor.CanCollide = true
+	floor.Color = Color3.fromRGB(80, 80, 90) -- 진한 회색 (도로 느낌)
+	floor.Material = Enum.Material.Concrete
+	floor.Parent = self._backgroundFolder
+
+	-- 도로 중앙선 (장식)
+	local centerLine = Instance.new("Part")
+	centerLine.Name = "CenterLine"
+	centerLine.Size = Vector3.new(chunkLength, 0.1, 0.5)
+	centerLine.Position = Vector3.new(
+		chunkPosition.X + chunkLength / 2,
+		1.05,
+		GameConstants.PLAYER.Z_POSITION
+	)
+	centerLine.Anchored = true
+	centerLine.CanCollide = false
+	centerLine.Color = Color3.fromRGB(255, 200, 50) -- 노란색 중앙선
+	centerLine.Material = Enum.Material.Neon
+	centerLine.Parent = self._backgroundFolder
+
+	table.insert(self._floorParts, floor)
+	table.insert(self._floorParts, centerLine)
 end
 
 -- 관중석 NPC 생성
@@ -461,6 +506,22 @@ function BackgroundService:_cleanupOldBackground()
 		item:Destroy()
 		table.remove(self._scenery, index)
 	end
+
+	-- 바닥 정리
+	local floorToRemove = {}
+	for i, floor in self._floorParts do
+		local distance = self._playerPosition.X - floor.Position.X
+		if distance > deleteDistance then
+			table.insert(floorToRemove, i)
+		end
+	end
+
+	for i = #floorToRemove, 1, -1 do
+		local index = floorToRemove[i]
+		local floor = self._floorParts[index]
+		floor:Destroy()
+		table.remove(self._floorParts, index)
+	end
 end
 
 -- 게임 종료 시 정리
@@ -482,6 +543,14 @@ function BackgroundService:Cleanup()
 		end
 	end
 	self._scenery = {}
+
+	-- 바닥 정리
+	for _, floor in self._floorParts do
+		if floor and floor.Parent then
+			floor:Destroy()
+		end
+	end
+	self._floorParts = {}
 
 	-- 폴더 정리
 	if self._backgroundFolder then
