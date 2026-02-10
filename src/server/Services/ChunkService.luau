@@ -30,6 +30,7 @@ export type ChunkService = typeof(setmetatable(
 		_obstacleService: any?, -- ObstacleService 참조 (장애물 생성용)
 		_powerupService: any?, -- PowerupService 참조 (파워업 생성용)
 		_npcService: any?, -- NPCService 참조 (NPC 생성용)
+		_backgroundService: any?, -- BackgroundService 참조 (배경 생성용)
 		_startZone: Model?, -- 시작 구역 (출발선 포함)
 	},
 	ChunkService
@@ -46,6 +47,7 @@ function ChunkService.new(): ChunkService
 		_obstacleService = nil,
 		_powerupService = nil,
 		_npcService = nil,
+		_backgroundService = nil,
 		_startZone = nil,
 	}, ChunkService)
 
@@ -72,6 +74,11 @@ end
 -- NPCService 설정 (GameManager에서 호출)
 function ChunkService:SetNPCService(npcService: any)
 	self._npcService = npcService
+end
+
+-- BackgroundService 설정 (GameManager에서 호출)
+function ChunkService:SetBackgroundService(backgroundService: any)
+	self._backgroundService = backgroundService
 end
 
 -- 청크 템플릿 로드
@@ -259,6 +266,11 @@ function ChunkService:SpawnNextChunk(): Model?
 	-- 청크 내 NPC 생성 (NPC 청크만)
 	if self._npcService and difficulty == "NPC" then
 		self._npcService:SpawnNPCInChunk(chunk, difficulty)
+	end
+
+	-- 청크 배경 요소 생성 (관중, 나무, 언덕)
+	if self._backgroundService then
+		self._backgroundService:AddBackgroundForChunk(spawnPosition, GameConstants.CHUNK.LENGTH)
 	end
 
 	print(`[ChunkService] Spawned chunk #{self._chunkCounter}: {difficulty} at {spawnPosition}`)

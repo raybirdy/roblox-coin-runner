@@ -334,4 +334,70 @@ GameConstants.NPC = {
 	},
 }
 
+-- 게임 배경 시스템
+GameConstants.BACKGROUND = {
+	-- 관중석 위치 (양쪽)
+	CROWD_Z_FRONT = 20, -- 앞쪽 관중석
+	CROWD_Z_BACK = -20, -- 뒤쪽 관중석
+	CROWD_Y = 0, -- 관중 높이
+
+	-- 관중 NPC 설정
+	CROWD_SPACING = 15, -- 관중 간격 (studs)
+	CROWD_PER_CHUNK = 4, -- 청크당 관중 수 (양쪽 합)
+
+	-- 관중 타입
+	CROWD_TYPES = {
+		{
+			name = "Rabbit",
+			color = Color3.fromRGB(255, 200, 200),
+			animation = "jump",
+		},
+		{
+			name = "Bear",
+			color = Color3.fromRGB(180, 130, 80),
+			animation = "wave",
+		},
+		{
+			name = "Cat",
+			color = Color3.fromRGB(255, 180, 100),
+			animation = "sit",
+		},
+		{
+			name = "Penguin",
+			color = Color3.fromRGB(60, 60, 70),
+			animation = "waddle",
+		},
+		{
+			name = "Dog",
+			color = Color3.fromRGB(210, 180, 140),
+			animation = "wag",
+		},
+	},
+
+	-- 배경 나무/언덕
+	SCENERY_Z = -35, -- 먼 배경 위치
+	TREES_PER_CHUNK = 2, -- 청크당 나무 수
+	HILLS_ENABLED = true, -- 언덕 배경
+
+	-- 스피드 라인
+	SPEED_LINES = {
+		ENABLED = true,
+		Z_RANGE = { -8, 8 }, -- Z 위치 범위
+		Y_RANGE = { 2, 12 }, -- Y 위치 범위
+		COUNT = 6, -- 동시 표시 개수
+		LENGTH = 8, -- 라인 길이
+		SPEED_MULTIPLIER = 2.0, -- 플레이어 속도 대비 배율
+	},
+
+	-- 캐릭터 Trail
+	TRAIL = {
+		ENABLED = true,
+		LIFETIME = 0.3, -- 잔상 지속 시간
+		MIN_LENGTH = 0.5, -- 최소 길이
+		WIDTH = { 1.5, 0.5 }, -- 시작/끝 너비
+		COLOR = Color3.fromRGB(255, 255, 200), -- 색상
+		TRANSPARENCY = { 0.3, 1 }, -- 시작/끝 투명도
+	},
+}
+
 return GameConstants

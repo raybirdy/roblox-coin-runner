@@ -17,6 +17,7 @@ local TutorialService = require(script.Parent.TutorialService)
 local PlayerDataService = require(script.Parent.PlayerDataService)
 local LobbyService = require(script.Parent.LobbyService)
 local ShopService = require(script.Parent.ShopService)
+local BackgroundService = require(script.Parent.BackgroundService)
 
 local GameManager = {}
 
@@ -29,6 +30,7 @@ type GameSession = {
 	powerupService: any, -- PowerupService
 	npcService: any, -- NPCService
 	tutorialService: any, -- TutorialService
+	backgroundService: any, -- BackgroundService
 	isPlaying: boolean,
 	startTime: number,
 	startPosition: Vector3, -- 시작 위치 (거리 계산용)
@@ -102,6 +104,7 @@ RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { 
 	local obstacleService = ObstacleService.new(player)
 	local powerupService = PowerupService.new(player)
 	local npcService = NPCService.new(player)
+	local backgroundService = BackgroundService.new()
 
 	-- 시작 위치 설정 및 플레이어 텔레포트
 	local startPosition = Vector3.new(0, 2.5, GameConstants.PLAYER.Z_POSITION)
@@ -122,6 +125,7 @@ RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { 
 		powerupService = powerupService,
 		npcService = npcService,
 		tutorialService = globalTutorialService,
+		backgroundService = backgroundService,
 		isPlaying = true,
 		startTime = tick(),
 		startPosition = startPosition,
@@ -134,11 +138,17 @@ RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { 
 
 	activeSessions[player] = session
 
-	-- 청크 서비스에 코인/장애물/파워업/NPC 서비스 연결
+	-- 청크 서비스에 코인/장애물/파워업/NPC/배경 서비스 연결
 	chunkService:SetCoinService(coinService)
 	chunkService:SetObstacleService(obstacleService)
 	chunkService:SetPowerupService(powerupService)
 	chunkService:SetNPCService(npcService)
+	chunkService:SetBackgroundService(backgroundService)
+
+	-- 배경 서비스 시작
+	backgroundService:StartGame()
+
+	-- 청크 서비스 시작
 	chunkService:StartGame()
 
 	-- 파워업 서비스 시작
@@ -380,6 +390,9 @@ function GameManager.EndGame(player: Player)
 	if session.npcService then
 		session.npcService:Destroy()
 	end
+	if session.backgroundService then
+		session.backgroundService:Cleanup()
+	end
 
 	-- 신기록 여부 확인
 	local isNewRecord = finalScore > 0 and finalScore >= highScore
@@ -433,6 +446,12 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 
 		-- 오래된 청크 정리
 		chunkService:CleanupOldChunks(hrp.Position)
+
+		-- 배경 요소 정리 (플레이어 위치 업데이트)
+		local backgroundService = session.backgroundService
+		if backgroundService then
+			backgroundService:UpdatePlayerPosition(hrp.Position)
+		end
 
 		-- 새 청크 생성 필요 시
 		if chunkService:CheckSpawnNewChunk(hrp.Position) then
