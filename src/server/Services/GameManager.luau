@@ -46,7 +46,9 @@ local globalTutorialService = TutorialService.new()
 globalTutorialService:SetPlayerDataService(PlayerDataService)
 
 -- 로비 초기화
+print("[GameManager] Initializing LobbyService...")
 LobbyService:Initialize()
+print("[GameManager] LobbyService initialized")
 
 -- 포탈 터치 감지 설정
 local function setupPortalDetection()

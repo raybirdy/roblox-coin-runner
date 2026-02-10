@@ -300,16 +300,22 @@ end
 
 -- 스폰 포인트 설정
 function LobbyService:_setupSpawnPoint()
-	-- 기존 SpawnLocation 찾기 또는 생성
-	local spawnLocation = workspace:FindFirstChild("SpawnLocation") :: SpawnLocation?
+	print("[LobbyService] Setting up spawn point...")
 
-	if not spawnLocation then
-		spawnLocation = Instance.new("SpawnLocation")
-		spawnLocation.Name = "SpawnLocation"
-		spawnLocation.Parent = workspace
+	-- 기존 SpawnLocation 모두 제거 (충돌 방지)
+	for _, child in workspace:GetChildren() do
+		if child:IsA("SpawnLocation") then
+			print(`[LobbyService] Removing existing SpawnLocation: {child.Name} at {child.Position}`)
+			child:Destroy()
+		end
 	end
 
-	-- 로비 스폰 위치로 이동
+	-- 새 SpawnLocation 생성
+	local spawnLocation = Instance.new("SpawnLocation")
+	spawnLocation.Name = "LobbySpawnLocation"
+	spawnLocation.Parent = workspace
+
+	-- 로비 스폰 위치로 설정
 	spawnLocation.Position = GameConstants.LOBBY.SPAWN_POSITION
 	spawnLocation.Anchored = true
 	spawnLocation.CanCollide = false
@@ -317,7 +323,7 @@ function LobbyService:_setupSpawnPoint()
 	spawnLocation.Neutral = true
 	spawnLocation.Duration = 0 -- 즉시 스폰
 
-	print("[LobbyService] Spawn point set to lobby position")
+	print(`[LobbyService] Spawn point set to lobby position: {GameConstants.LOBBY.SPAWN_POSITION}`)
 end
 
 -- 포탈 트리거 가져오기
