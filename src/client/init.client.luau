@@ -19,8 +19,10 @@ local humanoid = character:WaitForChild("Humanoid") :: Humanoid
 print("[Client] Game Constants Loaded")
 print("[Client] Remote Events Connected")
 
--- Roblox 기본 UI 비활성화
+-- Roblox 기본 컨트롤 관리
 local PlayerGui = player:WaitForChild("PlayerGui")
+local controlModule = require(player.PlayerScripts:WaitForChild("PlayerModule"):WaitForChild("ControlModule"))
+
 local function disableDefaultControls()
 	-- 기본 점프 버튼 비활성화
 	if humanoid then
@@ -28,7 +30,6 @@ local function disableDefaultControls()
 	end
 
 	-- 기본 이동 조이스틱 비활성화 (모바일)
-	local controlModule = require(player.PlayerScripts:WaitForChild("PlayerModule"):WaitForChild("ControlModule"))
 	if controlModule then
 		controlModule:Disable()
 	end
@@ -36,10 +37,22 @@ local function disableDefaultControls()
 	print("[Client] Default Roblox controls disabled")
 end
 
--- 초기 캐릭터 설정 (컨트롤러 정의 후 리스폰 핸들러 추가)
+local function enableDefaultControls()
+	-- 기본 이동 활성화 (로비용)
+	if controlModule then
+		controlModule:Enable()
+	end
 
--- 초기 설정
-disableDefaultControls()
+	-- 점프는 로비에서도 허용
+	if humanoid then
+		humanoid.JumpHeight = 7.2 -- Roblox 기본값
+	end
+
+	print("[Client] Default Roblox controls enabled (lobby mode)")
+end
+
+-- 초기 설정: 로비에서는 기본 이동 허용
+enableDefaultControls()
 
 -- 클라이언트 컨트롤러 로드
 local InputController = require(script.Controllers.InputController)
@@ -82,6 +95,9 @@ end)
 RemoteEvents.ReturnToLobby.OnClientEvent:Connect(function()
 	print("[Client] Returned to lobby")
 	uiController:ShowLobbyUI()
+
+	-- 로비에서는 기본 이동 활성화
+	enableDefaultControls()
 end)
 
 -- 포탈 진입 안내 (서버에서 포탈 감지 시)
@@ -106,7 +122,8 @@ tutorialController:SetNPCController(npcController)
 player.CharacterAdded:Connect(function(newCharacter: Model)
 	character = newCharacter
 	humanoid = character:WaitForChild("Humanoid") :: Humanoid
-	disableDefaultControls()
+	-- 리스폰 시 로비 모드로 (기본 이동 활성화)
+	enableDefaultControls()
 	playerController:UpdateCharacter(newCharacter)
 	cameraController:UpdateCharacter(newCharacter)
 	print("[Client] Character respawned, controllers updated")
@@ -139,6 +156,9 @@ RemoteEvents.GameStart.OnClientEvent:Connect(function(data)
 	print("[Client] Game start confirmed by server")
 	uiController:HideGameOver() -- 게임 오버 화면 숨기기
 	uiController:HideLobbyUI() -- 로비 UI 숨기기
+
+	-- 게임 시작 시 기본 컨트롤 비활성화 (자동 달리기 모드)
+	disableDefaultControls()
 
 	-- 카운트다운 전 플레이어 고정 (이전 게임 상태 완전 정리)
 	playerController:StopGame()
