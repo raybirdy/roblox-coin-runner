@@ -27,6 +27,7 @@ local function disableDefaultControls()
 	-- 기본 점프 버튼 비활성화
 	if humanoid then
 		humanoid.JumpHeight = 0 -- 기본 점프 비활성화 (커스텀 점프 사용)
+		humanoid.AutoRotate = false -- 게임 중에는 자동 회전 비활성화
 	end
 
 	-- 기본 이동 조이스틱 비활성화 (모바일)
@@ -46,6 +47,7 @@ local function enableDefaultControls()
 	-- 점프는 로비에서도 허용
 	if humanoid then
 		humanoid.JumpHeight = 7.2 -- Roblox 기본값
+		humanoid.AutoRotate = true -- 카메라 방향으로 캐릭터 회전
 	end
 
 	print("[Client] Default Roblox controls enabled (lobby mode)")

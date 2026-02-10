@@ -185,6 +185,12 @@ function GameManager.ReturnToLobby(player: Player)
 	RemoteEvents.ReturnToLobby:FireClient(player)
 end
 
+-- 클라이언트에서 로비 복귀 요청
+RemoteEvents.ReturnToLobby.OnServerEvent:Connect(function(player: Player)
+	print(`[GameManager] Return to lobby requested by {player.Name}`)
+	GameManager.ReturnToLobby(player)
+end)
+
 -- 상점 터치 감지 설정
 local function setupShopDetection()
 	local shopTrigger = LobbyService:GetShopTrigger()
@@ -391,11 +397,7 @@ function GameManager.EndGame(player: Player)
 	activeSessions[player] = nil
 
 	print(`[GameManager] Game ended for {player.Name}: Score={finalScore}, Coins={earnedCoins}, HighScore={highScore}`)
-
-	-- 로비로 복귀 (딜레이 후)
-	task.delay(0.5, function()
-		GameManager.ReturnToLobby(player)
-	end)
+	-- 로비 복귀는 Play Again 버튼 클릭 시 처리됨
 end
 
 -- 플레이어 퇴장 시 세션 정리

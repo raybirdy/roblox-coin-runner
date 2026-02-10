@@ -844,15 +844,15 @@ function UIController:OnPlayButtonClicked()
 	RemoteEvents.GameStart:FireServer()
 end
 
--- 재시작 버튼 클릭 처리 (이제 로비로 복귀)
+-- 재시작 버튼 클릭 처리 (로비로 복귀 요청)
 function UIController:OnRestartButtonClicked()
-	print("[UIController] Restart button clicked - returning to lobby")
+	print("[UIController] Restart button clicked - requesting return to lobby")
 
 	-- 게임 오버 화면 숨기기
 	self:HideGameOver()
 
-	-- 로비 UI 표시 (서버에서 ReturnToLobby가 호출됨)
-	self:ShowLobbyUI()
+	-- 서버에 로비 복귀 요청
+	RemoteEvents.ReturnToLobby:FireServer()
 end
 
 -- 부활 버튼 클릭 처리
