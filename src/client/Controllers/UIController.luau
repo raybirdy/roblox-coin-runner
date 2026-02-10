@@ -507,24 +507,24 @@ function UIController:_createUI()
 	countdownLabel.Parent = screenGui
 	self._countdownLabel = countdownLabel
 
-	-- 로비 안내 텍스트 (화면 하단)
+	-- 로비 안내 텍스트 (화면 하단) - 개선된 가시성
 	local lobbyGuide = Instance.new("Frame")
 	lobbyGuide.Name = "LobbyGuide"
-	lobbyGuide.Size = UDim2.new(0, 400, 0, 60)
-	lobbyGuide.Position = UDim2.new(0.5, -200, 1, -100)
-	lobbyGuide.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-	lobbyGuide.BackgroundTransparency = 0.4
+	lobbyGuide.Size = UDim2.new(0, 450, 0, 70)
+	lobbyGuide.Position = UDim2.new(0.5, -225, 1, -110)
+	lobbyGuide.BackgroundColor3 = Color3.fromRGB(0, 50, 0)
+	lobbyGuide.BackgroundTransparency = 0.15
 	lobbyGuide.Visible = false
 	lobbyGuide.Parent = screenGui
 	self._lobbyGuide = lobbyGuide
 
 	local guideCorner = Instance.new("UICorner")
-	guideCorner.CornerRadius = UDim.new(0, 12)
+	guideCorner.CornerRadius = UDim.new(0, 16)
 	guideCorner.Parent = lobbyGuide
 
 	local guideStroke = Instance.new("UIStroke")
 	guideStroke.Color = Color3.fromRGB(0, 255, 100)
-	guideStroke.Thickness = 2
+	guideStroke.Thickness = 3
 	guideStroke.Parent = lobbyGuide
 
 	local guideLabel = Instance.new("TextLabel")
@@ -532,57 +532,71 @@ function UIController:_createUI()
 	guideLabel.Size = UDim2.new(1, 0, 1, 0)
 	guideLabel.BackgroundTransparency = 1
 	guideLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-	guideLabel.TextSize = 22
-	guideLabel.Font = Enum.Font.GothamBold
+	guideLabel.TextSize = 26
+	guideLabel.Font = Enum.Font.GothamBlack
 	guideLabel.Text = "포탈로 들어가서 게임 시작!"
+	guideLabel.TextStrokeTransparency = 0
+	guideLabel.TextStrokeColor3 = Color3.fromRGB(0, 100, 0)
 	guideLabel.Parent = lobbyGuide
 
-	-- 로비 최고 점수 표시 (화면 상단)
+	-- 로비 최고 점수 표시 (화면 상단) - 개선된 가시성
 	local highScoreDisplay = Instance.new("Frame")
 	highScoreDisplay.Name = "HighScoreDisplay"
-	highScoreDisplay.Size = UDim2.new(0, 250, 0, 100)
-	highScoreDisplay.Position = UDim2.new(0.5, -125, 0, 10)
-	highScoreDisplay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-	highScoreDisplay.BackgroundTransparency = 0.4
+	highScoreDisplay.Size = UDim2.new(0, 300, 0, 130)
+	highScoreDisplay.Position = UDim2.new(0.5, -150, 0, 10)
+	highScoreDisplay.BackgroundColor3 = Color3.fromRGB(20, 20, 40)
+	highScoreDisplay.BackgroundTransparency = 0.15
 	highScoreDisplay.Visible = false
 	highScoreDisplay.Parent = screenGui
 	self._highScoreDisplay = highScoreDisplay
 
 	local hsCorner = Instance.new("UICorner")
-	hsCorner.CornerRadius = UDim.new(0, 12)
+	hsCorner.CornerRadius = UDim.new(0, 16)
 	hsCorner.Parent = highScoreDisplay
+
+	-- 테두리 추가 (금색)
+	local hsStroke = Instance.new("UIStroke")
+	hsStroke.Color = Color3.fromRGB(255, 215, 0)
+	hsStroke.Thickness = 3
+	hsStroke.Parent = highScoreDisplay
 
 	local hsTitle = Instance.new("TextLabel")
 	hsTitle.Name = "Title"
-	hsTitle.Size = UDim2.new(1, 0, 0, 30)
-	hsTitle.Position = UDim2.new(0, 0, 0, 5)
+	hsTitle.Size = UDim2.new(1, 0, 0, 35)
+	hsTitle.Position = UDim2.new(0, 0, 0, 8)
 	hsTitle.BackgroundTransparency = 1
 	hsTitle.TextColor3 = Color3.fromRGB(255, 215, 0)
-	hsTitle.TextSize = 18
-	hsTitle.Font = Enum.Font.GothamBold
+	hsTitle.TextSize = 24
+	hsTitle.Font = Enum.Font.GothamBlack
 	hsTitle.Text = "MY BEST"
+	hsTitle.TextStrokeTransparency = 0.5
+	hsTitle.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
 	hsTitle.Parent = highScoreDisplay
 
 	local hsScore = Instance.new("TextLabel")
 	hsScore.Name = "Score"
-	hsScore.Size = UDim2.new(1, 0, 0, 30)
-	hsScore.Position = UDim2.new(0, 0, 0, 35)
+	hsScore.Size = UDim2.new(1, 0, 0, 35)
+	hsScore.Position = UDim2.new(0, 0, 0, 45)
 	hsScore.BackgroundTransparency = 1
 	hsScore.TextColor3 = Color3.fromRGB(255, 255, 255)
-	hsScore.TextSize = 24
+	hsScore.TextSize = 28
 	hsScore.Font = Enum.Font.GothamBold
 	hsScore.Text = "Score: 0"
+	hsScore.TextStrokeTransparency = 0.3
+	hsScore.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
 	hsScore.Parent = highScoreDisplay
 
 	local hsCoins = Instance.new("TextLabel")
 	hsCoins.Name = "Coins"
-	hsCoins.Size = UDim2.new(1, 0, 0, 25)
-	hsCoins.Position = UDim2.new(0, 0, 0, 68)
+	hsCoins.Size = UDim2.new(1, 0, 0, 30)
+	hsCoins.Position = UDim2.new(0, 0, 0, 85)
 	hsCoins.BackgroundTransparency = 1
 	hsCoins.TextColor3 = Color3.fromRGB(255, 215, 0)
-	hsCoins.TextSize = 16
-	hsCoins.Font = Enum.Font.Gotham
+	hsCoins.TextSize = 20
+	hsCoins.Font = Enum.Font.GothamBold
 	hsCoins.Text = "Coins: 0"
+	hsCoins.TextStrokeTransparency = 0.3
+	hsCoins.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
 	hsCoins.Parent = highScoreDisplay
 
 	print("[UIController] UI created")

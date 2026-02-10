@@ -219,33 +219,45 @@ function LobbyService:_createTitle()
 	neonBorder.Parent = lobbyFolder
 end
 
--- 상점 부스 생성
+-- 상점 부스 생성 (개선된 가시성)
 function LobbyService:_createShop()
 	if not lobbyFolder then
 		return
 	end
 
-	-- 상점 부스
+	-- 상점 부스 (더 밝은 보라색)
 	local shopBooth = Instance.new("Part")
 	shopBooth.Name = "ShopBooth"
 	shopBooth.Size = Vector3.new(15, 10, 8)
 	shopBooth.Position = GameConstants.LOBBY.SHOP_POSITION
 	shopBooth.Anchored = true
 	shopBooth.CanCollide = true
-	shopBooth.Color = Color3.fromRGB(128, 0, 128) -- 보라색
+	shopBooth.Color = Color3.fromRGB(180, 80, 200) -- 더 밝은 보라색
 	shopBooth.Material = Enum.Material.SmoothPlastic
 	shopBooth.Parent = lobbyFolder
 
-	-- 상점 지붕
+	-- 상점 지붕 (네온 효과)
 	local shopRoof = Instance.new("Part")
 	shopRoof.Name = "ShopRoof"
 	shopRoof.Size = Vector3.new(17, 1, 10)
 	shopRoof.Position = GameConstants.LOBBY.SHOP_POSITION + Vector3.new(0, 5.5, 0)
 	shopRoof.Anchored = true
 	shopRoof.CanCollide = false
-	shopRoof.Color = Color3.fromRGB(200, 100, 200)
-	shopRoof.Material = Enum.Material.SmoothPlastic
+	shopRoof.Color = Color3.fromRGB(255, 150, 255)
+	shopRoof.Material = Enum.Material.Neon
 	shopRoof.Parent = lobbyFolder
+
+	-- 상점 테두리 (금색 네온)
+	local shopBorder = Instance.new("Part")
+	shopBorder.Name = "ShopBorder"
+	shopBorder.Size = Vector3.new(16, 10.5, 8.5)
+	shopBorder.Position = GameConstants.LOBBY.SHOP_POSITION
+	shopBorder.Anchored = true
+	shopBorder.CanCollide = false
+	shopBorder.Color = Color3.fromRGB(255, 215, 0)
+	shopBorder.Material = Enum.Material.Neon
+	shopBorder.Transparency = 0.7
+	shopBorder.Parent = lobbyFolder
 
 	-- 상점 터치 영역 (투명)
 	local shopTrigger = Instance.new("Part")
@@ -257,32 +269,90 @@ function LobbyService:_createShop()
 	shopTrigger.Transparency = 1
 	shopTrigger.Parent = lobbyFolder
 
-	-- 상점 간판
-	local shopSign = Instance.new("Part")
-	shopSign.Name = "ShopSign"
-	shopSign.Size = Vector3.new(12, 4, 1)
-	shopSign.Position = GameConstants.LOBBY.SHOP_POSITION + Vector3.new(0, 8, -5)
-	shopSign.Anchored = true
-	shopSign.CanCollide = false
-	shopSign.Color = Color3.fromRGB(255, 215, 0) -- 금색
-	shopSign.Material = Enum.Material.Neon
-	shopSign.Parent = lobbyFolder
+	-- 상점 간판 배경 (검은색)
+	local shopSignBg = Instance.new("Part")
+	shopSignBg.Name = "ShopSignBg"
+	shopSignBg.Size = Vector3.new(14, 5, 0.5)
+	shopSignBg.Position = GameConstants.LOBBY.SHOP_POSITION + Vector3.new(0, 9, -5)
+	shopSignBg.Anchored = true
+	shopSignBg.CanCollide = false
+	shopSignBg.Color = Color3.fromRGB(20, 20, 30)
+	shopSignBg.Material = Enum.Material.SmoothPlastic
+	shopSignBg.Parent = lobbyFolder
+
+	-- 상점 간판 테두리 (금색 네온)
+	local shopSignBorder = Instance.new("Part")
+	shopSignBorder.Name = "ShopSignBorder"
+	shopSignBorder.Size = Vector3.new(14.5, 5.5, 0.3)
+	shopSignBorder.Position = GameConstants.LOBBY.SHOP_POSITION + Vector3.new(0, 9, -5.2)
+	shopSignBorder.Anchored = true
+	shopSignBorder.CanCollide = false
+	shopSignBorder.Color = Color3.fromRGB(255, 215, 0)
+	shopSignBorder.Material = Enum.Material.Neon
+	shopSignBorder.Parent = lobbyFolder
+
+	-- 상점 BillboardGui (3D 공간에서 잘 보이게)
+	local billboard = Instance.new("BillboardGui")
+	billboard.Name = "ShopBillboard"
+	billboard.Size = UDim2.new(0, 250, 0, 100)
+	billboard.StudsOffset = Vector3.new(0, 10, 0)
+	billboard.Adornee = shopBooth
+	billboard.AlwaysOnTop = true
+	billboard.Parent = shopBooth
+
+	-- 배경 프레임
+	local bgFrame = Instance.new("Frame")
+	bgFrame.Size = UDim2.new(1, 0, 1, 0)
+	bgFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 40)
+	bgFrame.BackgroundTransparency = 0.15
+	bgFrame.Parent = billboard
+
+	local bgCorner = Instance.new("UICorner")
+	bgCorner.CornerRadius = UDim.new(0, 12)
+	bgCorner.Parent = bgFrame
+
+	local bgStroke = Instance.new("UIStroke")
+	bgStroke.Color = Color3.fromRGB(255, 215, 0)
+	bgStroke.Thickness = 3
+	bgStroke.Parent = bgFrame
 
 	-- 상점 텍스트
-	local surfaceGui = Instance.new("SurfaceGui")
-	surfaceGui.Name = "ShopGui"
-	surfaceGui.Face = Enum.NormalId.Front
-	surfaceGui.CanvasSize = Vector2.new(400, 100)
-	surfaceGui.Parent = shopSign
-
 	local shopLabel = Instance.new("TextLabel")
-	shopLabel.Size = UDim2.new(1, 0, 1, 0)
+	shopLabel.Size = UDim2.new(1, 0, 0.6, 0)
+	shopLabel.Position = UDim2.new(0, 0, 0, 5)
 	shopLabel.BackgroundTransparency = 1
-	shopLabel.TextColor3 = Color3.fromRGB(0, 0, 0)
-	shopLabel.TextSize = 50
-	shopLabel.Font = Enum.Font.GothamBold
+	shopLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
+	shopLabel.TextSize = 42
+	shopLabel.Font = Enum.Font.GothamBlack
 	shopLabel.Text = "SHOP"
-	shopLabel.Parent = surfaceGui
+	shopLabel.TextStrokeTransparency = 0
+	shopLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+	shopLabel.Parent = bgFrame
+
+	-- 안내 텍스트
+	local hintLabel = Instance.new("TextLabel")
+	hintLabel.Size = UDim2.new(1, 0, 0.35, 0)
+	hintLabel.Position = UDim2.new(0, 0, 0.6, 0)
+	hintLabel.BackgroundTransparency = 1
+	hintLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+	hintLabel.TextSize = 16
+	hintLabel.Font = Enum.Font.Gotham
+	hintLabel.Text = "Touch to open"
+	hintLabel.Parent = bgFrame
+
+	-- 상점 파티클 효과
+	local particles = Instance.new("ParticleEmitter")
+	particles.Name = "ShopSparkle"
+	particles.Color = ColorSequence.new(Color3.fromRGB(255, 215, 100))
+	particles.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.3),
+		NumberSequenceKeypoint.new(1, 0),
+	})
+	particles.Lifetime = NumberRange.new(1, 2)
+	particles.Rate = 8
+	particles.Speed = NumberRange.new(2, 4)
+	particles.SpreadAngle = Vector2.new(180, 180)
+	particles.Parent = shopRoof
 end
 
 -- 장식 코인 생성 (회전)
