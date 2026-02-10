@@ -83,7 +83,16 @@ end
 function CameraController:SetLobbyMode()
 	self._isGameMode = false
 	self._camera.CameraType = Enum.CameraType.Custom
-	self._camera.CameraSubject = self._character:FindFirstChild("Humanoid")
+
+	-- 현재 캐릭터의 Humanoid를 CameraSubject로 설정
+	local currentCharacter = self._player.Character
+	if currentCharacter then
+		local humanoid = currentCharacter:FindFirstChild("Humanoid")
+		if humanoid then
+			self._camera.CameraSubject = humanoid
+		end
+	end
+
 	print("[CameraController] Switched to lobby mode (default camera)")
 end
 
