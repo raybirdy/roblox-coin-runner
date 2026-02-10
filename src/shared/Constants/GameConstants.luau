@@ -37,7 +37,7 @@ GameConstants.CHUNK = {
 	MAX_LOADED = 6, -- 동시 로드 최대 청크 수 (더 많이 미리 로드)
 	MIN_AHEAD_DISTANCE = 200, -- 플레이어 앞에 최소 이 거리만큼 청크 유지 (studs)
 	DELETE_DISTANCE = 100, -- 캐릭터 뒤 이 거리 초과 시 청크 삭제
-	SAFE_ZONE_CHUNKS = 2, -- 시작 안전 구역 (처음 N개 청크는 장애물 없음)
+	SAFE_ZONE_CHUNKS = 4, -- 시작 안전 구역 (처음 4개 청크는 장애물 없음)
 
 	-- 높이 태그
 	HEIGHT_LOW = 0,
@@ -47,21 +47,21 @@ GameConstants.CHUNK = {
 
 -- 난이도별 청크 출현 확률 (시간대별)
 GameConstants.CHUNK_SPAWN_RATES = {
-	-- 0~30초
+	-- 0~30초 (초반 - 매우 쉬움)
 	{
 		maxTime = 30,
-		Easy = 0.70,
-		Normal = 0.10,
+		Easy = 0.80, -- Easy 80%
+		Normal = 0.00,
 		Hard = 0.00,
 		Bonus = 0.15,
 		NPC = 0.05,
 	},
-	-- 30~60초
+	-- 30~60초 (점진적 난이도 상승)
 	{
 		maxTime = 60,
-		Easy = 0.40,
-		Normal = 0.35,
-		Hard = 0.05,
+		Easy = 0.55, -- Easy 55%
+		Normal = 0.25,
+		Hard = 0.00, -- Hard 아직 없음
 		Bonus = 0.10,
 		NPC = 0.10,
 	},

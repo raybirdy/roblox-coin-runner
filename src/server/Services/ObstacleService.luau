@@ -71,18 +71,18 @@ end
 -- 난이도별 장애물 개수 결정
 function ObstacleService:_getObstacleCountForDifficulty(difficulty: string): number
 	if difficulty == "Easy" then
-		return math.random(1, 2) -- 쉬운 청크: 장애물 적음
+		return math.random(0, 1) -- 쉬운 청크: 장애물 거의 없음 (0-1개)
 	elseif difficulty == "Normal" then
-		return math.random(2, 3)
+		return math.random(1, 2) -- 보통: 1-2개
 	elseif difficulty == "Hard" then
-		return math.random(3, 5) -- 어려운 청크: 장애물 많음
+		return math.random(2, 4) -- 어려운 청크: 장애물 많음
 	elseif difficulty == "Bonus" then
-		return math.random(0, 1) -- 보너스는 장애물 거의 없음
+		return 0 -- 보너스는 장애물 없음
 	elseif difficulty == "NPC" then
-		return math.random(1, 2)
+		return math.random(0, 1) -- NPC 청크도 장애물 적게
 	end
 
-	return 2 -- 기본값
+	return 1 -- 기본값
 end
 
 -- 장애물 타입 선택
@@ -129,9 +129,52 @@ function ObstacleService:_spawnObstacle(position: Vector3, obstacleType: string)
 		-- 낮은 벽 (점프로 회피)
 		obstacle = Instance.new("Part")
 		obstacle.Name = "Obstacle_LowWall"
-		obstacle.Size = Vector3.new(2, GameConstants.OBSTACLE.LOW_WALL_HEIGHT, 8) -- 폭×높이×깊이
+		obstacle.Size = Vector3.new(2, GameConstants.OBSTACLE.LOW_WALL_HEIGHT, 10) -- 폭×높이×깊이
 		obstacle.Position = position + Vector3.new(0, GameConstants.OBSTACLE.LOW_WALL_HEIGHT / 2, 0)
-		obstacle.BrickColor = BrickColor.new("Bright red")
+		obstacle.Color = Color3.fromRGB(255, 80, 80) -- 빨간색 (점프 = 빨간색)
+		obstacle.Material = Enum.Material.Neon
+		obstacle.Transparency = 0.1
+
+		-- 점프 안내 화살표 (↑)
+		for i = 1, 2 do
+			local arrow = Instance.new("Part")
+			arrow.Name = `JumpArrow_{i}`
+			arrow.Size = Vector3.new(0.3, 1.2, 1.2)
+			arrow.Position = position + Vector3.new(-3 - i * 1.5, 2 + i * 1.2, 0)
+			arrow.Color = Color3.fromRGB(255, 150, 150)
+			arrow.Material = Enum.Material.Neon
+			arrow.Transparency = 0.3
+			arrow.CanCollide = false
+			arrow.Anchored = true
+			arrow.CFrame = CFrame.new(arrow.Position) * CFrame.Angles(0, 0, math.rad(-45))
+			arrow.Parent = workspace
+		end
+
+		-- "JUMP!" 텍스트
+		local signPart = Instance.new("Part")
+		signPart.Name = "JumpSign"
+		signPart.Size = Vector3.new(0.3, 2, 4)
+		signPart.Position = position + Vector3.new(-5, 5, 0)
+		signPart.Transparency = 1
+		signPart.CanCollide = false
+		signPart.Anchored = true
+		signPart.Parent = workspace
+
+		local billboard = Instance.new("BillboardGui")
+		billboard.Size = UDim2.new(0, 100, 0, 50)
+		billboard.Adornee = signPart
+		billboard.Parent = signPart
+
+		local jumpText = Instance.new("TextLabel")
+		jumpText.Size = UDim2.new(1, 0, 1, 0)
+		jumpText.BackgroundTransparency = 1
+		jumpText.Text = "JUMP!"
+		jumpText.TextColor3 = Color3.fromRGB(255, 200, 200)
+		jumpText.TextSize = 28
+		jumpText.Font = Enum.Font.GothamBold
+		jumpText.TextStrokeTransparency = 0.5
+		jumpText.TextStrokeColor3 = Color3.fromRGB(100, 0, 0)
+		jumpText.Parent = billboard
 	elseif obstacleType == "Tunnel" then
 		-- 공중 장애물 (슬라이드로 통과)
 		-- 아래 공간은 비워두고 위쪽만 장애물로 생성
@@ -140,56 +183,99 @@ function ObstacleService:_spawnObstacle(position: Vector3, obstacleType: string)
 
 		obstacle = Instance.new("Part")
 		obstacle.Name = "Obstacle_Tunnel"
-		obstacle.Size = Vector3.new(3, obstacleHeight, 10)
+		obstacle.Size = Vector3.new(4, obstacleHeight, 12)
 		-- Y 위치: 터널 높이 위에 장애물 배치
 		obstacle.Position = position + Vector3.new(0, tunnelHeight + obstacleHeight / 2, 0)
-		obstacle.BrickColor = BrickColor.new("Bright orange")
+		obstacle.Color = Color3.fromRGB(0, 150, 255) -- 파란색 (슬라이드 = 파란색)
 		obstacle.Material = Enum.Material.Neon
+		obstacle.Transparency = 0.2
 
-		-- 경고 표시 (슬라이드 필요)
-		local warningSign = Instance.new("Part")
-		warningSign.Name = "TunnelWarning"
-		warningSign.Size = Vector3.new(0.5, tunnelHeight - 0.5, 10)
-		warningSign.Position = position + Vector3.new(-3, tunnelHeight / 2, 0)
-		warningSign.Transparency = 0.3
-		warningSign.BrickColor = BrickColor.new("Bright yellow")
-		warningSign.CanCollide = false
-		warningSign.Anchored = true
-		warningSign.Material = Enum.Material.Neon
-		warningSign.Parent = workspace
+		-- ↓↓↓ 아래로 화살표 표시 (슬라이드 안내)
+		for i = 1, 3 do
+			local arrow = Instance.new("Part")
+			arrow.Name = `SlideArrow_{i}`
+			arrow.Size = Vector3.new(0.3, 1.5, 1.5)
+			arrow.Position = position + Vector3.new(-6 - i * 2, 4 - i * 0.5, 0)
+			arrow.Color = Color3.fromRGB(0, 200, 255)
+			arrow.Material = Enum.Material.Neon
+			arrow.Transparency = 0.3
+			arrow.CanCollide = false
+			arrow.Anchored = true
+			-- 아래를 가리키는 화살표 모양
+			arrow.CFrame = CFrame.new(arrow.Position) * CFrame.Angles(0, 0, math.rad(45))
+			arrow.Parent = workspace
+		end
 
-		-- 터널 입구 안내선 (초록색)
-		local tunnelGuide = Instance.new("Part")
-		tunnelGuide.Name = "TunnelGuide"
-		tunnelGuide.Size = Vector3.new(3, 0.3, 10)
-		tunnelGuide.Position = position + Vector3.new(0, tunnelHeight, 0)
-		tunnelGuide.Transparency = 0.5
-		tunnelGuide.BrickColor = BrickColor.new("Bright green")
-		tunnelGuide.CanCollide = false
-		tunnelGuide.Anchored = true
-		tunnelGuide.Material = Enum.Material.Neon
-		tunnelGuide.Parent = workspace
+		-- "SLIDE!" 텍스트 표시
+		local signPart = Instance.new("Part")
+		signPart.Name = "SlideSign"
+		signPart.Size = Vector3.new(0.5, 3, 6)
+		signPart.Position = position + Vector3.new(-8, 4, 0)
+		signPart.Color = Color3.fromRGB(0, 100, 200)
+		signPart.Material = Enum.Material.SmoothPlastic
+		signPart.CanCollide = false
+		signPart.Anchored = true
+		signPart.Parent = workspace
+
+		local billboard = Instance.new("BillboardGui")
+		billboard.Size = UDim2.new(0, 120, 0, 60)
+		billboard.Adornee = signPart
+		billboard.Parent = signPart
+
+		local slideText = Instance.new("TextLabel")
+		slideText.Size = UDim2.new(1, 0, 1, 0)
+		slideText.BackgroundTransparency = 1
+		slideText.Text = "SLIDE!"
+		slideText.TextColor3 = Color3.fromRGB(100, 220, 255)
+		slideText.TextSize = 32
+		slideText.Font = Enum.Font.GothamBold
+		slideText.TextStrokeTransparency = 0.5
+		slideText.TextStrokeColor3 = Color3.fromRGB(0, 50, 100)
+		slideText.Parent = billboard
+
+		-- 터널 통과 영역 표시 (초록색 바닥 라인)
+		local passZone = Instance.new("Part")
+		passZone.Name = "TunnelPassZone"
+		passZone.Size = Vector3.new(6, 0.2, 12)
+		passZone.Position = position + Vector3.new(0, 0.1, 0)
+		passZone.Color = Color3.fromRGB(0, 255, 100)
+		passZone.Material = Enum.Material.Neon
+		passZone.Transparency = 0.5
+		passZone.CanCollide = false
+		passZone.Anchored = true
+		passZone.Parent = workspace
 	elseif obstacleType == "SpikeTrap" then
 		-- 가시 함정 (바닥에 설치, 점프로 회피)
 		obstacle = Instance.new("Part")
 		obstacle.Name = "Obstacle_SpikeTrap"
-		obstacle.Size = Vector3.new(4, 2, 8)
+		obstacle.Size = Vector3.new(5, 2, 10)
 		obstacle.Position = position + Vector3.new(0, 1, 0)
-		obstacle.BrickColor = BrickColor.new("Bright red")
+		obstacle.Color = Color3.fromRGB(255, 50, 50)
 		obstacle.Material = Enum.Material.DiamondPlate
 
 		-- 가시 시각 효과 (상단에 뾰족한 파트들)
-		for i = 1, 3 do
+		for i = 1, 5 do
 			local spike = Instance.new("Part")
 			spike.Name = `Spike{i}`
-			spike.Size = Vector3.new(0.8, 1.5, 0.8)
-			spike.Position = position + Vector3.new(-1.2 + (i - 1) * 1.2, 2.5, 0)
-			spike.BrickColor = BrickColor.new("Really red")
+			spike.Size = Vector3.new(0.6, 2, 0.6)
+			spike.Position = position + Vector3.new(-2 + (i - 1) * 1, 3, (i % 2 - 0.5) * 3)
+			spike.Color = Color3.fromRGB(200, 0, 0)
 			spike.Material = Enum.Material.Metal
 			spike.Anchored = true
 			spike.CanCollide = false
 			spike.Parent = workspace
 		end
+
+		-- 경고 라인 (노란색)
+		local warningLine = Instance.new("Part")
+		warningLine.Name = "SpikeWarning"
+		warningLine.Size = Vector3.new(0.5, 0.3, 12)
+		warningLine.Position = position + Vector3.new(-4, 0.2, 0)
+		warningLine.Color = Color3.fromRGB(255, 200, 0)
+		warningLine.Material = Enum.Material.Neon
+		warningLine.CanCollide = false
+		warningLine.Anchored = true
+		warningLine.Parent = workspace
 
 	elseif obstacleType == "DoubleWall" then
 		-- 이중 벽 (두 번 점프 필요)
@@ -227,10 +313,48 @@ function ObstacleService:_spawnObstacle(position: Vector3, obstacleType: string)
 			GameConstants.OBSTACLE.GAP_WIDTH_MIN,
 			GameConstants.OBSTACLE.GAP_WIDTH_MAX
 		)
-		obstacle.Size = Vector3.new(gapWidth, 1, 8) -- 바닥 구멍
+		obstacle.Size = Vector3.new(gapWidth, 1, 12) -- 바닥 구멍
 		obstacle.Position = position + Vector3.new(0, -5, 0) -- 아래로 내림 (낙사 판정용)
-		obstacle.BrickColor = BrickColor.new("Really black")
-		obstacle.Transparency = 0.5
+		obstacle.Color = Color3.fromRGB(30, 30, 30)
+		obstacle.Transparency = 0.3
+
+		-- 구덩이 테두리 (빨간색 경고)
+		for _, xOffset in { -gapWidth / 2 - 0.3, gapWidth / 2 + 0.3 } do
+			local edge = Instance.new("Part")
+			edge.Name = "GapEdge"
+			edge.Size = Vector3.new(0.5, 1, 12)
+			edge.Position = position + Vector3.new(xOffset, 0.5, 0)
+			edge.Color = Color3.fromRGB(255, 100, 0)
+			edge.Material = Enum.Material.Neon
+			edge.CanCollide = false
+			edge.Anchored = true
+			edge.Parent = workspace
+		end
+
+		-- "DANGER!" 경고
+		local dangerSign = Instance.new("Part")
+		dangerSign.Name = "GapDanger"
+		dangerSign.Size = Vector3.new(0.3, 2, 4)
+		dangerSign.Position = position + Vector3.new(-gapWidth / 2 - 3, 3, 0)
+		dangerSign.Transparency = 1
+		dangerSign.CanCollide = false
+		dangerSign.Anchored = true
+		dangerSign.Parent = workspace
+
+		local billboard = Instance.new("BillboardGui")
+		billboard.Size = UDim2.new(0, 100, 0, 50)
+		billboard.Adornee = dangerSign
+		billboard.Parent = dangerSign
+
+		local dangerText = Instance.new("TextLabel")
+		dangerText.Size = UDim2.new(1, 0, 1, 0)
+		dangerText.BackgroundTransparency = 1
+		dangerText.Text = "JUMP!"
+		dangerText.TextColor3 = Color3.fromRGB(255, 150, 50)
+		dangerText.TextSize = 24
+		dangerText.Font = Enum.Font.GothamBold
+		dangerText.TextStrokeTransparency = 0.5
+		dangerText.Parent = billboard
 	else
 		obstacle = Instance.new("Part")
 		obstacle.Size = Vector3.new(2, 4, 8)
