@@ -52,10 +52,9 @@ local function enableDefaultControls()
 		controlModule:Enable()
 	end
 
-	-- 점프는 로비에서도 허용, 카메라 방향으로 캐릭터 회전
+	-- 점프는 로비에서도 허용
 	if currentHumanoid then
 		currentHumanoid.JumpHeight = 7.2 -- Roblox 기본값
-		currentHumanoid.AutoRotate = true -- 카메라 방향으로 캐릭터 회전
 	end
 
 	print("[Client] Default Roblox controls enabled (lobby mode)")
@@ -93,6 +92,9 @@ local shopController = ShopController.new(player)
 -- 배경 음악 시작
 musicController:Start()
 
+-- 초기 로비 모드 설정 (자유 회전 허용)
+playerController:SetLobbyMode()
+
 -- 플레이어 데이터 로드 시 UI 업데이트
 RemoteEvents.PlayerDataLoaded.OnClientEvent:Connect(function(data)
 	print("[Client] Player data loaded")
@@ -111,6 +113,9 @@ RemoteEvents.ReturnToLobby.OnClientEvent:Connect(function()
 
 	-- 카메라를 로비 모드로 전환 (기본 카메라)
 	cameraController:SetLobbyMode()
+
+	-- PlayerController 로비 모드 (자유 회전)
+	playerController:SetLobbyMode()
 end)
 
 -- 포탈 진입 안내 (서버에서 포탈 감지 시)
@@ -140,6 +145,7 @@ player.CharacterAdded:Connect(function(newCharacter: Model)
 	playerController:UpdateCharacter(newCharacter)
 	cameraController:UpdateCharacter(newCharacter)
 	cameraController:SetLobbyMode() -- 카메라도 로비 모드로
+	playerController:SetLobbyMode() -- PlayerController도 로비 모드로
 	print("[Client] Character respawned, controllers updated")
 end)
 
