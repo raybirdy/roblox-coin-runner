@@ -281,33 +281,56 @@ function UIController:_createUI()
 	highScoreLabel.Text = "🏆 High Score: 0"
 	highScoreLabel.Parent = gameOverFrame
 
-	-- 재시작 버튼
+	-- PLAY AGAIN 버튼 (바로 재시작)
 	local restartButton = Instance.new("TextButton")
 	restartButton.Name = "RestartButton"
-	restartButton.Size = UDim2.new(0, 280, 0, 70)
-	restartButton.Position = UDim2.new(0.5, -140, 0, 340)
+	restartButton.Size = UDim2.new(0, 200, 0, 55)
+	restartButton.Position = UDim2.new(0.5, -210, 0, 340)
 	restartButton.BackgroundColor3 = Color3.fromRGB(0, 180, 0)
 	restartButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-	restartButton.TextSize = 32
+	restartButton.TextSize = 24
 	restartButton.Font = Enum.Font.GothamBold
 	restartButton.Text = "▶ PLAY AGAIN"
 	restartButton.Parent = gameOverFrame
 
-	-- 둥근 모서리
 	local restartCorner = Instance.new("UICorner")
-	restartCorner.CornerRadius = UDim.new(0, 16)
+	restartCorner.CornerRadius = UDim.new(0, 12)
 	restartCorner.Parent = restartButton
 
-	-- 버튼 테두리
 	local restartStroke = Instance.new("UIStroke")
 	restartStroke.Color = Color3.fromRGB(255, 255, 255)
 	restartStroke.Thickness = 2
 	restartStroke.Transparency = 0.5
 	restartStroke.Parent = restartButton
 
-	-- 버튼 클릭 이벤트
 	restartButton.MouseButton1Click:Connect(function()
 		self:OnRestartButtonClicked()
+	end)
+
+	-- LOBBY 버튼 (로비로 복귀)
+	local lobbyButton = Instance.new("TextButton")
+	lobbyButton.Name = "LobbyButton"
+	lobbyButton.Size = UDim2.new(0, 200, 0, 55)
+	lobbyButton.Position = UDim2.new(0.5, 10, 0, 340)
+	lobbyButton.BackgroundColor3 = Color3.fromRGB(100, 100, 120)
+	lobbyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+	lobbyButton.TextSize = 24
+	lobbyButton.Font = Enum.Font.GothamBold
+	lobbyButton.Text = "🏠 LOBBY"
+	lobbyButton.Parent = gameOverFrame
+
+	local lobbyCorner = Instance.new("UICorner")
+	lobbyCorner.CornerRadius = UDim.new(0, 12)
+	lobbyCorner.Parent = lobbyButton
+
+	local lobbyStroke = Instance.new("UIStroke")
+	lobbyStroke.Color = Color3.fromRGB(255, 255, 255)
+	lobbyStroke.Thickness = 2
+	lobbyStroke.Transparency = 0.5
+	lobbyStroke.Parent = lobbyButton
+
+	lobbyButton.MouseButton1Click:Connect(function()
+		self:OnLobbyButtonClicked()
 	end)
 
 	-- 부활 버튼 (초기 숨김)
@@ -782,22 +805,39 @@ function UIController:ShowGameOver(finalScore: number, earnedCoins: number, high
 		newRecordLabel.Visible = isNewRecord == true
 	end
 
-	-- 부활 가능 시 버튼 표시/숨김
+	-- 버튼들 가져오기
 	local restartButton = self._gameOverFrame:FindFirstChild("RestartButton") :: TextButton?
-	if restartButton then
-		restartButton.Visible = not canRevive
-		restartButton.Position = UDim2.new(0.5, -140, 0, 340)
-	end
+	local lobbyButton = self._gameOverFrame:FindFirstChild("LobbyButton") :: TextButton?
 
-	if self._reviveButton then
-		self._reviveButton.Visible = canRevive == true
-		if canRevive then
-			-- 부활 버튼은 위에, 재시작 버튼은 아래에
-			self._reviveButton.Position = UDim2.new(0.5, -140, 0, 340)
-			if restartButton then
-				restartButton.Visible = true
-				restartButton.Position = UDim2.new(0.5, -140, 0, 420)
-			end
+	-- 부활 가능 시 버튼 배치
+	if canRevive then
+		-- 부활 버튼 맨 위
+		if self._reviveButton then
+			self._reviveButton.Visible = true
+			self._reviveButton.Size = UDim2.new(0, 280, 0, 55)
+			self._reviveButton.Position = UDim2.new(0.5, -140, 0, 330)
+		end
+		-- PLAY AGAIN, LOBBY 아래에 나란히
+		if restartButton then
+			restartButton.Visible = true
+			restartButton.Position = UDim2.new(0.5, -210, 0, 400)
+		end
+		if lobbyButton then
+			lobbyButton.Visible = true
+			lobbyButton.Position = UDim2.new(0.5, 10, 0, 400)
+		end
+	else
+		-- 부활 없음: PLAY AGAIN, LOBBY 나란히
+		if self._reviveButton then
+			self._reviveButton.Visible = false
+		end
+		if restartButton then
+			restartButton.Visible = true
+			restartButton.Position = UDim2.new(0.5, -210, 0, 340)
+		end
+		if lobbyButton then
+			lobbyButton.Visible = true
+			lobbyButton.Position = UDim2.new(0.5, 10, 0, 340)
 		end
 	end
 
@@ -806,9 +846,10 @@ function UIController:ShowGameOver(finalScore: number, earnedCoins: number, high
 	self._gameOverFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
 	self._gameOverFrame.Visible = true
 
+	local frameHeight = canRevive and 480 or 420
 	local appearTween = TweenService:Create(self._gameOverFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-		Size = UDim2.new(0, 450, 0, canRevive and 520 or 480),
-		Position = UDim2.new(0.5, -225, 0.5, canRevive and -260 or -240),
+		Size = UDim2.new(0, 450, 0, frameHeight),
+		Position = UDim2.new(0.5, -225, 0.5, -frameHeight / 2),
 	})
 	appearTween:Play()
 
@@ -844,9 +885,20 @@ function UIController:OnPlayButtonClicked()
 	RemoteEvents.GameStart:FireServer()
 end
 
--- 재시작 버튼 클릭 처리 (로비로 복귀 요청)
+-- 재시작 버튼 클릭 처리 (바로 게임 재시작)
 function UIController:OnRestartButtonClicked()
-	print("[UIController] Restart button clicked - requesting return to lobby")
+	print("[UIController] Play Again clicked - restarting game")
+
+	-- 게임 오버 화면 숨기기
+	self:HideGameOver()
+
+	-- 서버에 게임 시작 요청 (포탈 없이 바로 시작)
+	RemoteEvents.GameStart:FireServer()
+end
+
+-- 로비 버튼 클릭 처리 (로비로 복귀)
+function UIController:OnLobbyButtonClicked()
+	print("[UIController] Lobby button clicked - returning to lobby")
 
 	-- 게임 오버 화면 숨기기
 	self:HideGameOver()
@@ -980,7 +1032,13 @@ function UIController:HideGameOver()
 		local restartButton = self._gameOverFrame:FindFirstChild("RestartButton") :: TextButton?
 		if restartButton then
 			restartButton.Visible = true
-			restartButton.Position = UDim2.new(0.5, -140, 0, 340)
+			restartButton.Position = UDim2.new(0.5, -210, 0, 340)
+		end
+
+		local lobbyButton = self._gameOverFrame:FindFirstChild("LobbyButton") :: TextButton?
+		if lobbyButton then
+			lobbyButton.Visible = true
+			lobbyButton.Position = UDim2.new(0.5, 10, 0, 340)
 		end
 	end
 
@@ -988,11 +1046,6 @@ function UIController:HideGameOver()
 	if self._reviveButton then
 		self._reviveButton.Visible = false
 	end
-
-	-- UI 초기화
-	self:UpdateScore(0, 0, 0)
-	self:UpdateCoins(0)
-	self:UpdateLives(GameConstants.LIFE.STARTING_LIVES)
 end
 
 -- 튜토리얼 배너 표시
