@@ -1,6 +1,6 @@
 --!strict
 -- Lobby Service
--- 로비 물리 요소 생성 및 관리
+-- 로비 물리 요소 생성 및 관리 (확장: 장식물 + 동물 NPC)
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
@@ -37,10 +37,16 @@ function LobbyService:Initialize()
 	-- 장식 코인 생성
 	self:_createDecorationCoin()
 
+	-- 장식물 생성
+	self:_createDecorations()
+
+	-- 동물 NPC 생성
+	self:_createLobbyNPCs()
+
 	-- 스폰 포인트 설정
 	self:_setupSpawnPoint()
 
-	print("[LobbyService] Lobby initialized")
+	print("[LobbyService] Lobby initialized with decorations and NPCs")
 end
 
 -- 로비 바닥 생성
@@ -49,14 +55,15 @@ function LobbyService:_createFloor()
 		return
 	end
 
+	-- 잔디 바닥
 	local floor = Instance.new("Part")
 	floor.Name = "LobbyFloor"
 	floor.Size = GameConstants.LOBBY.FLOOR_SIZE
 	floor.Position = GameConstants.LOBBY.FLOOR_POSITION
 	floor.Anchored = true
 	floor.CanCollide = true
-	floor.Color = Color3.fromRGB(180, 180, 180) -- 밝은 회색
-	floor.Material = Enum.Material.Concrete
+	floor.Color = Color3.fromRGB(100, 180, 100) -- 잔디 초록
+	floor.Material = Enum.Material.Grass
 	floor.Parent = lobbyFolder
 
 	-- 바닥 테두리
@@ -69,6 +76,17 @@ function LobbyService:_createFloor()
 	border.Color = Color3.fromRGB(255, 215, 0) -- 금색
 	border.Material = Enum.Material.Neon
 	border.Parent = lobbyFolder
+
+	-- 중앙 길 (돌 바닥)
+	local path = Instance.new("Part")
+	path.Name = "LobbyPath"
+	path.Size = Vector3.new(GameConstants.LOBBY.FLOOR_SIZE.X - 20, 0.1, 8)
+	path.Position = GameConstants.LOBBY.FLOOR_POSITION + Vector3.new(0, 0.5, 0)
+	path.Anchored = true
+	path.CanCollide = true
+	path.Color = Color3.fromRGB(180, 180, 180)
+	path.Material = Enum.Material.Cobblestone
+	path.Parent = lobbyFolder
 end
 
 -- 게임 시작 포탈 생성
@@ -163,7 +181,7 @@ function LobbyService:_createTitle()
 	-- 타이틀 배경
 	local titleBackground = Instance.new("Part")
 	titleBackground.Name = "TitleBackground"
-	titleBackground.Size = Vector3.new(40, 10, 2)
+	titleBackground.Size = Vector3.new(50, 12, 2)
 	titleBackground.Position = GameConstants.LOBBY.TITLE_POSITION
 	titleBackground.Anchored = true
 	titleBackground.CanCollide = false
@@ -175,14 +193,14 @@ function LobbyService:_createTitle()
 	local surfaceGui = Instance.new("SurfaceGui")
 	surfaceGui.Name = "TitleGui"
 	surfaceGui.Face = Enum.NormalId.Front
-	surfaceGui.CanvasSize = Vector2.new(800, 200)
+	surfaceGui.CanvasSize = Vector2.new(1000, 240)
 	surfaceGui.Parent = titleBackground
 
 	local titleLabel = Instance.new("TextLabel")
 	titleLabel.Size = UDim2.new(1, 0, 1, 0)
 	titleLabel.BackgroundTransparency = 1
 	titleLabel.TextColor3 = Color3.fromRGB(255, 215, 0) -- 금색
-	titleLabel.TextSize = 80
+	titleLabel.TextSize = 100
 	titleLabel.Font = Enum.Font.GothamBold
 	titleLabel.Text = "COIN RUNNER"
 	titleLabel.TextStrokeTransparency = 0.3
@@ -192,7 +210,7 @@ function LobbyService:_createTitle()
 	-- 네온 테두리
 	local neonBorder = Instance.new("Part")
 	neonBorder.Name = "TitleBorder"
-	neonBorder.Size = Vector3.new(42, 12, 0.5)
+	neonBorder.Size = Vector3.new(52, 14, 0.5)
 	neonBorder.Position = GameConstants.LOBBY.TITLE_POSITION + Vector3.new(0, 0, -1)
 	neonBorder.Anchored = true
 	neonBorder.CanCollide = false
@@ -218,10 +236,21 @@ function LobbyService:_createShop()
 	shopBooth.Material = Enum.Material.SmoothPlastic
 	shopBooth.Parent = lobbyFolder
 
+	-- 상점 지붕
+	local shopRoof = Instance.new("Part")
+	shopRoof.Name = "ShopRoof"
+	shopRoof.Size = Vector3.new(17, 1, 10)
+	shopRoof.Position = GameConstants.LOBBY.SHOP_POSITION + Vector3.new(0, 5.5, 0)
+	shopRoof.Anchored = true
+	shopRoof.CanCollide = false
+	shopRoof.Color = Color3.fromRGB(200, 100, 200)
+	shopRoof.Material = Enum.Material.SmoothPlastic
+	shopRoof.Parent = lobbyFolder
+
 	-- 상점 터치 영역 (투명)
 	local shopTrigger = Instance.new("Part")
 	shopTrigger.Name = "ShopTrigger"
-	shopTrigger.Size = Vector3.new(18, 12, 10)
+	shopTrigger.Size = Vector3.new(18, 12, 12)
 	shopTrigger.Position = GameConstants.LOBBY.SHOP_POSITION
 	shopTrigger.Anchored = true
 	shopTrigger.CanCollide = false
@@ -232,7 +261,7 @@ function LobbyService:_createShop()
 	local shopSign = Instance.new("Part")
 	shopSign.Name = "ShopSign"
 	shopSign.Size = Vector3.new(12, 4, 1)
-	shopSign.Position = GameConstants.LOBBY.SHOP_POSITION + Vector3.new(0, 8, -4)
+	shopSign.Position = GameConstants.LOBBY.SHOP_POSITION + Vector3.new(0, 8, -5)
 	shopSign.Anchored = true
 	shopSign.CanCollide = false
 	shopSign.Color = Color3.fromRGB(255, 215, 0) -- 금색
@@ -262,11 +291,11 @@ function LobbyService:_createDecorationCoin()
 		return
 	end
 
-	-- 대형 코인
+	-- 대형 코인 (타이틀 옆)
 	local coin = Instance.new("Part")
 	coin.Name = "DecorationCoin"
-	coin.Size = Vector3.new(8, 8, 1)
-	coin.Position = Vector3.new(-70, 12, 0)
+	coin.Size = Vector3.new(10, 10, 1.5)
+	coin.Position = GameConstants.LOBBY.TITLE_POSITION + Vector3.new(-30, -5, 10)
 	coin.Anchored = true
 	coin.CanCollide = false
 	coin.Color = Color3.fromRGB(255, 215, 0) -- 금색
@@ -296,6 +325,659 @@ function LobbyService:_createDecorationCoin()
 	particles.Speed = NumberRange.new(1, 3)
 	particles.SpreadAngle = Vector2.new(360, 360)
 	particles.Parent = coin
+end
+
+-- 장식물 생성
+function LobbyService:_createDecorations()
+	if not lobbyFolder then
+		return
+	end
+
+	local decorations = GameConstants.LOBBY.DECORATIONS
+
+	-- 나무 생성
+	for _, pos in decorations.TREES do
+		self:_createTree(pos)
+	end
+
+	-- 꽃밭 생성
+	for _, pos in decorations.FLOWERS do
+		self:_createFlowerBed(pos)
+	end
+
+	-- 벤치 생성
+	for _, pos in decorations.BENCHES do
+		self:_createBench(pos)
+	end
+
+	-- 가로등 생성
+	for _, pos in decorations.LAMPS do
+		self:_createLamp(pos)
+	end
+
+	-- 분수대 생성
+	self:_createFountain(decorations.FOUNTAIN)
+
+	-- 풍선 생성
+	for i, pos in decorations.BALLOONS do
+		local colors = {
+			Color3.fromRGB(255, 100, 100), -- 빨강
+			Color3.fromRGB(100, 100, 255), -- 파랑
+		}
+		self:_createBalloon(pos, colors[i] or colors[1])
+	end
+
+	print("[LobbyService] Decorations created")
+end
+
+-- 나무 생성
+function LobbyService:_createTree(position: Vector3)
+	if not lobbyFolder then
+		return
+	end
+
+	local treeFolder = Instance.new("Model")
+	treeFolder.Name = "Tree"
+	treeFolder.Parent = lobbyFolder
+
+	-- 줄기
+	local trunk = Instance.new("Part")
+	trunk.Name = "Trunk"
+	trunk.Size = Vector3.new(2, 8, 2)
+	trunk.Position = position + Vector3.new(0, 4, 0)
+	trunk.Anchored = true
+	trunk.CanCollide = true
+	trunk.Color = Color3.fromRGB(101, 67, 33) -- 갈색
+	trunk.Material = Enum.Material.Wood
+	trunk.Parent = treeFolder
+
+	-- 잎 (구 3개로 풍성하게)
+	local leafPositions = {
+		Vector3.new(0, 10, 0),
+		Vector3.new(-1.5, 9, 1),
+		Vector3.new(1.5, 9, -1),
+	}
+
+	for _, leafPos in leafPositions do
+		local leaves = Instance.new("Part")
+		leaves.Name = "Leaves"
+		leaves.Size = Vector3.new(6, 6, 6)
+		leaves.Position = position + leafPos
+		leaves.Anchored = true
+		leaves.CanCollide = false
+		leaves.Color = Color3.fromRGB(34, 139, 34) -- 초록
+		leaves.Material = Enum.Material.Grass
+		leaves.Shape = Enum.PartType.Ball
+		leaves.Parent = treeFolder
+	end
+end
+
+-- 꽃밭 생성
+function LobbyService:_createFlowerBed(position: Vector3)
+	if not lobbyFolder then
+		return
+	end
+
+	local flowerColors = {
+		Color3.fromRGB(255, 100, 150), -- 분홍
+		Color3.fromRGB(255, 255, 100), -- 노랑
+		Color3.fromRGB(255, 150, 100), -- 주황
+		Color3.fromRGB(200, 100, 255), -- 보라
+		Color3.fromRGB(100, 200, 255), -- 하늘
+	}
+
+	for i = 1, 8 do
+		local offsetX = math.random(-3, 3)
+		local offsetZ = math.random(-3, 3)
+
+		-- 줄기
+		local stem = Instance.new("Part")
+		stem.Name = "FlowerStem"
+		stem.Size = Vector3.new(0.2, 1.5, 0.2)
+		stem.Position = position + Vector3.new(offsetX, 0.75, offsetZ)
+		stem.Anchored = true
+		stem.CanCollide = false
+		stem.Color = Color3.fromRGB(34, 139, 34)
+		stem.Material = Enum.Material.Grass
+		stem.Parent = lobbyFolder
+
+		-- 꽃
+		local flower = Instance.new("Part")
+		flower.Name = "Flower"
+		flower.Size = Vector3.new(0.8, 0.8, 0.8)
+		flower.Position = position + Vector3.new(offsetX, 1.8, offsetZ)
+		flower.Anchored = true
+		flower.CanCollide = false
+		flower.Color = flowerColors[math.random(1, #flowerColors)]
+		flower.Material = Enum.Material.Neon
+		flower.Shape = Enum.PartType.Ball
+		flower.Parent = lobbyFolder
+	end
+end
+
+-- 벤치 생성
+function LobbyService:_createBench(position: Vector3)
+	if not lobbyFolder then
+		return
+	end
+
+	local benchFolder = Instance.new("Model")
+	benchFolder.Name = "Bench"
+	benchFolder.Parent = lobbyFolder
+
+	-- 좌석
+	local seat = Instance.new("Part")
+	seat.Name = "Seat"
+	seat.Size = Vector3.new(5, 0.5, 2)
+	seat.Position = position + Vector3.new(0, 1.5, 0)
+	seat.Anchored = true
+	seat.CanCollide = true
+	seat.Color = Color3.fromRGB(139, 90, 43)
+	seat.Material = Enum.Material.Wood
+	seat.Parent = benchFolder
+
+	-- 등받이
+	local back = Instance.new("Part")
+	back.Name = "Back"
+	back.Size = Vector3.new(5, 2, 0.3)
+	back.Position = position + Vector3.new(0, 2.75, -0.85)
+	back.Anchored = true
+	back.CanCollide = true
+	back.Color = Color3.fromRGB(139, 90, 43)
+	back.Material = Enum.Material.Wood
+	back.Parent = benchFolder
+
+	-- 다리
+	for _, xOffset in { -2, 2 } do
+		local leg = Instance.new("Part")
+		leg.Name = "Leg"
+		leg.Size = Vector3.new(0.5, 1.5, 2)
+		leg.Position = position + Vector3.new(xOffset, 0.75, 0)
+		leg.Anchored = true
+		leg.CanCollide = true
+		leg.Color = Color3.fromRGB(80, 80, 80)
+		leg.Material = Enum.Material.Metal
+		leg.Parent = benchFolder
+	end
+end
+
+-- 가로등 생성
+function LobbyService:_createLamp(position: Vector3)
+	if not lobbyFolder then
+		return
+	end
+
+	local lampFolder = Instance.new("Model")
+	lampFolder.Name = "Lamp"
+	lampFolder.Parent = lobbyFolder
+
+	-- 기둥
+	local pole = Instance.new("Part")
+	pole.Name = "Pole"
+	pole.Size = Vector3.new(0.5, 10, 0.5)
+	pole.Position = position + Vector3.new(0, 5, 0)
+	pole.Anchored = true
+	pole.CanCollide = true
+	pole.Color = Color3.fromRGB(50, 50, 50)
+	pole.Material = Enum.Material.Metal
+	pole.Parent = lampFolder
+
+	-- 등
+	local light = Instance.new("Part")
+	light.Name = "Light"
+	light.Size = Vector3.new(2, 2, 2)
+	light.Position = position + Vector3.new(0, 10.5, 0)
+	light.Anchored = true
+	light.CanCollide = false
+	light.Color = Color3.fromRGB(255, 255, 200)
+	light.Material = Enum.Material.Neon
+	light.Shape = Enum.PartType.Ball
+	light.Parent = lampFolder
+
+	-- PointLight
+	local pointLight = Instance.new("PointLight")
+	pointLight.Brightness = 1
+	pointLight.Range = 20
+	pointLight.Color = Color3.fromRGB(255, 255, 200)
+	pointLight.Parent = light
+end
+
+-- 분수대 생성
+function LobbyService:_createFountain(position: Vector3)
+	if not lobbyFolder then
+		return
+	end
+
+	local fountainFolder = Instance.new("Model")
+	fountainFolder.Name = "Fountain"
+	fountainFolder.Parent = lobbyFolder
+
+	-- 베이스 (원형)
+	local base = Instance.new("Part")
+	base.Name = "Base"
+	base.Size = Vector3.new(12, 1, 12)
+	base.Position = position + Vector3.new(0, 0.5, 0)
+	base.Anchored = true
+	base.CanCollide = true
+	base.Color = Color3.fromRGB(180, 180, 180)
+	base.Material = Enum.Material.Marble
+	base.Shape = Enum.PartType.Cylinder
+	base.Orientation = Vector3.new(0, 0, 90)
+	base.Parent = fountainFolder
+
+	-- 물 영역
+	local water = Instance.new("Part")
+	water.Name = "Water"
+	water.Size = Vector3.new(10, 0.5, 10)
+	water.Position = position + Vector3.new(0, 1.25, 0)
+	water.Anchored = true
+	water.CanCollide = false
+	water.Color = Color3.fromRGB(100, 150, 255)
+	water.Material = Enum.Material.Glass
+	water.Transparency = 0.3
+	water.Shape = Enum.PartType.Cylinder
+	water.Orientation = Vector3.new(0, 0, 90)
+	water.Parent = fountainFolder
+
+	-- 중앙 기둥
+	local pillar = Instance.new("Part")
+	pillar.Name = "Pillar"
+	pillar.Size = Vector3.new(1.5, 5, 1.5)
+	pillar.Position = position + Vector3.new(0, 3.5, 0)
+	pillar.Anchored = true
+	pillar.CanCollide = true
+	pillar.Color = Color3.fromRGB(200, 200, 200)
+	pillar.Material = Enum.Material.Marble
+	pillar.Parent = fountainFolder
+
+	-- 물 파티클
+	local waterParticles = Instance.new("ParticleEmitter")
+	waterParticles.Name = "WaterSpray"
+	waterParticles.Color = ColorSequence.new(Color3.fromRGB(150, 200, 255))
+	waterParticles.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.3),
+		NumberSequenceKeypoint.new(0.5, 0.5),
+		NumberSequenceKeypoint.new(1, 0),
+	})
+	waterParticles.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.3),
+		NumberSequenceKeypoint.new(1, 1),
+	})
+	waterParticles.Lifetime = NumberRange.new(1, 1.5)
+	waterParticles.Rate = 30
+	waterParticles.Speed = NumberRange.new(8, 12)
+	waterParticles.SpreadAngle = Vector2.new(10, 10)
+	waterParticles.EmissionDirection = Enum.NormalId.Top
+	waterParticles.Parent = pillar
+end
+
+-- 풍선 생성
+function LobbyService:_createBalloon(position: Vector3, color: Color3)
+	if not lobbyFolder then
+		return
+	end
+
+	local balloonFolder = Instance.new("Model")
+	balloonFolder.Name = "Balloon"
+	balloonFolder.Parent = lobbyFolder
+
+	-- 풍선
+	local balloon = Instance.new("Part")
+	balloon.Name = "Balloon"
+	balloon.Size = Vector3.new(3, 4, 3)
+	balloon.Position = position
+	balloon.Anchored = true
+	balloon.CanCollide = false
+	balloon.Color = color
+	balloon.Material = Enum.Material.SmoothPlastic
+	balloon.Shape = Enum.PartType.Ball
+	balloon.Parent = balloonFolder
+
+	-- 끈
+	local string = Instance.new("Part")
+	string.Name = "String"
+	string.Size = Vector3.new(0.1, 5, 0.1)
+	string.Position = position - Vector3.new(0, 4.5, 0)
+	string.Anchored = true
+	string.CanCollide = false
+	string.Color = Color3.fromRGB(200, 200, 200)
+	string.Material = Enum.Material.Fabric
+	string.Parent = balloonFolder
+
+	-- 풍선 흔들림 애니메이션
+	task.spawn(function()
+		local originalPos = position
+		local time = math.random() * math.pi * 2 -- 랜덤 시작 위치
+		while balloon and balloon.Parent do
+			time += 0.05
+			local offsetX = math.sin(time) * 0.3
+			local offsetY = math.cos(time * 0.7) * 0.2
+			balloon.Position = originalPos + Vector3.new(offsetX, offsetY, 0)
+			string.Position = originalPos - Vector3.new(0, 4.5, 0) + Vector3.new(offsetX * 0.5, 0, 0)
+			task.wait(0.03)
+		end
+	end)
+end
+
+-- 동물 NPC 생성
+function LobbyService:_createLobbyNPCs()
+	if not lobbyFolder then
+		return
+	end
+
+	local npcTypes = GameConstants.LOBBY_NPC.TYPES
+
+	for npcId, npcData in npcTypes do
+		self:_createAnimalNPC(npcId, npcData)
+	end
+
+	print("[LobbyService] Lobby NPCs created")
+end
+
+-- 동물 NPC 생성 (개별)
+function LobbyService:_createAnimalNPC(npcId: string, npcData: {
+	name: string,
+	position: Vector3,
+	color: Color3,
+	message: string,
+	animation: string,
+})
+	if not lobbyFolder then
+		return
+	end
+
+	local npcFolder = Instance.new("Model")
+	npcFolder.Name = "LobbyNPC_" .. npcId
+	npcFolder.Parent = lobbyFolder
+
+	local baseY = npcData.position.Y + 1
+
+	-- 몸통
+	local body = Instance.new("Part")
+	body.Name = "Body"
+	body.Size = Vector3.new(2.5, 3, 2)
+	body.Position = npcData.position + Vector3.new(0, 1.5, 0)
+	body.Anchored = true
+	body.CanCollide = true
+	body.Color = npcData.color
+	body.Material = Enum.Material.SmoothPlastic
+	body.Parent = npcFolder
+
+	-- 머리
+	local head = Instance.new("Part")
+	head.Name = "Head"
+	head.Size = Vector3.new(2, 2, 2)
+	head.Position = npcData.position + Vector3.new(0, 3.5, 0)
+	head.Anchored = true
+	head.CanCollide = false
+	head.Color = npcData.color
+	head.Material = Enum.Material.SmoothPlastic
+	head.Shape = Enum.PartType.Ball
+	head.Parent = npcFolder
+
+	-- 눈 (왼쪽)
+	local eyeL = Instance.new("Part")
+	eyeL.Name = "EyeL"
+	eyeL.Size = Vector3.new(0.4, 0.4, 0.2)
+	eyeL.Position = npcData.position + Vector3.new(-0.4, 3.7, 0.9)
+	eyeL.Anchored = true
+	eyeL.CanCollide = false
+	eyeL.Color = Color3.fromRGB(0, 0, 0)
+	eyeL.Material = Enum.Material.SmoothPlastic
+	eyeL.Shape = Enum.PartType.Ball
+	eyeL.Parent = npcFolder
+
+	-- 눈 (오른쪽)
+	local eyeR = Instance.new("Part")
+	eyeR.Name = "EyeR"
+	eyeR.Size = Vector3.new(0.4, 0.4, 0.2)
+	eyeR.Position = npcData.position + Vector3.new(0.4, 3.7, 0.9)
+	eyeR.Anchored = true
+	eyeR.CanCollide = false
+	eyeR.Color = Color3.fromRGB(0, 0, 0)
+	eyeR.Material = Enum.Material.SmoothPlastic
+	eyeR.Shape = Enum.PartType.Ball
+	eyeR.Parent = npcFolder
+
+	-- 동물별 특징 추가
+	if npcId == "Rabbit" then
+		-- 토끼 귀
+		for _, xOffset in { -0.5, 0.5 } do
+			local ear = Instance.new("Part")
+			ear.Name = "Ear"
+			ear.Size = Vector3.new(0.4, 1.5, 0.3)
+			ear.Position = npcData.position + Vector3.new(xOffset, 4.8, 0)
+			ear.Anchored = true
+			ear.CanCollide = false
+			ear.Color = npcData.color
+			ear.Material = Enum.Material.SmoothPlastic
+			ear.Parent = npcFolder
+		end
+	elseif npcId == "Dog" then
+		-- 강아지 귀 (늘어진)
+		for _, xOffset in { -0.8, 0.8 } do
+			local ear = Instance.new("Part")
+			ear.Name = "Ear"
+			ear.Size = Vector3.new(0.5, 1, 0.3)
+			ear.Position = npcData.position + Vector3.new(xOffset, 3.8, 0.3)
+			ear.Anchored = true
+			ear.CanCollide = false
+			ear.Color = Color3.fromRGB(139, 90, 43) -- 갈색
+			ear.Material = Enum.Material.SmoothPlastic
+			ear.Parent = npcFolder
+		end
+		-- 꼬리
+		local tail = Instance.new("Part")
+		tail.Name = "Tail"
+		tail.Size = Vector3.new(0.4, 0.4, 1)
+		tail.Position = npcData.position + Vector3.new(0, 1.5, -1.3)
+		tail.Anchored = true
+		tail.CanCollide = false
+		tail.Color = npcData.color
+		tail.Material = Enum.Material.SmoothPlastic
+		tail.Parent = npcFolder
+
+		-- 꼬리 흔들기 애니메이션
+		task.spawn(function()
+			local originalPos = tail.Position
+			local time = 0
+			while tail and tail.Parent do
+				time += 0.15
+				local offsetX = math.sin(time) * 0.3
+				tail.Position = originalPos + Vector3.new(offsetX, 0, 0)
+				task.wait(0.03)
+			end
+		end)
+	elseif npcId == "Cat" then
+		-- 고양이 귀 (삼각형)
+		for _, xOffset in { -0.6, 0.6 } do
+			local ear = Instance.new("Part")
+			ear.Name = "Ear"
+			ear.Size = Vector3.new(0.5, 0.7, 0.3)
+			ear.Position = npcData.position + Vector3.new(xOffset, 4.5, 0)
+			ear.Anchored = true
+			ear.CanCollide = false
+			ear.Color = npcData.color
+			ear.Material = Enum.Material.SmoothPlastic
+			ear.Parent = npcFolder
+		end
+		-- 수염
+		for _, zOffset in { 0.3, -0.3 } do
+			local whisker = Instance.new("Part")
+			whisker.Name = "Whisker"
+			whisker.Size = Vector3.new(1.5, 0.05, 0.05)
+			whisker.Position = npcData.position + Vector3.new(0, 3.3, 1)
+			whisker.Anchored = true
+			whisker.CanCollide = false
+			whisker.Color = Color3.fromRGB(200, 200, 200)
+			whisker.Material = Enum.Material.SmoothPlastic
+			whisker.Parent = npcFolder
+		end
+	elseif npcId == "Penguin" then
+		-- 펭귄 배 (흰색)
+		local belly = Instance.new("Part")
+		belly.Name = "Belly"
+		belly.Size = Vector3.new(1.8, 2.2, 0.5)
+		belly.Position = npcData.position + Vector3.new(0, 1.5, 0.8)
+		belly.Anchored = true
+		belly.CanCollide = false
+		belly.Color = Color3.fromRGB(255, 255, 255)
+		belly.Material = Enum.Material.SmoothPlastic
+		belly.Parent = npcFolder
+		-- 부리
+		local beak = Instance.new("Part")
+		beak.Name = "Beak"
+		beak.Size = Vector3.new(0.5, 0.3, 0.5)
+		beak.Position = npcData.position + Vector3.new(0, 3.3, 1.2)
+		beak.Anchored = true
+		beak.CanCollide = false
+		beak.Color = Color3.fromRGB(255, 165, 0)
+		beak.Material = Enum.Material.SmoothPlastic
+		beak.Parent = npcFolder
+
+		-- 뒤뚱뒤뚱 애니메이션
+		task.spawn(function()
+			local originalPos = body.Position
+			local time = 0
+			while body and body.Parent do
+				time += 0.08
+				local offsetX = math.sin(time) * 0.15
+				local rotation = math.sin(time) * 5
+				body.CFrame = CFrame.new(originalPos + Vector3.new(offsetX, 0, 0)) * CFrame.Angles(0, 0, math.rad(rotation))
+				task.wait(0.03)
+			end
+		end)
+	elseif npcId == "Bear" then
+		-- 곰 귀 (둥근)
+		for _, xOffset in { -0.7, 0.7 } do
+			local ear = Instance.new("Part")
+			ear.Name = "Ear"
+			ear.Size = Vector3.new(0.6, 0.6, 0.3)
+			ear.Position = npcData.position + Vector3.new(xOffset, 4.4, 0)
+			ear.Anchored = true
+			ear.CanCollide = false
+			ear.Color = npcData.color
+			ear.Material = Enum.Material.SmoothPlastic
+			ear.Shape = Enum.PartType.Ball
+			ear.Parent = npcFolder
+		end
+		-- 코
+		local nose = Instance.new("Part")
+		nose.Name = "Nose"
+		nose.Size = Vector3.new(0.5, 0.4, 0.3)
+		nose.Position = npcData.position + Vector3.new(0, 3.3, 1)
+		nose.Anchored = true
+		nose.CanCollide = false
+		nose.Color = Color3.fromRGB(0, 0, 0)
+		nose.Material = Enum.Material.SmoothPlastic
+		nose.Shape = Enum.PartType.Ball
+		nose.Parent = npcFolder
+	end
+
+	-- 이름표 + 말풍선
+	local billboardGui = Instance.new("BillboardGui")
+	billboardGui.Name = "NPCGui"
+	billboardGui.Size = UDim2.new(0, 150, 0, 80)
+	billboardGui.StudsOffset = Vector3.new(0, 3, 0)
+	billboardGui.AlwaysOnTop = true
+	billboardGui.Parent = head
+
+	-- 이름
+	local nameLabel = Instance.new("TextLabel")
+	nameLabel.Name = "NameLabel"
+	nameLabel.Size = UDim2.new(1, 0, 0.3, 0)
+	nameLabel.Position = UDim2.new(0, 0, 0, 0)
+	nameLabel.BackgroundTransparency = 1
+	nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	nameLabel.TextSize = 18
+	nameLabel.Font = Enum.Font.GothamBold
+	nameLabel.Text = npcData.name
+	nameLabel.TextStrokeTransparency = 0.5
+	nameLabel.Parent = billboardGui
+
+	-- 말풍선 (처음엔 숨김)
+	local speechBubble = Instance.new("TextLabel")
+	speechBubble.Name = "SpeechBubble"
+	speechBubble.Size = UDim2.new(1, 0, 0.7, 0)
+	speechBubble.Position = UDim2.new(0, 0, 0.3, 0)
+	speechBubble.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	speechBubble.BackgroundTransparency = 0.2
+	speechBubble.TextColor3 = Color3.fromRGB(0, 0, 0)
+	speechBubble.TextSize = 12
+	speechBubble.Font = Enum.Font.Gotham
+	speechBubble.Text = npcData.message
+	speechBubble.TextWrapped = true
+	speechBubble.Visible = false
+	speechBubble.Parent = billboardGui
+
+	-- 모서리 둥글게
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, 8)
+	corner.Parent = speechBubble
+
+	-- 터치 시 말풍선 표시
+	body.Touched:Connect(function(hit: BasePart)
+		local character = hit.Parent
+		if character and character:FindFirstChild("Humanoid") then
+			speechBubble.Visible = true
+			task.delay(GameConstants.LOBBY_NPC.SPEECH_DURATION, function()
+				if speechBubble and speechBubble.Parent then
+					speechBubble.Visible = false
+				end
+			end)
+		end
+	end)
+
+	-- 점프 애니메이션 (토끼)
+	if npcData.animation == "jump" then
+		task.spawn(function()
+			local originalY = body.Position.Y
+			while body and body.Parent do
+				-- 점프 업
+				local tween = TweenService:Create(body, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+					Position = body.Position + Vector3.new(0, 1.5, 0),
+				})
+				tween:Play()
+				tween.Completed:Wait()
+
+				if not body or not body.Parent then
+					break
+				end
+
+				-- 점프 다운
+				local tween2 = TweenService:Create(body, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+					Position = Vector3.new(body.Position.X, originalY, body.Position.Z),
+				})
+				tween2:Play()
+				tween2.Completed:Wait()
+
+				task.wait(2) -- 2초마다 점프
+			end
+		end)
+	end
+
+	-- 손 흔들기 애니메이션 (곰돌이) - 머리 흔들기로 대체
+	if npcData.animation == "wave" then
+		task.spawn(function()
+			while head and head.Parent do
+				local tween = TweenService:Create(head, TweenInfo.new(0.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
+					Orientation = Vector3.new(0, 15, 0),
+				})
+				tween:Play()
+				tween.Completed:Wait()
+
+				if not head or not head.Parent then
+					break
+				end
+
+				local tween2 = TweenService:Create(head, TweenInfo.new(0.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
+					Orientation = Vector3.new(0, -15, 0),
+				})
+				tween2:Play()
+				tween2.Completed:Wait()
+			end
+		end)
+	end
 end
 
 -- 스폰 포인트 설정
@@ -348,9 +1030,13 @@ end
 -- 로비 표시/숨김
 function LobbyService:SetVisible(visible: boolean)
 	if lobbyFolder then
-		for _, child in lobbyFolder:GetChildren() do
+		for _, child in lobbyFolder:GetDescendants() do
 			if child:IsA("BasePart") then
-				child.Transparency = visible and (child.Name == "PortalTrigger" or child.Name == "ShopTrigger") and 1 or (visible and 0 or 1)
+				if child.Name == "PortalTrigger" or child.Name == "ShopTrigger" then
+					child.Transparency = 1
+				else
+					child.Transparency = visible and 0 or 1
+				end
 				child.CanCollide = visible
 			end
 		end
