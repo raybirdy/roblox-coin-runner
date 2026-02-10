@@ -173,16 +173,97 @@ GameConstants.DATA = {
 	SAVE_RETRY_COUNT = 3, -- 저장 실패 시 재시도 횟수
 }
 
--- 로비 시스템
+-- 로비 시스템 (확장)
 GameConstants.LOBBY = {
-	SPAWN_POSITION = Vector3.new(-80, 2.5, 0),
+	-- 크기 확장: 150 x 60 studs
+	FLOOR_SIZE = Vector3.new(150, 1, 60),
+	FLOOR_POSITION = Vector3.new(-85, 0.5, 0),
+
+	-- 주요 위치
+	SPAWN_POSITION = Vector3.new(-120, 2.5, 0),
 	PORTAL_POSITION = Vector3.new(-25, 3, 0),
 	PORTAL_SIZE = Vector3.new(2, 8, 10),
-	FLOOR_SIZE = Vector3.new(100, 1, 30),
-	FLOOR_POSITION = Vector3.new(-60, 0.5, 0),
-	SHOP_POSITION = Vector3.new(-50, 5, 0),
-	TITLE_POSITION = Vector3.new(-60, 15, -10),
-	HIGHSCORE_BOARD_POSITION = Vector3.new(-60, 10, -10),
+	SHOP_POSITION = Vector3.new(-70, 5, 20),
+	TITLE_POSITION = Vector3.new(-85, 18, -25),
+
+	-- 장식물 위치
+	DECORATIONS = {
+		-- 나무
+		TREES = {
+			Vector3.new(-140, 0, -20),
+			Vector3.new(-140, 0, 20),
+			Vector3.new(-100, 0, -22),
+			Vector3.new(-100, 0, 22),
+			Vector3.new(-50, 0, -22),
+			Vector3.new(-50, 0, 22),
+		},
+		-- 꽃밭
+		FLOWERS = {
+			Vector3.new(-130, 0, 0),
+			Vector3.new(-90, 0, 15),
+			Vector3.new(-60, 0, -15),
+		},
+		-- 벤치
+		BENCHES = {
+			Vector3.new(-110, 0, -15),
+			Vector3.new(-80, 0, 18),
+		},
+		-- 가로등
+		LAMPS = {
+			Vector3.new(-130, 0, -18),
+			Vector3.new(-130, 0, 18),
+			Vector3.new(-70, 0, -18),
+		},
+		-- 분수대
+		FOUNTAIN = Vector3.new(-85, 0, 0),
+		-- 풍선
+		BALLOONS = {
+			Vector3.new(-35, 8, 15),
+			Vector3.new(-30, 10, -10),
+		},
+	},
+}
+
+-- 로비 NPC (동물 캐릭터)
+GameConstants.LOBBY_NPC = {
+	TYPES = {
+		Rabbit = {
+			name = "토끼",
+			position = Vector3.new(-115, 0, 5),
+			color = Color3.fromRGB(255, 200, 200), -- 분홍
+			message = "안녕! 포탈로 들어가면 게임이 시작돼!",
+			animation = "jump", -- 점프하며 인사
+		},
+		Dog = {
+			name = "강아지",
+			position = Vector3.new(-72, 0, 15),
+			color = Color3.fromRGB(210, 180, 140), -- 베이지
+			message = "멍! 상점에서 아이템을 구경해봐!",
+			animation = "wag", -- 꼬리 흔들기
+		},
+		Cat = {
+			name = "고양이",
+			position = Vector3.new(-110, 0, -15),
+			color = Color3.fromRGB(255, 165, 0), -- 주황
+			message = "냥~ 점프는 2번까지 할 수 있어",
+			animation = "sit", -- 앉아서 기지개
+		},
+		Penguin = {
+			name = "펭귄",
+			position = Vector3.new(-95, 0, 8),
+			color = Color3.fromRGB(50, 50, 60), -- 검정
+			message = "코인을 많이 모아봐!",
+			animation = "waddle", -- 뒤뚱뒤뚱
+		},
+		Bear = {
+			name = "곰돌이",
+			position = Vector3.new(-30, 0, 5),
+			color = Color3.fromRGB(139, 90, 43), -- 갈색
+			message = "화이팅! 넌 할 수 있어!",
+			animation = "wave", -- 손 흔들기
+		},
+	},
+	SPEECH_DURATION = 3, -- 말풍선 표시 시간 (초)
 }
 
 -- 상점 시스템
