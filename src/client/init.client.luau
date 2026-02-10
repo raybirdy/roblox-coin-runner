@@ -75,6 +75,7 @@ local NPCController = require(script.Controllers.NPCController)
 local TutorialController = require(script.Controllers.TutorialController)
 local MusicController = require(script.Controllers.MusicController)
 local ShopController = require(script.Controllers.ShopController)
+local SpeedEffectController = require(script.Controllers.SpeedEffectController)
 
 -- 컨트롤러 인스턴스 생성
 local inputController = InputController.new()
@@ -88,6 +89,7 @@ local npcController = NPCController.new()
 local tutorialController = TutorialController.new()
 local musicController = MusicController.new()
 local shopController = ShopController.new(player)
+local speedEffectController = SpeedEffectController.new(player)
 
 -- 배경 음악 시작
 musicController:Start()
@@ -144,6 +146,7 @@ player.CharacterAdded:Connect(function(newCharacter: Model)
 	enableDefaultControls()
 	playerController:UpdateCharacter(newCharacter)
 	cameraController:UpdateCharacter(newCharacter)
+	speedEffectController:UpdateCharacter(newCharacter)
 	cameraController:SetLobbyMode() -- 카메라도 로비 모드로
 	playerController:SetLobbyMode() -- PlayerController도 로비 모드로
 	print("[Client] Character respawned, controllers updated")
@@ -214,6 +217,11 @@ RemoteEvents.GameStart.OnClientEvent:Connect(function(data)
 		-- 게임 시작!
 		playerController:StartGame()
 
+		-- 속도 연출 효과 시작
+		if charNow then
+			speedEffectController:StartGame(charNow)
+		end
+
 		-- 튜토리얼 시작 (필요 시)
 		if data.startTutorial then
 			tutorialController:Start(data.startPosition)
@@ -241,9 +249,11 @@ RemoteEvents.GameOver.OnClientEvent:Connect(function(data)
 	if data.canRevive then
 		print("[Client] Game paused - revive available")
 		playerController:StopGame()
+		speedEffectController:StopGame()
 	else
 		print("[Client] Game ended by server")
 		playerController:StopGame()
+		speedEffectController:StopGame()
 
 		-- 튜토리얼 종료 (활성화된 경우)
 		if tutorialController:IsActive() then
@@ -265,15 +275,22 @@ RemoteEvents.Revive.OnClientEvent:Connect(function(data)
 	end
 end)
 
--- 튜토리얼 거리 업데이트 (RunService)
+-- 튜토리얼 거리 업데이트 및 속도 연출 동기화 (RunService)
 RunService.Heartbeat:Connect(function(deltaTime: number)
+	-- 튜토리얼 거리 업데이트
 	if tutorialController:IsActive() and character then
 		local hrp = character:FindFirstChild("HumanoidRootPart") :: BasePart?
 		if hrp then
 			tutorialController:UpdateDistance(hrp.Position)
 		end
 	end
+
+	-- 속도 연출 효과 동기화 (게임 중일 때만)
+	if playerController:IsPlaying() then
+		local effectiveSpeed = playerController:GetEffectiveSpeed()
+		speedEffectController:SetSpeed(effectiveSpeed)
+	end
 end)
 
 print("[Client] Coin Runner Client Ready")
-print("[Client] Controllers initialized: Input, Player, Coin, Life, UI, Powerup, Camera, NPC, Tutorial, Music, Shop")
+print("[Client] Controllers initialized: Input, Player, Coin, Life, UI, Powerup, Camera, NPC, Tutorial, Music, Shop, SpeedEffect")

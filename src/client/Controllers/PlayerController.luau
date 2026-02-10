@@ -234,6 +234,16 @@ function PlayerController:SetSpeedMultiplier(multiplier: number)
 	print(`[PlayerController] Speed: {oldMultiplier * 100}% -> {multiplier * 100}% (effective: {math.floor(effectiveSpeed)} studs/s)`)
 end
 
+-- 현재 유효 속도 반환 (SpeedEffectController용)
+function PlayerController:GetEffectiveSpeed(): number
+	return self.currentSpeed * self.speedMultiplier
+end
+
+-- 게임 중인지 확인
+function PlayerController:IsPlaying(): boolean
+	return self.state ~= "Idle"
+end
+
 -- 캐릭터 업데이트 (리스폰 시 호출)
 function PlayerController:UpdateCharacter(newCharacter: Model)
 	-- 기존 연결 정리
