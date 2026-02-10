@@ -173,6 +173,37 @@ GameConstants.DATA = {
 	SAVE_RETRY_COUNT = 3, -- 저장 실패 시 재시도 횟수
 }
 
+-- 로비 시스템
+GameConstants.LOBBY = {
+	SPAWN_POSITION = Vector3.new(-80, 2.5, 0),
+	PORTAL_POSITION = Vector3.new(-25, 3, 0),
+	PORTAL_SIZE = Vector3.new(2, 8, 10),
+	FLOOR_SIZE = Vector3.new(100, 1, 30),
+	FLOOR_POSITION = Vector3.new(-60, 0.5, 0),
+	SHOP_POSITION = Vector3.new(-50, 5, 0),
+	TITLE_POSITION = Vector3.new(-60, 15, -10),
+	HIGHSCORE_BOARD_POSITION = Vector3.new(-60, 10, -10),
+}
+
+-- 상점 시스템
+GameConstants.SHOP = {
+	-- 스킨
+	SKINS = {
+		{ id = "default", name = "기본", price = 0 },
+		{ id = "red_hat", name = "빨간 모자", price = 100 },
+		{ id = "blue_cape", name = "파란 망토", price = 200 },
+		{ id = "golden", name = "골든", price = 500 },
+	},
+	-- 시작 파워업
+	START_POWERUPS = {
+		{ id = "start_magnet", name = "시작 자석", price = 50, duration = 5 },
+		{ id = "start_shield", name = "시작 쉴드", price = 50, uses = 1 },
+		{ id = "start_double", name = "시작 2배코인", price = 80, duration = 10 },
+	},
+	-- 부활권
+	REVIVE_TICKET_PRICE = 100,
+}
+
 -- NPC (MVP: 토끼, 곰돌이, 부엉이)
 GameConstants.NPC = {
 	SPEECH_BUBBLE_DURATION = 3, -- 말풍선 표시 시간 (초) - 더 오래 표시

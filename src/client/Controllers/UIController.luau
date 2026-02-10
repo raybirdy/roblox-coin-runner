@@ -32,6 +32,8 @@ export type UIController = typeof(setmetatable(
 		_tutorialBanner: Frame?, -- 튜토리얼 배너
 		_tutorialNotification: Frame?, -- 튜토리얼 종료 알림
 		_countdownLabel: TextLabel?, -- 카운트다운 표시
+		_lobbyGuide: Frame?, -- 로비 안내 텍스트
+		_highScoreDisplay: Frame?, -- 로비 최고 점수 표시
 		_connections: { RBXScriptConnection },
 		_onJumpCallback: (() -> ())?,
 		_onSlideCallback: (() -> ())?,
@@ -59,6 +61,8 @@ function UIController.new(player: Player): UIController
 		_tutorialBanner = nil,
 		_tutorialNotification = nil,
 		_countdownLabel = nil,
+		_lobbyGuide = nil,
+		_highScoreDisplay = nil,
 		_connections = {},
 		_onJumpCallback = nil,
 		_onSlideCallback = nil,
@@ -67,7 +71,7 @@ function UIController.new(player: Player): UIController
 	self:_createUI()
 	self:_createMobileControls()
 	self:_setupEventHandlers()
-	self:ShowStartMenu() -- 시작 시 메뉴 표시
+	self:ShowLobbyUI() -- 시작 시 로비 UI 표시
 
 	return self
 end
@@ -480,6 +484,84 @@ function UIController:_createUI()
 	countdownLabel.Parent = screenGui
 	self._countdownLabel = countdownLabel
 
+	-- 로비 안내 텍스트 (화면 하단)
+	local lobbyGuide = Instance.new("Frame")
+	lobbyGuide.Name = "LobbyGuide"
+	lobbyGuide.Size = UDim2.new(0, 400, 0, 60)
+	lobbyGuide.Position = UDim2.new(0.5, -200, 1, -100)
+	lobbyGuide.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	lobbyGuide.BackgroundTransparency = 0.4
+	lobbyGuide.Visible = false
+	lobbyGuide.Parent = screenGui
+	self._lobbyGuide = lobbyGuide
+
+	local guideCorner = Instance.new("UICorner")
+	guideCorner.CornerRadius = UDim.new(0, 12)
+	guideCorner.Parent = lobbyGuide
+
+	local guideStroke = Instance.new("UIStroke")
+	guideStroke.Color = Color3.fromRGB(0, 255, 100)
+	guideStroke.Thickness = 2
+	guideStroke.Parent = lobbyGuide
+
+	local guideLabel = Instance.new("TextLabel")
+	guideLabel.Name = "Label"
+	guideLabel.Size = UDim2.new(1, 0, 1, 0)
+	guideLabel.BackgroundTransparency = 1
+	guideLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	guideLabel.TextSize = 22
+	guideLabel.Font = Enum.Font.GothamBold
+	guideLabel.Text = "포탈로 들어가서 게임 시작!"
+	guideLabel.Parent = lobbyGuide
+
+	-- 로비 최고 점수 표시 (화면 상단)
+	local highScoreDisplay = Instance.new("Frame")
+	highScoreDisplay.Name = "HighScoreDisplay"
+	highScoreDisplay.Size = UDim2.new(0, 250, 0, 100)
+	highScoreDisplay.Position = UDim2.new(0.5, -125, 0, 10)
+	highScoreDisplay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	highScoreDisplay.BackgroundTransparency = 0.4
+	highScoreDisplay.Visible = false
+	highScoreDisplay.Parent = screenGui
+	self._highScoreDisplay = highScoreDisplay
+
+	local hsCorner = Instance.new("UICorner")
+	hsCorner.CornerRadius = UDim.new(0, 12)
+	hsCorner.Parent = highScoreDisplay
+
+	local hsTitle = Instance.new("TextLabel")
+	hsTitle.Name = "Title"
+	hsTitle.Size = UDim2.new(1, 0, 0, 30)
+	hsTitle.Position = UDim2.new(0, 0, 0, 5)
+	hsTitle.BackgroundTransparency = 1
+	hsTitle.TextColor3 = Color3.fromRGB(255, 215, 0)
+	hsTitle.TextSize = 18
+	hsTitle.Font = Enum.Font.GothamBold
+	hsTitle.Text = "MY BEST"
+	hsTitle.Parent = highScoreDisplay
+
+	local hsScore = Instance.new("TextLabel")
+	hsScore.Name = "Score"
+	hsScore.Size = UDim2.new(1, 0, 0, 30)
+	hsScore.Position = UDim2.new(0, 0, 0, 35)
+	hsScore.BackgroundTransparency = 1
+	hsScore.TextColor3 = Color3.fromRGB(255, 255, 255)
+	hsScore.TextSize = 24
+	hsScore.Font = Enum.Font.GothamBold
+	hsScore.Text = "Score: 0"
+	hsScore.Parent = highScoreDisplay
+
+	local hsCoins = Instance.new("TextLabel")
+	hsCoins.Name = "Coins"
+	hsCoins.Size = UDim2.new(1, 0, 0, 25)
+	hsCoins.Position = UDim2.new(0, 0, 0, 68)
+	hsCoins.BackgroundTransparency = 1
+	hsCoins.TextColor3 = Color3.fromRGB(255, 215, 0)
+	hsCoins.TextSize = 16
+	hsCoins.Font = Enum.Font.Gotham
+	hsCoins.Text = "Coins: 0"
+	hsCoins.Parent = highScoreDisplay
+
 	print("[UIController] UI created")
 end
 
@@ -762,15 +844,15 @@ function UIController:OnPlayButtonClicked()
 	RemoteEvents.GameStart:FireServer()
 end
 
--- 재시작 버튼 클릭 처리
+-- 재시작 버튼 클릭 처리 (이제 로비로 복귀)
 function UIController:OnRestartButtonClicked()
-	print("[UIController] Restart button clicked")
+	print("[UIController] Restart button clicked - returning to lobby")
 
 	-- 게임 오버 화면 숨기기
 	self:HideGameOver()
 
-	-- 서버에 게임 시작 요청
-	RemoteEvents.GameStart:FireServer()
+	-- 로비 UI 표시 (서버에서 ReturnToLobby가 호출됨)
+	self:ShowLobbyUI()
 end
 
 -- 부활 버튼 클릭 처리
@@ -784,10 +866,14 @@ function UIController:OnReviveButtonClicked()
 	RemoteEvents.Revive:FireServer()
 end
 
--- 시작 메뉴 표시
-function UIController:ShowStartMenu()
-	if self._startMenuFrame then
-		self._startMenuFrame.Visible = true
+-- 로비 UI 표시
+function UIController:ShowLobbyUI()
+	-- 로비 안내 표시
+	if self._lobbyGuide then
+		self._lobbyGuide.Visible = true
+	end
+	if self._highScoreDisplay then
+		self._highScoreDisplay.Visible = true
 	end
 
 	-- 게임 UI 숨기기
@@ -809,12 +895,20 @@ function UIController:ShowStartMenu()
 	if self._slideButton then
 		self._slideButton.Visible = false
 	end
-end
 
--- 시작 메뉴 숨기기
-function UIController:HideStartMenu()
+	-- 시작 메뉴 숨기기 (더 이상 사용 안 함)
 	if self._startMenuFrame then
 		self._startMenuFrame.Visible = false
+	end
+end
+
+-- 로비 UI 숨기기
+function UIController:HideLobbyUI()
+	if self._lobbyGuide then
+		self._lobbyGuide.Visible = false
+	end
+	if self._highScoreDisplay then
+		self._highScoreDisplay.Visible = false
 	end
 
 	-- 게임 UI 표시
@@ -836,6 +930,33 @@ function UIController:HideStartMenu()
 	if self._slideButton then
 		self._slideButton.Visible = true
 	end
+end
+
+-- 최고 점수 표시 업데이트
+function UIController:UpdateHighScoreDisplay(highScore: number, coins: number)
+	if not self._highScoreDisplay then
+		return
+	end
+
+	local scoreLabel = self._highScoreDisplay:FindFirstChild("Score") :: TextLabel?
+	if scoreLabel then
+		scoreLabel.Text = `Score: {highScore}`
+	end
+
+	local coinsLabel = self._highScoreDisplay:FindFirstChild("Coins") :: TextLabel?
+	if coinsLabel then
+		coinsLabel.Text = `Coins: {coins}`
+	end
+end
+
+-- 시작 메뉴 표시 (호환성 유지)
+function UIController:ShowStartMenu()
+	self:ShowLobbyUI()
+end
+
+-- 시작 메뉴 숨기기 (호환성 유지)
+function UIController:HideStartMenu()
+	self:HideLobbyUI()
 end
 
 -- 게임 오버 화면 숨기기 (재시작 시)

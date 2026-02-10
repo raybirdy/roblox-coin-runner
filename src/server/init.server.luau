@@ -14,11 +14,15 @@ local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)
 -- 서버 서비스 로드
 local GameManager = require(ServerScriptService.Server.Services.GameManager)
 local PlayerDataService = require(ServerScriptService.Server.Services.PlayerDataService)
+local LobbyService = require(ServerScriptService.Server.Services.LobbyService)
+local ShopService = require(ServerScriptService.Server.Services.ShopService)
 
 print("[Server] Game Constants Loaded")
 print("[Server] Remote Events Initialized")
 print("[Server] GameManager Loaded")
 print("[Server] PlayerDataService Loaded")
+print("[Server] LobbyService Loaded")
+print("[Server] ShopService Loaded")
 
 -- 플레이어 참가 처리
 game.Players.PlayerAdded:Connect(function(player: Player)

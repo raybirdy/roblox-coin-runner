@@ -29,7 +29,11 @@ type PlayerData = {
 	totalDistance: number,
 	totalCoinsCollected: number,
 	tutorialCompleted: boolean,
-	-- 향후 추가: 스킨, 펫, 레벨 등
+	-- 상점 시스템
+	ownedSkins: { string },
+	equippedSkin: string,
+	startPowerups: { [string]: number }, -- powerupId -> 보유 개수
+	reviveTickets: number,
 }
 
 local DEFAULT_DATA: PlayerData = {
@@ -39,6 +43,11 @@ local DEFAULT_DATA: PlayerData = {
 	totalDistance = 0,
 	totalCoinsCollected = 0,
 	tutorialCompleted = false,
+	-- 상점 시스템 기본값
+	ownedSkins = { "default" },
+	equippedSkin = "default",
+	startPowerups = {},
+	reviveTickets = 0,
 }
 
 -- 메모리 캐시 (활성 플레이어)
@@ -197,6 +206,205 @@ end
 function PlayerDataService:OnPlayerRemoving(player: Player)
 	self:SavePlayerData(player)
 	playerDataCache[player] = nil
+end
+
+-- 코인 차감
+function PlayerDataService:SpendCoins(player: Player, amount: number): boolean
+	local playerData = playerDataCache[player]
+	if not playerData then
+		return false
+	end
+
+	if playerData.coins < amount then
+		return false
+	end
+
+	playerData.coins -= amount
+	return true
+end
+
+-- 코인 추가
+function PlayerDataService:AddCoins(player: Player, amount: number)
+	local playerData = playerDataCache[player]
+	if not playerData then
+		return
+	end
+
+	playerData.coins += amount
+end
+
+-- 스킨 구매
+function PlayerDataService:PurchaseSkin(player: Player, skinId: string, price: number): boolean
+	local playerData = playerDataCache[player]
+	if not playerData then
+		return false
+	end
+
+	-- 이미 소유한 스킨인지 확인
+	for _, ownedSkin in playerData.ownedSkins do
+		if ownedSkin == skinId then
+			return false -- 이미 소유
+		end
+	end
+
+	-- 코인 차감
+	if not self:SpendCoins(player, price) then
+		return false
+	end
+
+	-- 스킨 추가
+	table.insert(playerData.ownedSkins, skinId)
+	self:SavePlayerData(player)
+
+	return true
+end
+
+-- 스킨 장착
+function PlayerDataService:EquipSkin(player: Player, skinId: string): boolean
+	local playerData = playerDataCache[player]
+	if not playerData then
+		return false
+	end
+
+	-- 소유한 스킨인지 확인
+	local owned = false
+	for _, ownedSkin in playerData.ownedSkins do
+		if ownedSkin == skinId then
+			owned = true
+			break
+		end
+	end
+
+	if not owned then
+		return false
+	end
+
+	playerData.equippedSkin = skinId
+	self:SavePlayerData(player)
+
+	return true
+end
+
+-- 시작 파워업 구매
+function PlayerDataService:PurchaseStartPowerup(player: Player, powerupId: string, price: number): boolean
+	local playerData = playerDataCache[player]
+	if not playerData then
+		return false
+	end
+
+	-- 코인 차감
+	if not self:SpendCoins(player, price) then
+		return false
+	end
+
+	-- 파워업 추가
+	if not playerData.startPowerups then
+		playerData.startPowerups = {}
+	end
+	playerData.startPowerups[powerupId] = (playerData.startPowerups[powerupId] or 0) + 1
+	self:SavePlayerData(player)
+
+	return true
+end
+
+-- 시작 파워업 사용
+function PlayerDataService:UseStartPowerup(player: Player, powerupId: string): boolean
+	local playerData = playerDataCache[player]
+	if not playerData or not playerData.startPowerups then
+		return false
+	end
+
+	local count = playerData.startPowerups[powerupId] or 0
+	if count <= 0 then
+		return false
+	end
+
+	playerData.startPowerups[powerupId] = count - 1
+	self:SavePlayerData(player)
+
+	return true
+end
+
+-- 시작 파워업 보유 개수 확인
+function PlayerDataService:GetStartPowerupCount(player: Player, powerupId: string): number
+	local playerData = playerDataCache[player]
+	if not playerData or not playerData.startPowerups then
+		return 0
+	end
+
+	return playerData.startPowerups[powerupId] or 0
+end
+
+-- 부활권 구매
+function PlayerDataService:PurchaseReviveTicket(player: Player, price: number): boolean
+	local playerData = playerDataCache[player]
+	if not playerData then
+		return false
+	end
+
+	-- 코인 차감
+	if not self:SpendCoins(player, price) then
+		return false
+	end
+
+	playerData.reviveTickets = (playerData.reviveTickets or 0) + 1
+	self:SavePlayerData(player)
+
+	return true
+end
+
+-- 부활권 사용
+function PlayerDataService:UseReviveTicket(player: Player): boolean
+	local playerData = playerDataCache[player]
+	if not playerData then
+		return false
+	end
+
+	local tickets = playerData.reviveTickets or 0
+	if tickets <= 0 then
+		return false
+	end
+
+	playerData.reviveTickets = tickets - 1
+	self:SavePlayerData(player)
+
+	return true
+end
+
+-- 부활권 보유 개수 확인
+function PlayerDataService:GetReviveTicketCount(player: Player): number
+	local playerData = playerDataCache[player]
+	if not playerData then
+		return 0
+	end
+
+	return playerData.reviveTickets or 0
+end
+
+-- 스킨 소유 여부 확인
+function PlayerDataService:OwnsSkin(player: Player, skinId: string): boolean
+	local playerData = playerDataCache[player]
+	if not playerData then
+		return false
+	end
+
+	for _, ownedSkin in playerData.ownedSkins do
+		if ownedSkin == skinId then
+			return true
+		end
+	end
+
+	return false
+end
+
+-- 장착 중인 스킨 가져오기
+function PlayerDataService:GetEquippedSkin(player: Player): string
+	local playerData = playerDataCache[player]
+	if not playerData then
+		return "default"
+	end
+
+	return playerData.equippedSkin or "default"
 end
 
 -- 유틸리티: 테이블 복사

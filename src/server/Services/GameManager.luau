@@ -15,6 +15,8 @@ local PowerupService = require(script.Parent.PowerupService)
 local NPCService = require(script.Parent.NPCService)
 local TutorialService = require(script.Parent.TutorialService)
 local PlayerDataService = require(script.Parent.PlayerDataService)
+local LobbyService = require(script.Parent.LobbyService)
+local ShopService = require(script.Parent.ShopService)
 
 local GameManager = {}
 
@@ -34,6 +36,7 @@ type GameSession = {
 	coins: number,
 	lives: number,
 	reviveCount: number, -- 부활 횟수
+	startPowerups: { string }?, -- 게임 시작 시 사용할 파워업 목록
 }
 
 local activeSessions: { [Player]: GameSession } = {}
@@ -41,6 +44,179 @@ local globalTutorialService = TutorialService.new()
 
 -- TutorialService에 PlayerDataService 연결
 globalTutorialService:SetPlayerDataService(PlayerDataService)
+
+-- 로비 초기화
+LobbyService:Initialize()
+
+-- 포탈 터치 감지 설정
+local function setupPortalDetection()
+	local portalTrigger = LobbyService:GetPortalTrigger()
+	if portalTrigger then
+		portalTrigger.Touched:Connect(function(hit: BasePart)
+			local character = hit.Parent :: Model?
+			if not character then
+				return
+			end
+
+			local player = Players:GetPlayerFromCharacter(character)
+			if not player then
+				return
+			end
+
+			-- 이미 게임 중이면 무시
+			if activeSessions[player] then
+				return
+			end
+
+			-- 게임 시작 요청 처리
+			print(`[GameManager] Portal touched by {player.Name}`)
+			RemoteEvents.PortalEnter:FireClient(player)
+		end)
+		print("[GameManager] Portal detection set up")
+	end
+end
+
+-- 포탈 터치 후 게임 시작 요청
+RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { startPowerups: { string }? }?)
+	print(`[GameManager] Portal enter confirmed by {player.Name}`)
+
+	-- 시작 파워업 검증 및 사용
+	local validPowerups: { string } = {}
+	if data and data.startPowerups then
+		for _, powerupId in data.startPowerups do
+			if PlayerDataService:UseStartPowerup(player, powerupId) then
+				table.insert(validPowerups, powerupId)
+				print(`[GameManager] Using start powerup: {powerupId}`)
+			end
+		end
+	end
+
+	-- 기존 세션이 있으면 정리
+	if activeSessions[player] then
+		GameManager.EndGame(player)
+	end
+
+	-- 새 세션 생성 (기존 GameStart 로직과 동일)
+	local chunkService = ChunkService.new()
+	local coinService = CoinService.new(player)
+	local obstacleService = ObstacleService.new(player)
+	local powerupService = PowerupService.new(player)
+	local npcService = NPCService.new(player)
+
+	-- 시작 위치 설정 및 플레이어 텔레포트
+	local startPosition = Vector3.new(0, 2.5, GameConstants.PLAYER.Z_POSITION)
+	local character = player.Character
+	if character then
+		local hrp = character:FindFirstChild("HumanoidRootPart") :: BasePart?
+		if hrp then
+			hrp.CFrame = CFrame.new(startPosition) * CFrame.Angles(0, math.rad(-90), 0)
+			print(`[GameManager] Teleported {player.Name} to start position`)
+		end
+	end
+
+	local session: GameSession = {
+		player = player,
+		chunkService = chunkService,
+		coinService = coinService,
+		obstacleService = obstacleService,
+		powerupService = powerupService,
+		npcService = npcService,
+		tutorialService = globalTutorialService,
+		isPlaying = true,
+		startTime = tick(),
+		startPosition = startPosition,
+		score = 0,
+		coins = 0,
+		lives = GameConstants.LIFE.STARTING_LIVES,
+		reviveCount = 0,
+		startPowerups = validPowerups,
+	}
+
+	activeSessions[player] = session
+
+	-- 청크 서비스에 코인/장애물/파워업/NPC 서비스 연결
+	chunkService:SetCoinService(coinService)
+	chunkService:SetObstacleService(obstacleService)
+	chunkService:SetPowerupService(powerupService)
+	chunkService:SetNPCService(npcService)
+	chunkService:StartGame()
+
+	-- 파워업 서비스 시작
+	powerupService:StartGame()
+
+	-- 시작 파워업 적용
+	for _, powerupId in validPowerups do
+		if powerupId == "start_magnet" then
+			powerupService:ActivatePowerup("Magnet")
+		elseif powerupId == "start_shield" then
+			powerupService:ActivatePowerup("Shield")
+		elseif powerupId == "start_double" then
+			powerupService:ActivatePowerup("DoubleCoin")
+		end
+	end
+
+	-- 튜토리얼 필요 여부 확인
+	local needsTutorial = globalTutorialService:NeedsTutorial(player)
+
+	-- 클라이언트에 게임 시작 알림
+	RemoteEvents.GameStart:FireClient(player, {
+		startTime = session.startTime,
+		lives = session.lives,
+		startTutorial = needsTutorial,
+		startPosition = startPosition,
+		startPowerups = validPowerups,
+	})
+
+	print(`[GameManager] Game started for {player.Name} via portal`)
+end)
+
+-- 로비 복귀 처리
+function GameManager.ReturnToLobby(player: Player)
+	local character = player.Character
+	if character then
+		local hrp = character:FindFirstChild("HumanoidRootPart") :: BasePart?
+		if hrp then
+			hrp.CFrame = CFrame.new(GameConstants.LOBBY.SPAWN_POSITION) * CFrame.Angles(0, math.rad(-90), 0)
+			print(`[GameManager] {player.Name} returned to lobby`)
+		end
+	end
+
+	-- 클라이언트에 로비 복귀 알림
+	RemoteEvents.ReturnToLobby:FireClient(player)
+end
+
+-- 상점 터치 감지 설정
+local function setupShopDetection()
+	local shopTrigger = LobbyService:GetShopTrigger()
+	if shopTrigger then
+		shopTrigger.Touched:Connect(function(hit: BasePart)
+			local character = hit.Parent :: Model?
+			if not character then
+				return
+			end
+
+			local player = Players:GetPlayerFromCharacter(character)
+			if not player then
+				return
+			end
+
+			-- 게임 중이면 무시
+			if activeSessions[player] then
+				return
+			end
+
+			-- 상점 열기 알림
+			RemoteEvents.ShopOpen:FireClient(player)
+		end)
+		print("[GameManager] Shop detection set up")
+	end
+end
+
+-- 초기화 후 포탈/상점 감지 설정
+task.defer(function()
+	setupPortalDetection()
+	setupShopDetection()
+end)
 
 -- 게임 시작 요청 처리
 RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
@@ -215,6 +391,11 @@ function GameManager.EndGame(player: Player)
 	activeSessions[player] = nil
 
 	print(`[GameManager] Game ended for {player.Name}: Score={finalScore}, Coins={earnedCoins}, HighScore={highScore}`)
+
+	-- 로비로 복귀 (딜레이 후)
+	task.delay(0.5, function()
+		GameManager.ReturnToLobby(player)
+	end)
 end
 
 -- 플레이어 퇴장 시 세션 정리

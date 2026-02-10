@@ -52,6 +52,7 @@ local CameraController = require(script.Controllers.CameraController)
 local NPCController = require(script.Controllers.NPCController)
 local TutorialController = require(script.Controllers.TutorialController)
 local MusicController = require(script.Controllers.MusicController)
+local ShopController = require(script.Controllers.ShopController)
 
 -- 컨트롤러 인스턴스 생성
 local inputController = InputController.new()
@@ -64,9 +65,39 @@ local cameraController = CameraController.new(player, character)
 local npcController = NPCController.new()
 local tutorialController = TutorialController.new()
 local musicController = MusicController.new()
+local shopController = ShopController.new(player)
 
 -- 배경 음악 시작
 musicController:Start()
+
+-- 플레이어 데이터 로드 시 UI 업데이트
+RemoteEvents.PlayerDataLoaded.OnClientEvent:Connect(function(data)
+	print("[Client] Player data loaded")
+	if data.highScore then
+		uiController:UpdateHighScoreDisplay(data.highScore, data.coins or 0)
+	end
+end)
+
+-- 로비 복귀 처리
+RemoteEvents.ReturnToLobby.OnClientEvent:Connect(function()
+	print("[Client] Returned to lobby")
+	uiController:ShowLobbyUI()
+end)
+
+-- 포탈 진입 안내 (서버에서 포탈 감지 시)
+RemoteEvents.PortalEnter.OnClientEvent:Connect(function()
+	print("[Client] Portal enter detected, confirming to server...")
+	-- 시작 파워업 선택 UI 표시 가능 (Phase 2 확장)
+	RemoteEvents.PortalEnter:FireServer({})
+end)
+
+-- 상점 열기 (서버에서 상점 감지 시)
+RemoteEvents.ShopOpen.OnClientEvent:Connect(function()
+	print("[Client] Shop open requested")
+	if not shopController:IsOpen() then
+		shopController:Open()
+	end
+end)
 
 -- 튜토리얼 컨트롤러에 NPCController 연결
 tutorialController:SetNPCController(npcController)
@@ -107,6 +138,7 @@ end)
 RemoteEvents.GameStart.OnClientEvent:Connect(function(data)
 	print("[Client] Game start confirmed by server")
 	uiController:HideGameOver() -- 게임 오버 화면 숨기기
+	uiController:HideLobbyUI() -- 로비 UI 숨기기
 
 	-- 카운트다운 전 플레이어 고정 (이전 게임 상태 완전 정리)
 	playerController:StopGame()
@@ -198,4 +230,4 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 end)
 
 print("[Client] Coin Runner Client Ready")
-print("[Client] Controllers initialized: Input, Player, Coin, Life, UI, Powerup, Camera, NPC, Tutorial, Music")
+print("[Client] Controllers initialized: Input, Player, Coin, Life, UI, Powerup, Camera, NPC, Tutorial, Music, Shop")

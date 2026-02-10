@@ -111,4 +111,36 @@ RemoteEvents.NPCAppeared = getOrCreateRemoteEvent("NPCAppeared")
 RemoteEvents.NPCInteraction = getOrCreateRemoteEvent("NPCInteraction")
 -- 클라이언트 → 서버: NPC 상호작용 요청 (향후 확장용)
 
+-- 로비 포탈 진입
+RemoteEvents.PortalEnter = getOrCreateRemoteEvent("PortalEnter")
+-- 클라이언트 → 서버: 포탈 진입 요청 (게임 시작)
+
+-- 상점 열기
+RemoteEvents.ShopOpen = getOrCreateRemoteEvent("ShopOpen")
+-- 클라이언트 → 서버: 상점 UI 열기 요청
+
+-- 상점 구매
+RemoteEvents.ShopPurchase = getOrCreateRemoteEvent("ShopPurchase")
+-- 클라이언트 → 서버: 아이템 구매 요청
+-- 파라미터: { itemType: string, itemId: string }
+
+-- 상점 구매 결과
+RemoteEvents.ShopPurchaseResult = getOrCreateRemoteEvent("ShopPurchaseResult")
+-- 서버 → 클라이언트: 구매 결과 알림
+-- 파라미터: { success: boolean, itemType: string, itemId: string, newBalance: number, error: string? }
+
+-- 스킨 장착
+RemoteEvents.EquipSkin = getOrCreateRemoteEvent("EquipSkin")
+-- 클라이언트 → 서버: 스킨 장착 요청
+-- 파라미터: { skinId: string }
+
+-- 시작 파워업 사용
+RemoteEvents.UseStartPowerup = getOrCreateRemoteEvent("UseStartPowerup")
+-- 클라이언트 → 서버: 시작 파워업 사용 요청
+-- 파라미터: { powerupId: string }
+
+-- 로비 복귀
+RemoteEvents.ReturnToLobby = getOrCreateRemoteEvent("ReturnToLobby")
+-- 서버 → 클라이언트: 로비로 복귀 알림
+
 return RemoteEvents
