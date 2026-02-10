@@ -184,6 +184,7 @@ GameConstants.LOBBY = {
 	PORTAL_POSITION = Vector3.new(-25, 3, 0),
 	PORTAL_SIZE = Vector3.new(2, 8, 10),
 	SHOP_POSITION = Vector3.new(-70, 5, 20),
+	LEADERBOARD_POSITION = Vector3.new(-70, 5, -20), -- 상점 반대편
 	TITLE_POSITION = Vector3.new(-85, 18, -25),
 
 	-- 장식물 위치
