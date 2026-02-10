@@ -270,21 +270,33 @@ function ProceduralChunkGenerator._addBonusVisuals(chunk: Model, position: Vecto
 	arch.Transparency = 0.3
 	arch.Parent = chunk
 
-	-- "BONUS" 텍스트
+	-- "BONUS" 텍스트 (잘 보이도록 배경 추가)
 	local billboard = Instance.new("BillboardGui")
-	billboard.Size = UDim2.new(0, 150, 0, 50)
-	billboard.StudsOffset = Vector3.new(0, 4, 0)
+	billboard.Size = UDim2.new(0, 180, 0, 80)
+	billboard.StudsOffset = Vector3.new(0, 5, 0)
 	billboard.Adornee = arch
+	billboard.AlwaysOnTop = true
 	billboard.Parent = arch
+
+	-- 배경 프레임 (검은색 반투명)
+	local bgFrame = Instance.new("Frame")
+	bgFrame.Size = UDim2.new(1, 0, 1, 0)
+	bgFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	bgFrame.BackgroundTransparency = 0.3
+	bgFrame.BorderSizePixel = 4
+	bgFrame.BorderColor3 = Color3.fromRGB(255, 215, 0)
+	bgFrame.Parent = billboard
 
 	local text = Instance.new("TextLabel")
 	text.Size = UDim2.new(1, 0, 1, 0)
 	text.BackgroundTransparency = 1
 	text.Text = "BONUS!"
-	text.TextColor3 = Color3.fromRGB(255, 255, 100)
-	text.TextSize = 36
-	text.Font = Enum.Font.GothamBold
-	text.Parent = billboard
+	text.TextColor3 = Color3.fromRGB(255, 255, 255) -- 흰색 글자
+	text.TextSize = 42
+	text.Font = Enum.Font.GothamBlack
+	text.TextStrokeTransparency = 0
+	text.TextStrokeColor3 = Color3.fromRGB(200, 150, 0) -- 금색 테두리
+	text.Parent = bgFrame
 
 	-- 별 장식
 	for i = 1, 5 do
@@ -313,27 +325,38 @@ function ProceduralChunkGenerator._addHardVisuals(chunk: Model, position: Vector
 	local warningSign = Instance.new("Part")
 	warningSign.Name = "WarningSign"
 	warningSign.Size = Vector3.new(0.5, 4, 4)
-	warningSign.Position = Vector3.new(position.X + 2, 4, position.Z - 8)
+	warningSign.Position = Vector3.new(position.X + 2, 5, position.Z - 8)
 	warningSign.Anchored = true
 	warningSign.CanCollide = false
-	warningSign.Color = Color3.fromRGB(255, 200, 0)
-	warningSign.Material = Enum.Material.SmoothPlastic
+	warningSign.Transparency = 1
 	warningSign.Parent = chunk
 
-	-- 경고 텍스트
+	-- 경고 텍스트 (잘 보이도록 배경 추가)
 	local billboard = Instance.new("BillboardGui")
-	billboard.Size = UDim2.new(0, 100, 0, 100)
+	billboard.Size = UDim2.new(0, 140, 0, 70)
 	billboard.Adornee = warningSign
+	billboard.AlwaysOnTop = true
 	billboard.Parent = warningSign
+
+	-- 배경 프레임 (검은색 반투명)
+	local bgFrame = Instance.new("Frame")
+	bgFrame.Size = UDim2.new(1, 0, 1, 0)
+	bgFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	bgFrame.BackgroundTransparency = 0.3
+	bgFrame.BorderSizePixel = 3
+	bgFrame.BorderColor3 = Color3.fromRGB(255, 50, 50)
+	bgFrame.Parent = billboard
 
 	local text = Instance.new("TextLabel")
 	text.Size = UDim2.new(1, 0, 1, 0)
 	text.BackgroundTransparency = 1
-	text.Text = "!"
-	text.TextColor3 = Color3.fromRGB(50, 50, 50)
-	text.TextSize = 72
-	text.Font = Enum.Font.GothamBold
-	text.Parent = billboard
+	text.Text = "HARD!"
+	text.TextColor3 = Color3.fromRGB(255, 255, 255) -- 흰색 글자
+	text.TextSize = 36
+	text.Font = Enum.Font.GothamBlack
+	text.TextStrokeTransparency = 0
+	text.TextStrokeColor3 = Color3.fromRGB(200, 0, 0) -- 빨간 테두리
+	text.Parent = bgFrame
 
 	-- 빨간 테두리 라인
 	for _, zOffset in { -CHUNK_CONFIG.FLOOR_WIDTH / 2, CHUNK_CONFIG.FLOOR_WIDTH / 2 } do
