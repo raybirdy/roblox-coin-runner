@@ -111,9 +111,10 @@ RemoteEvents.GameStart.OnClientEvent:Connect(function(data)
 	-- 카운트다운 전 플레이어 고정 (이전 게임 상태 완전 정리)
 	playerController:StopGame()
 
-	-- 시작 위치로 이동 및 고정
-	if character then
-		local hrp = character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	-- 현재 캐릭터 참조 (항상 최신 상태 사용)
+	local currentCharacter = player.Character
+	if currentCharacter then
+		local hrp = currentCharacter:FindFirstChild("HumanoidRootPart") :: BasePart?
 		if hrp then
 			hrp.Anchored = true -- 카운트다운 중 고정
 			hrp.AssemblyLinearVelocity = Vector3.zero
@@ -124,9 +125,10 @@ RemoteEvents.GameStart.OnClientEvent:Connect(function(data)
 
 	-- 카운트다운 후 게임 시작
 	uiController:ShowCountdown(function()
-		-- 고정 해제
-		if character then
-			local hrp = character:FindFirstChild("HumanoidRootPart") :: BasePart?
+		-- 고정 해제 (현재 캐릭터 다시 참조)
+		local charNow = player.Character
+		if charNow then
+			local hrp = charNow:FindFirstChild("HumanoidRootPart") :: BasePart?
 			if hrp then
 				hrp.Anchored = false
 			end

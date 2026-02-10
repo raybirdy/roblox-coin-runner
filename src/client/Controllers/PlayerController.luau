@@ -129,6 +129,9 @@ function PlayerController:StartGame()
 	self.verticalVelocity = 0
 	self._lastJumpTime = 0
 
+	-- Anchored 해제 (Play Again 버그 방지)
+	self.humanoidRootPart.Anchored = false
+
 	-- 속도 완전 초기화
 	self.humanoidRootPart.AssemblyLinearVelocity = Vector3.zero
 
