@@ -143,4 +143,13 @@ RemoteEvents.UseStartPowerup = getOrCreateRemoteEvent("UseStartPowerup")
 RemoteEvents.ReturnToLobby = getOrCreateRemoteEvent("ReturnToLobby")
 -- 서버 → 클라이언트: 로비로 복귀 알림
 
+-- 리더보드 요청
+RemoteEvents.LeaderboardRequest = getOrCreateRemoteEvent("LeaderboardRequest")
+-- 클라이언트 → 서버: 리더보드 데이터 요청
+
+-- 리더보드 데이터
+RemoteEvents.LeaderboardData = getOrCreateRemoteEvent("LeaderboardData")
+-- 서버 → 클라이언트: 리더보드 데이터 전송
+-- 파라미터: { leaderboard: {{rank, name, score}}, playerRank: number? }
+
 return RemoteEvents

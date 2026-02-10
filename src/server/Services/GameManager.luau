@@ -18,6 +18,7 @@ local PlayerDataService = require(script.Parent.PlayerDataService)
 local LobbyService = require(script.Parent.LobbyService)
 local ShopService = require(script.Parent.ShopService)
 local BackgroundService = require(script.Parent.BackgroundService)
+local LeaderboardService = require(script.Parent.LeaderboardService)
 
 local GameManager = {}
 
@@ -373,6 +374,9 @@ function GameManager.EndGame(player: Player)
 	-- 최고 점수 가져오기
 	local playerData = PlayerDataService:GetPlayerData(player)
 	local highScore = playerData and playerData.highScore or 0
+
+	-- 글로벌 리더보드 업데이트
+	LeaderboardService:UpdateScore(player, highScore)
 
 	-- 청크, 코인, 장애물, 파워업, NPC 정리
 	if session.chunkService then
