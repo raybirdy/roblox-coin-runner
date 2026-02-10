@@ -135,6 +135,9 @@ function PlayerController:StartGame()
 	-- 속도 완전 초기화
 	self.humanoidRootPart.AssemblyLinearVelocity = Vector3.zero
 
+	-- 게임 모드: 회전 잠금 활성화
+	self:SetGameMode()
+
 	-- RunService 루프 시작 (전역 연결 사용 - 중복 방지)
 	local connection = RunService.Heartbeat:Connect(function(deltaTime: number)
 		self:_update(deltaTime)
@@ -188,6 +191,39 @@ function PlayerController:StopGame()
 	end
 
 	print(`[PlayerController] Game stopped for {self.player.Name}`)
+end
+
+-- 로비 모드 설정 (자유 회전 허용)
+function PlayerController:SetLobbyMode()
+	-- 회전 고정 해제
+	local rotationLock = self.humanoidRootPart:FindFirstChild("RotationLock")
+	if rotationLock then
+		rotationLock.Enabled = false
+	end
+
+	-- Humanoid 자동 회전 활성화 (카메라 방향으로 회전)
+	self.humanoid.AutoRotate = true
+
+	print("[PlayerController] Lobby mode - free rotation enabled")
+end
+
+-- 게임 모드 설정 (회전 잠금)
+function PlayerController:SetGameMode()
+	-- Humanoid 자동 회전 비활성화
+	self.humanoid.AutoRotate = false
+
+	-- 회전 고정 활성화
+	local rotationLock = self.humanoidRootPart:FindFirstChild("RotationLock")
+	if rotationLock then
+		rotationLock.Enabled = true
+		-- 오른쪽 바라보기로 리셋
+		rotationLock.CFrame = CFrame.Angles(0, math.rad(-90), 0)
+	end
+
+	-- 초기 회전 설정
+	self.humanoidRootPart.CFrame = CFrame.new(self.humanoidRootPart.Position) * CFrame.Angles(0, math.rad(-90), 0)
+
+	print("[PlayerController] Game mode - rotation locked")
 end
 
 -- 속도 배율 설정 (튜토리얼 슬로모션용)
@@ -275,9 +311,9 @@ function PlayerController:_setupPhysics()
 	-- Humanoid 설정
 	self.humanoid.WalkSpeed = 16 -- 애니메이션 재생용 (실제 이동은 CFrame으로)
 	self.humanoid.JumpPower = 0 -- 커스텀 점프 사용
-	self.humanoid.AutoRotate = false -- 회전 고정 (오른쪽 보기)
+	self.humanoid.AutoRotate = true -- 로비에서는 자유 회전 (초기값)
 
-	-- 회전 고정 (오른쪽을 향하기) - AlignOrientation 사용
+	-- 회전 고정 (오른쪽을 향하기) - AlignOrientation 사용, 초기에는 비활성화
 	local attachment = self.humanoidRootPart:FindFirstChild("ZAxisAttachment")
 	if attachment then
 		local alignOrientation = Instance.new("AlignOrientation")
@@ -287,13 +323,11 @@ function PlayerController:_setupPhysics()
 		alignOrientation.MaxTorque = 100000
 		alignOrientation.Responsiveness = 200
 		alignOrientation.CFrame = CFrame.Angles(0, math.rad(-90), 0) -- 오른쪽 바라보기
+		alignOrientation.Enabled = false -- 로비에서는 비활성화
 		alignOrientation.Parent = self.humanoidRootPart
 	end
 
-	-- 초기 회전 설정
-	self.humanoidRootPart.CFrame = CFrame.new(self.humanoidRootPart.Position) * CFrame.Angles(0, math.rad(-90), 0)
-
-	print("[PlayerController] Physics set up")
+	print("[PlayerController] Physics set up (lobby mode: free rotation)")
 end
 
 -- 메인 업데이트 루프

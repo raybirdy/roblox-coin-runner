@@ -19,16 +19,22 @@ local humanoid = character:WaitForChild("Humanoid") :: Humanoid
 print("[Client] Game Constants Loaded")
 print("[Client] Remote Events Connected")
 
--- Roblox 기본 UI 비활성화
+-- Roblox 기본 컨트롤 관리
 local PlayerGui = player:WaitForChild("PlayerGui")
+local controlModule = require(player.PlayerScripts:WaitForChild("PlayerModule"):WaitForChild("ControlModule"))
+
 local function disableDefaultControls()
+	-- 현재 캐릭터의 humanoid 가져오기
+	local currentCharacter = player.Character
+	local currentHumanoid = currentCharacter and currentCharacter:FindFirstChild("Humanoid") :: Humanoid?
+
 	-- 기본 점프 버튼 비활성화
-	if humanoid then
-		humanoid.JumpHeight = 0 -- 기본 점프 비활성화 (커스텀 점프 사용)
+	if currentHumanoid then
+		currentHumanoid.JumpHeight = 0 -- 기본 점프 비활성화 (커스텀 점프 사용)
+		currentHumanoid.AutoRotate = false -- 게임 중에는 자동 회전 비활성화
 	end
 
 	-- 기본 이동 조이스틱 비활성화 (모바일)
-	local controlModule = require(player.PlayerScripts:WaitForChild("PlayerModule"):WaitForChild("ControlModule"))
 	if controlModule then
 		controlModule:Disable()
 	end
@@ -36,10 +42,26 @@ local function disableDefaultControls()
 	print("[Client] Default Roblox controls disabled")
 end
 
--- 초기 캐릭터 설정 (컨트롤러 정의 후 리스폰 핸들러 추가)
+local function enableDefaultControls()
+	-- 현재 캐릭터의 humanoid 가져오기
+	local currentCharacter = player.Character
+	local currentHumanoid = currentCharacter and currentCharacter:FindFirstChild("Humanoid") :: Humanoid?
 
--- 초기 설정
-disableDefaultControls()
+	-- 기본 이동 활성화 (로비용)
+	if controlModule then
+		controlModule:Enable()
+	end
+
+	-- 점프는 로비에서도 허용
+	if currentHumanoid then
+		currentHumanoid.JumpHeight = 7.2 -- Roblox 기본값
+	end
+
+	print("[Client] Default Roblox controls enabled (lobby mode)")
+end
+
+-- 초기 설정: 로비에서는 기본 이동 허용
+enableDefaultControls()
 
 -- 클라이언트 컨트롤러 로드
 local InputController = require(script.Controllers.InputController)
@@ -52,6 +74,7 @@ local CameraController = require(script.Controllers.CameraController)
 local NPCController = require(script.Controllers.NPCController)
 local TutorialController = require(script.Controllers.TutorialController)
 local MusicController = require(script.Controllers.MusicController)
+local ShopController = require(script.Controllers.ShopController)
 
 -- 컨트롤러 인스턴스 생성
 local inputController = InputController.new()
@@ -64,9 +87,51 @@ local cameraController = CameraController.new(player, character)
 local npcController = NPCController.new()
 local tutorialController = TutorialController.new()
 local musicController = MusicController.new()
+local shopController = ShopController.new(player)
 
 -- 배경 음악 시작
 musicController:Start()
+
+-- 초기 로비 모드 설정 (자유 회전 허용)
+playerController:SetLobbyMode()
+
+-- 플레이어 데이터 로드 시 UI 업데이트
+RemoteEvents.PlayerDataLoaded.OnClientEvent:Connect(function(data)
+	print("[Client] Player data loaded")
+	if data.highScore then
+		uiController:UpdateHighScoreDisplay(data.highScore, data.coins or 0)
+	end
+end)
+
+-- 로비 복귀 처리
+RemoteEvents.ReturnToLobby.OnClientEvent:Connect(function()
+	print("[Client] Returned to lobby")
+	uiController:ShowLobbyUI()
+
+	-- 로비에서는 기본 이동 활성화
+	enableDefaultControls()
+
+	-- 카메라를 로비 모드로 전환 (기본 카메라)
+	cameraController:SetLobbyMode()
+
+	-- PlayerController 로비 모드 (자유 회전)
+	playerController:SetLobbyMode()
+end)
+
+-- 포탈 진입 안내 (서버에서 포탈 감지 시)
+RemoteEvents.PortalEnter.OnClientEvent:Connect(function()
+	print("[Client] Portal enter detected, confirming to server...")
+	-- 시작 파워업 선택 UI 표시 가능 (Phase 2 확장)
+	RemoteEvents.PortalEnter:FireServer({})
+end)
+
+-- 상점 열기 (서버에서 상점 감지 시)
+RemoteEvents.ShopOpen.OnClientEvent:Connect(function()
+	print("[Client] Shop open requested")
+	if not shopController:IsOpen() then
+		shopController:Open()
+	end
+end)
 
 -- 튜토리얼 컨트롤러에 NPCController 연결
 tutorialController:SetNPCController(npcController)
@@ -75,9 +140,12 @@ tutorialController:SetNPCController(npcController)
 player.CharacterAdded:Connect(function(newCharacter: Model)
 	character = newCharacter
 	humanoid = character:WaitForChild("Humanoid") :: Humanoid
-	disableDefaultControls()
+	-- 리스폰 시 로비 모드로 (기본 이동 활성화)
+	enableDefaultControls()
 	playerController:UpdateCharacter(newCharacter)
 	cameraController:UpdateCharacter(newCharacter)
+	cameraController:SetLobbyMode() -- 카메라도 로비 모드로
+	playerController:SetLobbyMode() -- PlayerController도 로비 모드로
 	print("[Client] Character respawned, controllers updated")
 end)
 
@@ -106,26 +174,35 @@ end)
 -- 서버로부터 게임 시작 응답 수신
 RemoteEvents.GameStart.OnClientEvent:Connect(function(data)
 	print("[Client] Game start confirmed by server")
-	uiController:HideGameOver() -- 게임 오버 화면 숨기기
 
-	-- 카운트다운 전 플레이어 고정 (이전 게임 상태 완전 정리)
+	-- 1. UI 전환: 로비 UI 숨기고 게임 UI 표시
+	uiController:HideGameOver()
+	uiController:HideLobbyUI()
+
+	-- 2. 컨트롤 전환: 기본 이동 비활성화
+	disableDefaultControls()
+
+	-- 3. 카메라 전환: 게임 모드 (측면 뷰)
+	cameraController:SetGameMode()
+
+	-- 4. PlayerController 초기화
 	playerController:StopGame()
 
-	-- 현재 캐릭터 참조 (항상 최신 상태 사용)
+	-- 5. 플레이어 텔레포트 (게임 시작 위치로)
+	local startPos = data.startPosition or Vector3.new(0, 2.5, 0)
 	local currentCharacter = player.Character
 	if currentCharacter then
 		local hrp = currentCharacter:FindFirstChild("HumanoidRootPart") :: BasePart?
 		if hrp then
-			hrp.Anchored = true -- 카운트다운 중 고정
+			hrp.Anchored = true
 			hrp.AssemblyLinearVelocity = Vector3.zero
-			hrp.CFrame = CFrame.new(data.startPosition or Vector3.new(0, 2.5, 0))
-				* CFrame.Angles(0, math.rad(-90), 0)
+			hrp.CFrame = CFrame.new(startPos) * CFrame.Angles(0, math.rad(-90), 0)
 		end
 	end
 
-	-- 카운트다운 후 게임 시작
+	-- 6. 카운트다운 후 게임 시작
 	uiController:ShowCountdown(function()
-		-- 고정 해제 (현재 캐릭터 다시 참조)
+		-- 고정 해제
 		local charNow = player.Character
 		if charNow then
 			local hrp = charNow:FindFirstChild("HumanoidRootPart") :: BasePart?
@@ -134,12 +211,13 @@ RemoteEvents.GameStart.OnClientEvent:Connect(function(data)
 			end
 		end
 
+		-- 게임 시작!
 		playerController:StartGame()
 
 		-- 튜토리얼 시작 (필요 시)
 		if data.startTutorial then
 			tutorialController:Start(data.startPosition)
-			uiController:ShowTutorialBanner() -- 튜토리얼 배너 표시
+			uiController:ShowTutorialBanner()
 		end
 	end)
 end)
@@ -198,4 +276,4 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 end)
 
 print("[Client] Coin Runner Client Ready")
-print("[Client] Controllers initialized: Input, Player, Coin, Life, UI, Powerup, Camera, NPC, Tutorial, Music")
+print("[Client] Controllers initialized: Input, Player, Coin, Life, UI, Powerup, Camera, NPC, Tutorial, Music, Shop")
