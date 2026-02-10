@@ -158,47 +158,56 @@ end)
 -- 서버로부터 게임 시작 응답 수신
 RemoteEvents.GameStart.OnClientEvent:Connect(function(data)
 	print("[Client] Game start confirmed by server")
-	uiController:HideGameOver() -- 게임 오버 화면 숨기기
-	uiController:HideLobbyUI() -- 로비 UI 숨기기
+	print(`[Client] Start position: {data.startPosition}`)
 
-	-- 게임 시작 시 기본 컨트롤 비활성화 (자동 달리기 모드)
+	-- 1. UI 전환: 로비 UI 숨기고 게임 UI 표시
+	uiController:HideGameOver()
+	uiController:HideLobbyUI()
+
+	-- 2. 컨트롤 전환: 기본 이동 비활성화
 	disableDefaultControls()
 
-	-- 카메라를 게임 모드로 전환 (측면 뷰)
+	-- 3. 카메라 전환: 게임 모드 (측면 뷰)
 	cameraController:SetGameMode()
 
-	-- 카운트다운 전 플레이어 고정 (이전 게임 상태 완전 정리)
+	-- 4. PlayerController 초기화
 	playerController:StopGame()
 
-	-- 현재 캐릭터 참조 (항상 최신 상태 사용)
+	-- 5. 플레이어 텔레포트 (게임 시작 위치로)
+	local startPos = data.startPosition or Vector3.new(0, 2.5, 0)
 	local currentCharacter = player.Character
 	if currentCharacter then
 		local hrp = currentCharacter:FindFirstChild("HumanoidRootPart") :: BasePart?
 		if hrp then
-			hrp.Anchored = true -- 카운트다운 중 고정
+			hrp.Anchored = true
 			hrp.AssemblyLinearVelocity = Vector3.zero
-			hrp.CFrame = CFrame.new(data.startPosition or Vector3.new(0, 2.5, 0))
-				* CFrame.Angles(0, math.rad(-90), 0)
+			hrp.CFrame = CFrame.new(startPos) * CFrame.Angles(0, math.rad(-90), 0)
+			print(`[Client] Teleported to: {startPos}`)
 		end
 	end
 
-	-- 카운트다운 후 게임 시작
+	-- 6. 카운트다운 후 게임 시작
 	uiController:ShowCountdown(function()
-		-- 고정 해제 (현재 캐릭터 다시 참조)
+		print("[Client] Countdown finished, starting game...")
+
+		-- 고정 해제
 		local charNow = player.Character
 		if charNow then
 			local hrp = charNow:FindFirstChild("HumanoidRootPart") :: BasePart?
 			if hrp then
 				hrp.Anchored = false
+				print("[Client] Player unanchored")
 			end
 		end
 
+		-- 게임 시작!
 		playerController:StartGame()
+		print("[Client] PlayerController:StartGame() called")
 
 		-- 튜토리얼 시작 (필요 시)
 		if data.startTutorial then
 			tutorialController:Start(data.startPosition)
-			uiController:ShowTutorialBanner() -- 튜토리얼 배너 표시
+			uiController:ShowTutorialBanner()
 		end
 	end)
 end)

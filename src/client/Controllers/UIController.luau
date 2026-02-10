@@ -912,8 +912,11 @@ function UIController:ShowLobbyUI()
 	end
 end
 
--- 로비 UI 숨기기
+-- 로비 UI 숨기기 (게임 시작 시)
 function UIController:HideLobbyUI()
+	print("[UIController] HideLobbyUI called - switching to game UI")
+
+	-- 로비 UI 숨기기
 	if self._lobbyGuide then
 		self._lobbyGuide.Visible = false
 	end
@@ -924,12 +927,14 @@ function UIController:HideLobbyUI()
 	-- 게임 UI 표시
 	if self._scoreLabel then
 		self._scoreLabel.Visible = true
+		print("[UIController] ScoreLabel shown")
 	end
 	if self._coinsLabel then
 		self._coinsLabel.Visible = true
 	end
 	if self._livesContainer then
 		self._livesContainer.Visible = true
+		print("[UIController] LivesContainer shown")
 	end
 	if self._distanceLabel then
 		self._distanceLabel.Visible = true
@@ -940,6 +945,11 @@ function UIController:HideLobbyUI()
 	if self._slideButton then
 		self._slideButton.Visible = true
 	end
+
+	-- UI 값 초기화
+	self:UpdateScore(0, 0, 0)
+	self:UpdateCoins(0)
+	self:UpdateLives(GameConstants.LIFE.STARTING_LIVES)
 end
 
 -- 최고 점수 표시 업데이트
