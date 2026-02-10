@@ -21,6 +21,7 @@ export type CameraController = typeof(setmetatable(
 		_targetCFrame: CFrame,
 		_shakeIntensity: number,
 		_shakeDecay: number,
+		_isGameMode: boolean, -- 게임 모드 여부 (true = 측면뷰, false = 기본 카메라)
 	},
 	CameraController
 ))
@@ -42,6 +43,7 @@ function CameraController.new(player: Player, character: Model): CameraControlle
 		_targetCFrame = CFrame.new(),
 		_shakeIntensity = 0,
 		_shakeDecay = 0.95,
+		_isGameMode = false, -- 시작 시 로비 모드 (기본 카메라)
 	}, CameraController)
 
 	self:_initialize()
@@ -51,9 +53,6 @@ end
 
 -- 초기화
 function CameraController:_initialize()
-	-- 카메라 타입 설정
-	self._camera.CameraType = Enum.CameraType.Scriptable
-
 	-- HumanoidRootPart 가져오기
 	self._humanoidRootPart = self._character:FindFirstChild("HumanoidRootPart") :: BasePart?
 
@@ -62,13 +61,15 @@ function CameraController:_initialize()
 		return
 	end
 
-	-- 초기 카메라 위치 설정
-	self._targetCFrame = self:_calculateCameraPosition()
-	self._camera.CFrame = self._targetCFrame
+	-- 로비 모드로 시작 (기본 카메라)
+	self:SetLobbyMode()
 
 	-- 업데이트 루프
 	local connection = RunService.RenderStepped:Connect(function(deltaTime: number)
-		self:_updateCamera(deltaTime)
+		-- 게임 모드일 때만 커스텀 카메라 업데이트
+		if self._isGameMode then
+			self:_updateCamera(deltaTime)
+		end
 	end)
 	table.insert(self._connections, connection)
 
@@ -76,6 +77,26 @@ function CameraController:_initialize()
 	self:_setupCameraShakeEvent()
 
 	print("[CameraController] Camera initialized")
+end
+
+-- 로비 모드 (기본 Roblox 카메라)
+function CameraController:SetLobbyMode()
+	self._isGameMode = false
+	self._camera.CameraType = Enum.CameraType.Custom
+	self._camera.CameraSubject = self._character:FindFirstChild("Humanoid")
+	print("[CameraController] Switched to lobby mode (default camera)")
+end
+
+-- 게임 모드 (측면 뷰 카메라)
+function CameraController:SetGameMode()
+	self._isGameMode = true
+	self._camera.CameraType = Enum.CameraType.Scriptable
+
+	-- 초기 카메라 위치 설정
+	self._targetCFrame = self:_calculateCameraPosition()
+	self._camera.CFrame = self._targetCFrame
+
+	print("[CameraController] Switched to game mode (side view camera)")
 end
 
 -- 카메라 흔들림 이벤트 설정

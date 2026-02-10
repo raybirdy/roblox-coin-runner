@@ -98,6 +98,9 @@ RemoteEvents.ReturnToLobby.OnClientEvent:Connect(function()
 
 	-- 로비에서는 기본 이동 활성화
 	enableDefaultControls()
+
+	-- 카메라를 로비 모드로 전환 (기본 카메라)
+	cameraController:SetLobbyMode()
 end)
 
 -- 포탈 진입 안내 (서버에서 포탈 감지 시)
@@ -126,6 +129,7 @@ player.CharacterAdded:Connect(function(newCharacter: Model)
 	enableDefaultControls()
 	playerController:UpdateCharacter(newCharacter)
 	cameraController:UpdateCharacter(newCharacter)
+	cameraController:SetLobbyMode() -- 카메라도 로비 모드로
 	print("[Client] Character respawned, controllers updated")
 end)
 
@@ -159,6 +163,9 @@ RemoteEvents.GameStart.OnClientEvent:Connect(function(data)
 
 	-- 게임 시작 시 기본 컨트롤 비활성화 (자동 달리기 모드)
 	disableDefaultControls()
+
+	-- 카메라를 게임 모드로 전환 (측면 뷰)
+	cameraController:SetGameMode()
 
 	-- 카운트다운 전 플레이어 고정 (이전 게임 상태 완전 정리)
 	playerController:StopGame()
