@@ -317,7 +317,7 @@ function ObstacleService:_spawnObstacle(position: Vector3, obstacleType: string)
 		secondWall.Position = position + Vector3.new(5, (GameConstants.OBSTACLE.LOW_WALL_HEIGHT + 1) / 2, 0)
 		secondWall.BrickColor = BrickColor.new("Bright red")
 		secondWall.Anchored = true
-		secondWall.CanCollide = true
+		secondWall.CanCollide = false -- 저연령층 게임: 장애물 통과 가능
 		secondWall.Material = Enum.Material.SmoothPlastic
 		secondWall:SetAttribute("ObstacleType", "DoubleWall")
 		secondWall.Parent = workspace
@@ -401,7 +401,7 @@ function ObstacleService:_spawnObstacle(position: Vector3, obstacleType: string)
 	end
 
 	obstacle.Anchored = true
-	obstacle.CanCollide = true
+	obstacle.CanCollide = false -- 저연령층 게임: 장애물 통과 가능 (에너지만 감소)
 	obstacle.Material = Enum.Material.SmoothPlastic
 	obstacle:SetAttribute("ObstacleType", obstacleType)
 
