@@ -150,41 +150,44 @@ function ObstacleService:_spawnObstacle(position: Vector3, obstacleType: string)
 			arrow.Parent = workspace
 		end
 
-		-- "JUMP!" 텍스트 (잘 보이도록 배경 추가)
+		-- "JUMP!" 텍스트 (SurfaceGui로 3D 공간에 표시)
 		local signPart = Instance.new("Part")
 		signPart.Name = "JumpSign"
-		signPart.Size = Vector3.new(0.3, 2, 4)
-		signPart.Position = position + Vector3.new(-6, 6, 0)
-		signPart.Transparency = 1
+		signPart.Size = Vector3.new(0.3, 2.5, 5)
+		signPart.Position = position + Vector3.new(-6, 5.5, 0)
+		signPart.Color = Color3.fromRGB(30, 30, 40)
+		signPart.Material = Enum.Material.SmoothPlastic
 		signPart.CanCollide = false
 		signPart.Anchored = true
 		signPart.Parent = workspace
 
-		local billboard = Instance.new("BillboardGui")
-		billboard.Size = UDim2.new(0, 140, 0, 70)
-		billboard.Adornee = signPart
-		billboard.AlwaysOnTop = true
-		billboard.Parent = signPart
+		-- 간판 테두리 (빨간 네온)
+		local signBorder = Instance.new("Part")
+		signBorder.Name = "JumpSignBorder"
+		signBorder.Size = Vector3.new(0.1, 2.7, 5.2)
+		signBorder.Position = position + Vector3.new(-6.15, 5.5, 0)
+		signBorder.Color = Color3.fromRGB(255, 80, 80)
+		signBorder.Material = Enum.Material.Neon
+		signBorder.CanCollide = false
+		signBorder.Anchored = true
+		signBorder.Parent = workspace
 
-		-- 배경 프레임 (검은색 반투명)
-		local bgFrame = Instance.new("Frame")
-		bgFrame.Size = UDim2.new(1, 0, 1, 0)
-		bgFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-		bgFrame.BackgroundTransparency = 0.3
-		bgFrame.BorderSizePixel = 3
-		bgFrame.BorderColor3 = Color3.fromRGB(255, 100, 100)
-		bgFrame.Parent = billboard
+		local surfaceGui = Instance.new("SurfaceGui")
+		surfaceGui.Name = "JumpGui"
+		surfaceGui.Face = Enum.NormalId.Left -- 플레이어 방향(-X)을 향함
+		surfaceGui.CanvasSize = Vector2.new(200, 100)
+		surfaceGui.Parent = signPart
 
 		local jumpText = Instance.new("TextLabel")
 		jumpText.Size = UDim2.new(1, 0, 1, 0)
 		jumpText.BackgroundTransparency = 1
 		jumpText.Text = "JUMP!"
-		jumpText.TextColor3 = Color3.fromRGB(255, 255, 255) -- 흰색 글자
-		jumpText.TextSize = 36
+		jumpText.TextColor3 = Color3.fromRGB(255, 255, 255)
+		jumpText.TextScaled = true
 		jumpText.Font = Enum.Font.GothamBlack
 		jumpText.TextStrokeTransparency = 0
-		jumpText.TextStrokeColor3 = Color3.fromRGB(200, 0, 0) -- 빨간 테두리
-		jumpText.Parent = bgFrame
+		jumpText.TextStrokeColor3 = Color3.fromRGB(200, 0, 0)
+		jumpText.Parent = surfaceGui
 	elseif obstacleType == "Tunnel" then
 		-- 공중 장애물 (슬라이드로 통과)
 		-- 아래 공간은 비워두고 위쪽만 장애물로 생성
@@ -216,33 +219,44 @@ function ObstacleService:_spawnObstacle(position: Vector3, obstacleType: string)
 			arrow.Parent = workspace
 		end
 
-		-- "SLIDE!" 텍스트 표시 (잘 보이도록 배경 추가)
+		-- "SLIDE!" 텍스트 (SurfaceGui로 3D 공간에 표시)
 		local signPart = Instance.new("Part")
 		signPart.Name = "SlideSign"
-		signPart.Size = Vector3.new(0.5, 3, 6)
+		signPart.Size = Vector3.new(0.3, 2.5, 5)
 		signPart.Position = position + Vector3.new(-10, 5, 0)
-		signPart.Transparency = 1
+		signPart.Color = Color3.fromRGB(30, 30, 40)
+		signPart.Material = Enum.Material.SmoothPlastic
 		signPart.CanCollide = false
 		signPart.Anchored = true
 		signPart.Parent = workspace
 
-		local billboard = Instance.new("BillboardGui")
-		billboard.Size = UDim2.new(0, 140, 0, 70)
-		billboard.Adornee = signPart
-		billboard.AlwaysOnTop = true
-		billboard.Parent = signPart
+		-- 간판 테두리 (파란 네온)
+		local signBorder = Instance.new("Part")
+		signBorder.Name = "SlideSignBorder"
+		signBorder.Size = Vector3.new(0.1, 2.7, 5.2)
+		signBorder.Position = position + Vector3.new(-10.15, 5, 0)
+		signBorder.Color = Color3.fromRGB(0, 150, 255)
+		signBorder.Material = Enum.Material.Neon
+		signBorder.CanCollide = false
+		signBorder.Anchored = true
+		signBorder.Parent = workspace
 
-		-- 배경 프레임 (검은색 반투명)
-		local bgFrame = Instance.new("Frame")
-		bgFrame.Size = UDim2.new(1, 0, 1, 0)
-		bgFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-		bgFrame.BackgroundTransparency = 0.3
-		bgFrame.BorderSizePixel = 3
-		bgFrame.BorderColor3 = Color3.fromRGB(0, 150, 255)
-		bgFrame.Parent = billboard
+		local surfaceGui = Instance.new("SurfaceGui")
+		surfaceGui.Name = "SlideGui"
+		surfaceGui.Face = Enum.NormalId.Left -- 플레이어 방향(-X)을 향함
+		surfaceGui.CanvasSize = Vector2.new(200, 100)
+		surfaceGui.Parent = signPart
 
-		slideText.TextStrokeColor3 = Color3.fromRGB(0, 100, 200) -- 파란 테두리
-		slideText.Parent = bgFrame
+		local slideText = Instance.new("TextLabel")
+		slideText.Size = UDim2.new(1, 0, 1, 0)
+		slideText.BackgroundTransparency = 1
+		slideText.Text = "SLIDE!"
+		slideText.TextColor3 = Color3.fromRGB(255, 255, 255)
+		slideText.TextScaled = true
+		slideText.Font = Enum.Font.GothamBlack
+		slideText.TextStrokeTransparency = 0
+		slideText.TextStrokeColor3 = Color3.fromRGB(0, 100, 200)
+		slideText.Parent = surfaceGui
 
 		-- 터널 통과 영역 표시 (초록색 바닥 라인)
 		local passZone = Instance.new("Part")
@@ -303,7 +317,7 @@ function ObstacleService:_spawnObstacle(position: Vector3, obstacleType: string)
 		secondWall.Position = position + Vector3.new(5, (GameConstants.OBSTACLE.LOW_WALL_HEIGHT + 1) / 2, 0)
 		secondWall.BrickColor = BrickColor.new("Bright red")
 		secondWall.Anchored = true
-		secondWall.CanCollide = true
+		secondWall.CanCollide = false -- 저연령층 게임: 장애물 통과 가능
 		secondWall.Material = Enum.Material.SmoothPlastic
 		secondWall:SetAttribute("ObstacleType", "DoubleWall")
 		secondWall.Parent = workspace
@@ -342,41 +356,44 @@ function ObstacleService:_spawnObstacle(position: Vector3, obstacleType: string)
 			edge.Parent = workspace
 		end
 
-		-- "DANGER!" 경고 (잘 보이도록 배경 추가)
+		-- "DANGER!" 경고 (SurfaceGui로 3D 공간에 표시)
 		local dangerSign = Instance.new("Part")
 		dangerSign.Name = "GapDanger"
-		dangerSign.Size = Vector3.new(0.3, 2, 4)
+		dangerSign.Size = Vector3.new(0.3, 2.5, 5)
 		dangerSign.Position = position + Vector3.new(-gapWidth / 2 - 4, 4, 0)
-		dangerSign.Transparency = 1
+		dangerSign.Color = Color3.fromRGB(30, 30, 40)
+		dangerSign.Material = Enum.Material.SmoothPlastic
 		dangerSign.CanCollide = false
 		dangerSign.Anchored = true
 		dangerSign.Parent = workspace
 
-		local billboard = Instance.new("BillboardGui")
-		billboard.Size = UDim2.new(0, 140, 0, 70)
-		billboard.Adornee = dangerSign
-		billboard.AlwaysOnTop = true
-		billboard.Parent = dangerSign
+		-- 간판 테두리 (주황 네온)
+		local signBorder = Instance.new("Part")
+		signBorder.Name = "DangerSignBorder"
+		signBorder.Size = Vector3.new(0.1, 2.7, 5.2)
+		signBorder.Position = position + Vector3.new(-gapWidth / 2 - 4.15, 4, 0)
+		signBorder.Color = Color3.fromRGB(255, 150, 0)
+		signBorder.Material = Enum.Material.Neon
+		signBorder.CanCollide = false
+		signBorder.Anchored = true
+		signBorder.Parent = workspace
 
-		-- 배경 프레임 (검은색 반투명)
-		local bgFrame = Instance.new("Frame")
-		bgFrame.Size = UDim2.new(1, 0, 1, 0)
-		bgFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-		bgFrame.BackgroundTransparency = 0.3
-		bgFrame.BorderSizePixel = 3
-		bgFrame.BorderColor3 = Color3.fromRGB(255, 150, 0)
-		bgFrame.Parent = billboard
+		local surfaceGui = Instance.new("SurfaceGui")
+		surfaceGui.Name = "DangerGui"
+		surfaceGui.Face = Enum.NormalId.Left -- 플레이어 방향(-X)을 향함
+		surfaceGui.CanvasSize = Vector2.new(200, 100)
+		surfaceGui.Parent = dangerSign
 
 		local dangerText = Instance.new("TextLabel")
 		dangerText.Size = UDim2.new(1, 0, 1, 0)
 		dangerText.BackgroundTransparency = 1
 		dangerText.Text = "DANGER!"
-		dangerText.TextColor3 = Color3.fromRGB(255, 255, 255) -- 흰색 글자
-		dangerText.TextSize = 32
+		dangerText.TextColor3 = Color3.fromRGB(255, 255, 255)
+		dangerText.TextScaled = true
 		dangerText.Font = Enum.Font.GothamBlack
 		dangerText.TextStrokeTransparency = 0
-		dangerText.TextStrokeColor3 = Color3.fromRGB(255, 100, 0) -- 주황 테두리
-		dangerText.Parent = bgFrame
+		dangerText.TextStrokeColor3 = Color3.fromRGB(255, 100, 0)
+		dangerText.Parent = surfaceGui
 	else
 		obstacle = Instance.new("Part")
 		obstacle.Size = Vector3.new(2, 4, 8)
@@ -384,7 +401,7 @@ function ObstacleService:_spawnObstacle(position: Vector3, obstacleType: string)
 	end
 
 	obstacle.Anchored = true
-	obstacle.CanCollide = true
+	obstacle.CanCollide = false -- 저연령층 게임: 장애물 통과 가능 (에너지만 감소)
 	obstacle.Material = Enum.Material.SmoothPlastic
 	obstacle:SetAttribute("ObstacleType", obstacleType)
 
