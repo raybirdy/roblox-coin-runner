@@ -321,17 +321,17 @@ function LobbyService:_createShop()
 	surfaceGui.CanvasSize = Vector2.new(280, 100)
 	surfaceGui.Parent = shopSignBg
 
-	-- 상점 텍스트
+	-- 상점 텍스트 (흰색 + 금색 테두리로 잘 보이게)
 	local shopLabel = Instance.new("TextLabel")
 	shopLabel.Size = UDim2.new(1, 0, 0.65, 0)
 	shopLabel.Position = UDim2.new(0, 0, 0, 0)
 	shopLabel.BackgroundTransparency = 1
-	shopLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
+	shopLabel.TextColor3 = Color3.fromRGB(255, 255, 255) -- 흰색 텍스트
 	shopLabel.TextScaled = true
 	shopLabel.Font = Enum.Font.GothamBlack
 	shopLabel.Text = "SHOP"
 	shopLabel.TextStrokeTransparency = 0
-	shopLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+	shopLabel.TextStrokeColor3 = Color3.fromRGB(255, 180, 0) -- 금색 테두리
 	shopLabel.Parent = surfaceGui
 
 	-- 안내 텍스트
@@ -339,10 +339,12 @@ function LobbyService:_createShop()
 	hintLabel.Size = UDim2.new(1, 0, 0.35, 0)
 	hintLabel.Position = UDim2.new(0, 0, 0.65, 0)
 	hintLabel.BackgroundTransparency = 1
-	hintLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+	hintLabel.TextColor3 = Color3.fromRGB(255, 255, 255) -- 흰색 텍스트
 	hintLabel.TextScaled = true
 	hintLabel.Font = Enum.Font.Gotham
 	hintLabel.Text = "Touch to open"
+	hintLabel.TextStrokeTransparency = 0
+	hintLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0) -- 검정 테두리
 	hintLabel.Parent = surfaceGui
 
 	-- 상점 파티클 효과
