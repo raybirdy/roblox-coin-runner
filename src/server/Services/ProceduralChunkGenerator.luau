@@ -270,33 +270,44 @@ function ProceduralChunkGenerator._addBonusVisuals(chunk: Model, position: Vecto
 	arch.Transparency = 0.3
 	arch.Parent = chunk
 
-	-- "BONUS" 텍스트 (잘 보이도록 배경 추가)
-	local billboard = Instance.new("BillboardGui")
-	billboard.Size = UDim2.new(0, 180, 0, 80)
-	billboard.StudsOffset = Vector3.new(0, 5, 0)
-	billboard.Adornee = arch
-	billboard.AlwaysOnTop = true
-	billboard.Parent = arch
+	-- "BONUS" 텍스트 (SurfaceGui로 3D 공간에 표시)
+	local signPart = Instance.new("Part")
+	signPart.Name = "BonusSign"
+	signPart.Size = Vector3.new(0.3, 3, 6)
+	signPart.Position = Vector3.new(position.X - 2, 8, position.Z)
+	signPart.Color = Color3.fromRGB(30, 30, 40)
+	signPart.Material = Enum.Material.SmoothPlastic
+	signPart.CanCollide = false
+	signPart.Anchored = true
+	signPart.Parent = chunk
 
-	-- 배경 프레임 (검은색 반투명)
-	local bgFrame = Instance.new("Frame")
-	bgFrame.Size = UDim2.new(1, 0, 1, 0)
-	bgFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-	bgFrame.BackgroundTransparency = 0.3
-	bgFrame.BorderSizePixel = 4
-	bgFrame.BorderColor3 = Color3.fromRGB(255, 215, 0)
-	bgFrame.Parent = billboard
+	-- 간판 테두리 (금색 네온)
+	local signBorder = Instance.new("Part")
+	signBorder.Name = "BonusSignBorder"
+	signBorder.Size = Vector3.new(0.1, 3.2, 6.2)
+	signBorder.Position = Vector3.new(position.X - 2.15, 8, position.Z)
+	signBorder.Color = Color3.fromRGB(255, 215, 0)
+	signBorder.Material = Enum.Material.Neon
+	signBorder.CanCollide = false
+	signBorder.Anchored = true
+	signBorder.Parent = chunk
+
+	local surfaceGui = Instance.new("SurfaceGui")
+	surfaceGui.Name = "BonusGui"
+	surfaceGui.Face = Enum.NormalId.Left -- 플레이어 방향(-X)을 향함
+	surfaceGui.CanvasSize = Vector2.new(200, 100)
+	surfaceGui.Parent = signPart
 
 	local text = Instance.new("TextLabel")
 	text.Size = UDim2.new(1, 0, 1, 0)
 	text.BackgroundTransparency = 1
 	text.Text = "BONUS!"
-	text.TextColor3 = Color3.fromRGB(255, 255, 255) -- 흰색 글자
-	text.TextSize = 42
+	text.TextColor3 = Color3.fromRGB(255, 255, 255)
+	text.TextScaled = true
 	text.Font = Enum.Font.GothamBlack
 	text.TextStrokeTransparency = 0
-	text.TextStrokeColor3 = Color3.fromRGB(200, 150, 0) -- 금색 테두리
-	text.Parent = bgFrame
+	text.TextStrokeColor3 = Color3.fromRGB(200, 150, 0)
+	text.Parent = surfaceGui
 
 	-- 별 장식
 	for i = 1, 5 do

@@ -134,40 +134,60 @@ function LobbyService:_createPortal()
 	particles.SpreadAngle = Vector2.new(180, 180)
 	particles.Parent = portalFrame
 
-	-- 포탈 텍스트
-	local billboardGui = Instance.new("BillboardGui")
-	billboardGui.Name = "PortalText"
-	billboardGui.Size = UDim2.new(0, 200, 0, 50)
-	billboardGui.StudsOffset = Vector3.new(0, 6, 0)
-	billboardGui.AlwaysOnTop = true
-	billboardGui.Parent = portalFrame
+	-- 포탈 텍스트 간판 (SurfaceGui로 3D 공간에 표시)
+	local signPart = Instance.new("Part")
+	signPart.Name = "PortalSign"
+	signPart.Size = Vector3.new(0.3, 2, 8)
+	signPart.Position = GameConstants.LOBBY.PORTAL_POSITION + Vector3.new(-3, 7, 0)
+	signPart.Color = Color3.fromRGB(20, 40, 20)
+	signPart.Material = Enum.Material.SmoothPlastic
+	signPart.CanCollide = false
+	signPart.Anchored = true
+	signPart.Parent = lobbyFolder
+
+	-- 간판 테두리 (초록 네온)
+	local signBorder = Instance.new("Part")
+	signBorder.Name = "PortalSignBorder"
+	signBorder.Size = Vector3.new(0.1, 2.2, 8.2)
+	signBorder.Position = GameConstants.LOBBY.PORTAL_POSITION + Vector3.new(-3.15, 7, 0)
+	signBorder.Color = Color3.fromRGB(0, 255, 100)
+	signBorder.Material = Enum.Material.Neon
+	signBorder.CanCollide = false
+	signBorder.Anchored = true
+	signBorder.Parent = lobbyFolder
+
+	local surfaceGui = Instance.new("SurfaceGui")
+	surfaceGui.Name = "PortalGui"
+	surfaceGui.Face = Enum.NormalId.Left -- 플레이어 방향(-X)을 향함
+	surfaceGui.CanvasSize = Vector2.new(300, 75)
+	surfaceGui.Parent = signPart
 
 	local textLabel = Instance.new("TextLabel")
 	textLabel.Size = UDim2.new(1, 0, 1, 0)
 	textLabel.BackgroundTransparency = 1
 	textLabel.TextColor3 = Color3.fromRGB(0, 255, 100)
-	textLabel.TextSize = 24
+	textLabel.TextScaled = true
 	textLabel.Font = Enum.Font.GothamBold
 	textLabel.Text = "ENTER TO PLAY"
-	textLabel.TextStrokeTransparency = 0.5
+	textLabel.TextStrokeTransparency = 0
 	textLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-	textLabel.Parent = billboardGui
+	textLabel.Parent = surfaceGui
 
-	-- 텍스트 애니메이션 (펄스)
+	-- 간판 애니메이션 (네온 테두리 펄스)
 	task.spawn(function()
-		while portalFrame and portalFrame.Parent do
-			local tween = TweenService:Create(textLabel, TweenInfo.new(0.8, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
-				TextSize = 28,
+		while signBorder and signBorder.Parent do
+			local tween = TweenService:Create(signBorder, TweenInfo.new(0.8, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
+				Transparency = 0.3,
 			})
 			tween:Play()
 			tween.Completed:Wait()
 
-			if not portalFrame or not portalFrame.Parent then
+			if not signBorder or not signBorder.Parent then
 				break
 			end
 
-			local tween2 = TweenService:Create(textLabel, TweenInfo.new(0.8, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
-				TextSize = 24,
+			local tween2 = TweenService:Create(signBorder, TweenInfo.new(0.8, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
+				Transparency = 0,
 			})
 			tween2:Play()
 			tween2.Completed:Wait()
@@ -294,54 +314,36 @@ function LobbyService:_createShop()
 	shopSignBorder.Material = Enum.Material.Neon
 	shopSignBorder.Parent = lobbyFolder
 
-	-- 상점 BillboardGui (3D 공간에서 잘 보이게)
-	local billboard = Instance.new("BillboardGui")
-	billboard.Name = "ShopBillboard"
-	billboard.Size = UDim2.new(0, 250, 0, 100)
-	billboard.StudsOffset = Vector3.new(0, 10, 0)
-	billboard.Adornee = shopBooth
-	billboard.AlwaysOnTop = true
-	billboard.Parent = shopBooth
-
-	-- 배경 프레임
-	local bgFrame = Instance.new("Frame")
-	bgFrame.Size = UDim2.new(1, 0, 1, 0)
-	bgFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 40)
-	bgFrame.BackgroundTransparency = 0.15
-	bgFrame.Parent = billboard
-
-	local bgCorner = Instance.new("UICorner")
-	bgCorner.CornerRadius = UDim.new(0, 12)
-	bgCorner.Parent = bgFrame
-
-	local bgStroke = Instance.new("UIStroke")
-	bgStroke.Color = Color3.fromRGB(255, 215, 0)
-	bgStroke.Thickness = 3
-	bgStroke.Parent = bgFrame
+	-- 상점 SurfaceGui (물리적 간판에 표시)
+	local surfaceGui = Instance.new("SurfaceGui")
+	surfaceGui.Name = "ShopGui"
+	surfaceGui.Face = Enum.NormalId.Front -- 플레이어 방향(로비 중앙)을 향함
+	surfaceGui.CanvasSize = Vector2.new(280, 100)
+	surfaceGui.Parent = shopSignBg
 
 	-- 상점 텍스트
 	local shopLabel = Instance.new("TextLabel")
-	shopLabel.Size = UDim2.new(1, 0, 0.6, 0)
-	shopLabel.Position = UDim2.new(0, 0, 0, 5)
+	shopLabel.Size = UDim2.new(1, 0, 0.65, 0)
+	shopLabel.Position = UDim2.new(0, 0, 0, 0)
 	shopLabel.BackgroundTransparency = 1
 	shopLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
-	shopLabel.TextSize = 42
+	shopLabel.TextScaled = true
 	shopLabel.Font = Enum.Font.GothamBlack
 	shopLabel.Text = "SHOP"
 	shopLabel.TextStrokeTransparency = 0
 	shopLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-	shopLabel.Parent = bgFrame
+	shopLabel.Parent = surfaceGui
 
 	-- 안내 텍스트
 	local hintLabel = Instance.new("TextLabel")
 	hintLabel.Size = UDim2.new(1, 0, 0.35, 0)
-	hintLabel.Position = UDim2.new(0, 0, 0.6, 0)
+	hintLabel.Position = UDim2.new(0, 0, 0.65, 0)
 	hintLabel.BackgroundTransparency = 1
 	hintLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-	hintLabel.TextSize = 16
+	hintLabel.TextScaled = true
 	hintLabel.Font = Enum.Font.Gotham
 	hintLabel.Text = "Touch to open"
-	hintLabel.Parent = bgFrame
+	hintLabel.Parent = surfaceGui
 
 	-- 상점 파티클 효과
 	local particles = Instance.new("ParticleEmitter")

@@ -105,7 +105,7 @@ GameConstants.COIN = {
 -- 장애물
 GameConstants.OBSTACLE = {
 	LOW_WALL_HEIGHT = 4, -- 낮은 벽 높이
-	TUNNEL_HEIGHT = 3, -- 높은 벽 터널 통로 높이
+	TUNNEL_HEIGHT = 4.5, -- 높은 벽 터널 통로 높이 (슬라이드로 통과 가능)
 	GAP_WIDTH_MIN = 6, -- 구덩이 최소 폭
 	GAP_WIDTH_MAX = 10, -- 구덩이 최대 폭
 	MIN_SPACING = 12, -- 장애물 간 최소 간격 (studs) - 최고 속도 기준
