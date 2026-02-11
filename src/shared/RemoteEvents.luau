@@ -152,4 +152,35 @@ RemoteEvents.LeaderboardData = getOrCreateRemoteEvent("LeaderboardData")
 -- 서버 → 클라이언트: 리더보드 데이터 전송
 -- 파라미터: { leaderboard: {{rank, name, score}}, playerRank: number? }
 
+-- ==================== 수익화 시스템 ====================
+
+-- 젬 구매 요청 (Robux → 젬)
+RemoteEvents.PurchaseGems = getOrCreateRemoteEvent("PurchaseGems")
+-- 클라이언트 → 서버: 젬 패키지 구매 요청
+-- 파라미터: { productId: string } (e.g., "gems_50", "gems_200")
+
+-- 젬 구매 결과
+RemoteEvents.PurchaseGemsResult = getOrCreateRemoteEvent("PurchaseGemsResult")
+-- 서버 → 클라이언트: 젬 구매 결과 알림
+-- 파라미터: { success: boolean, gems: number?, error: string? }
+
+-- VIP 상태 변경
+RemoteEvents.VIPStatusChanged = getOrCreateRemoteEvent("VIPStatusChanged")
+-- 서버 → 클라이언트: VIP 상태 변경 알림
+-- 파라미터: { hasVIP: boolean }
+
+-- 젬 잔액 업데이트
+RemoteEvents.GemsUpdated = getOrCreateRemoteEvent("GemsUpdated")
+-- 서버 → 클라이언트: 젬 잔액 변경 알림
+-- 파라미터: { gems: number }
+
+-- 상점 데이터 요청
+RemoteEvents.ShopDataRequest = getOrCreateRemoteEvent("ShopDataRequest")
+-- 클라이언트 → 서버: 상점 전체 데이터 요청
+
+-- 상점 데이터 응답
+RemoteEvents.ShopDataResponse = getOrCreateRemoteEvent("ShopDataResponse")
+-- 서버 → 클라이언트: 상점 전체 데이터 전송
+-- 파라미터: { skins, startPowerups, reviveTickets, gemProducts }
+
 return RemoteEvents

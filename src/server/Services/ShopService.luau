@@ -11,7 +11,7 @@ local PlayerDataService = require(script.Parent.PlayerDataService)
 local ShopService = {}
 
 -- 스킨 정보 가져오기
-local function getSkinInfo(skinId: string): { id: string, name: string, price: number }?
+local function getSkinInfo(skinId: string): { id: string, name: string, price: number, currency: string? }?
 	for _, skin in GameConstants.SHOP.SKINS do
 		if skin.id == skinId then
 			return skin
@@ -48,11 +48,19 @@ RemoteEvents.ShopPurchase.OnServerEvent:Connect(function(player: Player, data: {
 			errorMsg = "invalid_item"
 		elseif PlayerDataService:OwnsSkin(player, itemId) then
 			errorMsg = "already_owned"
-		elseif not PlayerDataService:PurchaseSkin(player, itemId, skinInfo.price) then
-			errorMsg = "insufficient_coins"
 		else
-			success = true
-			print(`[ShopService] {player.Name} purchased skin: {itemId}`)
+			-- 재화 종류 확인 (coins 또는 gems)
+			local currency = skinInfo.currency or "coins"
+			if not PlayerDataService:PurchaseSkin(player, itemId, skinInfo.price, currency) then
+				if currency == "gems" then
+					errorMsg = "insufficient_gems"
+				else
+					errorMsg = "insufficient_coins"
+				end
+			else
+				success = true
+				print(`[ShopService] {player.Name} purchased skin: {itemId} with {currency}`)
+			end
 		end
 
 	elseif itemType == "start_powerup" then
@@ -140,20 +148,17 @@ RemoteEvents.UseStartPowerup.OnServerEvent:Connect(function(player: Player, data
 end)
 
 -- 상점 데이터 가져오기 (클라이언트 초기화용)
-function ShopService:GetShopData(player: Player): {
-	skins: { { id: string, name: string, price: number, owned: boolean, equipped: boolean } },
-	startPowerups: { { id: string, name: string, price: number, count: number } },
-	reviveTickets: { price: number, count: number },
-}
+function ShopService:GetShopData(player: Player)
 	local playerData = PlayerDataService:GetPlayerData(player)
 
-	-- 스킨 목록
+	-- 스킨 목록 (코인/젬 재화 정보 포함)
 	local skins = {}
 	for _, skin in GameConstants.SHOP.SKINS do
 		table.insert(skins, {
 			id = skin.id,
 			name = skin.name,
 			price = skin.price,
+			currency = skin.currency or "coins",
 			owned = playerData and PlayerDataService:OwnsSkin(player, skin.id) or skin.id == "default",
 			equipped = playerData and PlayerDataService:GetEquippedSkin(player) == skin.id or skin.id == "default",
 		})
@@ -176,12 +181,41 @@ function ShopService:GetShopData(player: Player): {
 		count = playerData and PlayerDataService:GetReviveTicketCount(player) or 0,
 	}
 
+	-- 젬 상품 목록
+	local gemProducts = {}
+	for _, product in GameConstants.MONETIZATION.GEM_PRODUCTS do
+		table.insert(gemProducts, {
+			id = product.id,
+			gems = product.gems,
+			bonus = product.bonus or 0,
+			robux = product.robux,
+			includesPet = product.includesPet or false,
+		})
+	end
+
+	-- 플레이어 재화 정보
+	local playerCurrency = {
+		coins = playerData and playerData.coins or 0,
+		gems = playerData and playerData.gems or 0,
+		hasVIP = playerData and playerData.hasVIP or false,
+	}
+
 	return {
 		skins = skins,
 		startPowerups = startPowerups,
 		reviveTickets = reviveTickets,
+		gemProducts = gemProducts,
+		playerCurrency = playerCurrency,
 	}
 end
+
+-- 상점 데이터 요청 처리
+RemoteEvents.ShopDataRequest.OnServerEvent:Connect(function(player: Player)
+	print(`[ShopService] Shop data request from {player.Name}`)
+
+	local shopData = ShopService:GetShopData(player)
+	RemoteEvents.ShopDataResponse:FireClient(player, shopData)
+end)
 
 print("[ShopService] Initialized")
 

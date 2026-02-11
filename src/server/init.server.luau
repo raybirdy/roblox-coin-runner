@@ -23,6 +23,7 @@ local GameManager = require(ServerScriptService.Server.Services.GameManager)
 local PlayerDataService = require(ServerScriptService.Server.Services.PlayerDataService)
 local LobbyService = require(ServerScriptService.Server.Services.LobbyService)
 local ShopService = require(ServerScriptService.Server.Services.ShopService)
+local MonetizationService = require(ServerScriptService.Server.Services.MonetizationService)
 
 print("[Server] Game Constants Loaded")
 print("[Server] Remote Events Initialized")
@@ -30,6 +31,7 @@ print("[Server] GameManager Loaded")
 print("[Server] PlayerDataService Loaded")
 print("[Server] LobbyService Loaded")
 print("[Server] ShopService Loaded")
+print("[Server] MonetizationService Loaded")
 
 -- 플레이어 참가 처리
 game.Players.PlayerAdded:Connect(function(player: Player)
