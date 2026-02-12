@@ -271,13 +271,25 @@ GameConstants.LOBBY_NPC = {
 GameConstants.SHOP = {
 	-- 스킨 (코인으로 구매)
 	SKINS = {
-		{ id = "default", name = "기본", price = 0, currency = "coins" },
-		{ id = "red_hat", name = "빨간 모자", price = 100, currency = "coins" },
-		{ id = "blue_cape", name = "파란 망토", price = 200, currency = "coins" },
-		{ id = "golden", name = "골든", price = 500, currency = "coins" },
+		{ id = "default", name = "기본", price = 0, currency = "coins", color = Color3.fromRGB(0, 170, 255) },
+		{
+			id = "red_hat",
+			name = "빨간 모자",
+			price = 100,
+			currency = "coins",
+			color = Color3.fromRGB(220, 50, 50),
+		},
+		{
+			id = "blue_cape",
+			name = "파란 망토",
+			price = 200,
+			currency = "coins",
+			color = Color3.fromRGB(50, 100, 220),
+		},
+		{ id = "golden", name = "골든", price = 500, currency = "coins", color = Color3.fromRGB(255, 215, 0) },
 		-- 프리미엄 스킨 (젬으로 구매)
-		{ id = "unicorn", name = "유니콘", price = 100, currency = "gems" },
-		{ id = "dragon", name = "드래곤", price = 200, currency = "gems" },
+		{ id = "unicorn", name = "유니콘", price = 100, currency = "gems", color = Color3.fromRGB(255, 180, 255) },
+		{ id = "dragon", name = "드래곤", price = 200, currency = "gems", color = Color3.fromRGB(200, 50, 0) },
 	},
 	-- 시작 파워업 (코인)
 	START_POWERUPS = {

@@ -272,6 +272,22 @@ function ShopController:_setupEventHandlers()
 	end)
 	table.insert(self._connections, vipConnection)
 
+	-- 상점 데이터 응답
+	local shopDataConnection = RemoteEvents.ShopDataResponse.OnClientEvent:Connect(function(data)
+		if data.playerCurrency then
+			if self._playerData then
+				self._playerData.coins = data.playerCurrency.coins
+			end
+			self._gems = data.playerCurrency.gems or 0
+			self._hasVIP = data.playerCurrency.hasVIP or false
+			self:_updateCurrencyDisplay()
+		end
+		if self._isOpen then
+			self:_refreshCurrentTab()
+		end
+	end)
+	table.insert(self._connections, shopDataConnection)
+
 	print("[ShopController] Event handlers set up")
 end
 
@@ -673,6 +689,10 @@ function ShopController:Open()
 
 	self._isOpen = true
 	self._shopFrame.Visible = true
+
+	-- 서버에서 최신 상점 데이터 요청
+	RemoteEvents.ShopDataRequest:FireServer()
+
 	self:_switchTab("skins")
 
 	-- 등장 애니메이션

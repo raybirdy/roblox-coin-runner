@@ -2,6 +2,7 @@
 -- Shop Service
 -- 상점 시스템 서버 로직 (구매, 장착)
 
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local GameConstants = require(ReplicatedStorage.Shared.Constants.GameConstants)
@@ -21,7 +22,9 @@ local function getSkinInfo(skinId: string): { id: string, name: string, price: n
 end
 
 -- 시작 파워업 정보 가져오기
-local function getStartPowerupInfo(powerupId: string): { id: string, name: string, price: number, duration: number?, uses: number? }?
+local function getStartPowerupInfo(
+	powerupId: string
+): { id: string, name: string, price: number, duration: number?, uses: number? }?
 	for _, powerup in GameConstants.SHOP.START_POWERUPS do
 		if powerup.id == powerupId then
 			return powerup
@@ -62,7 +65,6 @@ RemoteEvents.ShopPurchase.OnServerEvent:Connect(function(player: Player, data: {
 				print(`[ShopService] {player.Name} purchased skin: {itemId} with {currency}`)
 			end
 		end
-
 	elseif itemType == "start_powerup" then
 		-- 시작 파워업 구매
 		local powerupInfo = getStartPowerupInfo(itemId)
@@ -74,7 +76,6 @@ RemoteEvents.ShopPurchase.OnServerEvent:Connect(function(player: Player, data: {
 			success = true
 			print(`[ShopService] {player.Name} purchased start powerup: {itemId}`)
 		end
-
 	elseif itemType == "revive_ticket" then
 		-- 부활권 구매
 		if not PlayerDataService:PurchaseReviveTicket(player, GameConstants.SHOP.REVIVE_TICKET_PRICE) then
@@ -83,7 +84,6 @@ RemoteEvents.ShopPurchase.OnServerEvent:Connect(function(player: Player, data: {
 			success = true
 			print(`[ShopService] {player.Name} purchased revive ticket`)
 		end
-
 	else
 		errorMsg = "invalid_item_type"
 	end
@@ -126,7 +126,8 @@ RemoteEvents.EquipSkin.OnServerEvent:Connect(function(player: Player, data: { sk
 			RemoteEvents.PlayerDataLoaded:FireClient(player, playerData)
 		end
 
-		-- TODO: 캐릭터 외형 변경 로직 (Phase 3)
+		-- 캐릭터 외형 변경
+		ShopService:ApplySkinToCharacter(player, skinId)
 	else
 		warn(`[ShopService] Failed to equip skin for {player.Name}: {skinId}`)
 	end
@@ -146,6 +147,35 @@ RemoteEvents.UseStartPowerup.OnServerEvent:Connect(function(player: Player, data
 		warn(`[ShopService] Failed to use start powerup for {player.Name}: {powerupId}`)
 	end
 end)
+
+-- 스킨 색상 정보 가져오기
+local function getSkinColor(skinId: string): Color3
+	for _, skin in GameConstants.SHOP.SKINS do
+		if skin.id == skinId and skin.color then
+			return skin.color
+		end
+	end
+	return Color3.fromRGB(0, 170, 255) -- 기본 색상
+end
+
+-- 캐릭터에 스킨 외형 적용
+function ShopService:ApplySkinToCharacter(player: Player, skinId: string)
+	local character = player.Character
+	if not character then
+		return
+	end
+
+	local skinColor = getSkinColor(skinId)
+
+	-- 캐릭터의 모든 BodyPart 색상 변경
+	for _, part in character:GetChildren() do
+		if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+			part.Color = skinColor
+		end
+	end
+
+	print(`[ShopService] Applied skin '{skinId}' to {player.Name}`)
+end
 
 -- 상점 데이터 가져오기 (클라이언트 초기화용)
 function ShopService:GetShopData(player: Player)
@@ -216,6 +246,29 @@ RemoteEvents.ShopDataRequest.OnServerEvent:Connect(function(player: Player)
 	local shopData = ShopService:GetShopData(player)
 	RemoteEvents.ShopDataResponse:FireClient(player, shopData)
 end)
+
+-- 캐릭터 스폰 시 장착 스킨 자동 적용
+Players.PlayerAdded:Connect(function(player: Player)
+	player.CharacterAdded:Connect(function()
+		-- 데이터 로드 대기
+		task.wait(0.5)
+		local equippedSkin = PlayerDataService:GetEquippedSkin(player)
+		if equippedSkin and equippedSkin ~= "default" then
+			ShopService:ApplySkinToCharacter(player, equippedSkin)
+		end
+	end)
+end)
+
+-- 이미 접속한 플레이어 처리
+for _, player in Players:GetPlayers() do
+	player.CharacterAdded:Connect(function()
+		task.wait(0.5)
+		local equippedSkin = PlayerDataService:GetEquippedSkin(player)
+		if equippedSkin and equippedSkin ~= "default" then
+			ShopService:ApplySkinToCharacter(player, equippedSkin)
+		end
+	end)
+end
 
 print("[ShopService] Initialized")
 
