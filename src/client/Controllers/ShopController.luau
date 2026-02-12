@@ -22,6 +22,8 @@ export type ShopController = typeof(setmetatable(
 		_playerData: any?,
 		_connections: { RBXScriptConnection },
 		_isOpen: boolean,
+		_hasVIP: boolean,
+		_gems: number,
 	},
 	ShopController
 ))
@@ -36,6 +38,8 @@ function ShopController.new(player: Player): ShopController
 		_playerData = nil,
 		_connections = {},
 		_isOpen = false,
+		_hasVIP = false,
+		_gems = 0,
 	}, ShopController)
 
 	self:_createUI()
@@ -90,14 +94,26 @@ function ShopController:_createUI()
 	-- 보유 코인 표시
 	local coinsLabel = Instance.new("TextLabel")
 	coinsLabel.Name = "CoinsLabel"
-	coinsLabel.Size = UDim2.new(0, 200, 0, 30)
-	coinsLabel.Position = UDim2.new(0.5, -100, 0, 55)
+	coinsLabel.Size = UDim2.new(0, 150, 0, 30)
+	coinsLabel.Position = UDim2.new(0.5, -155, 0, 55)
 	coinsLabel.BackgroundTransparency = 1
 	coinsLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
 	coinsLabel.TextSize = 20
 	coinsLabel.Font = Enum.Font.GothamBold
 	coinsLabel.Text = "Coins: 0"
 	coinsLabel.Parent = shopFrame
+
+	-- 보유 젬 표시
+	local gemsLabel = Instance.new("TextLabel")
+	gemsLabel.Name = "GemsLabel"
+	gemsLabel.Size = UDim2.new(0, 150, 0, 30)
+	gemsLabel.Position = UDim2.new(0.5, 5, 0, 55)
+	gemsLabel.BackgroundTransparency = 1
+	gemsLabel.TextColor3 = Color3.fromRGB(170, 100, 255)
+	gemsLabel.TextSize = 20
+	gemsLabel.Font = Enum.Font.GothamBold
+	gemsLabel.Text = "Gems: 0"
+	gemsLabel.Parent = shopFrame
 
 	-- 탭 버튼 컨테이너
 	local tabContainer = Instance.new("Frame")
@@ -119,12 +135,13 @@ function ShopController:_createUI()
 		{ id = "skins", name = "스킨" },
 		{ id = "powerups", name = "파워업" },
 		{ id = "revive", name = "부활권" },
+		{ id = "gems", name = "젬" },
 	}
 
 	for _, tab in tabs do
 		local tabButton = Instance.new("TextButton")
 		tabButton.Name = tab.id .. "Tab"
-		tabButton.Size = UDim2.new(0, 130, 0, 35)
+		tabButton.Size = UDim2.new(0, 100, 0, 35)
 		tabButton.BackgroundColor3 = Color3.fromRGB(80, 80, 100)
 		tabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 		tabButton.TextSize = 18
@@ -197,7 +214,9 @@ function ShopController:_setupEventHandlers()
 	-- 플레이어 데이터 로드
 	local dataConnection = RemoteEvents.PlayerDataLoaded.OnClientEvent:Connect(function(data)
 		self._playerData = data
-		self:_updateCoinsDisplay()
+		self._gems = data.gems or 0
+		self._hasVIP = data.hasVIP or false
+		self:_updateCurrencyDisplay()
 		if self._isOpen then
 			self:_refreshCurrentTab()
 		end
@@ -211,7 +230,7 @@ function ShopController:_setupEventHandlers()
 			-- 코인 업데이트
 			if self._playerData then
 				self._playerData.coins = data.newBalance
-				self:_updateCoinsDisplay()
+				self:_updateCurrencyDisplay()
 			end
 		else
 			print(`[ShopController] Purchase failed: {data.error}`)
@@ -220,6 +239,38 @@ function ShopController:_setupEventHandlers()
 		end
 	end)
 	table.insert(self._connections, purchaseConnection)
+
+	-- 젬 구매 결과
+	local gemsResultConnection = RemoteEvents.PurchaseGemsResult.OnClientEvent:Connect(function(data)
+		if data.success then
+			print(`[ShopController] Gem purchase successful: +{data.gems} gems`)
+			self._gems = data.gems or self._gems
+			self:_updateCurrencyDisplay()
+			self:_showNotification("Purchase Complete", `젬 {data.gems}개 획득!`)
+		else
+			print(`[ShopController] Gem purchase failed: {data.error}`)
+			self:_showNotification("Purchase Failed", data.error or "Unknown error")
+		end
+	end)
+	table.insert(self._connections, gemsResultConnection)
+
+	-- 젬 잔액 업데이트
+	local gemsUpdatedConnection = RemoteEvents.GemsUpdated.OnClientEvent:Connect(function(data)
+		self._gems = data.gems or 0
+		self:_updateCurrencyDisplay()
+	end)
+	table.insert(self._connections, gemsUpdatedConnection)
+
+	-- VIP 상태 변경
+	local vipConnection = RemoteEvents.VIPStatusChanged.OnClientEvent:Connect(function(data)
+		self._hasVIP = data.hasVIP or false
+		print(`[ShopController] VIP status changed: {self._hasVIP}`)
+		-- 젬 탭이 열려 있으면 새로고침
+		if self._isOpen and self._currentTab == "gems" then
+			self:_refreshCurrentTab()
+		end
+	end)
+	table.insert(self._connections, vipConnection)
 
 	print("[ShopController] Event handlers set up")
 end
@@ -269,6 +320,8 @@ function ShopController:_refreshCurrentTab()
 		self:_populatePowerups(itemContainer)
 	elseif self._currentTab == "revive" then
 		self:_populateReviveTickets(itemContainer)
+	elseif self._currentTab == "gems" then
+		self:_populateGems(itemContainer)
 	end
 
 	-- 캔버스 크기 업데이트
@@ -293,6 +346,7 @@ function ShopController:_populateSkins(container: ScrollingFrame)
 			owned = owned,
 			equipped = equipped,
 			itemType = "skin",
+			currency = skin.currency,
 		})
 	end
 end
@@ -300,7 +354,8 @@ end
 -- 파워업 탭 채우기
 function ShopController:_populatePowerups(container: ScrollingFrame)
 	for _, powerup in GameConstants.SHOP.START_POWERUPS do
-		local count = self._playerData and self._playerData.startPowerups and self._playerData.startPowerups[powerup.id] or 0
+		local count = self._playerData and self._playerData.startPowerups and self._playerData.startPowerups[powerup.id]
+			or 0
 
 		local itemFrame = self:_createItemFrame(container, {
 			id = powerup.id,
@@ -326,15 +381,19 @@ function ShopController:_populateReviveTickets(container: ScrollingFrame)
 end
 
 -- 아이템 프레임 생성
-function ShopController:_createItemFrame(container: ScrollingFrame, item: {
-	id: string,
-	name: string,
-	price: number,
-	owned: boolean?,
-	equipped: boolean?,
-	count: number?,
-	itemType: string,
-}): Frame
+function ShopController:_createItemFrame(
+	container: ScrollingFrame,
+	item: {
+		id: string,
+		name: string,
+		price: number,
+		owned: boolean?,
+		equipped: boolean?,
+		count: number?,
+		itemType: string,
+		currency: string?,
+	}
+): Frame
 	local itemFrame = Instance.new("Frame")
 	itemFrame.Name = item.id
 	itemFrame.Size = UDim2.new(0, 130, 0, 100)
@@ -400,9 +459,10 @@ function ShopController:_createItemFrame(container: ScrollingFrame, item: {
 			end)
 		end
 	else
-		button.BackgroundColor3 = Color3.fromRGB(0, 180, 0)
+		local isGemCurrency = item.currency == "gems"
+		button.BackgroundColor3 = isGemCurrency and Color3.fromRGB(130, 70, 200) or Color3.fromRGB(0, 180, 0)
 		button.TextColor3 = Color3.fromRGB(255, 255, 255)
-		button.Text = `{item.price}`
+		button.Text = isGemCurrency and `💎 {item.price}` or `{item.price}`
 		button.MouseButton1Click:Connect(function()
 			RemoteEvents.ShopPurchase:FireServer({
 				itemType = item.itemType,
@@ -429,8 +489,8 @@ function ShopController:_ownsSkin(skinId: string): boolean
 	return false
 end
 
--- 코인 표시 업데이트
-function ShopController:_updateCoinsDisplay()
+-- 재화 표시 통합 업데이트
+function ShopController:_updateCurrencyDisplay()
 	if not self._shopFrame then
 		return
 	end
@@ -439,6 +499,163 @@ function ShopController:_updateCoinsDisplay()
 	if coinsLabel then
 		local coins = self._playerData and self._playerData.coins or 0
 		coinsLabel.Text = `Coins: {coins}`
+	end
+
+	local gemsLabel = self._shopFrame:FindFirstChild("GemsLabel") :: TextLabel?
+	if gemsLabel then
+		gemsLabel.Text = `Gems: {self._gems}`
+	end
+end
+
+-- 젬 상품 카드 생성
+function ShopController:_createGemProductFrame(
+	container: ScrollingFrame,
+	product: {
+		id: string,
+		gems: number,
+		robux: number,
+		bonus: number,
+		includesPet: boolean?,
+	}
+): Frame
+	local frame = Instance.new("Frame")
+	frame.Name = product.id
+	frame.Size = UDim2.new(0, 130, 0, 100)
+	frame.BackgroundColor3 = Color3.fromRGB(60, 40, 80)
+	frame.Parent = container
+
+	local frameCorner = Instance.new("UICorner")
+	frameCorner.CornerRadius = UDim.new(0, 8)
+	frameCorner.Parent = frame
+
+	-- 상품명
+	local nameLabel = Instance.new("TextLabel")
+	nameLabel.Name = "Name"
+	nameLabel.Size = UDim2.new(1, 0, 0, 22)
+	nameLabel.Position = UDim2.new(0, 0, 0, 5)
+	nameLabel.BackgroundTransparency = 1
+	nameLabel.TextColor3 = Color3.fromRGB(170, 100, 255)
+	nameLabel.TextSize = 14
+	nameLabel.Font = Enum.Font.GothamBold
+	nameLabel.Text = `💎 {product.gems} 젬`
+	nameLabel.Parent = frame
+
+	-- 보너스 또는 펫 포함 텍스트
+	local subText = ""
+	if product.includesPet then
+		subText = "펫 포함!"
+	elseif product.bonus > 0 then
+		subText = `+{product.bonus} 보너스`
+	end
+
+	if subText ~= "" then
+		local bonusLabel = Instance.new("TextLabel")
+		bonusLabel.Name = "Bonus"
+		bonusLabel.Size = UDim2.new(1, 0, 0, 18)
+		bonusLabel.Position = UDim2.new(0, 0, 0, 27)
+		bonusLabel.BackgroundTransparency = 1
+		bonusLabel.TextColor3 = Color3.fromRGB(255, 200, 100)
+		bonusLabel.TextSize = 12
+		bonusLabel.Font = Enum.Font.GothamBold
+		bonusLabel.Text = subText
+		bonusLabel.Parent = frame
+	end
+
+	-- 구매 버튼
+	local button = Instance.new("TextButton")
+	button.Name = "Button"
+	button.Size = UDim2.new(1, -20, 0, 30)
+	button.Position = UDim2.new(0, 10, 1, -40)
+	button.BackgroundColor3 = Color3.fromRGB(0, 150, 50)
+	button.TextColor3 = Color3.fromRGB(255, 255, 255)
+	button.TextSize = 14
+	button.Font = Enum.Font.GothamBold
+	button.Text = `R$ {product.robux}`
+	button.Parent = frame
+
+	local buttonCorner = Instance.new("UICorner")
+	buttonCorner.CornerRadius = UDim.new(0, 6)
+	buttonCorner.Parent = button
+
+	button.MouseButton1Click:Connect(function()
+		RemoteEvents.PurchaseGems:FireServer({ productId = product.id })
+	end)
+
+	return frame
+end
+
+-- 젬 탭 채우기
+function ShopController:_populateGems(container: ScrollingFrame)
+	-- 젬 상품 카드
+	for _, product in GameConstants.MONETIZATION.GEM_PRODUCTS do
+		self:_createGemProductFrame(container, product)
+	end
+
+	-- VIP GamePass 카드
+	local vipFrame = Instance.new("Frame")
+	vipFrame.Name = "vip_pass"
+	vipFrame.Size = UDim2.new(0, 130, 0, 100)
+	vipFrame.BackgroundColor3 = Color3.fromRGB(80, 60, 20)
+	vipFrame.Parent = container
+
+	local vipCorner = Instance.new("UICorner")
+	vipCorner.CornerRadius = UDim.new(0, 8)
+	vipCorner.Parent = vipFrame
+
+	local vipStroke = Instance.new("UIStroke")
+	vipStroke.Color = Color3.fromRGB(255, 215, 0)
+	vipStroke.Thickness = 2
+	vipStroke.Parent = vipFrame
+
+	-- VIP 이름
+	local vipName = Instance.new("TextLabel")
+	vipName.Name = "Name"
+	vipName.Size = UDim2.new(1, 0, 0, 22)
+	vipName.Position = UDim2.new(0, 0, 0, 5)
+	vipName.BackgroundTransparency = 1
+	vipName.TextColor3 = Color3.fromRGB(255, 215, 0)
+	vipName.TextSize = 14
+	vipName.Font = Enum.Font.GothamBold
+	vipName.Text = "VIP PASS"
+	vipName.Parent = vipFrame
+
+	-- VIP 설명
+	local vipDesc = Instance.new("TextLabel")
+	vipDesc.Name = "Description"
+	vipDesc.Size = UDim2.new(1, 0, 0, 18)
+	vipDesc.Position = UDim2.new(0, 0, 0, 27)
+	vipDesc.BackgroundTransparency = 1
+	vipDesc.TextColor3 = Color3.fromRGB(255, 230, 150)
+	vipDesc.TextSize = 11
+	vipDesc.Font = Enum.Font.Gotham
+	vipDesc.Text = "코인 2배 획득"
+	vipDesc.Parent = vipFrame
+
+	-- VIP 버튼
+	local vipButton = Instance.new("TextButton")
+	vipButton.Name = "Button"
+	vipButton.Size = UDim2.new(1, -20, 0, 30)
+	vipButton.Position = UDim2.new(0, 10, 1, -40)
+	vipButton.TextSize = 14
+	vipButton.Font = Enum.Font.GothamBold
+	vipButton.Parent = vipFrame
+
+	local vipBtnCorner = Instance.new("UICorner")
+	vipBtnCorner.CornerRadius = UDim.new(0, 6)
+	vipBtnCorner.Parent = vipButton
+
+	if self._hasVIP then
+		vipButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+		vipButton.TextColor3 = Color3.fromRGB(200, 200, 200)
+		vipButton.Text = "VIP 보유중"
+		vipButton.Active = false
+	else
+		vipButton.BackgroundColor3 = Color3.fromRGB(200, 170, 0)
+		vipButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+		vipButton.Text = "R$ 99"
+		vipButton.MouseButton1Click:Connect(function()
+			RemoteEvents.PurchaseGems:FireServer({ productId = "vip_gamepass" })
+		end)
 	end
 end
 
@@ -462,10 +679,11 @@ function ShopController:Open()
 	self._shopFrame.Size = UDim2.new(0, 0, 0, 0)
 	self._shopFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
 
-	local tween = TweenService:Create(self._shopFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-		Size = UDim2.new(0, 500, 0, 450),
-		Position = UDim2.new(0.5, -250, 0.5, -225),
-	})
+	local tween =
+		TweenService:Create(self._shopFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+			Size = UDim2.new(0, 500, 0, 450),
+			Position = UDim2.new(0.5, -250, 0.5, -225),
+		})
 	tween:Play()
 
 	print("[ShopController] Shop opened")
@@ -480,10 +698,11 @@ function ShopController:Close()
 	self._isOpen = false
 
 	-- 사라지는 애니메이션
-	local tween = TweenService:Create(self._shopFrame, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-		Size = UDim2.new(0, 0, 0, 0),
-		Position = UDim2.new(0.5, 0, 0.5, 0),
-	})
+	local tween =
+		TweenService:Create(self._shopFrame, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+			Size = UDim2.new(0, 0, 0, 0),
+			Position = UDim2.new(0.5, 0, 0.5, 0),
+		})
 	tween:Play()
 	tween.Completed:Connect(function()
 		if self._shopFrame then
