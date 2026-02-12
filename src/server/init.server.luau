@@ -24,6 +24,7 @@ local PlayerDataService = require(ServerScriptService.Server.Services.PlayerData
 local LobbyService = require(ServerScriptService.Server.Services.LobbyService)
 local ShopService = require(ServerScriptService.Server.Services.ShopService)
 local MonetizationService = require(ServerScriptService.Server.Services.MonetizationService)
+local ProgressionService = require(ServerScriptService.Server.Services.ProgressionService)
 
 print("[Server] Game Constants Loaded")
 print("[Server] Remote Events Initialized")
@@ -32,6 +33,7 @@ print("[Server] PlayerDataService Loaded")
 print("[Server] LobbyService Loaded")
 print("[Server] ShopService Loaded")
 print("[Server] MonetizationService Loaded")
+print("[Server] ProgressionService Loaded")
 
 -- 플레이어 참가 처리
 game.Players.PlayerAdded:Connect(function(player: Player)
@@ -41,6 +43,9 @@ game.Players.PlayerAdded:Connect(function(player: Player)
 	local playerData = PlayerDataService:LoadPlayerData(player)
 
 	if playerData then
+		-- 일일 미션 초기화
+		ProgressionService:InitDailyMissions(player)
+
 		-- 클라이언트에 데이터 전송
 		RemoteEvents.PlayerDataLoaded:FireClient(player, playerData)
 		print(`[Server] Sent player data to {player.Name}`)

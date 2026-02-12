@@ -37,6 +37,12 @@ type PlayerData = {
 	reviveTickets: number,
 	-- VIP
 	hasVIP: boolean,
+	-- 진행도 시스템
+	level: number,
+	xp: number,
+	dailyMissions: { any }?, -- { { id, target, progress, completed } }
+	dailyMissionDate: string?, -- "YYYY-MM-DD" (미션 리셋 날짜)
+	completedAchievements: { string }?, -- 달성한 업적 ID 목록
 }
 
 local DEFAULT_DATA: PlayerData = {
@@ -54,6 +60,12 @@ local DEFAULT_DATA: PlayerData = {
 	reviveTickets = 0,
 	-- VIP 기본값
 	hasVIP = false,
+	-- 진행도 기본값
+	level = 1,
+	xp = 0,
+	dailyMissions = nil,
+	dailyMissionDate = nil,
+	completedAchievements = {},
 }
 
 -- 메모리 캐시 (활성 플레이어)

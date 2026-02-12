@@ -200,4 +200,35 @@ RemoteEvents.ConsolationReward = getOrCreateRemoteEvent("ConsolationReward")
 -- 서버 → 클라이언트: 위로 보상 알림
 -- 파라미터: { coins: number }
 
+-- ==================== 진행도 시스템 ====================
+
+-- 레벨업 알림
+RemoteEvents.LevelUp = getOrCreateRemoteEvent("LevelUp")
+-- 서버 → 클라이언트: 레벨업 알림
+-- 파라미터: { newLevel: number, rewards: { coins: number, gems: number? } }
+
+-- XP 획득 알림
+RemoteEvents.XPGained = getOrCreateRemoteEvent("XPGained")
+-- 서버 → 클라이언트: XP 획득 알림
+-- 파라미터: { xp: number, totalXP: number, level: number, xpToNext: number }
+
+-- 일일 미션 업데이트
+RemoteEvents.MissionUpdate = getOrCreateRemoteEvent("MissionUpdate")
+-- 서버 → 클라이언트: 미션 진행도/완료 알림
+-- 파라미터: { missions: { { id, name, desc, target, progress, completed, reward } } }
+
+-- 업적 달성 알림
+RemoteEvents.AchievementUnlocked = getOrCreateRemoteEvent("AchievementUnlocked")
+-- 서버 → 클라이언트: 업적 달성 알림
+-- 파라미터: { id: string, name: string, desc: string, rewardGems: number, rewardXP: number }
+
+-- 진행도 데이터 요청
+RemoteEvents.ProgressionDataRequest = getOrCreateRemoteEvent("ProgressionDataRequest")
+-- 클라이언트 → 서버: 전체 진행도 데이터 요청
+
+-- 진행도 데이터 응답
+RemoteEvents.ProgressionDataResponse = getOrCreateRemoteEvent("ProgressionDataResponse")
+-- 서버 → 클라이언트: 전체 진행도 데이터 전송
+-- 파라미터: { level, xp, xpToNext, missions, achievements }
+
 return RemoteEvents

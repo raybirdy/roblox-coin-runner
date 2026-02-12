@@ -20,6 +20,7 @@ local ShopService = require(script.Parent.ShopService)
 local BackgroundService = require(script.Parent.BackgroundService)
 local LeaderboardService = require(script.Parent.LeaderboardService)
 local MonetizationService = require(script.Parent.MonetizationService)
+local ProgressionService = require(script.Parent.ProgressionService)
 
 local GameManager = {}
 
@@ -425,6 +426,9 @@ function GameManager.EndGame(player: Player)
 	-- 글로벌 리더보드 업데이트
 	LeaderboardService:UpdateScore(player, highScore)
 
+	-- 진행도 업데이트 (레벨, 미션, 업적)
+	ProgressionService:OnGameEnd(player, finalScore, earnedCoins, distance)
+
 	-- 청크, 코인, 장애물, 파워업, NPC 정리
 	if session.chunkService then
 		session.chunkService:Destroy()
@@ -596,6 +600,9 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 				print(`[GameManager] Combo {session.comboCount}x! +{comboBonus} bonus for {player.Name}`)
 			end
 
+			-- 콤보 미션 진행도 업데이트
+			ProgressionService:OnComboReached(player, session.comboCount)
+
 			-- 클라이언트에 콤보 상태 알림
 			RemoteEvents.ComboUpdate:FireClient(player, {
 				combo = session.comboCount,
@@ -690,6 +697,9 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 			RemoteEvents.NearMiss:FireClient(player, {
 				bonus = GameConstants.SCORE.NEAR_MISS_BONUS,
 			})
+
+			-- 미션 진행도 업데이트
+			ProgressionService:OnNearMiss(player)
 
 			print(`[GameManager] Near miss! +{GameConstants.SCORE.NEAR_MISS_BONUS} for {player.Name}`)
 		end
