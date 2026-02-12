@@ -13,17 +13,31 @@ local LeaderboardService = {}
 
 -- OrderedDataStore (Studio에서는 사용 불가)
 local highScoreStore = nil
+local dailyScoreStore = nil
+local weeklyScoreStore = nil
+
 local success, err = pcall(function()
 	highScoreStore = DataStoreService:GetOrderedDataStore("HighScores_v1")
+
+	-- 일간/주간 키는 날짜 기반
+	local today = os.date("!%Y-%m-%d")
+	local weekNum = os.date("!%Y-W%W")
+	dailyScoreStore = DataStoreService:GetOrderedDataStore("DailyScores_" .. today)
+	weeklyScoreStore = DataStoreService:GetOrderedDataStore("WeeklyScores_" .. weekNum)
 end)
 
 if not success then
 	warn("[LeaderboardService] OrderedDataStore unavailable (Studio mode): " .. tostring(err))
 end
 
--- 캐시된 리더보드 데이터
-local cachedLeaderboard: { { rank: number, name: string, score: number } } = {}
-local lastUpdateTime = 0
+-- 캐시된 리더보드 데이터 (탭별)
+type LeaderboardEntry = { rank: number, name: string, score: number }
+local cachedLeaderboards: { [string]: { LeaderboardEntry } } = {
+	all = {},
+	daily = {},
+	weekly = {},
+}
+local lastUpdateTimes: { [string]: number } = { all = 0, daily = 0, weekly = 0 }
 local CACHE_DURATION = 30 -- 30초마다 갱신
 
 -- 리더보드 업데이트 (점수 저장)
@@ -36,7 +50,7 @@ function LeaderboardService:UpdateScore(player: Player, score: number)
 	local userId = player.UserId
 	local playerName = player.Name
 
-	-- 기존 점수 확인
+	-- 전체 리더보드: 최고 점수만 저장
 	local currentScore = 0
 	local getSuccess, getData = pcall(function()
 		return highScoreStore:GetAsync(userId)
@@ -46,7 +60,6 @@ function LeaderboardService:UpdateScore(player: Player, score: number)
 		currentScore = getData
 	end
 
-	-- 새 점수가 더 높으면 업데이트
 	if score > currentScore then
 		local setSuccess, setErr = pcall(function()
 			highScoreStore:SetAsync(userId, score)
@@ -54,37 +67,69 @@ function LeaderboardService:UpdateScore(player: Player, score: number)
 
 		if setSuccess then
 			print(`[LeaderboardService] Updated high score for {playerName}: {score}`)
-			-- 캐시 무효화
-			lastUpdateTime = 0
+			lastUpdateTimes.all = 0
 		else
 			warn(`[LeaderboardService] Failed to update score: {setErr}`)
 		end
 	end
-end
 
--- 리더보드 가져오기 (상위 N명)
-function LeaderboardService:GetLeaderboard(count: number?): { { rank: number, name: string, score: number } }
-	local maxCount = count or 10
-
-	-- 캐시가 유효하면 캐시 반환
-	if tick() - lastUpdateTime < CACHE_DURATION and #cachedLeaderboard > 0 then
-		return cachedLeaderboard
+	-- 일간 리더보드: 오늘 최고 점수
+	if dailyScoreStore then
+		pcall(function()
+			local dailyCurrent = dailyScoreStore:GetAsync(userId) or 0
+			if score > dailyCurrent then
+				dailyScoreStore:SetAsync(userId, score)
+				lastUpdateTimes.daily = 0
+			end
+		end)
 	end
 
-	if not highScoreStore then
+	-- 주간 리더보드: 이번 주 최고 점수
+	if weeklyScoreStore then
+		pcall(function()
+			local weeklyCurrent = weeklyScoreStore:GetAsync(userId) or 0
+			if score > weeklyCurrent then
+				weeklyScoreStore:SetAsync(userId, score)
+				lastUpdateTimes.weekly = 0
+			end
+		end)
+	end
+end
+
+-- 리더보드 가져오기 (상위 N명, 탭별)
+function LeaderboardService:GetLeaderboard(count: number?, tab: string?): { LeaderboardEntry }
+	local maxCount = count or 10
+	local tabKey = tab or "all"
+
+	-- 캐시가 유효하면 캐시 반환
+	local lastUpdate = lastUpdateTimes[tabKey] or 0
+	local cached = cachedLeaderboards[tabKey] or {}
+	if tick() - lastUpdate < CACHE_DURATION and #cached > 0 then
+		return cached
+	end
+
+	-- 탭별 DataStore 선택
+	local store = highScoreStore
+	if tabKey == "daily" then
+		store = dailyScoreStore
+	elseif tabKey == "weekly" then
+		store = weeklyScoreStore
+	end
+
+	if not store then
 		-- Studio 모드: 더미 데이터 반환
 		return self:_getDummyLeaderboard()
 	end
 
-	local leaderboard: { { rank: number, name: string, score: number } } = {}
+	local leaderboard: { LeaderboardEntry } = {}
 
 	local success, pages = pcall(function()
-		return highScoreStore:GetSortedAsync(false, maxCount)
+		return store:GetSortedAsync(false, maxCount)
 	end)
 
 	if not success or not pages then
-		warn("[LeaderboardService] Failed to get leaderboard")
-		return cachedLeaderboard
+		warn(`[LeaderboardService] Failed to get {tabKey} leaderboard`)
+		return cached
 	end
 
 	local data = pages:GetCurrentPage()
@@ -111,10 +156,10 @@ function LeaderboardService:GetLeaderboard(count: number?): { { rank: number, na
 	end
 
 	-- 캐시 업데이트
-	cachedLeaderboard = leaderboard
-	lastUpdateTime = tick()
+	cachedLeaderboards[tabKey] = leaderboard
+	lastUpdateTimes[tabKey] = tick()
 
-	print(`[LeaderboardService] Leaderboard updated with {#leaderboard} entries`)
+	print(`[LeaderboardService] {tabKey} leaderboard updated with {#leaderboard} entries`)
 
 	return leaderboard
 end
@@ -154,7 +199,8 @@ function LeaderboardService:GetPlayerRank(player: Player): number?
 
 	-- 순위 계산 (해당 점수보다 높은 점수 개수 + 1)
 	-- 참고: 정확한 순위 계산은 비용이 많이 들어 캐시된 리더보드에서 확인
-	for _, entry in cachedLeaderboard do
+	local allCache = cachedLeaderboards.all or {}
+	for _, entry in allCache do
 		if entry.score == score then
 			return entry.rank
 		end
@@ -164,15 +210,17 @@ function LeaderboardService:GetPlayerRank(player: Player): number?
 end
 
 -- 리더보드 요청 이벤트 핸들러
-RemoteEvents.LeaderboardRequest.OnServerEvent:Connect(function(player: Player)
-	print(`[LeaderboardService] Leaderboard requested by {player.Name}`)
+RemoteEvents.LeaderboardRequest.OnServerEvent:Connect(function(player: Player, data: { tab: string? }?)
+	local tab = data and data.tab or "all"
+	print(`[LeaderboardService] Leaderboard requested by {player.Name} (tab: {tab})`)
 
-	local leaderboard = LeaderboardService:GetLeaderboard(10)
+	local leaderboard = LeaderboardService:GetLeaderboard(10, tab)
 	local playerRank = LeaderboardService:GetPlayerRank(player)
 
 	RemoteEvents.LeaderboardData:FireClient(player, {
 		leaderboard = leaderboard,
 		playerRank = playerRank,
+		tab = tab,
 	})
 end)
 
@@ -199,8 +247,8 @@ function LeaderboardService:UpdateLobbyDisplay()
 		return
 	end
 
-	-- 리더보드 데이터 가져오기
-	local leaderboard = self:GetLeaderboard(10)
+	-- 리더보드 데이터 가져오기 (로비 간판은 전체 리더보드)
+	local leaderboard = self:GetLeaderboard(10, "all")
 
 	-- 각 순위 슬롯 업데이트
 	for i = 1, 10 do

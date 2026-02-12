@@ -312,6 +312,11 @@ RemoteEvents.Revive.OnClientEvent:Connect(function(data)
 	end
 end)
 
+-- 위로 보상 피드백
+RemoteEvents.ConsolationReward.OnClientEvent:Connect(function(data)
+	uiController:ShowGameFeedback(`힘내! +{data.coins} 코인 선물!`, Color3.fromRGB(255, 150, 255))
+end)
+
 -- 니어미스 피드백
 RemoteEvents.NearMiss.OnClientEvent:Connect(function(data)
 	uiController:ShowGameFeedback(`NEAR MISS! +{data.bonus}`, Color3.fromRGB(255, 200, 0))

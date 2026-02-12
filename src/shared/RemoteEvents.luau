@@ -195,4 +195,9 @@ RemoteEvents.ComboUpdate = getOrCreateRemoteEvent("ComboUpdate")
 -- 서버 → 클라이언트: 콤보 상태 알림
 -- 파라미터: { combo: number, bonus: number? }
 
+-- 위로 보상
+RemoteEvents.ConsolationReward = getOrCreateRemoteEvent("ConsolationReward")
+-- 서버 → 클라이언트: 위로 보상 알림
+-- 파라미터: { coins: number }
+
 return RemoteEvents

@@ -33,6 +33,7 @@ export type ChunkService = typeof(setmetatable(
 		_npcService: any?, -- NPCService 참조 (NPC 생성용)
 		_backgroundService: any?, -- BackgroundService 참조 (배경 생성용)
 		_startZone: Model?, -- 시작 구역 (출발선 포함)
+		_mercyChunkCount: number, -- 남은 자비 청크 수
 	},
 	ChunkService
 ))
@@ -50,6 +51,7 @@ function ChunkService.new(): ChunkService
 		_npcService = nil,
 		_backgroundService = nil,
 		_startZone = nil,
+		_mercyChunkCount = 0,
 	}, ChunkService)
 
 	self:_loadChunkTemplates()
@@ -311,8 +313,13 @@ function ChunkService:_selectDifficulty(): string
 		rateTable = GameConstants.CHUNK_SPAWN_RATES[#GameConstants.CHUNK_SPAWN_RATES]
 	end
 
-	-- 자비 구간 체크 (연속 피격 시 강제 Easy/Bonus - 향후 구현)
-	-- TODO: 피격 카운터 확인
+	-- 자비 구간 체크 (연속 피격 시 강제 Easy/Bonus)
+	if self._mercyChunkCount > 0 then
+		self._mercyChunkCount -= 1
+		local mercyDifficulty = math.random() < 0.4 and "Bonus" or "Easy"
+		print(`[ChunkService] Mercy chunk activated: {mercyDifficulty} ({self._mercyChunkCount} remaining)`)
+		return mercyDifficulty
+	end
 
 	-- 가중 랜덤 선택
 	local rand = math.random()
@@ -466,6 +473,12 @@ function ChunkService:CheckSpawnNewChunk(playerPosition: Vector3): boolean
 	local distanceAhead = frontmostChunkEnd - playerPosition.X
 
 	return distanceAhead < GameConstants.CHUNK.MIN_AHEAD_DISTANCE
+end
+
+-- 자비 청크 요청 (GameManager에서 연속 피격 시 호출)
+function ChunkService:RequestMercyChunks(count: number)
+	self._mercyChunkCount = count
+	print(`[ChunkService] Mercy mode activated: {count} easy chunks queued`)
 end
 
 -- 활성 청크 수 반환
