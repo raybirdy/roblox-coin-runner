@@ -301,7 +301,6 @@ function ObstacleService:_spawnObstacle(position: Vector3, obstacleType: string)
 		warningLine.CanCollide = false
 		warningLine.Anchored = true
 		warningLine.Parent = workspace
-
 	elseif obstacleType == "DoubleWall" then
 		-- 이중 벽 (두 번 점프 필요)
 		obstacle = Instance.new("Part")
@@ -329,15 +328,11 @@ function ObstacleService:_spawnObstacle(position: Vector3, obstacleType: string)
 			spawnTime = tick(),
 		}
 		table.insert(self._activeObstacles, secondWallData)
-
 	elseif obstacleType == "Gap" then
 		-- 구덩이 (점프로 건너기)
 		obstacle = Instance.new("Part")
 		obstacle.Name = "Obstacle_Gap"
-		local gapWidth = math.random(
-			GameConstants.OBSTACLE.GAP_WIDTH_MIN,
-			GameConstants.OBSTACLE.GAP_WIDTH_MAX
-		)
+		local gapWidth = math.random(GameConstants.OBSTACLE.GAP_WIDTH_MIN, GameConstants.OBSTACLE.GAP_WIDTH_MAX)
 		obstacle.Size = Vector3.new(gapWidth, 1, 12) -- 바닥 구멍
 		obstacle.Position = position + Vector3.new(0, -5, 0) -- 아래로 내림 (낙사 판정용)
 		obstacle.Color = Color3.fromRGB(30, 30, 30)
@@ -508,12 +503,79 @@ end
 function ObstacleService:OnObstacleHit()
 	self._isInvincible = true
 	self._lastHitTime = tick()
-	print(`[ObstacleService] {self._player.Name} hit obstacle! Invincible for {GameConstants.LIFE.INVINCIBLE_DURATION}s`)
+	print(
+		`[ObstacleService] {self._player.Name} hit obstacle! Invincible for {GameConstants.LIFE.INVINCIBLE_DURATION}s`
+	)
 end
 
 -- 무적 상태 확인
 function ObstacleService:IsInvincible(): boolean
 	return self._isInvincible
+end
+
+-- 니어미스 감지 (GameManager에서 호출)
+function ObstacleService:CheckNearMiss(
+	playerPosition: Vector3,
+	isSliding: boolean,
+	nearMissedSet: { [any]: boolean }
+): { BasePart }
+	local nearMisses = {}
+	local NEAR_MISS_X_RANGE = GameConstants.OBSTACLE.NEAR_MISS_X_RANGE
+	local NEAR_MISS_Y_MARGIN = GameConstants.OBSTACLE.NEAR_MISS_Y_MARGIN
+
+	for _, obstacleData in self._activeObstacles do
+		local obstaclePart = obstacleData.part
+
+		-- Skip if already near-missed
+		if nearMissedSet[obstaclePart] then
+			continue
+		end
+
+		local obstacleType = obstacleData.obstacleType
+		local dx = playerPosition.X - obstaclePart.Position.X
+
+		-- Player must be passing the obstacle (at or just past it)
+		if dx < -1 or dx > NEAR_MISS_X_RANGE then
+			continue
+		end
+
+		-- Check Y proximity for a "close call" dodge
+		local isNearMiss = false
+
+		if obstacleType == "LowWall" or obstacleType == "DoubleWall" then
+			local wallTop = GameConstants.OBSTACLE.LOW_WALL_HEIGHT
+			-- Jumped over and barely cleared
+			if playerPosition.Y > wallTop and playerPosition.Y < wallTop + NEAR_MISS_Y_MARGIN then
+				isNearMiss = true
+			end
+		elseif obstacleType == "SpikeTrap" then
+			-- Jumped over spikes, barely cleared
+			if playerPosition.Y > 3.5 and playerPosition.Y < 3.5 + NEAR_MISS_Y_MARGIN then
+				isNearMiss = true
+			end
+		elseif obstacleType == "Tunnel" then
+			local tunnelBottom = GameConstants.OBSTACLE.TUNNEL_HEIGHT
+			-- Slid under and barely fit (must be actively sliding)
+			if
+				isSliding
+				and playerPosition.Y < tunnelBottom
+				and playerPosition.Y > tunnelBottom - NEAR_MISS_Y_MARGIN
+			then
+				isNearMiss = true
+			end
+		elseif obstacleType == "Gap" then
+			-- Jumped over gap, barely cleared
+			if playerPosition.Y > 2 and playerPosition.Y < 2 + NEAR_MISS_Y_MARGIN then
+				isNearMiss = true
+			end
+		end
+
+		if isNearMiss then
+			table.insert(nearMisses, obstaclePart)
+		end
+	end
+
+	return nearMisses
 end
 
 -- 청크 삭제 시 관련 장애물 정리

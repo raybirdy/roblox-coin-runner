@@ -152,19 +152,21 @@ function PowerupController:_showPowerupIcon(powerupType: string, duration: numbe
 
 	-- 등장 애니메이션
 	iconFrame.Size = UDim2.new(0, 0, 0, 0)
-	local appearTween = TweenService:Create(iconFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-		Size = UDim2.new(0, 70, 0, 70),
-	})
+	local appearTween =
+		TweenService:Create(iconFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+			Size = UDim2.new(0, 70, 0, 70),
+		})
 	appearTween:Play()
 
 	-- 지속 시간 후 제거
 	task.delay(duration, function()
 		if iconFrame and iconFrame.Parent then
 			-- 사라지는 애니메이션
-			local disappearTween = TweenService:Create(iconFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-				Size = UDim2.new(0, 0, 0, 0),
-				BackgroundTransparency = 1,
-			})
+			local disappearTween =
+				TweenService:Create(iconFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+					Size = UDim2.new(0, 0, 0, 0),
+					BackgroundTransparency = 1,
+				})
 			disappearTween:Play()
 			disappearTween.Completed:Connect(function()
 				iconFrame:Destroy()
@@ -208,12 +210,10 @@ function PowerupController:OnPowerupCollected(data: { powerupType: string })
 			self._activePowerups["Magnet"] = false
 			print("[PowerupController] Magnet expired")
 		end)
-
 	elseif powerupType == "Shield" then
 		print(`[PowerupController] Shield activated! (Uses: {GameConstants.POWERUP.SHIELD_USES})`)
 		self._activePowerups["Shield"] = true
 		self:_showPowerupIcon("Shield", 60) -- 쉴드는 사용할 때까지 표시
-
 	elseif powerupType == "Invincible" then
 		print(`[PowerupController] Invincible activated! (Duration: {GameConstants.POWERUP.INVINCIBLE_DURATION}s)`)
 		self._activePowerups["Invincible"] = true
@@ -223,7 +223,6 @@ function PowerupController:OnPowerupCollected(data: { powerupType: string })
 			self._activePowerups["Invincible"] = false
 			print("[PowerupController] Invincible expired")
 		end)
-
 	elseif powerupType == "DoubleCoin" then
 		print(`[PowerupController] DoubleCoin activated! (Duration: {GameConstants.POWERUP.DOUBLE_COIN_DURATION}s)`)
 		self._activePowerups["DoubleCoin"] = true
@@ -233,7 +232,6 @@ function PowerupController:OnPowerupCollected(data: { powerupType: string })
 			self._activePowerups["DoubleCoin"] = false
 			print("[PowerupController] DoubleCoin expired")
 		end)
-
 	elseif powerupType == "ShieldUsed" then
 		print("[PowerupController] Shield blocked an obstacle!")
 		self._activePowerups["Shield"] = false

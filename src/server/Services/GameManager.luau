@@ -41,6 +41,9 @@ type GameSession = {
 	lives: number,
 	reviveCount: number, -- 부활 횟수
 	startPowerups: { string }?, -- 게임 시작 시 사용할 파워업 목록
+	comboCount: number, -- 연속 코인 수집 콤보
+	lastCoinTime: number, -- 마지막 코인 수집 시간
+	nearMissedObstacles: { [any]: boolean }, -- 니어미스 처리된 장애물 추적
 }
 
 local activeSessions: { [Player]: GameSession } = {}
@@ -136,6 +139,9 @@ RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { 
 		lives = GameConstants.LIFE.STARTING_LIVES,
 		reviveCount = 0,
 		startPowerups = validPowerups,
+		comboCount = 0,
+		lastCoinTime = 0,
+		nearMissedObstacles = {},
 	}
 
 	activeSessions[player] = session
@@ -289,6 +295,9 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 		coins = 0,
 		lives = GameConstants.LIFE.STARTING_LIVES,
 		reviveCount = 0,
+		comboCount = 0,
+		lastCoinTime = 0,
+		nearMissedObstacles = {},
 	}
 
 	activeSessions[player] = session
@@ -534,6 +543,45 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 			)
 		end
 
+		-- 콤보 시스템
+		if #collectedCoins > 0 then
+			local now = tick()
+			if now - session.lastCoinTime < GameConstants.SCORE.COMBO_TIMEOUT then
+				session.comboCount += #collectedCoins
+			else
+				session.comboCount = #collectedCoins
+			end
+			session.lastCoinTime = now
+
+			-- 콤보 마일스톤 보너스 체크
+			local prevCombo = session.comboCount - #collectedCoins
+			local comboBonus = 0
+			if session.comboCount >= 50 and prevCombo < 50 then
+				comboBonus = GameConstants.SCORE.COMBO_50_BONUS
+			elseif session.comboCount >= 30 and prevCombo < 30 then
+				comboBonus = GameConstants.SCORE.COMBO_30_BONUS
+			elseif session.comboCount >= 10 and prevCombo < 10 then
+				comboBonus = GameConstants.SCORE.COMBO_10_BONUS
+			end
+
+			if comboBonus > 0 then
+				session.score += comboBonus
+				print(`[GameManager] Combo {session.comboCount}x! +{comboBonus} bonus for {player.Name}`)
+			end
+
+			-- 클라이언트에 콤보 상태 알림
+			RemoteEvents.ComboUpdate:FireClient(player, {
+				combo = session.comboCount,
+				bonus = comboBonus > 0 and comboBonus or nil,
+			})
+		else
+			-- 콤보 타임아웃 체크
+			if session.comboCount > 0 and tick() - session.lastCoinTime >= GameConstants.SCORE.COMBO_TIMEOUT then
+				session.comboCount = 0
+				RemoteEvents.ComboUpdate:FireClient(player, { combo = 0 })
+			end
+		end
+
 		-- 낙하 감지 (Y < -10 이면 낙사)
 		local FALL_THRESHOLD = -10
 		if hrp.Position.Y < FALL_THRESHOLD then
@@ -595,6 +643,19 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 					end
 				end
 			end
+		end
+
+		-- 니어미스 감지 (장애물 근접 회피 보너스)
+		local nearMisses = obstacleService:CheckNearMiss(hrp.Position, isSliding, session.nearMissedObstacles)
+		for _, obstaclePart in nearMisses do
+			session.nearMissedObstacles[obstaclePart] = true
+			session.score += GameConstants.SCORE.NEAR_MISS_BONUS
+
+			RemoteEvents.NearMiss:FireClient(player, {
+				bonus = GameConstants.SCORE.NEAR_MISS_BONUS,
+			})
+
+			print(`[GameManager] Near miss! +{GameConstants.SCORE.NEAR_MISS_BONUS} for {player.Name}`)
 		end
 
 		-- 점수 업데이트 (이동 거리 기반)

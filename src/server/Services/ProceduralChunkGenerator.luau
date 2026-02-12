@@ -54,11 +54,7 @@ local CHUNK_CONFIG = {
 }
 
 -- 청크 생성 (메인 함수)
-function ProceduralChunkGenerator.Generate(
-	difficulty: string,
-	startHeight: string,
-	position: Vector3
-): Model
+function ProceduralChunkGenerator.Generate(difficulty: string, startHeight: string, position: Vector3): Model
 	local chunk = Instance.new("Model")
 	chunk.Name = `Chunk_{difficulty}_{startHeight}`
 
@@ -113,11 +109,7 @@ function ProceduralChunkGenerator._selectEndHeight(startHeight: string): string
 end
 
 -- 바닥 생성
-function ProceduralChunkGenerator._createFloor(
-	position: Vector3,
-	startHeight: string,
-	endHeight: string
-): Part
+function ProceduralChunkGenerator._createFloor(position: Vector3, startHeight: string, endHeight: string): Part
 	local chunkLength = GameConstants.CHUNK.LENGTH
 
 	-- 높이값 계산
@@ -128,11 +120,7 @@ function ProceduralChunkGenerator._createFloor(
 	local floor = Instance.new("Part")
 	floor.Name = "Floor"
 	floor.Size = Vector3.new(chunkLength, CHUNK_CONFIG.FLOOR_THICKNESS, CHUNK_CONFIG.FLOOR_WIDTH)
-	floor.Position = Vector3.new(
-		position.X + chunkLength / 2,
-		avgY + CHUNK_CONFIG.FLOOR_THICKNESS / 2,
-		position.Z
-	)
+	floor.Position = Vector3.new(position.X + chunkLength / 2, avgY + CHUNK_CONFIG.FLOOR_THICKNESS / 2, position.Z)
 	floor.Anchored = true
 	floor.CanCollide = true
 	floor.Color = Color3.fromRGB(90, 90, 100)
@@ -154,12 +142,7 @@ function ProceduralChunkGenerator._getHeightValue(height: string): number
 end
 
 -- 경사로 생성 (높이 전환 시)
-function ProceduralChunkGenerator._createRamp(
-	chunk: Model,
-	position: Vector3,
-	startHeight: string,
-	endHeight: string
-)
+function ProceduralChunkGenerator._createRamp(chunk: Model, position: Vector3, startHeight: string, endHeight: string)
 	local chunkLength = GameConstants.CHUNK.LENGTH
 	local startY = ProceduralChunkGenerator._getHeightValue(startHeight)
 	local endY = ProceduralChunkGenerator._getHeightValue(endHeight)
@@ -175,11 +158,8 @@ function ProceduralChunkGenerator._createRamp(
 	local ramp = Instance.new("Part")
 	ramp.Name = "Ramp"
 	ramp.Size = Vector3.new(rampLength, 1, CHUNK_CONFIG.FLOOR_WIDTH - 2)
-	ramp.CFrame = CFrame.new(
-		rampStartX + rampLength / 2,
-		(startY + endY) / 2 + 0.5,
-		position.Z
-	) * CFrame.Angles(0, 0, -angle)
+	ramp.CFrame = CFrame.new(rampStartX + rampLength / 2, (startY + endY) / 2 + 0.5, position.Z)
+		* CFrame.Angles(0, 0, -angle)
 	ramp.Anchored = true
 	ramp.CanCollide = true
 	ramp.Color = Color3.fromRGB(100, 100, 110)
@@ -207,11 +187,7 @@ function ProceduralChunkGenerator._addDecorations(chunk: Model, position: Vector
 		local rail = Instance.new("Part")
 		rail.Name = "SideRail"
 		rail.Size = Vector3.new(chunkLength, 0.5, 0.5)
-		rail.Position = Vector3.new(
-			position.X + chunkLength / 2,
-			1.25,
-			position.Z + zOffset
-		)
+		rail.Position = Vector3.new(position.X + chunkLength / 2, 1.25, position.Z + zOffset)
 		rail.Anchored = true
 		rail.CanCollide = false
 		rail.Color = Color3.fromRGB(150, 150, 160)
@@ -225,11 +201,7 @@ function ProceduralChunkGenerator._addDecorations(chunk: Model, position: Vector
 		local line = Instance.new("Part")
 		line.Name = `FloorLine_{i}`
 		line.Size = Vector3.new(0.3, 0.1, CHUNK_CONFIG.FLOOR_WIDTH - 4)
-		line.Position = Vector3.new(
-			position.X + i * 20,
-			1.05,
-			position.Z
-		)
+		line.Position = Vector3.new(position.X + i * 20, 1.05, position.Z)
 		line.Anchored = true
 		line.CanCollide = false
 		line.Color = Color3.fromRGB(200, 200, 200)
@@ -315,11 +287,7 @@ function ProceduralChunkGenerator._addBonusVisuals(chunk: Model, position: Vecto
 		star.Name = `Star_{i}`
 		star.Shape = Enum.PartType.Ball
 		star.Size = Vector3.new(1.5, 1.5, 1.5)
-		star.Position = Vector3.new(
-			position.X + 10 + i * 12,
-			8 + math.sin(i) * 2,
-			position.Z + math.cos(i * 2) * 5
-		)
+		star.Position = Vector3.new(position.X + 10 + i * 12, 8 + math.sin(i) * 2, position.Z + math.cos(i * 2) * 5)
 		star.Anchored = true
 		star.CanCollide = false
 		star.Color = Color3.fromRGB(255, 255, 100)
@@ -374,11 +342,7 @@ function ProceduralChunkGenerator._addHardVisuals(chunk: Model, position: Vector
 		local dangerLine = Instance.new("Part")
 		dangerLine.Name = "DangerLine"
 		dangerLine.Size = Vector3.new(chunkLength, 0.3, 0.3)
-		dangerLine.Position = Vector3.new(
-			position.X + chunkLength / 2,
-			1.15,
-			position.Z + zOffset
-		)
+		dangerLine.Position = Vector3.new(position.X + chunkLength / 2, 1.15, position.Z + zOffset)
 		dangerLine.Anchored = true
 		dangerLine.CanCollide = false
 		dangerLine.Color = Color3.fromRGB(255, 50, 50)
@@ -407,11 +371,7 @@ function ProceduralChunkGenerator._addNPCVisuals(chunk: Model, position: Vector3
 		heart.Name = `Heart_{i}`
 		heart.Shape = Enum.PartType.Ball
 		heart.Size = Vector3.new(1.2, 1.2, 1.2)
-		heart.Position = Vector3.new(
-			position.X + 2,
-			10 + i * 1.5,
-			position.Z + (i - 2) * 3
-		)
+		heart.Position = Vector3.new(position.X + 2, 10 + i * 1.5, position.Z + (i - 2) * 3)
 		heart.Anchored = true
 		heart.CanCollide = false
 		heart.Color = Color3.fromRGB(255, 100, 150)
