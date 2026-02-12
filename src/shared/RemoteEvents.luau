@@ -183,4 +183,16 @@ RemoteEvents.ShopDataResponse = getOrCreateRemoteEvent("ShopDataResponse")
 -- 서버 → 클라이언트: 상점 전체 데이터 전송
 -- 파라미터: { skins, startPowerups, reviveTickets, gemProducts }
 
+-- ==================== 게임플레이 피드백 ====================
+
+-- 니어미스 (장애물 근접 회피)
+RemoteEvents.NearMiss = getOrCreateRemoteEvent("NearMiss")
+-- 서버 → 클라이언트: 니어미스 알림
+-- 파라미터: { bonus: number }
+
+-- 콤보 업데이트
+RemoteEvents.ComboUpdate = getOrCreateRemoteEvent("ComboUpdate")
+-- 서버 → 클라이언트: 콤보 상태 알림
+-- 파라미터: { combo: number, bonus: number? }
+
 return RemoteEvents

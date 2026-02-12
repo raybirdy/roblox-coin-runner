@@ -479,12 +479,26 @@ function ShopController:_createItemFrame(
 		button.BackgroundColor3 = isGemCurrency and Color3.fromRGB(130, 70, 200) or Color3.fromRGB(0, 180, 0)
 		button.TextColor3 = Color3.fromRGB(255, 255, 255)
 		button.Text = isGemCurrency and `💎 {item.price}` or `{item.price}`
-		button.MouseButton1Click:Connect(function()
-			RemoteEvents.ShopPurchase:FireServer({
-				itemType = item.itemType,
-				itemId = item.id,
-			})
-		end)
+		if isGemCurrency then
+			button.MouseButton1Click:Connect(function()
+				self:_showConfirmPopup(
+					`{item.name}을(를) 💎 {item.price} 젬에\n구매하시겠습니까?`,
+					function()
+						RemoteEvents.ShopPurchase:FireServer({
+							itemType = item.itemType,
+							itemId = item.id,
+						})
+					end
+				)
+			end)
+		else
+			button.MouseButton1Click:Connect(function()
+				RemoteEvents.ShopPurchase:FireServer({
+					itemType = item.itemType,
+					itemId = item.id,
+				})
+			end)
+		end
 	end
 
 	return itemFrame
@@ -594,7 +608,9 @@ function ShopController:_createGemProductFrame(
 	buttonCorner.Parent = button
 
 	button.MouseButton1Click:Connect(function()
-		RemoteEvents.PurchaseGems:FireServer({ productId = product.id })
+		self:_showConfirmPopup(`💎 {product.gems} 젬을 R$ {product.robux}에\n구매하시겠습니까?`, function()
+			RemoteEvents.PurchaseGems:FireServer({ productId = product.id })
+		end)
 	end)
 
 	return frame
@@ -670,7 +686,12 @@ function ShopController:_populateGems(container: ScrollingFrame)
 		vipButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 		vipButton.Text = "R$ 99"
 		vipButton.MouseButton1Click:Connect(function()
-			RemoteEvents.PurchaseGems:FireServer({ productId = "vip_gamepass" })
+			self:_showConfirmPopup(
+				"VIP 패스를 R$ 99에 구매하시겠습니까?\n코인 획득 2배 효과!",
+				function()
+					RemoteEvents.PurchaseGems:FireServer({ productId = "vip_gamepass" })
+				end
+			)
 		end)
 	end
 end
@@ -750,6 +771,135 @@ function ShopController:_showNotification(title: string, message: string)
 				end
 			end)
 		end
+	end)
+end
+
+-- 구매 확인 팝업 (아동 보호)
+function ShopController:_showConfirmPopup(message: string, onConfirm: () -> ())
+	if not self._screenGui then
+		return
+	end
+
+	-- Remove existing popup
+	local existing = self._screenGui:FindFirstChild("ConfirmPopup")
+	if existing then
+		existing:Destroy()
+	end
+
+	-- Dim background
+	local dim = Instance.new("Frame")
+	dim.Name = "ConfirmPopup"
+	dim.Size = UDim2.new(1, 0, 1, 0)
+	dim.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	dim.BackgroundTransparency = 0.5
+	dim.Parent = self._screenGui
+
+	-- Popup frame
+	local popup = Instance.new("Frame")
+	popup.Name = "PopupContent"
+	popup.Size = UDim2.new(0, 300, 0, 180)
+	popup.Position = UDim2.new(0.5, -150, 0.5, -90)
+	popup.BackgroundColor3 = Color3.fromRGB(30, 30, 50)
+	popup.Parent = dim
+
+	local popupCorner = Instance.new("UICorner")
+	popupCorner.CornerRadius = UDim.new(0, 16)
+	popupCorner.Parent = popup
+
+	local popupStroke = Instance.new("UIStroke")
+	popupStroke.Color = Color3.fromRGB(255, 200, 0)
+	popupStroke.Thickness = 2
+	popupStroke.Parent = popup
+
+	-- Title
+	local titleLabel = Instance.new("TextLabel")
+	titleLabel.Name = "Title"
+	titleLabel.Size = UDim2.new(1, 0, 0, 35)
+	titleLabel.Position = UDim2.new(0, 0, 0, 10)
+	titleLabel.BackgroundTransparency = 1
+	titleLabel.TextColor3 = Color3.fromRGB(255, 200, 0)
+	titleLabel.TextSize = 20
+	titleLabel.Font = Enum.Font.GothamBold
+	titleLabel.Text = "구매 확인"
+	titleLabel.Parent = popup
+
+	-- Message
+	local msgLabel = Instance.new("TextLabel")
+	msgLabel.Name = "Message"
+	msgLabel.Size = UDim2.new(1, -20, 0, 55)
+	msgLabel.Position = UDim2.new(0, 10, 0, 48)
+	msgLabel.BackgroundTransparency = 1
+	msgLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
+	msgLabel.TextSize = 16
+	msgLabel.Font = Enum.Font.Gotham
+	msgLabel.Text = message
+	msgLabel.TextWrapped = true
+	msgLabel.Parent = popup
+
+	-- Close popup function
+	local function closePopup()
+		local tweenOut =
+			TweenService:Create(popup, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+				Size = UDim2.new(0, 0, 0, 0),
+				Position = UDim2.new(0.5, 0, 0.5, 0),
+			})
+		tweenOut:Play()
+		tweenOut.Completed:Connect(function()
+			if dim and dim.Parent then
+				dim:Destroy()
+			end
+		end)
+	end
+
+	-- Confirm button
+	local confirmBtn = Instance.new("TextButton")
+	confirmBtn.Name = "ConfirmButton"
+	confirmBtn.Size = UDim2.new(0, 120, 0, 40)
+	confirmBtn.Position = UDim2.new(0.5, -130, 1, -55)
+	confirmBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
+	confirmBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	confirmBtn.TextSize = 18
+	confirmBtn.Font = Enum.Font.GothamBold
+	confirmBtn.Text = "확인"
+	confirmBtn.Parent = popup
+
+	local confirmCorner = Instance.new("UICorner")
+	confirmCorner.CornerRadius = UDim.new(0, 8)
+	confirmCorner.Parent = confirmBtn
+
+	-- Cancel button
+	local cancelBtn = Instance.new("TextButton")
+	cancelBtn.Name = "CancelButton"
+	cancelBtn.Size = UDim2.new(0, 120, 0, 40)
+	cancelBtn.Position = UDim2.new(0.5, 10, 1, -55)
+	cancelBtn.BackgroundColor3 = Color3.fromRGB(150, 50, 50)
+	cancelBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	cancelBtn.TextSize = 18
+	cancelBtn.Font = Enum.Font.GothamBold
+	cancelBtn.Text = "취소"
+	cancelBtn.Parent = popup
+
+	local cancelCorner = Instance.new("UICorner")
+	cancelCorner.CornerRadius = UDim.new(0, 8)
+	cancelCorner.Parent = cancelBtn
+
+	-- Open animation
+	popup.Size = UDim2.new(0, 0, 0, 0)
+	popup.Position = UDim2.new(0.5, 0, 0.5, 0)
+
+	local tweenIn = TweenService:Create(popup, TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+		Size = UDim2.new(0, 300, 0, 180),
+		Position = UDim2.new(0.5, -150, 0.5, -90),
+	})
+	tweenIn:Play()
+
+	confirmBtn.MouseButton1Click:Connect(function()
+		closePopup()
+		onConfirm()
+	end)
+
+	cancelBtn.MouseButton1Click:Connect(function()
+		closePopup()
 	end)
 end
 

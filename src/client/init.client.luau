@@ -312,6 +312,20 @@ RemoteEvents.Revive.OnClientEvent:Connect(function(data)
 	end
 end)
 
+-- 니어미스 피드백
+RemoteEvents.NearMiss.OnClientEvent:Connect(function(data)
+	uiController:ShowGameFeedback(`NEAR MISS! +{data.bonus}`, Color3.fromRGB(255, 200, 0))
+end)
+
+-- 콤보 피드백
+RemoteEvents.ComboUpdate.OnClientEvent:Connect(function(data)
+	if data.bonus and data.bonus > 0 then
+		uiController:ShowGameFeedback(`{data.combo}x COMBO! +{data.bonus}`, Color3.fromRGB(0, 255, 150))
+	elseif data.combo >= 5 and data.combo % 5 == 0 then
+		uiController:ShowGameFeedback(`{data.combo}x COMBO!`, Color3.fromRGB(100, 200, 255))
+	end
+end)
+
 -- 튜토리얼 거리 업데이트 및 속도 연출 동기화 (RunService)
 RunService.Heartbeat:Connect(function(deltaTime: number)
 	-- 튜토리얼 거리 업데이트

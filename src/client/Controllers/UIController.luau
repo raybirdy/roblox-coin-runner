@@ -612,7 +612,8 @@ function UIController:_createMobileControls()
 	local jumpButton = Instance.new("TextButton")
 	jumpButton.Name = "JumpButton"
 	jumpButton.Size = UDim2.new(0, GameConstants.UI.TOUCH_BUTTON_SIZE, 0, GameConstants.UI.TOUCH_BUTTON_SIZE)
-	jumpButton.Position = UDim2.new(1, -GameConstants.UI.TOUCH_BUTTON_SIZE - 20, 1, -GameConstants.UI.TOUCH_BUTTON_SIZE - 20)
+	jumpButton.Position =
+		UDim2.new(1, -GameConstants.UI.TOUCH_BUTTON_SIZE - 20, 1, -GameConstants.UI.TOUCH_BUTTON_SIZE - 20)
 	jumpButton.BackgroundColor3 = Color3.fromRGB(0, 150, 255) -- 파란색
 	jumpButton.BackgroundTransparency = 0.3
 	jumpButton.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -704,7 +705,14 @@ function UIController:_setupEventHandlers()
 
 	-- 게임 오버
 	local gameOverConnection = RemoteEvents.GameOver.OnClientEvent:Connect(function(data)
-		self:ShowGameOver(data.finalScore, data.earnedCoins, data.highScore, data.distance, data.isNewRecord, data.canRevive)
+		self:ShowGameOver(
+			data.finalScore,
+			data.earnedCoins,
+			data.highScore,
+			data.distance,
+			data.isNewRecord,
+			data.canRevive
+		)
 	end)
 	table.insert(self._connections, gameOverConnection)
 
@@ -785,7 +793,14 @@ function UIController:OnSlide(callback: () -> ())
 end
 
 -- 게임 오버 화면 표시
-function UIController:ShowGameOver(finalScore: number, earnedCoins: number, highScore: number?, distance: number?, isNewRecord: boolean?, canRevive: boolean?)
+function UIController:ShowGameOver(
+	finalScore: number,
+	earnedCoins: number,
+	highScore: number?,
+	distance: number?,
+	isNewRecord: boolean?,
+	canRevive: boolean?
+)
 	if not self._gameOverFrame then
 		return
 	end
@@ -861,10 +876,11 @@ function UIController:ShowGameOver(finalScore: number, earnedCoins: number, high
 	self._gameOverFrame.Visible = true
 
 	local frameHeight = canRevive and 480 or 420
-	local appearTween = TweenService:Create(self._gameOverFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-		Size = UDim2.new(0, 450, 0, frameHeight),
-		Position = UDim2.new(0.5, -225, 0.5, -frameHeight / 2),
-	})
+	local appearTween =
+		TweenService:Create(self._gameOverFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+			Size = UDim2.new(0, 450, 0, frameHeight),
+			Position = UDim2.new(0.5, -225, 0.5, -frameHeight / 2),
+		})
 	appearTween:Play()
 
 	-- NEW RECORD 애니메이션 (깜빡임)
@@ -885,7 +901,9 @@ function UIController:ShowGameOver(finalScore: number, earnedCoins: number, high
 		end)
 	end
 
-	print(`[UIController] Game Over displayed - Score: {finalScore}, Coins: {earnedCoins}, Distance: {distance or 0}m, HighScore: {highScore or 0}, NewRecord: {isNewRecord or false}`)
+	print(
+		`[UIController] Game Over displayed - Score: {finalScore}, Coins: {earnedCoins}, Distance: {distance or 0}m, HighScore: {highScore or 0}, NewRecord: {isNewRecord or false}`
+	)
 end
 
 -- 플레이 버튼 클릭 처리
@@ -1137,6 +1155,38 @@ function UIController:ShowCountdown(onComplete: () -> ())
 	end
 
 	print("[UIController] Countdown started")
+end
+
+-- 게임 피드백 플로팅 텍스트 (니어미스, 콤보 등)
+function UIController:ShowGameFeedback(text: string, color: Color3)
+	if not self._screenGui then
+		return
+	end
+
+	local feedbackLabel = Instance.new("TextLabel")
+	feedbackLabel.Name = "GameFeedback"
+	feedbackLabel.Size = UDim2.new(0, 300, 0, 50)
+	feedbackLabel.Position = UDim2.new(0.5, -150, 0.4, 0)
+	feedbackLabel.BackgroundTransparency = 1
+	feedbackLabel.TextColor3 = color
+	feedbackLabel.TextSize = 28
+	feedbackLabel.Font = Enum.Font.GothamBlack
+	feedbackLabel.Text = text
+	feedbackLabel.TextStrokeTransparency = 0
+	feedbackLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+	feedbackLabel.Parent = self._screenGui
+
+	-- Float up and fade out
+	local tweenInfo = TweenInfo.new(0.8, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	local tween = TweenService:Create(feedbackLabel, tweenInfo, {
+		Position = UDim2.new(0.5, -150, 0.3, 0),
+		TextTransparency = 1,
+		TextStrokeTransparency = 1,
+	})
+	tween:Play()
+	tween.Completed:Connect(function()
+		feedbackLabel:Destroy()
+	end)
 end
 
 -- 정리

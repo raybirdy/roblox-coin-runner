@@ -109,6 +109,8 @@ GameConstants.OBSTACLE = {
 	GAP_WIDTH_MIN = 6, -- 구덩이 최소 폭
 	GAP_WIDTH_MAX = 10, -- 구덩이 최대 폭
 	MIN_SPACING = 12, -- 장애물 간 최소 간격 (studs) - 최고 속도 기준
+	NEAR_MISS_X_RANGE = 4, -- 니어미스 X거리 범위 (studs)
+	NEAR_MISS_Y_MARGIN = 3, -- 니어미스 Y방향 여유 범위 (studs)
 }
 
 -- 라이프 시스템
