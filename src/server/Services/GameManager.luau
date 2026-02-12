@@ -674,9 +674,23 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 						session.isPlaying = false
 						print(`[GameManager] Player {player.Name} can revive - offering revive`)
 
+						-- 현재 점수 계산 (UI 표시용)
+						local reviveX = player.Character
+							and player.Character:FindFirstChild("HumanoidRootPart")
+							and (player.Character.HumanoidRootPart :: BasePart).Position.X
+							or session.startPosition.X
+						local reviveDist = math.max(0, math.floor(reviveX - session.startPosition.X))
+						local reviveData = PlayerDataService:GetPlayerData(player)
+						local reviveHS = reviveData and reviveData.highScore or 0
+
 						RemoteEvents.GameOver:FireClient(player, {
 							canRevive = true,
 							revivesLeft = GameConstants.REVIVE.MAX_REVIVES - session.reviveCount,
+							finalScore = session.score,
+							earnedCoins = session.coins,
+							highScore = reviveHS,
+							distance = reviveDist,
+							isNewRecord = session.score > 0 and session.score >= reviveHS,
 						})
 					else
 						-- 부활 불가 - 게임 오버
