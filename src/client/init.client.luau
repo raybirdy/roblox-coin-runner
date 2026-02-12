@@ -118,6 +118,9 @@ RemoteEvents.PlayerDataLoaded.OnClientEvent:Connect(function(data)
 	end
 end)
 
+-- 초기화 완료 후 서버에 데이터 요청 (레이스 컨디션 방지)
+RemoteEvents.PlayerDataRequest:FireServer()
+
 -- 로비 복귀 처리
 RemoteEvents.ReturnToLobby.OnClientEvent:Connect(function()
 	print("[Client] Returned to lobby")
