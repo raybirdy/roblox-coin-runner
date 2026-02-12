@@ -675,10 +675,82 @@ function ShopController:_populateGems(container: ScrollingFrame)
 	end
 end
 
--- 알림 표시
+-- 알림 표시 (토스트 UI)
 function ShopController:_showNotification(title: string, message: string)
-	-- 간단한 알림 (추후 개선 가능)
 	print(`[ShopController] {title}: {message}`)
+
+	if not self._screenGui then
+		return
+	end
+
+	-- 기존 토스트 제거
+	local existing = self._screenGui:FindFirstChild("Toast")
+	if existing then
+		existing:Destroy()
+	end
+
+	-- 토스트 프레임
+	local toast = Instance.new("Frame")
+	toast.Name = "Toast"
+	toast.Size = UDim2.new(0, 300, 0, 60)
+	toast.Position = UDim2.new(0.5, -150, 0, -70)
+	toast.BackgroundColor3 = Color3.fromRGB(30, 30, 50)
+	toast.BackgroundTransparency = 0.1
+	toast.Parent = self._screenGui
+
+	local toastCorner = Instance.new("UICorner")
+	toastCorner.CornerRadius = UDim.new(0, 10)
+	toastCorner.Parent = toast
+
+	local toastStroke = Instance.new("UIStroke")
+	toastStroke.Color = title == "Purchase Failed" and Color3.fromRGB(255, 80, 80) or Color3.fromRGB(80, 255, 80)
+	toastStroke.Thickness = 2
+	toastStroke.Parent = toast
+
+	-- 타이틀
+	local titleLabel = Instance.new("TextLabel")
+	titleLabel.Size = UDim2.new(1, 0, 0, 25)
+	titleLabel.Position = UDim2.new(0, 0, 0, 5)
+	titleLabel.BackgroundTransparency = 1
+	titleLabel.TextColor3 = toastStroke.Color
+	titleLabel.TextSize = 16
+	titleLabel.Font = Enum.Font.GothamBold
+	titleLabel.Text = title
+	titleLabel.Parent = toast
+
+	-- 메시지
+	local msgLabel = Instance.new("TextLabel")
+	msgLabel.Size = UDim2.new(1, 0, 0, 20)
+	msgLabel.Position = UDim2.new(0, 0, 0, 30)
+	msgLabel.BackgroundTransparency = 1
+	msgLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
+	msgLabel.TextSize = 13
+	msgLabel.Font = Enum.Font.Gotham
+	msgLabel.Text = message
+	msgLabel.TextTruncate = Enum.TextTruncate.AtEnd
+	msgLabel.Parent = toast
+
+	-- 슬라이드 인 애니메이션
+	local tweenIn = TweenService:Create(toast, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+		Position = UDim2.new(0.5, -150, 0, 20),
+	})
+	tweenIn:Play()
+
+	-- 2초 후 사라짐
+	task.delay(2, function()
+		if toast and toast.Parent then
+			local tweenOut =
+				TweenService:Create(toast, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+					Position = UDim2.new(0.5, -150, 0, -70),
+				})
+			tweenOut:Play()
+			tweenOut.Completed:Connect(function()
+				if toast and toast.Parent then
+					toast:Destroy()
+				end
+			end)
+		end
+	end)
 end
 
 -- 상점 열기

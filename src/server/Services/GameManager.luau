@@ -204,6 +204,9 @@ RemoteEvents.ReturnToLobby.OnServerEvent:Connect(function(player: Player)
 end)
 
 -- 상점 터치 감지 설정
+local shopDebounce: { [Player]: number } = {}
+local SHOP_DEBOUNCE_TIME = 2 -- 2초 디바운스
+
 local function setupShopDetection()
 	local shopTrigger = LobbyService:GetShopTrigger()
 	if shopTrigger then
@@ -222,6 +225,13 @@ local function setupShopDetection()
 			if activeSessions[player] then
 				return
 			end
+
+			-- 디바운스 체크
+			local lastOpen = shopDebounce[player]
+			if lastOpen and (tick() - lastOpen) < SHOP_DEBOUNCE_TIME then
+				return
+			end
+			shopDebounce[player] = tick()
 
 			-- 상점 열기 알림
 			RemoteEvents.ShopOpen:FireClient(player)
@@ -445,6 +455,7 @@ Players.PlayerRemoving:Connect(function(player: Player)
 	if activeSessions[player] then
 		GameManager.EndGame(player)
 	end
+	shopDebounce[player] = nil
 end)
 
 -- 메인 업데이트 루프 (모든 활성 세션)
