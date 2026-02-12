@@ -241,6 +241,7 @@ RemoteEvents.GameStart.OnClientEvent:Connect(function(data)
 
 		-- 게임 시작!
 		playerController:StartGame()
+		inputController:SetGameActive(true)
 
 		-- 속도 연출 효과 시작
 		if charNow then
@@ -270,6 +271,9 @@ end)
 
 -- 서버로부터 게임 종료 수신
 RemoteEvents.GameOver.OnClientEvent:Connect(function(data)
+	-- 스와이프 입력 비활성화
+	inputController:SetGameActive(false)
+
 	-- 부활 가능한 경우 게임 일시정지만 (완전 종료 아님)
 	if data.canRevive then
 		print("[Client] Game paused - revive available")
@@ -295,6 +299,7 @@ RemoteEvents.Revive.OnClientEvent:Connect(function(data)
 	if data.success then
 		print(`[Client] Revive successful! Resuming game...`)
 		playerController:StartGame()
+		inputController:SetGameActive(true)
 
 		-- 부활 후 속도 감소 및 점진적 회복
 		local reduction = GameConstants.REVIVE.SPEED_REDUCTION

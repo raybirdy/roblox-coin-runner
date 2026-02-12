@@ -173,7 +173,9 @@ GameConstants.TUTORIAL = {
 
 -- UI
 GameConstants.UI = {
-	TOUCH_BUTTON_SIZE = 80, -- 모바일 버튼 최소 크기 (px)
+	TOUCH_BUTTON_SIZE = 120, -- 모바일 버튼 크기 (px) - 6~12세 대상 큰 버튼
+	SWIPE_THRESHOLD = 30, -- 스와이프 인식 최소 거리 (px)
+	SWIPE_MAX_TIME = 0.4, -- 스와이프 최대 시간 (초)
 }
 
 -- DataStore

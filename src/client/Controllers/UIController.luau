@@ -608,60 +608,85 @@ function UIController:_createMobileControls()
 		return
 	end
 
+	local btnSize = GameConstants.UI.TOUCH_BUTTON_SIZE
+	local btnMargin = 20
+
 	-- 점프 버튼 (오른쪽 하단)
 	local jumpButton = Instance.new("TextButton")
 	jumpButton.Name = "JumpButton"
-	jumpButton.Size = UDim2.new(0, GameConstants.UI.TOUCH_BUTTON_SIZE, 0, GameConstants.UI.TOUCH_BUTTON_SIZE)
-	jumpButton.Position =
-		UDim2.new(1, -GameConstants.UI.TOUCH_BUTTON_SIZE - 20, 1, -GameConstants.UI.TOUCH_BUTTON_SIZE - 20)
-	jumpButton.BackgroundColor3 = Color3.fromRGB(0, 150, 255) -- 파란색
-	jumpButton.BackgroundTransparency = 0.3
+	jumpButton.Size = UDim2.new(0, btnSize, 0, btnSize)
+	jumpButton.Position = UDim2.new(1, -btnSize - btnMargin, 1, -btnSize - btnMargin)
+	jumpButton.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
+	jumpButton.BackgroundTransparency = 0.2
 	jumpButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-	jumpButton.TextSize = 32
+	jumpButton.TextSize = 36
 	jumpButton.Font = Enum.Font.GothamBold
 	jumpButton.Text = "↑\nJUMP"
 	jumpButton.TextYAlignment = Enum.TextYAlignment.Center
 	jumpButton.Parent = self._screenGui
 	self._jumpButton = jumpButton
 
-	-- 둥근 모서리
 	local jumpCorner = Instance.new("UICorner")
-	jumpCorner.CornerRadius = UDim.new(0, 12)
+	jumpCorner.CornerRadius = UDim.new(0, 16)
 	jumpCorner.Parent = jumpButton
 
-	-- 테두리
 	local jumpStroke = Instance.new("UIStroke")
 	jumpStroke.Color = Color3.fromRGB(255, 255, 255)
-	jumpStroke.Thickness = 2
-	jumpStroke.Transparency = 0.5
+	jumpStroke.Thickness = 3
+	jumpStroke.Transparency = 0.3
 	jumpStroke.Parent = jumpButton
 
 	-- 슬라이드 버튼 (왼쪽 하단)
 	local slideButton = Instance.new("TextButton")
 	slideButton.Name = "SlideButton"
-	slideButton.Size = UDim2.new(0, GameConstants.UI.TOUCH_BUTTON_SIZE, 0, GameConstants.UI.TOUCH_BUTTON_SIZE)
-	slideButton.Position = UDim2.new(0, 20, 1, -GameConstants.UI.TOUCH_BUTTON_SIZE - 20)
-	slideButton.BackgroundColor3 = Color3.fromRGB(255, 150, 0) -- 주황색
-	slideButton.BackgroundTransparency = 0.3
+	slideButton.Size = UDim2.new(0, btnSize, 0, btnSize)
+	slideButton.Position = UDim2.new(0, btnMargin, 1, -btnSize - btnMargin)
+	slideButton.BackgroundColor3 = Color3.fromRGB(255, 150, 0)
+	slideButton.BackgroundTransparency = 0.2
 	slideButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-	slideButton.TextSize = 32
+	slideButton.TextSize = 36
 	slideButton.Font = Enum.Font.GothamBold
 	slideButton.Text = "↓\nSLIDE"
 	slideButton.TextYAlignment = Enum.TextYAlignment.Center
 	slideButton.Parent = self._screenGui
 	self._slideButton = slideButton
 
-	-- 둥근 모서리
 	local slideCorner = Instance.new("UICorner")
-	slideCorner.CornerRadius = UDim.new(0, 12)
+	slideCorner.CornerRadius = UDim.new(0, 16)
 	slideCorner.Parent = slideButton
 
-	-- 테두리
 	local slideStroke = Instance.new("UIStroke")
 	slideStroke.Color = Color3.fromRGB(255, 255, 255)
-	slideStroke.Thickness = 2
-	slideStroke.Transparency = 0.5
+	slideStroke.Thickness = 3
+	slideStroke.Transparency = 0.3
 	slideStroke.Parent = slideButton
+
+	-- 터치 프레스 피드백 (버튼 누를 때 축소, 뗄 때 복구)
+	local function addPressFeedback(button: TextButton)
+		local originalSize = button.Size
+		local pressInfo = TweenInfo.new(0.08, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+		local releaseInfo = TweenInfo.new(0.12, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+
+		local shrunkSize = UDim2.new(
+			originalSize.X.Scale,
+			math.floor(originalSize.X.Offset * 0.9),
+			originalSize.Y.Scale,
+			math.floor(originalSize.Y.Offset * 0.9)
+		)
+
+		button.MouseButton1Down:Connect(function()
+			TweenService:Create(button, pressInfo, { Size = shrunkSize }):Play()
+			button.BackgroundTransparency = 0.1
+		end)
+
+		button.MouseButton1Up:Connect(function()
+			TweenService:Create(button, releaseInfo, { Size = originalSize }):Play()
+			button.BackgroundTransparency = 0.2
+		end)
+	end
+
+	addPressFeedback(jumpButton)
+	addPressFeedback(slideButton)
 
 	-- 버튼 클릭 이벤트
 	jumpButton.MouseButton1Click:Connect(function()
