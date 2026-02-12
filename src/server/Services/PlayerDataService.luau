@@ -24,6 +24,7 @@ end
 -- 기본 플레이어 데이터 구조
 type PlayerData = {
 	coins: number,
+	gems: number, -- 프리미엄 재화
 	highScore: number,
 	gamesPlayed: number,
 	totalDistance: number,
@@ -34,10 +35,13 @@ type PlayerData = {
 	equippedSkin: string,
 	startPowerups: { [string]: number }, -- powerupId -> 보유 개수
 	reviveTickets: number,
+	-- VIP
+	hasVIP: boolean,
 }
 
 local DEFAULT_DATA: PlayerData = {
 	coins = 0,
+	gems = 0,
 	highScore = 0,
 	gamesPlayed = 0,
 	totalDistance = 0,
@@ -48,6 +52,8 @@ local DEFAULT_DATA: PlayerData = {
 	equippedSkin = "default",
 	startPowerups = {},
 	reviveTickets = 0,
+	-- VIP 기본값
+	hasVIP = false,
 }
 
 -- 메모리 캐시 (활성 플레이어)
@@ -233,8 +239,66 @@ function PlayerDataService:AddCoins(player: Player, amount: number)
 	playerData.coins += amount
 end
 
--- 스킨 구매
-function PlayerDataService:PurchaseSkin(player: Player, skinId: string, price: number): boolean
+-- 젬 차감
+function PlayerDataService:SpendGems(player: Player, amount: number): boolean
+	local playerData = playerDataCache[player]
+	if not playerData then
+		return false
+	end
+
+	if playerData.gems < amount then
+		return false
+	end
+
+	playerData.gems -= amount
+	return true
+end
+
+-- 젬 추가
+function PlayerDataService:AddGems(player: Player, amount: number)
+	local playerData = playerDataCache[player]
+	if not playerData then
+		return
+	end
+
+	playerData.gems += amount
+	print(`[PlayerDataService] Added {amount} gems to {player.Name}, total: {playerData.gems}`)
+end
+
+-- 젬 잔액 확인
+function PlayerDataService:GetGems(player: Player): number
+	local playerData = playerDataCache[player]
+	if not playerData then
+		return 0
+	end
+
+	return playerData.gems
+end
+
+-- VIP 상태 설정
+function PlayerDataService:SetVIP(player: Player, hasVIP: boolean)
+	local playerData = playerDataCache[player]
+	if not playerData then
+		return
+	end
+
+	playerData.hasVIP = hasVIP
+	self:SavePlayerData(player)
+	print(`[PlayerDataService] VIP status for {player.Name}: {hasVIP}`)
+end
+
+-- VIP 상태 확인
+function PlayerDataService:HasVIP(player: Player): boolean
+	local playerData = playerDataCache[player]
+	if not playerData then
+		return false
+	end
+
+	return playerData.hasVIP or false
+end
+
+-- 스킨 구매 (코인 또는 젬)
+function PlayerDataService:PurchaseSkin(player: Player, skinId: string, price: number, currency: string?): boolean
 	local playerData = playerDataCache[player]
 	if not playerData then
 		return false
@@ -247,9 +311,16 @@ function PlayerDataService:PurchaseSkin(player: Player, skinId: string, price: n
 		end
 	end
 
-	-- 코인 차감
-	if not self:SpendCoins(player, price) then
-		return false
+	-- 재화 차감 (기본값: coins)
+	local currencyType = currency or "coins"
+	if currencyType == "gems" then
+		if not self:SpendGems(player, price) then
+			return false
+		end
+	else
+		if not self:SpendCoins(player, price) then
+			return false
+		end
 	end
 
 	-- 스킨 추가

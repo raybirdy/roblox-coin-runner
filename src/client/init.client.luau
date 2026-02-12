@@ -77,6 +77,7 @@ local MusicController = require(script.Controllers.MusicController)
 local ShopController = require(script.Controllers.ShopController)
 local SpeedEffectController = require(script.Controllers.SpeedEffectController)
 local LeaderboardController = require(script.Controllers.LeaderboardController)
+local StartPowerupController = require(script.Controllers.StartPowerupController)
 
 -- 컨트롤러 인스턴스 생성
 local inputController = InputController.new()
@@ -92,6 +93,7 @@ local musicController = MusicController.new()
 local shopController = ShopController.new(player)
 local speedEffectController = SpeedEffectController.new(player)
 local leaderboardController = LeaderboardController.new(player)
+local startPowerupController = StartPowerupController.new(player)
 
 -- 배경 음악 시작
 musicController:Start()
@@ -102,9 +104,13 @@ playerController:SetLobbyMode()
 -- 리더보드 표시 (로비에서)
 leaderboardController:Show()
 
+-- 플레이어 데이터 캐시
+local cachedPlayerData: any? = nil
+
 -- 플레이어 데이터 로드 시 UI 업데이트
 RemoteEvents.PlayerDataLoaded.OnClientEvent:Connect(function(data)
 	print("[Client] Player data loaded")
+	cachedPlayerData = data
 	if data.highScore then
 		uiController:UpdateHighScoreDisplay(data.highScore, data.coins or 0)
 	end
@@ -130,9 +136,13 @@ end)
 
 -- 포탈 진입 안내 (서버에서 포탈 감지 시)
 RemoteEvents.PortalEnter.OnClientEvent:Connect(function()
-	print("[Client] Portal enter detected, confirming to server...")
-	-- 시작 파워업 선택 UI 표시 가능 (Phase 2 확장)
-	RemoteEvents.PortalEnter:FireServer({})
+	print("[Client] Portal enter detected, showing powerup selection...")
+
+	-- 시작 파워업 선택 UI 표시 (캐시된 플레이어 데이터 사용)
+	startPowerupController:Show(cachedPlayerData, function(selectedPowerups)
+		print(`[Client] Starting game with {#selectedPowerups} powerups`)
+		RemoteEvents.PortalEnter:FireServer({ startPowerups = selectedPowerups })
+	end)
 end)
 
 -- 상점 열기 (서버에서 상점 감지 시)
@@ -279,6 +289,24 @@ RemoteEvents.Revive.OnClientEvent:Connect(function(data)
 	if data.success then
 		print(`[Client] Revive successful! Resuming game...`)
 		playerController:StartGame()
+
+		-- 부활 후 속도 감소 및 점진적 회복
+		local reduction = GameConstants.REVIVE.SPEED_REDUCTION
+		local recoveryTime = GameConstants.REVIVE.SPEED_RECOVERY_TIME
+		playerController:SetSpeedMultiplier(reduction)
+
+		task.spawn(function()
+			local elapsed = 0
+			local STEP = 0.1
+			while elapsed < recoveryTime do
+				task.wait(STEP)
+				elapsed += STEP
+				local t = math.min(elapsed / recoveryTime, 1)
+				local currentMultiplier = reduction + (1 - reduction) * t
+				playerController:SetSpeedMultiplier(currentMultiplier)
+			end
+			playerController:SetSpeedMultiplier(1.0)
+		end)
 	else
 		print(`[Client] Revive failed: {data.reason}`)
 	end
@@ -302,4 +330,6 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 end)
 
 print("[Client] Coin Runner Client Ready")
-print("[Client] Controllers initialized: Input, Player, Coin, Life, UI, Powerup, Camera, NPC, Tutorial, Music, Shop, SpeedEffect, Leaderboard")
+print(
+	"[Client] Controllers initialized: Input, Player, Coin, Life, UI, Powerup, Camera, NPC, Tutorial, Music, Shop, SpeedEffect, Leaderboard"
+)

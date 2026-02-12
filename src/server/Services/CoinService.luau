@@ -92,23 +92,37 @@ end
 
 -- 코인 타입 선택 (가중 랜덤)
 function CoinService:_selectCoinType(difficulty: string): string
-	-- MVP: 대부분 Bronze, 가끔 Silver/Gold
 	local rand = math.random()
 
 	if difficulty == "Bonus" then
 		-- Bonus 청크에서는 고급 코인 확률 높음
-		if rand < 0.20 then
+		if rand < 0.05 then
+			return "Diamond"
+		elseif rand < 0.25 then
 			return "Gold"
-		elseif rand < 0.50 then
+		elseif rand < 0.55 then
+			return "Silver"
+		else
+			return "Bronze"
+		end
+	elseif difficulty == "Hard" then
+		-- Hard 청크에서 Diamond 등장
+		if rand < 0.03 then
+			return "Diamond"
+		elseif rand < 0.10 then
+			return "Gold"
+		elseif rand < 0.30 then
 			return "Silver"
 		else
 			return "Bronze"
 		end
 	else
 		-- 일반 청크
-		if rand < 0.05 then
+		if rand < 0.01 then
+			return "Diamond"
+		elseif rand < 0.06 then
 			return "Gold"
-		elseif rand < 0.20 then
+		elseif rand < 0.21 then
 			return "Silver"
 		else
 			return "Bronze"
@@ -123,18 +137,22 @@ function CoinService:_spawnCoin(position: Vector3, coinType: string)
 	local outerColor: Color3
 	local innerColor: Color3
 
-	if coinType == "Bronze" then
-		outerColor = Color3.fromRGB(205, 127, 50) -- 브론즈 색
-		innerColor = Color3.fromRGB(255, 170, 80) -- 밝은 브론즈
-		value = GameConstants.COIN.BRONZE_VALUE
-	elseif coinType == "Silver" then
-		outerColor = Color3.fromRGB(192, 192, 192) -- 실버 색
-		innerColor = Color3.fromRGB(230, 230, 240) -- 밝은 실버
-		value = GameConstants.COIN.SILVER_VALUE
+	if coinType == "Diamond" then
+		outerColor = Color3.fromRGB(120, 200, 255) -- 다이아몬드 색
+		innerColor = Color3.fromRGB(200, 240, 255) -- 밝은 다이아몬드
+		value = GameConstants.COIN.DIAMOND_VALUE
 	elseif coinType == "Gold" then
 		outerColor = Color3.fromRGB(255, 215, 0) -- 골드 색
 		innerColor = Color3.fromRGB(255, 240, 100) -- 밝은 골드
 		value = GameConstants.COIN.GOLD_VALUE
+	elseif coinType == "Silver" then
+		outerColor = Color3.fromRGB(192, 192, 192) -- 실버 색
+		innerColor = Color3.fromRGB(230, 230, 240) -- 밝은 실버
+		value = GameConstants.COIN.SILVER_VALUE
+	elseif coinType == "Bronze" then
+		outerColor = Color3.fromRGB(205, 127, 50) -- 브론즈 색
+		innerColor = Color3.fromRGB(255, 170, 80) -- 밝은 브론즈
+		value = GameConstants.COIN.BRONZE_VALUE
 	else
 		outerColor = Color3.fromRGB(205, 127, 50)
 		innerColor = Color3.fromRGB(255, 170, 80)
@@ -224,8 +242,7 @@ function CoinService:_startCoinRotation(coinModel: Model)
 			end
 
 			-- Y축 기준 회전 + 기본 Z축 90도 유지 (코인이 세로로 서서 빙글빙글)
-			local newCFrame = CFrame.new(basePosition)
-				* CFrame.Angles(0, math.rad(angle), math.rad(90))
+			local newCFrame = CFrame.new(basePosition) * CFrame.Angles(0, math.rad(angle), math.rad(90))
 			coinModel:SetPrimaryPartCFrame(newCFrame)
 
 			task.wait(0.025) -- ~40 FPS 회전

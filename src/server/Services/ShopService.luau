@@ -2,6 +2,7 @@
 -- Shop Service
 -- 상점 시스템 서버 로직 (구매, 장착)
 
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local GameConstants = require(ReplicatedStorage.Shared.Constants.GameConstants)
@@ -11,7 +12,7 @@ local PlayerDataService = require(script.Parent.PlayerDataService)
 local ShopService = {}
 
 -- 스킨 정보 가져오기
-local function getSkinInfo(skinId: string): { id: string, name: string, price: number }?
+local function getSkinInfo(skinId: string): { id: string, name: string, price: number, currency: string? }?
 	for _, skin in GameConstants.SHOP.SKINS do
 		if skin.id == skinId then
 			return skin
@@ -21,7 +22,9 @@ local function getSkinInfo(skinId: string): { id: string, name: string, price: n
 end
 
 -- 시작 파워업 정보 가져오기
-local function getStartPowerupInfo(powerupId: string): { id: string, name: string, price: number, duration: number?, uses: number? }?
+local function getStartPowerupInfo(
+	powerupId: string
+): { id: string, name: string, price: number, duration: number?, uses: number? }?
 	for _, powerup in GameConstants.SHOP.START_POWERUPS do
 		if powerup.id == powerupId then
 			return powerup
@@ -48,13 +51,20 @@ RemoteEvents.ShopPurchase.OnServerEvent:Connect(function(player: Player, data: {
 			errorMsg = "invalid_item"
 		elseif PlayerDataService:OwnsSkin(player, itemId) then
 			errorMsg = "already_owned"
-		elseif not PlayerDataService:PurchaseSkin(player, itemId, skinInfo.price) then
-			errorMsg = "insufficient_coins"
 		else
-			success = true
-			print(`[ShopService] {player.Name} purchased skin: {itemId}`)
+			-- 재화 종류 확인 (coins 또는 gems)
+			local currency = skinInfo.currency or "coins"
+			if not PlayerDataService:PurchaseSkin(player, itemId, skinInfo.price, currency) then
+				if currency == "gems" then
+					errorMsg = "insufficient_gems"
+				else
+					errorMsg = "insufficient_coins"
+				end
+			else
+				success = true
+				print(`[ShopService] {player.Name} purchased skin: {itemId} with {currency}`)
+			end
 		end
-
 	elseif itemType == "start_powerup" then
 		-- 시작 파워업 구매
 		local powerupInfo = getStartPowerupInfo(itemId)
@@ -66,7 +76,6 @@ RemoteEvents.ShopPurchase.OnServerEvent:Connect(function(player: Player, data: {
 			success = true
 			print(`[ShopService] {player.Name} purchased start powerup: {itemId}`)
 		end
-
 	elseif itemType == "revive_ticket" then
 		-- 부활권 구매
 		if not PlayerDataService:PurchaseReviveTicket(player, GameConstants.SHOP.REVIVE_TICKET_PRICE) then
@@ -75,7 +84,6 @@ RemoteEvents.ShopPurchase.OnServerEvent:Connect(function(player: Player, data: {
 			success = true
 			print(`[ShopService] {player.Name} purchased revive ticket`)
 		end
-
 	else
 		errorMsg = "invalid_item_type"
 	end
@@ -118,7 +126,8 @@ RemoteEvents.EquipSkin.OnServerEvent:Connect(function(player: Player, data: { sk
 			RemoteEvents.PlayerDataLoaded:FireClient(player, playerData)
 		end
 
-		-- TODO: 캐릭터 외형 변경 로직 (Phase 3)
+		-- 캐릭터 외형 변경
+		ShopService:ApplySkinToCharacter(player, skinId)
 	else
 		warn(`[ShopService] Failed to equip skin for {player.Name}: {skinId}`)
 	end
@@ -139,21 +148,47 @@ RemoteEvents.UseStartPowerup.OnServerEvent:Connect(function(player: Player, data
 	end
 end)
 
+-- 스킨 색상 정보 가져오기
+local function getSkinColor(skinId: string): Color3
+	for _, skin in GameConstants.SHOP.SKINS do
+		if skin.id == skinId and skin.color then
+			return skin.color
+		end
+	end
+	return Color3.fromRGB(0, 170, 255) -- 기본 색상
+end
+
+-- 캐릭터에 스킨 외형 적용
+function ShopService:ApplySkinToCharacter(player: Player, skinId: string)
+	local character = player.Character
+	if not character then
+		return
+	end
+
+	local skinColor = getSkinColor(skinId)
+
+	-- 캐릭터의 모든 BodyPart 색상 변경
+	for _, part in character:GetChildren() do
+		if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+			part.Color = skinColor
+		end
+	end
+
+	print(`[ShopService] Applied skin '{skinId}' to {player.Name}`)
+end
+
 -- 상점 데이터 가져오기 (클라이언트 초기화용)
-function ShopService:GetShopData(player: Player): {
-	skins: { { id: string, name: string, price: number, owned: boolean, equipped: boolean } },
-	startPowerups: { { id: string, name: string, price: number, count: number } },
-	reviveTickets: { price: number, count: number },
-}
+function ShopService:GetShopData(player: Player)
 	local playerData = PlayerDataService:GetPlayerData(player)
 
-	-- 스킨 목록
+	-- 스킨 목록 (코인/젬 재화 정보 포함)
 	local skins = {}
 	for _, skin in GameConstants.SHOP.SKINS do
 		table.insert(skins, {
 			id = skin.id,
 			name = skin.name,
 			price = skin.price,
+			currency = skin.currency or "coins",
 			owned = playerData and PlayerDataService:OwnsSkin(player, skin.id) or skin.id == "default",
 			equipped = playerData and PlayerDataService:GetEquippedSkin(player) == skin.id or skin.id == "default",
 		})
@@ -176,11 +211,63 @@ function ShopService:GetShopData(player: Player): {
 		count = playerData and PlayerDataService:GetReviveTicketCount(player) or 0,
 	}
 
+	-- 젬 상품 목록
+	local gemProducts = {}
+	for _, product in GameConstants.MONETIZATION.GEM_PRODUCTS do
+		table.insert(gemProducts, {
+			id = product.id,
+			gems = product.gems,
+			bonus = product.bonus or 0,
+			robux = product.robux,
+			includesPet = product.includesPet or false,
+		})
+	end
+
+	-- 플레이어 재화 정보
+	local playerCurrency = {
+		coins = playerData and playerData.coins or 0,
+		gems = playerData and playerData.gems or 0,
+		hasVIP = playerData and playerData.hasVIP or false,
+	}
+
 	return {
 		skins = skins,
 		startPowerups = startPowerups,
 		reviveTickets = reviveTickets,
+		gemProducts = gemProducts,
+		playerCurrency = playerCurrency,
 	}
+end
+
+-- 상점 데이터 요청 처리
+RemoteEvents.ShopDataRequest.OnServerEvent:Connect(function(player: Player)
+	print(`[ShopService] Shop data request from {player.Name}`)
+
+	local shopData = ShopService:GetShopData(player)
+	RemoteEvents.ShopDataResponse:FireClient(player, shopData)
+end)
+
+-- 캐릭터 스폰 시 장착 스킨 자동 적용
+Players.PlayerAdded:Connect(function(player: Player)
+	player.CharacterAdded:Connect(function()
+		-- 데이터 로드 대기
+		task.wait(0.5)
+		local equippedSkin = PlayerDataService:GetEquippedSkin(player)
+		if equippedSkin and equippedSkin ~= "default" then
+			ShopService:ApplySkinToCharacter(player, equippedSkin)
+		end
+	end)
+end)
+
+-- 이미 접속한 플레이어 처리
+for _, player in Players:GetPlayers() do
+	player.CharacterAdded:Connect(function()
+		task.wait(0.5)
+		local equippedSkin = PlayerDataService:GetEquippedSkin(player)
+		if equippedSkin and equippedSkin ~= "default" then
+			ShopService:ApplySkinToCharacter(player, equippedSkin)
+		end
+	end)
 end
 
 print("[ShopService] Initialized")

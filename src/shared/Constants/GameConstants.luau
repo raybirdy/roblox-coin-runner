@@ -269,21 +269,56 @@ GameConstants.LOBBY_NPC = {
 
 -- 상점 시스템
 GameConstants.SHOP = {
-	-- 스킨
+	-- 스킨 (코인으로 구매)
 	SKINS = {
-		{ id = "default", name = "기본", price = 0 },
-		{ id = "red_hat", name = "빨간 모자", price = 100 },
-		{ id = "blue_cape", name = "파란 망토", price = 200 },
-		{ id = "golden", name = "골든", price = 500 },
+		{ id = "default", name = "기본", price = 0, currency = "coins", color = Color3.fromRGB(0, 170, 255) },
+		{
+			id = "red_hat",
+			name = "빨간 모자",
+			price = 100,
+			currency = "coins",
+			color = Color3.fromRGB(220, 50, 50),
+		},
+		{
+			id = "blue_cape",
+			name = "파란 망토",
+			price = 200,
+			currency = "coins",
+			color = Color3.fromRGB(50, 100, 220),
+		},
+		{ id = "golden", name = "골든", price = 500, currency = "coins", color = Color3.fromRGB(255, 215, 0) },
+		-- 프리미엄 스킨 (젬으로 구매)
+		{ id = "unicorn", name = "유니콘", price = 100, currency = "gems", color = Color3.fromRGB(255, 180, 255) },
+		{ id = "dragon", name = "드래곤", price = 200, currency = "gems", color = Color3.fromRGB(200, 50, 0) },
 	},
-	-- 시작 파워업
+	-- 시작 파워업 (코인)
 	START_POWERUPS = {
 		{ id = "start_magnet", name = "시작 자석", price = 50, duration = 5 },
 		{ id = "start_shield", name = "시작 쉴드", price = 50, uses = 1 },
 		{ id = "start_double", name = "시작 2배코인", price = 80, duration = 10 },
 	},
-	-- 부활권
+	-- 부활권 (코인)
 	REVIVE_TICKET_PRICE = 100,
+	-- 젬으로 부활 (게임 중)
+	REVIVE_GEM_COST = 5,
+}
+
+-- 수익화 시스템 (Robux 상품)
+-- 주의: 실제 Product/GamePass ID는 Roblox Creator Hub에서 생성 후 교체 필요
+GameConstants.MONETIZATION = {
+	-- DevProducts (젬 구매) - ID는 Creator Hub에서 생성 후 교체
+	GEM_PRODUCTS = {
+		{ id = "gems_50", productId = 0, gems = 50, robux = 25, bonus = 0 },
+		{ id = "gems_200", productId = 0, gems = 200, robux = 75, bonus = 50 },
+		{ id = "gems_500", productId = 0, gems = 500, robux = 149, bonus = 150 },
+		{ id = "starter_pack", productId = 0, gems = 100, robux = 49, bonus = 0, includesPet = true },
+	},
+	-- GamePass (VIP)
+	VIP_GAMEPASS_ID = 0, -- Creator Hub에서 생성 후 교체
+	VIP_BENEFITS = {
+		coinMultiplier = 2, -- 코인 획득 2배
+		badge = "VIP",
+	},
 }
 
 -- NPC (MVP: 토끼, 곰돌이, 부엉이)
