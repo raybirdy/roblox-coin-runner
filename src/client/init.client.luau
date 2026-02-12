@@ -78,6 +78,7 @@ local ShopController = require(script.Controllers.ShopController)
 local SpeedEffectController = require(script.Controllers.SpeedEffectController)
 local LeaderboardController = require(script.Controllers.LeaderboardController)
 local StartPowerupController = require(script.Controllers.StartPowerupController)
+local ProgressionController = require(script.Controllers.ProgressionController)
 
 -- 컨트롤러 인스턴스 생성
 local inputController = InputController.new()
@@ -94,6 +95,7 @@ local shopController = ShopController.new(player)
 local speedEffectController = SpeedEffectController.new(player)
 local leaderboardController = LeaderboardController.new(player)
 local startPowerupController = StartPowerupController.new(player)
+local progressionController = ProgressionController.new(player)
 
 -- 배경 음악 시작
 musicController:Start()
@@ -132,6 +134,9 @@ RemoteEvents.ReturnToLobby.OnClientEvent:Connect(function()
 
 	-- 리더보드 표시
 	leaderboardController:Show()
+
+	-- 진행도 UI 표시
+	progressionController:ShowInLobby()
 end)
 
 -- 포탈 진입 안내 (서버에서 포탈 감지 시)
@@ -200,6 +205,7 @@ RemoteEvents.GameStart.OnClientEvent:Connect(function(data)
 	uiController:HideGameOver()
 	uiController:HideLobbyUI()
 	leaderboardController:Hide()
+	progressionController:HideForGame()
 
 	-- 2. 컨트롤 전환: 기본 이동 비활성화
 	disableDefaultControls()
@@ -350,5 +356,5 @@ end)
 
 print("[Client] Coin Runner Client Ready")
 print(
-	"[Client] Controllers initialized: Input, Player, Coin, Life, UI, Powerup, Camera, NPC, Tutorial, Music, Shop, SpeedEffect, Leaderboard"
+	"[Client] Controllers initialized: Input, Player, Coin, Life, UI, Powerup, Camera, NPC, Tutorial, Music, Shop, SpeedEffect, Leaderboard, Progression"
 )

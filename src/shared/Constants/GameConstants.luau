@@ -467,4 +467,86 @@ GameConstants.BACKGROUND = {
 	},
 }
 
+-- ==================== 진행도 시스템 ====================
+
+-- 레벨 시스템
+GameConstants.LEVEL = {
+	-- 레벨별 필요 XP (레벨 1부터 시작, 인덱스 = 다음 레벨로 가기 위한 XP)
+	XP_TABLE = {
+		100, -- Lv1 → Lv2
+		200, -- Lv2 → Lv3
+		350, -- Lv3 → Lv4
+		500, -- Lv4 → Lv5
+		700, -- Lv5 → Lv6
+		1000, -- Lv6 → Lv7
+		1300, -- Lv7 → Lv8
+		1700, -- Lv8 → Lv9
+		2200, -- Lv9 → Lv10
+		3000, -- Lv10 → Lv11
+		4000, -- Lv11 → Lv12
+		5000, -- Lv12 → Lv13
+		6500, -- Lv13 → Lv14
+		8000, -- Lv14 → Lv15
+		10000, -- Lv15 → Lv16
+		12000, -- Lv16 → Lv17
+		15000, -- Lv17 → Lv18
+		18000, -- Lv18 → Lv19
+		22000, -- Lv19 → Lv20
+		30000, -- Lv20 → Lv21+
+	},
+	MAX_LEVEL = 20,
+	-- XP 획득량
+	XP_PER_GAME = 10, -- 게임 1회 참여
+	XP_PER_SCORE_100 = 5, -- 점수 100점당 XP
+	XP_PER_MISSION = 30, -- 미션 완료 시 XP
+	XP_PER_ACHIEVEMENT = 50, -- 업적 완료 시 XP
+	-- 레벨업 보상 (레벨당 코인)
+	LEVEL_UP_COIN_REWARD = 50,
+	-- 특별 레벨 보상 (5레벨마다 젬)
+	MILESTONE_LEVELS = { 5, 10, 15, 20 },
+	MILESTONE_GEM_REWARD = 10,
+}
+
+-- 일일 미션 시스템
+GameConstants.MISSIONS = {
+	DAILY_COUNT = 3, -- 하루 3개 미션
+	-- 미션 템플릿
+	TEMPLATES = {
+		{ id = "play_games", name = "게임 플레이", desc = "게임 {target}회 플레이", targets = { 3, 5 }, reward = 30 },
+		{ id = "collect_coins", name = "코인 수집", desc = "코인 {target}개 수집", targets = { 30, 50, 100 }, reward = 40 },
+		{ id = "score_reach", name = "목표 점수", desc = "점수 {target}점 달성", targets = { 500, 1000, 2000 }, reward = 50 },
+		{ id = "near_miss", name = "니어미스", desc = "니어미스 {target}회 달성", targets = { 3, 5 }, reward = 35 },
+		{ id = "combo_reach", name = "콤보 달성", desc = "{target}콤보 달성", targets = { 10, 20 }, reward = 40 },
+		{ id = "distance_run", name = "달리기", desc = "{target}m 달리기", targets = { 500, 1000 }, reward = 35 },
+	},
+}
+
+-- 업적 시스템
+GameConstants.ACHIEVEMENTS = {
+	-- { id, name, desc, condition, target, rewardGems, rewardXP }
+	LIST = {
+		-- 게임 시작
+		{ id = "first_game", name = "첫 발걸음", desc = "첫 게임 플레이!", target = 1, condition = "games_played", rewardGems = 5, rewardXP = 50 },
+		{ id = "play_10", name = "단골 러너", desc = "10회 게임 플레이", target = 10, condition = "games_played", rewardGems = 10, rewardXP = 100 },
+		{ id = "play_50", name = "마라톤 러너", desc = "50회 게임 플레이", target = 50, condition = "games_played", rewardGems = 20, rewardXP = 200 },
+		{ id = "play_100", name = "전설의 러너", desc = "100회 게임 플레이", target = 100, condition = "games_played", rewardGems = 50, rewardXP = 500 },
+		-- 점수
+		{ id = "score_500", name = "워밍업", desc = "500점 달성", target = 500, condition = "high_score", rewardGems = 5, rewardXP = 50 },
+		{ id = "score_1000", name = "실력자", desc = "1000점 달성", target = 1000, condition = "high_score", rewardGems = 10, rewardXP = 100 },
+		{ id = "score_5000", name = "고수", desc = "5000점 달성", target = 5000, condition = "high_score", rewardGems = 25, rewardXP = 250 },
+		{ id = "score_10000", name = "챔피언", desc = "10000점 달성", target = 10000, condition = "high_score", rewardGems = 50, rewardXP = 500 },
+		-- 코인
+		{ id = "coins_100", name = "동전 모으기", desc = "누적 100코인 수집", target = 100, condition = "total_coins", rewardGems = 5, rewardXP = 50 },
+		{ id = "coins_1000", name = "부자 러너", desc = "누적 1000코인 수집", target = 1000, condition = "total_coins", rewardGems = 15, rewardXP = 150 },
+		{ id = "coins_5000", name = "코인 왕", desc = "누적 5000코인 수집", target = 5000, condition = "total_coins", rewardGems = 30, rewardXP = 300 },
+		-- 거리
+		{ id = "dist_1000", name = "1km 러너", desc = "누적 1000m 달리기", target = 1000, condition = "total_distance", rewardGems = 5, rewardXP = 50 },
+		{ id = "dist_10000", name = "10km 러너", desc = "누적 10000m 달리기", target = 10000, condition = "total_distance", rewardGems = 20, rewardXP = 200 },
+		-- 레벨
+		{ id = "level_5", name = "성장중", desc = "레벨 5 달성", target = 5, condition = "level", rewardGems = 10, rewardXP = 0 },
+		{ id = "level_10", name = "중급 러너", desc = "레벨 10 달성", target = 10, condition = "level", rewardGems = 25, rewardXP = 0 },
+		{ id = "level_20", name = "만렙 러너", desc = "레벨 20 달성", target = 20, condition = "level", rewardGems = 100, rewardXP = 0 },
+	},
+}
+
 return GameConstants
