@@ -100,11 +100,7 @@ function BackgroundService:_spawnFloorForChunk(chunkPosition: Vector3, chunkLeng
 	local centerLine = Instance.new("Part")
 	centerLine.Name = "CenterLine"
 	centerLine.Size = Vector3.new(chunkLength, 0.1, 0.5)
-	centerLine.Position = Vector3.new(
-		chunkPosition.X + chunkLength / 2,
-		1.05,
-		GameConstants.PLAYER.Z_POSITION
-	)
+	centerLine.Position = Vector3.new(chunkPosition.X + chunkLength / 2, 1.05, GameConstants.PLAYER.Z_POSITION)
 	centerLine.Anchored = true
 	centerLine.CanCollide = false
 	centerLine.Color = Color3.fromRGB(255, 200, 50) -- 노란색 중앙선
@@ -135,11 +131,7 @@ function BackgroundService:_spawnCrowdForChunk(chunkPosition: Vector3, chunkLeng
 		local xOffset = (i - 1) * bgConfig.CROWD_SPACING + math.random(5, 15)
 		local zPosition = (i % 2 == 0) and bgConfig.CROWD_Z_FRONT or bgConfig.CROWD_Z_BACK
 
-		local position = Vector3.new(
-			chunkPosition.X + xOffset,
-			bgConfig.CROWD_Y,
-			zPosition
-		)
+		local position = Vector3.new(chunkPosition.X + xOffset, bgConfig.CROWD_Y, zPosition)
 
 		-- 관중 NPC 생성
 		local crowdNPC = self:_createCrowdNPC(crowdType, position)
@@ -150,11 +142,14 @@ function BackgroundService:_spawnCrowdForChunk(chunkPosition: Vector3, chunkLeng
 end
 
 -- 관중 NPC 생성 (개별)
-function BackgroundService:_createCrowdNPC(crowdType: {
-	name: string,
-	color: Color3,
-	animation: string,
-}, position: Vector3): Model?
+function BackgroundService:_createCrowdNPC(
+	crowdType: {
+		name: string,
+		color: Color3,
+		animation: string,
+	},
+	position: Vector3
+): Model?
 	if not self._backgroundFolder then
 		return nil
 	end
@@ -265,24 +260,30 @@ function BackgroundService:_playCrowdAnimation(npcModel: Model, animationType: s
 			-- 점프 애니메이션 (위아래)
 			task.spawn(function()
 				while body and body.Parent do
-					local jumpTween = TweenService:Create(body, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-						Position = body.Position + Vector3.new(0, 1, 0),
-					})
-					local headJumpTween = TweenService:Create(head, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-						Position = head.Position + Vector3.new(0, 1, 0),
-					})
+					local jumpTween =
+						TweenService:Create(body, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+							Position = body.Position + Vector3.new(0, 1, 0),
+						})
+					local headJumpTween =
+						TweenService:Create(head, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+							Position = head.Position + Vector3.new(0, 1, 0),
+						})
 					jumpTween:Play()
 					headJumpTween:Play()
 					jumpTween.Completed:Wait()
 
-					if not body or not body.Parent then break end
+					if not body or not body.Parent then
+						break
+					end
 
-					local downTween = TweenService:Create(body, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-						Position = Vector3.new(body.Position.X, originalBodyY, body.Position.Z),
-					})
-					local headDownTween = TweenService:Create(head, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-						Position = Vector3.new(head.Position.X, originalHeadY, head.Position.Z),
-					})
+					local downTween =
+						TweenService:Create(body, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+							Position = Vector3.new(body.Position.X, originalBodyY, body.Position.Z),
+						})
+					local headDownTween =
+						TweenService:Create(head, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+							Position = Vector3.new(head.Position.X, originalHeadY, head.Position.Z),
+						})
 					downTween:Play()
 					headDownTween:Play()
 					downTween.Completed:Wait()
@@ -294,17 +295,27 @@ function BackgroundService:_playCrowdAnimation(npcModel: Model, animationType: s
 			-- 좌우 흔들기
 			task.spawn(function()
 				while head and head.Parent do
-					local waveTween = TweenService:Create(head, TweenInfo.new(0.3, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
-						Orientation = Vector3.new(0, 20, 10),
-					})
+					local waveTween = TweenService:Create(
+						head,
+						TweenInfo.new(0.3, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+						{
+							Orientation = Vector3.new(0, 20, 10),
+						}
+					)
 					waveTween:Play()
 					waveTween.Completed:Wait()
 
-					if not head or not head.Parent then break end
+					if not head or not head.Parent then
+						break
+					end
 
-					local waveBackTween = TweenService:Create(head, TweenInfo.new(0.3, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
-						Orientation = Vector3.new(0, -20, -10),
-					})
+					local waveBackTween = TweenService:Create(
+						head,
+						TweenInfo.new(0.3, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+						{
+							Orientation = Vector3.new(0, -20, -10),
+						}
+					)
 					waveBackTween:Play()
 					waveBackTween.Completed:Wait()
 
@@ -315,17 +326,27 @@ function BackgroundService:_playCrowdAnimation(npcModel: Model, animationType: s
 			-- 뒤뚱뒤뚱
 			task.spawn(function()
 				while body and body.Parent do
-					local waddleTween = TweenService:Create(body, TweenInfo.new(0.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
-						Orientation = Vector3.new(0, 0, 8),
-					})
+					local waddleTween = TweenService:Create(
+						body,
+						TweenInfo.new(0.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+						{
+							Orientation = Vector3.new(0, 0, 8),
+						}
+					)
 					waddleTween:Play()
 					waddleTween.Completed:Wait()
 
-					if not body or not body.Parent then break end
+					if not body or not body.Parent then
+						break
+					end
 
-					local waddleBackTween = TweenService:Create(body, TweenInfo.new(0.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
-						Orientation = Vector3.new(0, 0, -8),
-					})
+					local waddleBackTween = TweenService:Create(
+						body,
+						TweenInfo.new(0.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+						{
+							Orientation = Vector3.new(0, 0, -8),
+						}
+					)
 					waddleBackTween:Play()
 					waddleBackTween.Completed:Wait()
 				end
@@ -334,24 +355,42 @@ function BackgroundService:_playCrowdAnimation(npcModel: Model, animationType: s
 			-- 기본: 가벼운 위아래
 			task.spawn(function()
 				while body and body.Parent do
-					local bobTween = TweenService:Create(body, TweenInfo.new(0.6, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
-						Position = body.Position + Vector3.new(0, 0.3, 0),
-					})
-					local headBobTween = TweenService:Create(head, TweenInfo.new(0.6, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
-						Position = head.Position + Vector3.new(0, 0.3, 0),
-					})
+					local bobTween = TweenService:Create(
+						body,
+						TweenInfo.new(0.6, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+						{
+							Position = body.Position + Vector3.new(0, 0.3, 0),
+						}
+					)
+					local headBobTween = TweenService:Create(
+						head,
+						TweenInfo.new(0.6, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+						{
+							Position = head.Position + Vector3.new(0, 0.3, 0),
+						}
+					)
 					bobTween:Play()
 					headBobTween:Play()
 					bobTween.Completed:Wait()
 
-					if not body or not body.Parent then break end
+					if not body or not body.Parent then
+						break
+					end
 
-					local bobDownTween = TweenService:Create(body, TweenInfo.new(0.6, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
-						Position = Vector3.new(body.Position.X, originalBodyY, body.Position.Z),
-					})
-					local headBobDownTween = TweenService:Create(head, TweenInfo.new(0.6, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
-						Position = Vector3.new(head.Position.X, originalHeadY, head.Position.Z),
-					})
+					local bobDownTween = TweenService:Create(
+						body,
+						TweenInfo.new(0.6, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+						{
+							Position = Vector3.new(body.Position.X, originalBodyY, body.Position.Z),
+						}
+					)
+					local headBobDownTween = TweenService:Create(
+						head,
+						TweenInfo.new(0.6, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+						{
+							Position = Vector3.new(head.Position.X, originalHeadY, head.Position.Z),
+						}
+					)
 					bobDownTween:Play()
 					headBobDownTween:Play()
 					bobDownTween.Completed:Wait()
@@ -375,11 +414,7 @@ function BackgroundService:_spawnSceneryForChunk(chunkPosition: Vector3, chunkLe
 		local xOffset = (i - 1) * (chunkLength / bgConfig.TREES_PER_CHUNK) + math.random(10, 30)
 		local zOffset = (i % 2 == 0) and 5 or -5 -- 약간 좌우로
 
-		local position = Vector3.new(
-			chunkPosition.X + xOffset,
-			0,
-			bgConfig.SCENERY_Z + zOffset
-		)
+		local position = Vector3.new(chunkPosition.X + xOffset, 0, bgConfig.SCENERY_Z + zOffset)
 
 		local tree = self:_createBackgroundTree(position)
 		if tree then
@@ -436,11 +471,7 @@ function BackgroundService:_spawnHillForChunk(chunkPosition: Vector3, chunkLengt
 	local hill = Instance.new("Part")
 	hill.Name = "BackgroundHill"
 	hill.Size = Vector3.new(chunkLength, 15, 30)
-	hill.Position = Vector3.new(
-		chunkPosition.X + chunkLength / 2,
-		-5,
-		bgConfig.SCENERY_Z - 15
-	)
+	hill.Position = Vector3.new(chunkPosition.X + chunkLength / 2, -5, bgConfig.SCENERY_Z - 15)
 	hill.Anchored = true
 	hill.CanCollide = false
 	hill.Color = Color3.fromRGB(80, 150, 80) -- 연한 초록

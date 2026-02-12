@@ -101,7 +101,11 @@ function LobbyService:_createPortal()
 	-- 포탈 프레임 (아치형)
 	local portalFrame = Instance.new("Part")
 	portalFrame.Name = "PortalFrame"
-	portalFrame.Size = Vector3.new(GameConstants.LOBBY.PORTAL_SIZE.X, GameConstants.LOBBY.PORTAL_SIZE.Y + 2, GameConstants.LOBBY.PORTAL_SIZE.Z + 2)
+	portalFrame.Size = Vector3.new(
+		GameConstants.LOBBY.PORTAL_SIZE.X,
+		GameConstants.LOBBY.PORTAL_SIZE.Y + 2,
+		GameConstants.LOBBY.PORTAL_SIZE.Z + 2
+	)
 	portalFrame.Position = GameConstants.LOBBY.PORTAL_POSITION
 	portalFrame.Anchored = true
 	portalFrame.CanCollide = false
@@ -176,9 +180,10 @@ function LobbyService:_createPortal()
 	-- 간판 애니메이션 (네온 테두리 펄스)
 	task.spawn(function()
 		while signBorder and signBorder.Parent do
-			local tween = TweenService:Create(signBorder, TweenInfo.new(0.8, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
-				Transparency = 0.3,
-			})
+			local tween =
+				TweenService:Create(signBorder, TweenInfo.new(0.8, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
+					Transparency = 0.3,
+				})
 			tween:Play()
 			tween.Completed:Wait()
 
@@ -186,9 +191,10 @@ function LobbyService:_createPortal()
 				break
 			end
 
-			local tween2 = TweenService:Create(signBorder, TweenInfo.new(0.8, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
-				Transparency = 0,
-			})
+			local tween2 =
+				TweenService:Create(signBorder, TweenInfo.new(0.8, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
+					Transparency = 0,
+				})
 			tween2:Play()
 			tween2.Completed:Wait()
 		end
@@ -915,13 +921,16 @@ function LobbyService:_createLobbyNPCs()
 end
 
 -- 동물 NPC 생성 (개별)
-function LobbyService:_createAnimalNPC(npcId: string, npcData: {
-	name: string,
-	position: Vector3,
-	color: Color3,
-	message: string,
-	animation: string,
-})
+function LobbyService:_createAnimalNPC(
+	npcId: string,
+	npcData: {
+		name: string,
+		position: Vector3,
+		color: Color3,
+		message: string,
+		animation: string,
+	}
+)
 	if not lobbyFolder then
 		return
 	end
@@ -1083,7 +1092,8 @@ function LobbyService:_createAnimalNPC(npcId: string, npcData: {
 				time += 0.08
 				local offsetX = math.sin(time) * 0.15
 				local rotation = math.sin(time) * 5
-				body.CFrame = CFrame.new(originalPos + Vector3.new(offsetX, 0, 0)) * CFrame.Angles(0, 0, math.rad(rotation))
+				body.CFrame = CFrame.new(originalPos + Vector3.new(offsetX, 0, 0))
+					* CFrame.Angles(0, 0, math.rad(rotation))
 				task.wait(0.03)
 			end
 		end)
@@ -1174,9 +1184,10 @@ function LobbyService:_createAnimalNPC(npcId: string, npcData: {
 			local originalY = body.Position.Y
 			while body and body.Parent do
 				-- 점프 업
-				local tween = TweenService:Create(body, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-					Position = body.Position + Vector3.new(0, 1.5, 0),
-				})
+				local tween =
+					TweenService:Create(body, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+						Position = body.Position + Vector3.new(0, 1.5, 0),
+					})
 				tween:Play()
 				tween.Completed:Wait()
 
@@ -1185,9 +1196,10 @@ function LobbyService:_createAnimalNPC(npcId: string, npcData: {
 				end
 
 				-- 점프 다운
-				local tween2 = TweenService:Create(body, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-					Position = Vector3.new(body.Position.X, originalY, body.Position.Z),
-				})
+				local tween2 =
+					TweenService:Create(body, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+						Position = Vector3.new(body.Position.X, originalY, body.Position.Z),
+					})
 				tween2:Play()
 				tween2.Completed:Wait()
 
@@ -1200,9 +1212,10 @@ function LobbyService:_createAnimalNPC(npcId: string, npcData: {
 	if npcData.animation == "wave" then
 		task.spawn(function()
 			while head and head.Parent do
-				local tween = TweenService:Create(head, TweenInfo.new(0.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
-					Orientation = Vector3.new(0, 15, 0),
-				})
+				local tween =
+					TweenService:Create(head, TweenInfo.new(0.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
+						Orientation = Vector3.new(0, 15, 0),
+					})
 				tween:Play()
 				tween.Completed:Wait()
 
@@ -1210,9 +1223,10 @@ function LobbyService:_createAnimalNPC(npcId: string, npcData: {
 					break
 				end
 
-				local tween2 = TweenService:Create(head, TweenInfo.new(0.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
-					Orientation = Vector3.new(0, -15, 0),
-				})
+				local tween2 =
+					TweenService:Create(head, TweenInfo.new(0.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
+						Orientation = Vector3.new(0, -15, 0),
+					})
 				tween2:Play()
 				tween2.Completed:Wait()
 			end

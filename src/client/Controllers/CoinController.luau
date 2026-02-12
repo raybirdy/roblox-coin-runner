@@ -116,7 +116,14 @@ function CoinController:_setupEventHandlers()
 end
 
 -- 코인 수집 시 호출
-function CoinController:OnCoinCollected(data: { coinType: string, coinValue: number, totalCoins: number, isDoubled: boolean? })
+function CoinController:OnCoinCollected(
+	data: {
+		coinType: string,
+		coinValue: number,
+		totalCoins: number,
+		isDoubled: boolean?,
+	}
+)
 	self._totalCoins = data.totalCoins
 
 	-- 사운드 재생

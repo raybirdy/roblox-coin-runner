@@ -48,12 +48,7 @@ function NPCController:_setupEventHandlers()
 end
 
 -- NPC 등장 처리
-function NPCController:OnNPCAppeared(
-	npcType: string,
-	position: Vector3,
-	npcInstance: Model,
-	messageIndex: number?
-)
+function NPCController:OnNPCAppeared(npcType: string, position: Vector3, npcInstance: Model, messageIndex: number?)
 	print(`[NPCController] NPC appeared: {npcType} at {position}`)
 
 	-- 말풍선 표시
@@ -127,17 +122,19 @@ function NPCController:ShowSpeechBubble(npcModel: Model, npcType: string, messag
 
 	-- 등장 애니메이션
 	billboardGui.Size = UDim2.new(0, 0, 0, 0)
-	local appearTween = TweenService:Create(billboardGui, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-		Size = UDim2.new(0, 250, 0, 80),
-	})
+	local appearTween =
+		TweenService:Create(billboardGui, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+			Size = UDim2.new(0, 250, 0, 80),
+		})
 	appearTween:Play()
 
 	-- 일정 시간 후 말풍선 제거 (사라지는 애니메이션)
 	task.delay(GameConstants.NPC.SPEECH_BUBBLE_DURATION - 0.3, function()
 		if billboardGui and billboardGui.Parent then
-			local disappearTween = TweenService:Create(billboardGui, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-				Size = UDim2.new(0, 0, 0, 0),
-			})
+			local disappearTween =
+				TweenService:Create(billboardGui, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+					Size = UDim2.new(0, 0, 0, 0),
+				})
 			disappearTween:Play()
 			disappearTween.Completed:Connect(function()
 				if billboardGui and billboardGui.Parent then

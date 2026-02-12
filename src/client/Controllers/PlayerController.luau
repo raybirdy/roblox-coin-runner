@@ -231,7 +231,9 @@ function PlayerController:SetSpeedMultiplier(multiplier: number)
 	local oldMultiplier = self.speedMultiplier
 	self.speedMultiplier = multiplier
 	local effectiveSpeed = self.currentSpeed * multiplier
-	print(`[PlayerController] Speed: {oldMultiplier * 100}% -> {multiplier * 100}% (effective: {math.floor(effectiveSpeed)} studs/s)`)
+	print(
+		`[PlayerController] Speed: {oldMultiplier * 100}% -> {multiplier * 100}% (effective: {math.floor(effectiveSpeed)} studs/s)`
+	)
 end
 
 -- 현재 유효 속도 반환 (SpeedEffectController용)
