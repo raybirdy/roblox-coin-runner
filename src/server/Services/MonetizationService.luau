@@ -26,7 +26,9 @@ local function getGemProductById(productId: string): { id: string, productId: nu
 end
 
 -- DevProduct ID로 상품 정보 가져오기
-local function getGemProductByDevProductId(devProductId: number): { id: string, productId: number, gems: number, bonus: number }?
+local function getGemProductByDevProductId(
+	devProductId: number
+): { id: string, productId: number, gems: number, bonus: number }?
 	for _, product in GameConstants.MONETIZATION.GEM_PRODUCTS do
 		if product.productId == devProductId then
 			return product
@@ -36,7 +38,10 @@ local function getGemProductByDevProductId(devProductId: number): { id: string, 
 end
 
 -- 젬 구매 처리 (DevProduct)
-local function processGemPurchase(player: Player, product: { id: string, productId: number, gems: number, bonus: number }): boolean
+local function processGemPurchase(
+	player: Player,
+	product: { id: string, productId: number, gems: number, bonus: number }
+): boolean
 	local totalGems = product.gems + (product.bonus or 0)
 
 	-- 젬 지급
@@ -66,7 +71,9 @@ local function processGemPurchase(player: Player, product: { id: string, product
 end
 
 -- ProcessReceipt 콜백 (DevProduct 구매 처리)
-local function processReceipt(receiptInfo: { PlayerId: number, PurchaseId: string, ProductId: number }): Enum.ProductPurchaseDecision
+local function processReceipt(
+	receiptInfo: { PlayerId: number, PurchaseId: string, ProductId: number }
+): Enum.ProductPurchaseDecision
 	-- 중복 처리 방지
 	local receiptKey = `{receiptInfo.PlayerId}_{receiptInfo.PurchaseId}`
 	if processedReceipts[receiptKey] then
@@ -134,9 +141,45 @@ end
 RemoteEvents.PurchaseGems.OnServerEvent:Connect(function(player: Player, data: { productId: string })
 	local productId = data.productId
 
-	print(`[MonetizationService] Gem purchase request from {player.Name}: {productId}`)
+	print(`[MonetizationService] Purchase request from {player.Name}: {productId}`)
 
-	-- 상품 정보 확인
+	-- VIP GamePass 구매 요청
+	if productId == "vip_gamepass" then
+		local vipGamePassId = GameConstants.MONETIZATION.VIP_GAMEPASS_ID
+
+		-- 이미 VIP 보유 중
+		if PlayerDataService:HasVIP(player) then
+			RemoteEvents.PurchaseGemsResult:FireClient(player, {
+				success = false,
+				error = "already_owned",
+			})
+			return
+		end
+
+		-- GamePass ID가 설정되지 않은 경우 (개발 중 테스트 모드)
+		if vipGamePassId == 0 then
+			print(`[MonetizationService] Test mode - granting VIP for free`)
+			PlayerDataService:SetVIP(player, true)
+			RemoteEvents.VIPStatusChanged:FireClient(player, { hasVIP = true })
+			return
+		end
+
+		-- MarketplaceService로 GamePass 구매 프롬프트 표시
+		local success, err = pcall(function()
+			MarketplaceService:PromptGamePassPurchase(player, vipGamePassId)
+		end)
+
+		if not success then
+			warn(`[MonetizationService] Failed to prompt VIP purchase: {err}`)
+			RemoteEvents.PurchaseGemsResult:FireClient(player, {
+				success = false,
+				error = "purchase_failed",
+			})
+		end
+		return
+	end
+
+	-- 젬 상품 구매 요청
 	local product = getGemProductById(productId)
 	if not product then
 		RemoteEvents.PurchaseGemsResult:FireClient(player, {
@@ -196,13 +239,15 @@ end
 MarketplaceService.ProcessReceipt = processReceipt
 
 -- GamePass 구매 완료 이벤트
-MarketplaceService.PromptGamePassPurchaseFinished:Connect(function(player: Player, gamePassId: number, wasPurchased: boolean)
-	if gamePassId == GameConstants.MONETIZATION.VIP_GAMEPASS_ID and wasPurchased then
-		print(`[MonetizationService] {player.Name} purchased VIP GamePass!`)
-		PlayerDataService:SetVIP(player, true)
-		RemoteEvents.VIPStatusChanged:FireClient(player, { hasVIP = true })
+MarketplaceService.PromptGamePassPurchaseFinished:Connect(
+	function(player: Player, gamePassId: number, wasPurchased: boolean)
+		if gamePassId == GameConstants.MONETIZATION.VIP_GAMEPASS_ID and wasPurchased then
+			print(`[MonetizationService] {player.Name} purchased VIP GamePass!`)
+			PlayerDataService:SetVIP(player, true)
+			RemoteEvents.VIPStatusChanged:FireClient(player, { hasVIP = true })
+		end
 	end
-end)
+)
 
 print("[MonetizationService] Initialized")
 

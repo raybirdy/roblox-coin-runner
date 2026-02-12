@@ -19,6 +19,7 @@ local LobbyService = require(script.Parent.LobbyService)
 local ShopService = require(script.Parent.ShopService)
 local BackgroundService = require(script.Parent.BackgroundService)
 local LeaderboardService = require(script.Parent.LeaderboardService)
+local MonetizationService = require(script.Parent.MonetizationService)
 
 local GameManager = {}
 
@@ -328,6 +329,22 @@ RemoteEvents.Revive.OnServerEvent:Connect(function(player: Player)
 		return
 	end
 
+	-- 부활 재화 차감: 부활권 우선 → 젬 차감
+	local reviveMethod = "none"
+	if PlayerDataService:UseReviveTicket(player) then
+		reviveMethod = "ticket"
+		print(`[GameManager] {player.Name} used revive ticket`)
+	elseif PlayerDataService:SpendGems(player, GameConstants.SHOP.REVIVE_GEM_COST) then
+		reviveMethod = "gems"
+		local currentGems = PlayerDataService:GetGems(player)
+		RemoteEvents.GemsUpdated:FireClient(player, { gems = currentGems })
+		print(`[GameManager] {player.Name} spent {GameConstants.SHOP.REVIVE_GEM_COST} gems to revive`)
+	else
+		print(`[GameManager] {player.Name} has no revive tickets or gems`)
+		RemoteEvents.Revive:FireClient(player, { success = false, reason = "no_currency" })
+		return
+	end
+
 	-- 부활 처리
 	session.reviveCount += 1
 	session.lives = 1 -- 라이프 1개로 부활
@@ -345,6 +362,7 @@ RemoteEvents.Revive.OnServerEvent:Connect(function(player: Player)
 		success = true,
 		lives = session.lives,
 		revivesLeft = GameConstants.REVIVE.MAX_REVIVES - session.reviveCount,
+		reviveMethod = reviveMethod,
 	})
 
 	-- 라이프 업데이트 알림
@@ -365,7 +383,12 @@ function GameManager.EndGame(player: Player)
 	-- 최종 점수 계산
 	local finalScore = session.score
 	local earnedCoins = session.coins
-	local currentX = (player.Character and player.Character:FindFirstChild("HumanoidRootPart") and (player.Character.HumanoidRootPart :: BasePart).Position.X or session.startPosition.X)
+	local currentX = (
+		player.Character
+			and player.Character:FindFirstChild("HumanoidRootPart")
+			and (player.Character.HumanoidRootPart :: BasePart).Position.X
+		or session.startPosition.X
+	)
 	local distance = math.max(0, math.floor(currentX - session.startPosition.X))
 
 	-- 플레이어 데이터 업데이트 및 저장
@@ -478,9 +501,9 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 
 		-- 코인 수집 체크 (자석 효과 적용)
 		local collectedCoins = coinService:CheckCoinCollection(hrp.Position, powerupService:GetMagnetRadius())
-		local coinMultiplier = powerupService:GetCoinMultiplier()
+		local coinMultiplier = powerupService:GetCoinMultiplier() * MonetizationService:GetCoinMultiplier(player)
 		for _, coinData in collectedCoins do
-			-- 2배 코인 적용
+			-- 2배 코인 적용 (파워업 + VIP 배율)
 			local actualValue = coinData.value * coinMultiplier
 
 			-- 세션 데이터 업데이트
@@ -495,7 +518,9 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 				isDoubled = coinMultiplier > 1,
 			})
 
-			print(`[GameManager] Player {player.Name} collected {coinData.type} coin (+{actualValue}){coinMultiplier > 1 and " (x2)" or ""}`)
+			print(
+				`[GameManager] Player {player.Name} collected {coinData.type} coin (+{actualValue}){coinMultiplier > 1 and " (x2)" or ""}`
+			)
 		end
 
 		-- 낙하 감지 (Y < -10 이면 낙사)
