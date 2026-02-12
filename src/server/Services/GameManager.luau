@@ -44,9 +44,13 @@ type GameSession = {
 	comboCount: number, -- 연속 코인 수집 콤보
 	lastCoinTime: number, -- 마지막 코인 수집 시간
 	nearMissedObstacles: { [any]: boolean }, -- 니어미스 처리된 장애물 추적
+	consecutiveHits: number, -- 연속 피격 횟수 (자비 청크용)
 }
 
 local activeSessions: { [Player]: GameSession } = {}
+
+-- 위로 보상 추적 (플레이어별 연속 빠른 게임오버 횟수)
+local consolationTracker: { [Player]: number } = {}
 local globalTutorialService = TutorialService.new()
 
 -- TutorialService에 PlayerDataService 연결
@@ -142,6 +146,7 @@ RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { 
 		comboCount = 0,
 		lastCoinTime = 0,
 		nearMissedObstacles = {},
+		consecutiveHits = 0,
 	}
 
 	activeSessions[player] = session
@@ -443,6 +448,20 @@ function GameManager.EndGame(player: Player)
 	-- 신기록 여부 확인
 	local isNewRecord = finalScore > 0 and finalScore >= highScore
 
+	-- 위로 보상 체크
+	local consolationReward = 0
+	if finalScore < GameConstants.CONSOLATION.QUICK_DEATH_SCORE then
+		consolationTracker[player] = (consolationTracker[player] or 0) + 1
+		if consolationTracker[player] >= GameConstants.CONSOLATION.THRESHOLD then
+			consolationReward = GameConstants.CONSOLATION.REWARD_COINS
+			PlayerDataService:AddCoins(player, consolationReward)
+			consolationTracker[player] = 0
+			print(`[GameManager] Consolation reward: +{consolationReward} coins for {player.Name}`)
+		end
+	else
+		consolationTracker[player] = 0
+	end
+
 	-- 클라이언트에 게임 오버 알림
 	RemoteEvents.GameOver:FireClient(player, {
 		finalScore = finalScore,
@@ -451,6 +470,13 @@ function GameManager.EndGame(player: Player)
 		distance = distance,
 		isNewRecord = isNewRecord,
 	})
+
+	-- 위로 보상 알림 (별도 이벤트)
+	if consolationReward > 0 then
+		RemoteEvents.ConsolationReward:FireClient(player, { coins = consolationReward })
+		-- 업데이트된 데이터 재전송
+		RemoteEvents.PlayerDataLoaded:FireClient(player, PlayerDataService:GetPlayerData(player))
+	end
 
 	-- 세션 제거
 	activeSessions[player] = nil
@@ -465,6 +491,7 @@ Players.PlayerRemoving:Connect(function(player: Player)
 		GameManager.EndGame(player)
 	end
 	shopDebounce[player] = nil
+	consolationTracker[player] = nil
 end)
 
 -- 메인 업데이트 루프 (모든 활성 세션)
@@ -616,6 +643,14 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 				session.lives -= 1
 				obstacleService:OnObstacleHit()
 
+				-- 연속 피격 추적 (자비 청크)
+				session.consecutiveHits += 1
+				if session.consecutiveHits >= GameConstants.LIFE.MERCY_CHUNK_THRESHOLD then
+					session.chunkService:RequestMercyChunks(GameConstants.LIFE.MERCY_CHUNK_COUNT)
+					session.consecutiveHits = 0
+					print(`[GameManager] Mercy chunks activated for {player.Name}`)
+				end
+
 				-- 클라이언트에 라이프 업데이트 알림
 				RemoteEvents.LifeUpdate:FireClient(player, {
 					lives = session.lives,
@@ -650,6 +685,7 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 		for _, obstaclePart in nearMisses do
 			session.nearMissedObstacles[obstaclePart] = true
 			session.score += GameConstants.SCORE.NEAR_MISS_BONUS
+			session.consecutiveHits = 0 -- 회피 성공 시 연속 피격 리셋
 
 			RemoteEvents.NearMiss:FireClient(player, {
 				bonus = GameConstants.SCORE.NEAR_MISS_BONUS,

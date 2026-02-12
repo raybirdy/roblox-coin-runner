@@ -505,6 +505,12 @@ function LobbyService:_createLeaderboard()
 		scoreLabel.Parent = rankFrame
 	end
 
+	-- ClickDetector (클라이언트에서 상세 리더보드 팝업 열기)
+	local clickDetector = Instance.new("ClickDetector")
+	clickDetector.Name = "LeaderboardClick"
+	clickDetector.MaxActivationDistance = 15
+	clickDetector.Parent = boardBackground
+
 	-- 트로피 장식 (상단)
 	local trophy = Instance.new("Part")
 	trophy.Name = "Trophy"

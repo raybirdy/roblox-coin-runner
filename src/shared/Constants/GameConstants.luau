@@ -118,6 +118,14 @@ GameConstants.LIFE = {
 	STARTING_LIVES = 3,
 	INVINCIBLE_DURATION = 3, -- 피격 후 무적 시간 (초)
 	MERCY_CHUNK_THRESHOLD = 2, -- 연속 피격 2회 시 자비 청크
+	MERCY_CHUNK_COUNT = 2, -- 자비 모드 시 연속 쉬운 청크 수
+}
+
+-- 위로 보상
+GameConstants.CONSOLATION = {
+	THRESHOLD = 3, -- 3회 연속 빠른 게임오버 시 위로 보상
+	REWARD_COINS = 20, -- 보상 코인
+	QUICK_DEATH_SCORE = 100, -- 이 점수 미만이면 "빠른 게임오버"
 }
 
 -- 점수 시스템
