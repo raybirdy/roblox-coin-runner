@@ -2,7 +2,6 @@
 -- UI Controller
 -- 게임 UI 관리 (점수, 코인, 라이프 표시)
 
-local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 
@@ -24,6 +23,7 @@ export type UIController = typeof(setmetatable(
 		_heartLabels: { TextLabel },
 		_currentLives: number,
 		_distanceLabel: TextLabel?,
+		_hudFrame: Frame?,
 		_gameOverFrame: Frame?,
 		_startMenuFrame: Frame?,
 		_jumpButton: TextButton?,
@@ -53,6 +53,7 @@ function UIController.new(player: Player): UIController
 		_heartLabels = {},
 		_currentLives = GameConstants.LIFE.STARTING_LIVES,
 		_distanceLabel = nil,
+		_hudFrame = nil,
 		_gameOverFrame = nil,
 		_startMenuFrame = nil,
 		_jumpButton = nil,
@@ -85,69 +86,77 @@ function UIController:_createUI()
 	screenGui.Parent = self._playerGui
 	self._screenGui = screenGui
 
-	-- 점수 표시 (상단 중앙)
+	-- 상단 HUD 바 (화면 전체 너비, 한 줄)
+	local hudFrame = Instance.new("Frame")
+	hudFrame.Name = "HudFrame"
+	hudFrame.Size = UDim2.new(1, 0, 0, 36)
+	hudFrame.Position = UDim2.new(0, 0, 0, 0)
+	hudFrame.BackgroundTransparency = 0.5
+	hudFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	hudFrame.Parent = screenGui
+	self._hudFrame = hudFrame
+
+	-- 점수 (왼쪽)
 	local scoreLabel = Instance.new("TextLabel")
 	scoreLabel.Name = "ScoreLabel"
-	scoreLabel.Size = UDim2.new(0, 200, 0, 50)
-	scoreLabel.Position = UDim2.new(0.5, -100, 0, 10)
-	scoreLabel.BackgroundTransparency = 0.3
-	scoreLabel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	scoreLabel.Size = UDim2.new(0.25, 0, 1, 0)
+	scoreLabel.Position = UDim2.new(0, 10, 0, 0)
+	scoreLabel.BackgroundTransparency = 1
 	scoreLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-	scoreLabel.TextSize = 24
+	scoreLabel.TextSize = 18
 	scoreLabel.Font = Enum.Font.GothamBold
-	scoreLabel.Text = "Score: 0"
-	scoreLabel.Parent = screenGui
+	scoreLabel.Text = "⭐ 0"
+	scoreLabel.TextXAlignment = Enum.TextXAlignment.Left
+	scoreLabel.Parent = hudFrame
 	self._scoreLabel = scoreLabel
 
-	-- 둥근 모서리
-	local scoreCorner = Instance.new("UICorner")
-	scoreCorner.CornerRadius = UDim.new(0, 8)
-	scoreCorner.Parent = scoreLabel
+	-- 거리 (왼쪽 중간)
+	local distanceLabel = Instance.new("TextLabel")
+	distanceLabel.Name = "DistanceLabel"
+	distanceLabel.Size = UDim2.new(0.2, 0, 1, 0)
+	distanceLabel.Position = UDim2.new(0.25, 10, 0, 0)
+	distanceLabel.BackgroundTransparency = 1
+	distanceLabel.TextColor3 = Color3.fromRGB(100, 200, 255)
+	distanceLabel.TextSize = 16
+	distanceLabel.Font = Enum.Font.Gotham
+	distanceLabel.Text = "🏃 0m"
+	distanceLabel.TextXAlignment = Enum.TextXAlignment.Left
+	distanceLabel.Parent = hudFrame
+	self._distanceLabel = distanceLabel
 
-	-- 코인 표시 (상단 왼쪽)
+	-- 코인 (중앙)
 	local coinsLabel = Instance.new("TextLabel")
 	coinsLabel.Name = "CoinsLabel"
-	coinsLabel.Size = UDim2.new(0, 150, 0, 40)
-	coinsLabel.Position = UDim2.new(0, 10, 0, 10)
-	coinsLabel.BackgroundTransparency = 0.3
-	coinsLabel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-	coinsLabel.TextColor3 = Color3.fromRGB(255, 215, 0) -- 금색
-	coinsLabel.TextSize = 20
+	coinsLabel.Size = UDim2.new(0.2, 0, 1, 0)
+	coinsLabel.Position = UDim2.new(0.45, 10, 0, 0)
+	coinsLabel.BackgroundTransparency = 1
+	coinsLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
+	coinsLabel.TextSize = 16
 	coinsLabel.Font = Enum.Font.GothamBold
 	coinsLabel.Text = "🪙 0"
-	coinsLabel.Parent = screenGui
+	coinsLabel.TextXAlignment = Enum.TextXAlignment.Left
+	coinsLabel.Parent = hudFrame
 	self._coinsLabel = coinsLabel
 
-	-- 둥근 모서리
-	local coinsCorner = Instance.new("UICorner")
-	coinsCorner.CornerRadius = UDim.new(0, 8)
-	coinsCorner.Parent = coinsLabel
-
-	-- 라이프 컨테이너 (상단 오른쪽)
+	-- 하트 (오른쪽) — HUD 바 안에 통합
 	local livesContainer = Instance.new("Frame")
 	livesContainer.Name = "LivesContainer"
-	livesContainer.Size = UDim2.new(0, 150, 0, 50)
-	livesContainer.Position = UDim2.new(1, -160, 0, 10)
-	livesContainer.BackgroundTransparency = 0.3
-	livesContainer.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-	livesContainer.Parent = screenGui
+	livesContainer.Size = UDim2.new(0.3, -10, 1, 0)
+	livesContainer.Position = UDim2.new(0.7, 0, 0, 0)
+	livesContainer.BackgroundTransparency = 1
+	livesContainer.Parent = hudFrame
 	self._livesContainer = livesContainer
-
-	-- 둥근 모서리
-	local livesCorner = Instance.new("UICorner")
-	livesCorner.CornerRadius = UDim.new(0, 8)
-	livesCorner.Parent = livesContainer
 
 	-- 개별 하트 생성
 	self._heartLabels = {}
 	for i = 1, GameConstants.LIFE.STARTING_LIVES do
 		local heart = Instance.new("TextLabel")
 		heart.Name = `Heart{i}`
-		heart.Size = UDim2.new(0, 40, 0, 40)
-		heart.Position = UDim2.new(0, 10 + (i - 1) * 45, 0.5, -20)
+		heart.Size = UDim2.new(0, 30, 0, 30)
+		heart.Position = UDim2.new(0, 5 + (i - 1) * 32, 0.5, -15)
 		heart.BackgroundTransparency = 1
 		heart.TextColor3 = Color3.fromRGB(255, 50, 50)
-		heart.TextSize = 32
+		heart.TextSize = 22
 		heart.Font = Enum.Font.GothamBold
 		heart.Text = "❤️"
 		heart.Parent = livesContainer
@@ -160,25 +169,6 @@ function UIController:_createUI()
 	livesLabel.Visible = false
 	livesLabel.Parent = screenGui
 	self._livesLabel = livesLabel
-
-	-- 거리 표시 (점수 아래)
-	local distanceLabel = Instance.new("TextLabel")
-	distanceLabel.Name = "DistanceLabel"
-	distanceLabel.Size = UDim2.new(0, 200, 0, 40)
-	distanceLabel.Position = UDim2.new(0.5, -100, 0, 65)
-	distanceLabel.BackgroundTransparency = 0.3
-	distanceLabel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-	distanceLabel.TextColor3 = Color3.fromRGB(100, 200, 255) -- 파란색
-	distanceLabel.TextSize = 18
-	distanceLabel.Font = Enum.Font.Gotham
-	distanceLabel.Text = "Distance: 0m"
-	distanceLabel.Parent = screenGui
-	self._distanceLabel = distanceLabel
-
-	-- 둥근 모서리
-	local distanceCorner = Instance.new("UICorner")
-	distanceCorner.CornerRadius = UDim.new(0, 8)
-	distanceCorner.Parent = distanceLabel
 
 	-- 게임 오버 프레임 (초기 숨김)
 	local gameOverFrame = Instance.new("Frame")
@@ -246,16 +236,16 @@ function UIController:_createUI()
 	finalScoreLabel.Parent = gameOverFrame
 
 	-- 거리 표시
-	local distanceLabel = Instance.new("TextLabel")
-	distanceLabel.Name = "Distance"
-	distanceLabel.Size = UDim2.new(1, 0, 0, 35)
-	distanceLabel.Position = UDim2.new(0, 0, 0, 180)
-	distanceLabel.BackgroundTransparency = 1
-	distanceLabel.TextColor3 = Color3.fromRGB(100, 200, 255)
-	distanceLabel.TextSize = 20
-	distanceLabel.Font = Enum.Font.Gotham
-	distanceLabel.Text = "🏃 Distance: 0m"
-	distanceLabel.Parent = gameOverFrame
+	local goDistanceLabel = Instance.new("TextLabel")
+	goDistanceLabel.Name = "Distance"
+	goDistanceLabel.Size = UDim2.new(1, 0, 0, 35)
+	goDistanceLabel.Position = UDim2.new(0, 0, 0, 180)
+	goDistanceLabel.BackgroundTransparency = 1
+	goDistanceLabel.TextColor3 = Color3.fromRGB(100, 200, 255)
+	goDistanceLabel.TextSize = 20
+	goDistanceLabel.Font = Enum.Font.Gotham
+	goDistanceLabel.Text = "🏃 Distance: 0m"
+	goDistanceLabel.Parent = gameOverFrame
 
 	-- 획득 코인
 	local earnedCoinsLabel = Instance.new("TextLabel")
@@ -608,60 +598,85 @@ function UIController:_createMobileControls()
 		return
 	end
 
+	local btnSize = GameConstants.UI.TOUCH_BUTTON_SIZE
+	local btnMargin = 20
+
 	-- 점프 버튼 (오른쪽 하단)
 	local jumpButton = Instance.new("TextButton")
 	jumpButton.Name = "JumpButton"
-	jumpButton.Size = UDim2.new(0, GameConstants.UI.TOUCH_BUTTON_SIZE, 0, GameConstants.UI.TOUCH_BUTTON_SIZE)
-	jumpButton.Position =
-		UDim2.new(1, -GameConstants.UI.TOUCH_BUTTON_SIZE - 20, 1, -GameConstants.UI.TOUCH_BUTTON_SIZE - 20)
-	jumpButton.BackgroundColor3 = Color3.fromRGB(0, 150, 255) -- 파란색
-	jumpButton.BackgroundTransparency = 0.3
+	jumpButton.Size = UDim2.new(0, btnSize, 0, btnSize)
+	jumpButton.Position = UDim2.new(1, -btnSize - btnMargin, 1, -btnSize - btnMargin)
+	jumpButton.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
+	jumpButton.BackgroundTransparency = 0.2
 	jumpButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-	jumpButton.TextSize = 32
+	jumpButton.TextSize = 36
 	jumpButton.Font = Enum.Font.GothamBold
 	jumpButton.Text = "↑\nJUMP"
 	jumpButton.TextYAlignment = Enum.TextYAlignment.Center
 	jumpButton.Parent = self._screenGui
 	self._jumpButton = jumpButton
 
-	-- 둥근 모서리
 	local jumpCorner = Instance.new("UICorner")
-	jumpCorner.CornerRadius = UDim.new(0, 12)
+	jumpCorner.CornerRadius = UDim.new(0, 16)
 	jumpCorner.Parent = jumpButton
 
-	-- 테두리
 	local jumpStroke = Instance.new("UIStroke")
 	jumpStroke.Color = Color3.fromRGB(255, 255, 255)
-	jumpStroke.Thickness = 2
-	jumpStroke.Transparency = 0.5
+	jumpStroke.Thickness = 3
+	jumpStroke.Transparency = 0.3
 	jumpStroke.Parent = jumpButton
 
 	-- 슬라이드 버튼 (왼쪽 하단)
 	local slideButton = Instance.new("TextButton")
 	slideButton.Name = "SlideButton"
-	slideButton.Size = UDim2.new(0, GameConstants.UI.TOUCH_BUTTON_SIZE, 0, GameConstants.UI.TOUCH_BUTTON_SIZE)
-	slideButton.Position = UDim2.new(0, 20, 1, -GameConstants.UI.TOUCH_BUTTON_SIZE - 20)
-	slideButton.BackgroundColor3 = Color3.fromRGB(255, 150, 0) -- 주황색
-	slideButton.BackgroundTransparency = 0.3
+	slideButton.Size = UDim2.new(0, btnSize, 0, btnSize)
+	slideButton.Position = UDim2.new(0, btnMargin, 1, -btnSize - btnMargin)
+	slideButton.BackgroundColor3 = Color3.fromRGB(255, 150, 0)
+	slideButton.BackgroundTransparency = 0.2
 	slideButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-	slideButton.TextSize = 32
+	slideButton.TextSize = 36
 	slideButton.Font = Enum.Font.GothamBold
 	slideButton.Text = "↓\nSLIDE"
 	slideButton.TextYAlignment = Enum.TextYAlignment.Center
 	slideButton.Parent = self._screenGui
 	self._slideButton = slideButton
 
-	-- 둥근 모서리
 	local slideCorner = Instance.new("UICorner")
-	slideCorner.CornerRadius = UDim.new(0, 12)
+	slideCorner.CornerRadius = UDim.new(0, 16)
 	slideCorner.Parent = slideButton
 
-	-- 테두리
 	local slideStroke = Instance.new("UIStroke")
 	slideStroke.Color = Color3.fromRGB(255, 255, 255)
-	slideStroke.Thickness = 2
-	slideStroke.Transparency = 0.5
+	slideStroke.Thickness = 3
+	slideStroke.Transparency = 0.3
 	slideStroke.Parent = slideButton
+
+	-- 터치 프레스 피드백 (버튼 누를 때 축소, 뗄 때 복구)
+	local function addPressFeedback(button: TextButton)
+		local originalSize = button.Size
+		local pressInfo = TweenInfo.new(0.08, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+		local releaseInfo = TweenInfo.new(0.12, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+
+		local shrunkSize = UDim2.new(
+			originalSize.X.Scale,
+			math.floor(originalSize.X.Offset * 0.9),
+			originalSize.Y.Scale,
+			math.floor(originalSize.Y.Offset * 0.9)
+		)
+
+		button.MouseButton1Down:Connect(function()
+			TweenService:Create(button, pressInfo, { Size = shrunkSize }):Play()
+			button.BackgroundTransparency = 0.1
+		end)
+
+		button.MouseButton1Up:Connect(function()
+			TweenService:Create(button, releaseInfo, { Size = originalSize }):Play()
+			button.BackgroundTransparency = 0.2
+		end)
+	end
+
+	addPressFeedback(jumpButton)
+	addPressFeedback(slideButton)
 
 	-- 버튼 클릭 이벤트
 	jumpButton.MouseButton1Click:Connect(function()
@@ -731,12 +746,12 @@ function UIController:_setupEventHandlers()
 end
 
 -- 점수 업데이트
-function UIController:UpdateScore(score: number, distance: number, coins: number)
+function UIController:UpdateScore(score: number, distance: number, _coins: number)
 	if self._scoreLabel then
-		self._scoreLabel.Text = `Score: {score}`
+		self._scoreLabel.Text = `⭐ {score}`
 	end
 	if self._distanceLabel then
-		self._distanceLabel.Text = `Distance: {distance}m`
+		self._distanceLabel.Text = `🏃 {distance}m`
 	end
 end
 
@@ -772,10 +787,10 @@ function UIController:UpdateLives(lives: number)
 			local heart = self._heartLabels[lostHeartIndex]
 
 			-- 하트가 커졌다가 작아지는 애니메이션
-			heart.TextSize = 48
+			heart.TextSize = 34
 			local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Elastic, Enum.EasingDirection.Out)
 			local tween = TweenService:Create(heart, tweenInfo, {
-				TextSize = 32,
+				TextSize = 22,
 			})
 			tween:Play()
 		end
@@ -886,7 +901,7 @@ function UIController:ShowGameOver(
 	-- NEW RECORD 애니메이션 (깜빡임)
 	if isNewRecord and newRecordLabel then
 		task.spawn(function()
-			for i = 1, 6 do
+			for _ = 1, 6 do
 				if not newRecordLabel or not newRecordLabel.Parent then
 					break
 				end
@@ -961,17 +976,11 @@ function UIController:ShowLobbyUI()
 	end
 
 	-- 게임 UI 숨기기
-	if self._scoreLabel then
-		self._scoreLabel.Visible = false
-	end
-	if self._coinsLabel then
-		self._coinsLabel.Visible = false
+	if self._hudFrame then
+		self._hudFrame.Visible = false
 	end
 	if self._livesContainer then
 		self._livesContainer.Visible = false
-	end
-	if self._distanceLabel then
-		self._distanceLabel.Visible = false
 	end
 	if self._jumpButton then
 		self._jumpButton.Visible = false
@@ -997,17 +1006,11 @@ function UIController:HideLobbyUI()
 	end
 
 	-- 게임 UI 표시
-	if self._scoreLabel then
-		self._scoreLabel.Visible = true
-	end
-	if self._coinsLabel then
-		self._coinsLabel.Visible = true
+	if self._hudFrame then
+		self._hudFrame.Visible = true
 	end
 	if self._livesContainer then
 		self._livesContainer.Visible = true
-	end
-	if self._distanceLabel then
-		self._distanceLabel.Visible = true
 	end
 	if self._jumpButton then
 		self._jumpButton.Visible = true

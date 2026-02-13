@@ -81,6 +81,10 @@ RemoteEvents.PlayerDataLoaded = getOrCreateRemoteEvent("PlayerDataLoaded")
 -- 서버 → 클라이언트: 플레이어 데이터 로드 완료
 -- 파라미터: (playerData: table)
 
+-- 플레이어 데이터 요청 (클라이언트 초기화 완료 후)
+RemoteEvents.PlayerDataRequest = getOrCreateRemoteEvent("PlayerDataRequest")
+-- 클라이언트 → 서버: 초기 데이터 요청
+
 -- 튜토리얼 시작
 RemoteEvents.TutorialStart = getOrCreateRemoteEvent("TutorialStart")
 -- 클라이언트 → 서버: 튜토리얼 시작 알림

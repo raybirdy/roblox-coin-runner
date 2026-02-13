@@ -57,6 +57,15 @@ game.Players.PlayerAdded:Connect(function(player: Player)
 	end)
 end)
 
+-- 클라이언트 초기화 후 데이터 요청 처리
+RemoteEvents.PlayerDataRequest.OnServerEvent:Connect(function(player: Player)
+	local playerData = PlayerDataService:GetPlayerData(player)
+	if playerData then
+		RemoteEvents.PlayerDataLoaded:FireClient(player, playerData)
+		print(`[Server] Re-sent player data to {player.Name} (client request)`)
+	end
+end)
+
 -- 플레이어 퇴장 처리
 game.Players.PlayerRemoving:Connect(function(player: Player)
 	print(`[Server] Player {player.Name} leaving`)
