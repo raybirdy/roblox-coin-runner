@@ -284,45 +284,21 @@ GameConstants.SHOP = {
 	-- 스킨 (코인으로 구매)
 	SKINS = {
 		-- 기본 (무료)
-		{ id = "default", name = "기본", price = 0, currency = "coins", color = Color3.fromRGB(0, 170, 255) },
+		{ id = "default", name = "기본", price = 0, currency = "coins", color = Color3.fromRGB(0, 170, 255), thumbnailId = "rbxassetid://3535928381" },
 		-- 코인 스킨 (누구나 접근 가능)
-		{
-			id = "red_hat",
-			name = "빨간 모자",
-			price = 100,
-			currency = "coins",
-			color = Color3.fromRGB(220, 50, 50),
-		},
-		{ id = "ninja", name = "닌자", price = 150, currency = "coins", color = Color3.fromRGB(30, 30, 50) },
-		{
-			id = "blue_cape",
-			name = "파란 망토",
-			price = 200,
-			currency = "coins",
-			color = Color3.fromRGB(50, 100, 220),
-		},
-		{ id = "pirate", name = "해적", price = 300, currency = "coins", color = Color3.fromRGB(100, 60, 30) },
-		{ id = "robot", name = "로봇", price = 400, currency = "coins", color = Color3.fromRGB(160, 170, 180) },
-		{ id = "golden", name = "골든", price = 500, currency = "coins", color = Color3.fromRGB(255, 215, 0) },
+		{ id = "red_hat", name = "빨간 모자", price = 100, currency = "coins", color = Color3.fromRGB(220, 50, 50), thumbnailId = "rbxassetid://3535928917" },
+		{ id = "ninja", name = "닌자", price = 150, currency = "coins", color = Color3.fromRGB(30, 30, 50), thumbnailId = "rbxassetid://3535929309" },
+		{ id = "blue_cape", name = "파란 망토", price = 200, currency = "coins", color = Color3.fromRGB(50, 100, 220), thumbnailId = "rbxassetid://3535929635" },
+		{ id = "pirate", name = "해적", price = 300, currency = "coins", color = Color3.fromRGB(100, 60, 30), thumbnailId = "rbxassetid://3535929876" },
+		{ id = "robot", name = "로봇", price = 400, currency = "coins", color = Color3.fromRGB(160, 170, 180), thumbnailId = "rbxassetid://3535930077" },
+		{ id = "golden", name = "골든", price = 500, currency = "coins", color = Color3.fromRGB(255, 215, 0), thumbnailId = "rbxassetid://3535930233" },
 		-- 프리미엄 스킨 (젬으로 구매 - 희소성 높음)
-		{ id = "galaxy", name = "갤럭시", price = 80, currency = "gems", color = Color3.fromRGB(60, 20, 120) },
-		{ id = "unicorn", name = "유니콘", price = 100, currency = "gems", color = Color3.fromRGB(255, 180, 255) },
-		{
-			id = "ice_king",
-			name = "아이스킹",
-			price = 150,
-			currency = "gems",
-			color = Color3.fromRGB(150, 220, 255),
-		},
-		{ id = "dragon", name = "드래곤", price = 200, currency = "gems", color = Color3.fromRGB(200, 50, 0) },
-		{
-			id = "rainbow",
-			name = "레인보우",
-			price = 300,
-			currency = "gems",
-			color = Color3.fromRGB(255, 100, 200),
-		},
-		{ id = "shadow", name = "쉐도우", price = 400, currency = "gems", color = Color3.fromRGB(20, 20, 30) },
+		{ id = "galaxy", name = "갤럭시", price = 80, currency = "gems", color = Color3.fromRGB(60, 20, 120), thumbnailId = "rbxassetid://3535936432" },
+		{ id = "unicorn", name = "유니콘", price = 100, currency = "gems", color = Color3.fromRGB(255, 180, 255), thumbnailId = "rbxassetid://3535936633" },
+		{ id = "ice_king", name = "아이스킹", price = 150, currency = "gems", color = Color3.fromRGB(150, 220, 255), thumbnailId = "rbxassetid://3535936812" },
+		{ id = "dragon", name = "드래곤", price = 200, currency = "gems", color = Color3.fromRGB(200, 50, 0), thumbnailId = "rbxassetid://3535937071" },
+		{ id = "rainbow", name = "레인보우", price = 300, currency = "gems", color = Color3.fromRGB(255, 100, 200), thumbnailId = "rbxassetid://3535937245" },
+		{ id = "shadow", name = "쉐도우", price = 400, currency = "gems", color = Color3.fromRGB(20, 20, 30), thumbnailId = "rbxassetid://3535937404" },
 	},
 	-- 시작 파워업 (코인)
 	START_POWERUPS = {
