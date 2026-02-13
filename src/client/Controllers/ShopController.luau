@@ -363,6 +363,8 @@ function ShopController:_populateSkins(container: ScrollingFrame)
 			equipped = equipped,
 			itemType = "skin",
 			currency = skin.currency,
+			thumbnailId = skin.thumbnailId,
+			color = skin.color,
 		})
 	end
 end
@@ -408,6 +410,8 @@ function ShopController:_createItemFrame(
 		count: number?,
 		itemType: string,
 		currency: string?,
+		thumbnailId: string?,
+		color: Color3?,
 	}
 ): Frame
 	local itemFrame = Instance.new("Frame")
@@ -432,6 +436,33 @@ function ShopController:_createItemFrame(
 	nameLabel.Text = item.name
 	nameLabel.TextTruncate = Enum.TextTruncate.AtEnd
 	nameLabel.Parent = itemFrame
+
+	-- 스킨 썸네일 이미지 또는 색상 미리보기
+	if item.thumbnailId then
+		local thumbnail = Instance.new("ImageLabel")
+		thumbnail.Name = "Thumbnail"
+		thumbnail.Size = UDim2.new(0, 30, 0, 30)
+		thumbnail.Position = UDim2.new(0.5, -15, 0, 28)
+		thumbnail.BackgroundTransparency = 1
+		thumbnail.Image = item.thumbnailId
+		thumbnail.ScaleType = Enum.ScaleType.Fit
+		thumbnail.Parent = itemFrame
+
+		local thumbCorner = Instance.new("UICorner")
+		thumbCorner.CornerRadius = UDim.new(0, 4)
+		thumbCorner.Parent = thumbnail
+	elseif item.color then
+		local colorPreview = Instance.new("Frame")
+		colorPreview.Name = "ColorPreview"
+		colorPreview.Size = UDim2.new(0, 30, 0, 30)
+		colorPreview.Position = UDim2.new(0.5, -15, 0, 28)
+		colorPreview.BackgroundColor3 = item.color
+		colorPreview.Parent = itemFrame
+
+		local previewCorner = Instance.new("UICorner")
+		previewCorner.CornerRadius = UDim.new(0, 4)
+		previewCorner.Parent = colorPreview
+	end
 
 	-- 보유 개수 (파워업/부활권)
 	if item.count ~= nil then
