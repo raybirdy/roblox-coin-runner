@@ -12,12 +12,21 @@ local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)
 local CoinController = {}
 CoinController.__index = CoinController
 
+local PARTICLE_POOL_SIZE = 5
+
+type ParticlePoolEntry = {
+	attachment: Attachment,
+	emitter: ParticleEmitter,
+	inUse: boolean,
+}
+
 export type CoinController = typeof(setmetatable(
 	{} :: {
 		_connections: { RBXScriptConnection },
 		_totalCoins: number,
 		_popupGui: ScreenGui?,
 		_coinSound: Sound?,
+		_particlePool: { ParticlePoolEntry },
 	},
 	CoinController
 ))
@@ -28,11 +37,13 @@ function CoinController.new(): CoinController
 		_totalCoins = 0,
 		_popupGui = nil,
 		_coinSound = nil,
+		_particlePool = {},
 	}, CoinController)
 
 	self:_setupEventHandlers()
 	self:_createPopupGui()
 	self:_createCoinSound()
+	self:_createParticlePool()
 
 	return self
 end
@@ -139,6 +150,48 @@ function CoinController:OnCoinCollected(data: {
 	print(`[CoinController] Collected {data.coinType} coin! +{data.coinValue}{doubledText} (Total: {data.totalCoins})`)
 end
 
+-- 파티클 풀 생성 (사전 할당으로 GC 부하 감소)
+function CoinController:_createParticlePool()
+	for i = 1, PARTICLE_POOL_SIZE do
+		local attachment = Instance.new("Attachment")
+		attachment.Name = `CoinParticle_{i}`
+
+		local particle = Instance.new("ParticleEmitter")
+		particle.Size = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 0.5),
+			NumberSequenceKeypoint.new(0.5, 1),
+			NumberSequenceKeypoint.new(1, 0),
+		})
+		particle.Transparency = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 0),
+			NumberSequenceKeypoint.new(0.8, 0.3),
+			NumberSequenceKeypoint.new(1, 1),
+		})
+		particle.Lifetime = NumberRange.new(0.5, 1)
+		particle.Speed = NumberRange.new(5, 15)
+		particle.SpreadAngle = Vector2.new(180, 180)
+		particle.Rate = 0
+		particle.Acceleration = Vector3.new(0, 10, 0)
+		particle.Parent = attachment
+
+		table.insert(self._particlePool, {
+			attachment = attachment,
+			emitter = particle,
+			inUse = false,
+		})
+	end
+end
+
+-- 풀에서 사용 가능한 파티클 가져오기
+function CoinController:_getPooledParticle(): ParticlePoolEntry?
+	for _, entry in self._particlePool do
+		if not entry.inUse then
+			return entry
+		end
+	end
+	return nil
+end
+
 -- 코인 수집 파티클 효과
 function CoinController:_playCoinParticle(coinType: string, isDoubled: boolean?)
 	local player = Players.LocalPlayer
@@ -165,35 +218,23 @@ function CoinController:_playCoinParticle(coinType: string, isDoubled: boolean?)
 		color = Color3.fromRGB(255, 140, 0)
 	end
 
-	-- 파티클 이미터 생성
-	local attachment = Instance.new("Attachment")
-	attachment.Parent = hrp
+	-- 풀에서 파티클 가져오기
+	local poolEntry = self:_getPooledParticle()
+	if not poolEntry then
+		return -- 풀이 모두 사용 중이면 스킵
+	end
 
-	local particle = Instance.new("ParticleEmitter")
-	particle.Color = ColorSequence.new(color)
-	particle.Size = NumberSequence.new({
-		NumberSequenceKeypoint.new(0, 0.5),
-		NumberSequenceKeypoint.new(0.5, 1),
-		NumberSequenceKeypoint.new(1, 0),
-	})
-	particle.Transparency = NumberSequence.new({
-		NumberSequenceKeypoint.new(0, 0),
-		NumberSequenceKeypoint.new(0.8, 0.3),
-		NumberSequenceKeypoint.new(1, 1),
-	})
-	particle.Lifetime = NumberRange.new(0.5, 1)
-	particle.Speed = NumberRange.new(5, 15)
-	particle.SpreadAngle = Vector2.new(180, 180)
-	particle.Rate = 0
-	particle.Acceleration = Vector3.new(0, 10, 0)
-	particle.Parent = attachment
+	poolEntry.inUse = true
+	poolEntry.attachment.Parent = hrp
+	poolEntry.emitter.Color = ColorSequence.new(color)
 
 	-- 파티클 버스트
-	particle:Emit(isDoubled and 30 or 15)
+	poolEntry.emitter:Emit(isDoubled and 30 or 15)
 
-	-- 정리
+	-- 파티클 완료 후 풀에 반환
 	task.delay(1.5, function()
-		attachment:Destroy()
+		poolEntry.attachment.Parent = nil
+		poolEntry.inUse = false
 	end)
 end
 
@@ -208,6 +249,12 @@ function CoinController:Destroy()
 		connection:Disconnect()
 	end
 	self._connections = {}
+
+	-- 파티클 풀 정리
+	for _, entry in self._particlePool do
+		entry.attachment:Destroy()
+	end
+	self._particlePool = {}
 
 	if self._popupGui then
 		self._popupGui:Destroy()

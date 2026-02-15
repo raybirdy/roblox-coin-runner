@@ -291,8 +291,8 @@ function PowerupController:_playPowerupParticle(powerupType: string)
 	particle.LightEmission = 0.5
 	particle.Parent = attachment
 
-	-- 파티클 버스트
-	particle:Emit(40)
+	-- 파티클 버스트 (모바일 성능 최적화)
+	particle:Emit(20)
 
 	-- 정리
 	task.delay(2, function()
@@ -338,8 +338,8 @@ function PowerupController:_playShieldBreakParticle()
 	particle.LightEmission = 0.8
 	particle.Parent = attachment
 
-	-- 파티클 버스트 (파괴 효과)
-	particle:Emit(50)
+	-- 파티클 버스트 (파괴 효과, 모바일 성능 최적화)
+	particle:Emit(25)
 
 	-- 정리
 	task.delay(1, function()

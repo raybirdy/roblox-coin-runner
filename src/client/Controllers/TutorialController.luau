@@ -3,6 +3,7 @@
 -- 튜토리얼 진행 관리 (클라이언트)
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
 
 local GameConstants = require(ReplicatedStorage.Shared.Constants.GameConstants)
 local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)
@@ -33,12 +34,19 @@ function TutorialController.new(): TutorialController
 	local self = setmetatable({
 		_isActive = false,
 		_currentStep = 0,
-		_steps = {
-			{ message = "자동으로 달려! 코인을 모아봐!", trigger = "auto", delay = 2 },
-			{ message = "점프! ↑", trigger = "jump" },
-			{ message = "슬라이드! ↓", trigger = "slide" },
-			{ message = "공중에서 한 번 더 점프!", trigger = "auto", delay = 3 },
-		},
+		_steps = if UserInputService.TouchEnabled
+			then {
+				{ message = "자동으로 달려! 코인을 모아봐!", trigger = "auto", delay = 2 },
+				{ message = "위로 스와이프하거나 버튼을 눌러 점프!", trigger = "jump" },
+				{ message = "아래로 스와이프하거나 버튼을 눌러 슬라이드!", trigger = "slide" },
+				{ message = "공중에서 한 번 더 점프!", trigger = "auto", delay = 3 },
+			}
+			else {
+				{ message = "자동으로 달려! 코인을 모아봐!", trigger = "auto", delay = 2 },
+				{ message = "점프! ↑", trigger = "jump" },
+				{ message = "슬라이드! ↓", trigger = "slide" },
+				{ message = "공중에서 한 번 더 점프!", trigger = "auto", delay = 3 },
+			},
 		_distanceTraveled = 0,
 		_startPosition = nil,
 		_connections = {},

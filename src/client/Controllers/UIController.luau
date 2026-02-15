@@ -4,6 +4,7 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
 
 local GameConstants = require(ReplicatedStorage.Shared.Constants.GameConstants)
 local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)
@@ -419,7 +420,9 @@ function UIController:_createUI()
 	controlsLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
 	controlsLabel.TextSize = 16
 	controlsLabel.Font = Enum.Font.Gotham
-	controlsLabel.Text = "Controls:\nJUMP: Space / W / ↑\nSLIDE: S / ↓"
+	controlsLabel.Text = if UserInputService.TouchEnabled
+		then "Controls:\nJUMP: Swipe Up / Button\nSLIDE: Swipe Down / Button"
+		else "Controls:\nJUMP: Space / W / ↑\nSLIDE: S / ↓"
 	controlsLabel.Parent = startMenuFrame
 
 	-- 튜토리얼 배너 (화면 상단)
