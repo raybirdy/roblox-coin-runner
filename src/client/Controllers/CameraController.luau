@@ -31,8 +31,8 @@ export type CameraController = typeof(setmetatable(
 local BASE_CAMERA_DISTANCE = 40 -- 기준 카메라 거리 (1920px 기준)
 local MIN_CAMERA_DISTANCE = 28
 local MAX_CAMERA_DISTANCE = 45
-local CAMERA_HEIGHT = 20 -- 캐릭터 위 높이
-local CAMERA_ANGLE = math.rad(10) -- 아래로 내려다보는 각도
+local CAMERA_HEIGHT = 22 -- 캐릭터 위 높이
+local CAMERA_ANGLE = math.rad(8) -- 아래로 내려다보는 각도
 local CAMERA_SMOOTHNESS = 0.15 -- 카메라 부드러움 (0~1, 낮을수록 부드러움)
 
 -- viewport 기반 적응형 카메라 거리 계산
@@ -166,7 +166,7 @@ function CameraController:_calculateCameraPosition(): CFrame
 		+ self._cameraOffset
 
 	-- 캐릭터 앞쪽을 바라봄 (캐릭터가 화면 하단 ~25-30%에 위치하도록)
-	local lookAtPosition = characterPosition + Vector3.new(25, 5, 0)
+	local lookAtPosition = characterPosition + Vector3.new(35, 8, 0)
 
 	-- CFrame 생성
 	local cameraCFrame = CFrame.lookAt(cameraPosition, lookAtPosition)
