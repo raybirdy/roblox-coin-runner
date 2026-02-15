@@ -71,11 +71,11 @@ function ProgressionController:_createLevelDisplay()
 	screenGui.Parent = playerGui
 	self._screenGui = screenGui
 
-	-- 레벨 컨테이너 (좌상단)
+	-- 레벨 컨테이너 (좌상단, safe area padding 적용)
 	local container = Instance.new("Frame")
 	container.Name = "LevelContainer"
 	container.Size = UDim2.new(0, 160, 0, 40)
-	container.Position = UDim2.new(0, 10, 0, 10)
+	container.Position = UDim2.new(0, 10, 0, 16)
 	container.BackgroundColor3 = Color3.fromRGB(20, 20, 35)
 	container.BackgroundTransparency = 0.3
 	container.Parent = screenGui
@@ -141,7 +141,7 @@ function ProgressionController:_createLevelDisplay()
 	local missionBtn = Instance.new("TextButton")
 	missionBtn.Name = "MissionButton"
 	missionBtn.Size = UDim2.new(0, 40, 0, 40)
-	missionBtn.Position = UDim2.new(0, 175, 0, 10)
+	missionBtn.Position = UDim2.new(0, 175, 0, 16)
 	missionBtn.BackgroundColor3 = Color3.fromRGB(50, 120, 50)
 	missionBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 	missionBtn.TextSize = 20

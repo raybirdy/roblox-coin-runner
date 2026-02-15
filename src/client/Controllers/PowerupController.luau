@@ -58,7 +58,7 @@ function PowerupController:_createPowerupUI()
 	local container = Instance.new("Frame")
 	container.Name = "PowerupContainer"
 	container.Size = UDim2.new(0, 80, 0, 300)
-	container.Position = UDim2.new(0, 10, 0.5, -150)
+	container.Position = UDim2.new(0, 10, 0.5, -140)
 	container.BackgroundTransparency = 1
 	container.Parent = powerupGui
 	self._powerupContainer = container

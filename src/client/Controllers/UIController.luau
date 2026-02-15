@@ -84,6 +84,7 @@ function UIController:_createUI()
 	local screenGui = Instance.new("ScreenGui")
 	screenGui.Name = "GameUI"
 	screenGui.ResetOnSpawn = false
+	screenGui.ScreenInsets = Enum.ScreenInsets.DeviceSafeInsets
 	screenGui.Parent = self._playerGui
 	self._screenGui = screenGui
 
@@ -91,7 +92,7 @@ function UIController:_createUI()
 	local hudFrame = Instance.new("Frame")
 	hudFrame.Name = "HudFrame"
 	hudFrame.Size = UDim2.new(1, 0, 0, 36)
-	hudFrame.Position = UDim2.new(0, 0, 0, 0)
+	hudFrame.Position = UDim2.new(0, 0, 0, 8)
 	hudFrame.BackgroundTransparency = 0.5
 	hudFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 	hudFrame.Parent = screenGui
@@ -600,7 +601,7 @@ function UIController:_createMobileControls()
 	end
 
 	local btnSize = GameConstants.UI.TOUCH_BUTTON_SIZE
-	local btnMargin = 20
+	local btnMargin = 34 -- Increased for home indicator safe area
 
 	-- 점프 버튼 (오른쪽 하단)
 	local jumpButton = Instance.new("TextButton")
