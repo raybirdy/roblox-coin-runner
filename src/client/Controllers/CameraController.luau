@@ -21,7 +21,7 @@ export type CameraController = typeof(setmetatable(
 		_targetCFrame: CFrame,
 		_shakeIntensity: number,
 		_shakeDecay: number,
-		_isGameMode: boolean, -- 게임 모드 여부 (true = 측면뷰, false = 기본 카메라)
+		_isGameMode: boolean, -- 게임 모드 여부 (true = 3인칭 후방뷰, false = 기본 카메라)
 		_cameraDistance: number, -- 적응형 카메라 거리
 	},
 	CameraController
@@ -31,8 +31,8 @@ export type CameraController = typeof(setmetatable(
 local BASE_CAMERA_DISTANCE = 40 -- 기준 카메라 거리 (1920px 기준)
 local MIN_CAMERA_DISTANCE = 28
 local MAX_CAMERA_DISTANCE = 45
-local CAMERA_HEIGHT = 15 -- 캐릭터 위 높이
-local CAMERA_ANGLE = math.rad(15) -- 아래로 내려다보는 각도
+local CAMERA_HEIGHT = 20 -- 캐릭터 위 높이
+local CAMERA_ANGLE = math.rad(10) -- 아래로 내려다보는 각도
 local CAMERA_SMOOTHNESS = 0.15 -- 카메라 부드러움 (0~1, 낮을수록 부드러움)
 
 -- viewport 기반 적응형 카메라 거리 계산
@@ -120,7 +120,7 @@ function CameraController:SetLobbyMode()
 	print("[CameraController] Switched to lobby mode (default camera)")
 end
 
--- 게임 모드 (측면 뷰 카메라)
+-- 게임 모드 (3인칭 후방 뷰 카메라)
 function CameraController:SetGameMode()
 	self._isGameMode = true
 	self._camera.CameraType = Enum.CameraType.Scriptable
@@ -132,7 +132,7 @@ function CameraController:SetGameMode()
 	self._targetCFrame = self:_calculateCameraPosition()
 	self._camera.CFrame = self._targetCFrame
 
-	print("[CameraController] Switched to game mode (side view camera)")
+	print("[CameraController] Switched to game mode (3rd person chase camera)")
 end
 
 -- 카메라 흔들림 이벤트 설정
@@ -152,7 +152,7 @@ function CameraController:_setupCameraShakeEvent()
 	table.insert(self._connections, connection)
 end
 
--- 카메라 위치 계산 (측면 뷰)
+-- 카메라 위치 계산 (3인칭 후방 뷰)
 function CameraController:_calculateCameraPosition(): CFrame
 	if not self._humanoidRootPart then
 		return CFrame.new()
@@ -162,11 +162,11 @@ function CameraController:_calculateCameraPosition(): CFrame
 
 	-- 카메라 위치: 캐릭터 뒤쪽 + 위쪽 (적응형 거리 사용)
 	local cameraPosition = characterPosition
-		+ Vector3.new(-self._cameraDistance, CAMERA_HEIGHT, 0) -- 왼쪽 뒤, 위
+		+ Vector3.new(-self._cameraDistance, CAMERA_HEIGHT, 0) -- 뒤, 위
 		+ self._cameraOffset
 
-	-- 카메라가 캐릭터를 바라보도록
-	local lookAtPosition = characterPosition + Vector3.new(10, 2, 0) -- 약간 앞쪽
+	-- 캐릭터 앞쪽을 바라봄 (캐릭터가 화면 하단 ~25-30%에 위치하도록)
+	local lookAtPosition = characterPosition + Vector3.new(25, 5, 0)
 
 	-- CFrame 생성
 	local cameraCFrame = CFrame.lookAt(cameraPosition, lookAtPosition)
