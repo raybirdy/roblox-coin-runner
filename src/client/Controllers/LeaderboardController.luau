@@ -112,8 +112,8 @@ function LeaderboardController:_createPopupGui()
 	-- 닫기 버튼
 	local closeBtn = Instance.new("TextButton")
 	closeBtn.Name = "CloseButton"
-	closeBtn.Size = UDim2.new(0, 36, 0, 36)
-	closeBtn.Position = UDim2.new(1, -46, 0, 12)
+	closeBtn.Size = UDim2.new(0, 44, 0, 44)
+	closeBtn.Position = UDim2.new(1, -54, 0, 8)
 	closeBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
 	closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 	closeBtn.TextSize = 20
@@ -132,7 +132,7 @@ function LeaderboardController:_createPopupGui()
 	-- 탭 컨테이너
 	local tabContainer = Instance.new("Frame")
 	tabContainer.Name = "TabContainer"
-	tabContainer.Size = UDim2.new(1, -30, 0, 36)
+	tabContainer.Size = UDim2.new(1, -30, 0, 44)
 	tabContainer.Position = UDim2.new(0, 15, 0, 55)
 	tabContainer.BackgroundTransparency = 1
 	tabContainer.Parent = popupFrame

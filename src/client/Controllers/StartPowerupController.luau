@@ -125,8 +125,8 @@ function StartPowerupController:_createUI()
 	-- 건너뛰기 버튼
 	local skipButton = Instance.new("TextButton")
 	skipButton.Name = "SkipButton"
-	skipButton.Size = UDim2.new(0, 120, 0, 30)
-	skipButton.Position = UDim2.new(0.5, -60, 1, -25)
+	skipButton.Size = UDim2.new(0, 140, 0, 44)
+	skipButton.Position = UDim2.new(0.5, -70, 1, -38)
 	skipButton.BackgroundTransparency = 1
 	skipButton.TextColor3 = Color3.fromRGB(180, 180, 180)
 	skipButton.TextSize = 14
@@ -250,8 +250,8 @@ function StartPowerupController:_populateCards(startPowerups: { [string]: number
 		-- 선택 버튼
 		local selectBtn = Instance.new("TextButton")
 		selectBtn.Name = "SelectButton"
-		selectBtn.Size = UDim2.new(1, -16, 0, 30)
-		selectBtn.Position = UDim2.new(0, 8, 1, -40)
+		selectBtn.Size = UDim2.new(1, -16, 0, 44)
+		selectBtn.Position = UDim2.new(0, 8, 1, -52)
 		selectBtn.TextSize = 13
 		selectBtn.Font = Enum.Font.GothamBold
 		selectBtn.Parent = card

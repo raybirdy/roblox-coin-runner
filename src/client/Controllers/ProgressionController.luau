@@ -140,7 +140,7 @@ function ProgressionController:_createLevelDisplay()
 	-- 미션 버튼 (레벨 바 옆)
 	local missionBtn = Instance.new("TextButton")
 	missionBtn.Name = "MissionButton"
-	missionBtn.Size = UDim2.new(0, 40, 0, 40)
+	missionBtn.Size = UDim2.new(0, 48, 0, 48)
 	missionBtn.Position = UDim2.new(0, 175, 0, 16)
 	missionBtn.BackgroundColor3 = Color3.fromRGB(50, 120, 50)
 	missionBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -224,8 +224,8 @@ function ProgressionController:_createMissionPopup()
 	-- 닫기 버튼
 	local closeBtn = Instance.new("TextButton")
 	closeBtn.Name = "CloseButton"
-	closeBtn.Size = UDim2.new(0, 30, 0, 30)
-	closeBtn.Position = UDim2.new(1, -40, 0, 12)
+	closeBtn.Size = UDim2.new(0, 44, 0, 44)
+	closeBtn.Position = UDim2.new(1, -52, 0, 6)
 	closeBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
 	closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 	closeBtn.TextSize = 16

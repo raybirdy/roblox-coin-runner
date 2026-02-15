@@ -119,7 +119,7 @@ function ShopController:_createUI()
 	-- 탭 버튼 컨테이너
 	local tabContainer = Instance.new("Frame")
 	tabContainer.Name = "TabContainer"
-	tabContainer.Size = UDim2.new(1, -40, 0, 40)
+	tabContainer.Size = UDim2.new(1, -40, 0, 44)
 	tabContainer.Position = UDim2.new(0, 20, 0, 90)
 	tabContainer.BackgroundTransparency = 1
 	tabContainer.Parent = shopFrame
@@ -142,7 +142,7 @@ function ShopController:_createUI()
 	for _, tab in tabs do
 		local tabButton = Instance.new("TextButton")
 		tabButton.Name = tab.id .. "Tab"
-		tabButton.Size = UDim2.new(0, 100, 0, 35)
+		tabButton.Size = UDim2.new(0, 100, 0, 44)
 		tabButton.BackgroundColor3 = Color3.fromRGB(80, 80, 100)
 		tabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 		tabButton.TextSize = 18
@@ -190,8 +190,8 @@ function ShopController:_createUI()
 	-- 닫기 버튼
 	local closeButton = Instance.new("TextButton")
 	closeButton.Name = "CloseButton"
-	closeButton.Size = UDim2.new(0, 40, 0, 40)
-	closeButton.Position = UDim2.new(1, -50, 0, 10)
+	closeButton.Size = UDim2.new(0, 44, 0, 44)
+	closeButton.Position = UDim2.new(1, -54, 0, 8)
 	closeButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
 	closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 	closeButton.TextSize = 24
@@ -482,8 +482,8 @@ function ShopController:_createItemFrame(
 	-- 버튼
 	local button = Instance.new("TextButton")
 	button.Name = "Button"
-	button.Size = UDim2.new(1, -20, 0, 30)
-	button.Position = UDim2.new(0, 10, 1, -40)
+	button.Size = UDim2.new(1, -20, 0, 44)
+	button.Position = UDim2.new(0, 10, 1, -52)
 	button.Font = Enum.Font.GothamBold
 	button.TextSize = 14
 	button.Parent = itemFrame
@@ -626,8 +626,8 @@ function ShopController:_createGemProductFrame(
 	-- 구매 버튼
 	local button = Instance.new("TextButton")
 	button.Name = "Button"
-	button.Size = UDim2.new(1, -20, 0, 30)
-	button.Position = UDim2.new(0, 10, 1, -40)
+	button.Size = UDim2.new(1, -20, 0, 44)
+	button.Position = UDim2.new(0, 10, 1, -52)
 	button.BackgroundColor3 = Color3.fromRGB(0, 150, 50)
 	button.TextColor3 = Color3.fromRGB(255, 255, 255)
 	button.TextSize = 14
@@ -886,8 +886,8 @@ function ShopController:_showConfirmPopup(message: string, onConfirm: () -> ())
 	-- Confirm button
 	local confirmBtn = Instance.new("TextButton")
 	confirmBtn.Name = "ConfirmButton"
-	confirmBtn.Size = UDim2.new(0, 120, 0, 40)
-	confirmBtn.Position = UDim2.new(0.5, -130, 1, -55)
+	confirmBtn.Size = UDim2.new(0, 120, 0, 48)
+	confirmBtn.Position = UDim2.new(0.5, -130, 1, -60)
 	confirmBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
 	confirmBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 	confirmBtn.TextSize = 18
@@ -902,8 +902,8 @@ function ShopController:_showConfirmPopup(message: string, onConfirm: () -> ())
 	-- Cancel button
 	local cancelBtn = Instance.new("TextButton")
 	cancelBtn.Name = "CancelButton"
-	cancelBtn.Size = UDim2.new(0, 120, 0, 40)
-	cancelBtn.Position = UDim2.new(0.5, 10, 1, -55)
+	cancelBtn.Size = UDim2.new(0, 120, 0, 48)
+	cancelBtn.Position = UDim2.new(0.5, 10, 1, -60)
 	cancelBtn.BackgroundColor3 = Color3.fromRGB(150, 50, 50)
 	cancelBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 	cancelBtn.TextSize = 18
