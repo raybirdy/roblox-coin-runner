@@ -105,7 +105,7 @@ function UIController:_createUI()
 	scoreLabel.Position = UDim2.new(0, 10, 0, 0)
 	scoreLabel.BackgroundTransparency = 1
 	scoreLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-	scoreLabel.TextSize = 18
+	scoreLabel.TextSize = ResponsiveUtil.scaledTextSize(20, 16)
 	scoreLabel.Font = Enum.Font.GothamBold
 	scoreLabel.Text = "⭐ 0"
 	scoreLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -119,7 +119,7 @@ function UIController:_createUI()
 	distanceLabel.Position = UDim2.new(0.25, 10, 0, 0)
 	distanceLabel.BackgroundTransparency = 1
 	distanceLabel.TextColor3 = Color3.fromRGB(100, 200, 255)
-	distanceLabel.TextSize = 16
+	distanceLabel.TextSize = ResponsiveUtil.scaledTextSize(18, 15)
 	distanceLabel.Font = Enum.Font.Gotham
 	distanceLabel.Text = "🏃 0m"
 	distanceLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -133,7 +133,7 @@ function UIController:_createUI()
 	coinsLabel.Position = UDim2.new(0.45, 10, 0, 0)
 	coinsLabel.BackgroundTransparency = 1
 	coinsLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
-	coinsLabel.TextSize = 16
+	coinsLabel.TextSize = ResponsiveUtil.scaledTextSize(18, 15)
 	coinsLabel.Font = Enum.Font.GothamBold
 	coinsLabel.Text = "🪙 0"
 	coinsLabel.TextXAlignment = Enum.TextXAlignment.Left

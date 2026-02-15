@@ -130,7 +130,7 @@ function ProgressionController:_createLevelDisplay()
 	xpText.Position = UDim2.new(0, 60, 0, 2)
 	xpText.BackgroundTransparency = 1
 	xpText.TextColor3 = Color3.fromRGB(180, 180, 200)
-	xpText.TextSize = 10
+	xpText.TextSize = ResponsiveUtil.scaledTextSize(14, 12)
 	xpText.Font = Enum.Font.Gotham
 	xpText.Text = ""
 	xpText.TextXAlignment = Enum.TextXAlignment.Right
@@ -262,7 +262,7 @@ function ProgressionController:_createMissionPopup()
 		nameLabel.Position = UDim2.new(0, 10, 0, 5)
 		nameLabel.BackgroundTransparency = 1
 		nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-		nameLabel.TextSize = 13
+		nameLabel.TextSize = ResponsiveUtil.scaledTextSize(16, 14)
 		nameLabel.Font = Enum.Font.GothamBold
 		nameLabel.Text = "---"
 		nameLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -288,7 +288,7 @@ function ProgressionController:_createMissionPopup()
 		descLabel.Position = UDim2.new(0, 10, 0, 25)
 		descLabel.BackgroundTransparency = 1
 		descLabel.TextColor3 = Color3.fromRGB(180, 180, 200)
-		descLabel.TextSize = 11
+		descLabel.TextSize = ResponsiveUtil.scaledTextSize(14, 13)
 		descLabel.Font = Enum.Font.Gotham
 		descLabel.Text = ""
 		descLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -322,7 +322,7 @@ function ProgressionController:_createMissionPopup()
 		progressText.Size = UDim2.new(1, 0, 1, 0)
 		progressText.BackgroundTransparency = 1
 		progressText.TextColor3 = Color3.fromRGB(255, 255, 255)
-		progressText.TextSize = 8
+		progressText.TextSize = ResponsiveUtil.scaledTextSize(12, 10)
 		progressText.Font = Enum.Font.GothamBold
 		progressText.Text = "0/0"
 		progressText.Parent = progressBg

@@ -473,7 +473,7 @@ function ShopController:_createItemFrame(
 		countLabel.Position = UDim2.new(0, 0, 0, 28)
 		countLabel.BackgroundTransparency = 1
 		countLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-		countLabel.TextSize = 12
+		countLabel.TextSize = ResponsiveUtil.scaledTextSize(14, 13)
 		countLabel.Font = Enum.Font.Gotham
 		countLabel.Text = `보유: {item.count}개`
 		countLabel.Parent = itemFrame
@@ -617,7 +617,7 @@ function ShopController:_createGemProductFrame(
 		bonusLabel.Position = UDim2.new(0, 0, 0, 27)
 		bonusLabel.BackgroundTransparency = 1
 		bonusLabel.TextColor3 = Color3.fromRGB(255, 200, 100)
-		bonusLabel.TextSize = 12
+		bonusLabel.TextSize = ResponsiveUtil.scaledTextSize(14, 12)
 		bonusLabel.Font = Enum.Font.GothamBold
 		bonusLabel.Text = subText
 		bonusLabel.Parent = frame
@@ -690,7 +690,7 @@ function ShopController:_populateGems(container: ScrollingFrame)
 	vipDesc.Position = UDim2.new(0, 0, 0, 27)
 	vipDesc.BackgroundTransparency = 1
 	vipDesc.TextColor3 = Color3.fromRGB(255, 230, 150)
-	vipDesc.TextSize = 11
+	vipDesc.TextSize = ResponsiveUtil.scaledTextSize(14, 13)
 	vipDesc.Font = Enum.Font.Gotham
 	vipDesc.Text = "코인 2배 획득"
 	vipDesc.Parent = vipFrame
