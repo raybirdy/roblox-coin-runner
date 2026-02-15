@@ -189,15 +189,13 @@ inputController:OnSlide(function()
 	tutorialController:OnPlayerAction("slide")
 end)
 
--- UI 모바일 버튼 콜백 연결 (터치)
+-- UI 모바일 버튼 콜백 연결 (터치) — InputController debounce를 거침
 uiController:OnJump(function()
-	playerController:Jump()
-	tutorialController:OnPlayerAction("jump")
+	inputController:TriggerJump()
 end)
 
 uiController:OnSlide(function()
-	playerController:Slide()
-	tutorialController:OnPlayerAction("slide")
+	inputController:TriggerSlide()
 end)
 
 -- 서버로부터 게임 시작 응답 수신

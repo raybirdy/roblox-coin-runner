@@ -679,14 +679,14 @@ function UIController:_createMobileControls()
 	addPressFeedback(jumpButton)
 	addPressFeedback(slideButton)
 
-	-- 버튼 클릭 이벤트
-	jumpButton.MouseButton1Click:Connect(function()
+	-- 버튼 터치 이벤트 (MouseButton1Down으로 즉각 반응)
+	jumpButton.MouseButton1Down:Connect(function()
 		if self._onJumpCallback then
 			self._onJumpCallback()
 		end
 	end)
 
-	slideButton.MouseButton1Click:Connect(function()
+	slideButton.MouseButton1Down:Connect(function()
 		if self._onSlideCallback then
 			self._onSlideCallback()
 		end
