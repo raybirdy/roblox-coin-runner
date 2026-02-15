@@ -6,6 +6,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 
 local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)
+local ResponsiveUtil = require(ReplicatedStorage.Shared.Utils.ResponsiveUtil)
 
 local ProgressionController = {}
 ProgressionController.__index = ProgressionController
@@ -191,8 +192,8 @@ function ProgressionController:_createMissionPopup()
 	-- 팝업 프레임
 	local missionFrame = Instance.new("Frame")
 	missionFrame.Name = "MissionFrame"
-	missionFrame.Size = UDim2.new(0, 350, 0, 300)
-	missionFrame.Position = UDim2.new(0.5, -175, 0.5, -150)
+	missionFrame.Size = ResponsiveUtil.clampedSize(350, 300, 0.88, 0.75)
+	missionFrame.Position = ResponsiveUtil.clampedPosition(350, 300, 0.88, 0.75)
 	missionFrame.BackgroundColor3 = Color3.fromRGB(25, 30, 45)
 	missionFrame.BorderSizePixel = 0
 	missionFrame.Parent = missionGui
@@ -576,12 +577,14 @@ function ProgressionController:OpenMissions()
 
 	-- 팝업 애니메이션
 	if self._missionFrame then
-		self._missionFrame.Size = UDim2.new(0, 350, 0, 0)
-		self._missionFrame.Position = UDim2.new(0.5, -175, 0.5, 0)
+		local targetSize = ResponsiveUtil.clampedSize(350, 300, 0.88, 0.75)
+		local targetW = targetSize.X.Offset
+		self._missionFrame.Size = UDim2.new(0, targetW, 0, 0)
+		self._missionFrame.Position = UDim2.new(0.5, -targetW / 2, 0.5, 0)
 
 		TweenService:Create(self._missionFrame, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-			Size = UDim2.new(0, 350, 0, 300),
-			Position = UDim2.new(0.5, -175, 0.5, -150),
+			Size = targetSize,
+			Position = ResponsiveUtil.clampedPosition(350, 300, 0.88, 0.75),
 		}):Play()
 	end
 
@@ -596,9 +599,10 @@ function ProgressionController:CloseMissions()
 	self._isMissionOpen = false
 
 	if self._missionFrame then
+		local currentW = self._missionFrame.Size.X.Offset
 		local tween = TweenService:Create(self._missionFrame, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-			Size = UDim2.new(0, 350, 0, 0),
-			Position = UDim2.new(0.5, -175, 0.5, 0),
+			Size = UDim2.new(0, currentW, 0, 0),
+			Position = UDim2.new(0.5, -currentW / 2, 0.5, 0),
 		})
 		tween:Play()
 		tween.Completed:Connect(function()

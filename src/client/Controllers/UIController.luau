@@ -7,6 +7,7 @@ local TweenService = game:GetService("TweenService")
 
 local GameConstants = require(ReplicatedStorage.Shared.Constants.GameConstants)
 local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)
+local ResponsiveUtil = require(ReplicatedStorage.Shared.Utils.ResponsiveUtil)
 
 local UIController = {}
 UIController.__index = UIController
@@ -173,8 +174,8 @@ function UIController:_createUI()
 	-- 게임 오버 프레임 (초기 숨김)
 	local gameOverFrame = Instance.new("Frame")
 	gameOverFrame.Name = "GameOverFrame"
-	gameOverFrame.Size = UDim2.new(0, 450, 0, 480)
-	gameOverFrame.Position = UDim2.new(0.5, -225, 0.5, -240)
+	gameOverFrame.Size = ResponsiveUtil.clampedSize(450, 480, 0.92, 0.85)
+	gameOverFrame.Position = ResponsiveUtil.clampedPosition(450, 480, 0.92, 0.85)
 	gameOverFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 	gameOverFrame.BackgroundTransparency = 0.15
 	gameOverFrame.Visible = false
@@ -354,8 +355,8 @@ function UIController:_createUI()
 	-- 시작 메뉴 프레임 (초기 화면)
 	local startMenuFrame = Instance.new("Frame")
 	startMenuFrame.Name = "StartMenuFrame"
-	startMenuFrame.Size = UDim2.new(0, 500, 0, 400)
-	startMenuFrame.Position = UDim2.new(0.5, -250, 0.5, -200)
+	startMenuFrame.Size = ResponsiveUtil.clampedSize(500, 400, 0.92, 0.85)
+	startMenuFrame.Position = ResponsiveUtil.clampedPosition(500, 400, 0.92, 0.85)
 	startMenuFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 	startMenuFrame.BackgroundTransparency = 0.3
 	startMenuFrame.Visible = false
@@ -500,8 +501,8 @@ function UIController:_createUI()
 	-- 로비 안내 텍스트 (화면 하단) - 개선된 가시성
 	local lobbyGuide = Instance.new("Frame")
 	lobbyGuide.Name = "LobbyGuide"
-	lobbyGuide.Size = UDim2.new(0, 450, 0, 70)
-	lobbyGuide.Position = UDim2.new(0.5, -225, 1, -110)
+	lobbyGuide.Size = ResponsiveUtil.clampedSize(450, 70, 0.92, 0.15)
+	lobbyGuide.Position = UDim2.new(0.5, -math.min(450, ResponsiveUtil.getViewportSize().X * 0.92) / 2, 1, -110)
 	lobbyGuide.BackgroundColor3 = Color3.fromRGB(0, 50, 0)
 	lobbyGuide.BackgroundTransparency = 0.15
 	lobbyGuide.Visible = false
@@ -891,10 +892,12 @@ function UIController:ShowGameOver(
 	self._gameOverFrame.Visible = true
 
 	local frameHeight = canRevive and 480 or 420
+	local targetSize = ResponsiveUtil.clampedSize(450, frameHeight, 0.92, 0.85)
+	local targetPos = ResponsiveUtil.clampedPosition(450, frameHeight, 0.92, 0.85)
 	local appearTween =
 		TweenService:Create(self._gameOverFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-			Size = UDim2.new(0, 450, 0, frameHeight),
-			Position = UDim2.new(0.5, -225, 0.5, -frameHeight / 2),
+			Size = targetSize,
+			Position = targetPos,
 		})
 	appearTween:Play()
 

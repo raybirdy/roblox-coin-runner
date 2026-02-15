@@ -8,6 +8,7 @@ local TweenService = game:GetService("TweenService")
 
 local GameConstants = require(ReplicatedStorage.Shared.Constants.GameConstants)
 local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)
+local ResponsiveUtil = require(ReplicatedStorage.Shared.Utils.ResponsiveUtil)
 
 local ShopController = {}
 ShopController.__index = ShopController
@@ -60,8 +61,8 @@ function ShopController:_createUI()
 	-- 상점 프레임 (초기 숨김)
 	local shopFrame = Instance.new("Frame")
 	shopFrame.Name = "ShopFrame"
-	shopFrame.Size = UDim2.new(0, 500, 0, 450)
-	shopFrame.Position = UDim2.new(0.5, -250, 0.5, -225)
+	shopFrame.Size = ResponsiveUtil.clampedSize(500, 450, 0.92, 0.88)
+	shopFrame.Position = ResponsiveUtil.clampedPosition(500, 450, 0.92, 0.88)
 	shopFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 50)
 	shopFrame.BackgroundTransparency = 0.1
 	shopFrame.Visible = false
@@ -954,8 +955,8 @@ function ShopController:Open()
 
 	local tween =
 		TweenService:Create(self._shopFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-			Size = UDim2.new(0, 500, 0, 450),
-			Position = UDim2.new(0.5, -250, 0.5, -225),
+			Size = ResponsiveUtil.clampedSize(500, 450, 0.92, 0.88),
+			Position = ResponsiveUtil.clampedPosition(500, 450, 0.92, 0.88),
 		})
 	tween:Play()
 

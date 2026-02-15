@@ -6,6 +6,7 @@ local TweenService = game:GetService("TweenService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local GameConstants = require(ReplicatedStorage.Shared.Constants.GameConstants)
+local ResponsiveUtil = require(ReplicatedStorage.Shared.Utils.ResponsiveUtil)
 
 local StartPowerupController = {}
 StartPowerupController.__index = StartPowerupController
@@ -58,8 +59,8 @@ function StartPowerupController:_createUI()
 	-- 팝업 프레임
 	local popup = Instance.new("Frame")
 	popup.Name = "PopupFrame"
-	popup.Size = UDim2.new(0, 400, 0, 300)
-	popup.Position = UDim2.new(0.5, -200, 0.5, -150)
+	popup.Size = ResponsiveUtil.clampedSize(400, 300, 0.92, 0.75)
+	popup.Position = ResponsiveUtil.clampedPosition(400, 300, 0.92, 0.75)
 	popup.BackgroundColor3 = Color3.fromRGB(30, 30, 50)
 	popup.BackgroundTransparency = 0.1
 	popup.Visible = false
@@ -184,8 +185,8 @@ function StartPowerupController:Show(playerData: any?, callback: ({ string }) ->
 
 	local tween =
 		TweenService:Create(self._popupFrame, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-			Size = UDim2.new(0, 400, 0, 300),
-			Position = UDim2.new(0.5, -200, 0.5, -150),
+			Size = ResponsiveUtil.clampedSize(400, 300, 0.92, 0.75),
+			Position = ResponsiveUtil.clampedPosition(400, 300, 0.92, 0.75),
 		})
 	tween:Play()
 end
