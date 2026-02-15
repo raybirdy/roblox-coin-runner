@@ -22,15 +22,29 @@ export type CameraController = typeof(setmetatable(
 		_shakeIntensity: number,
 		_shakeDecay: number,
 		_isGameMode: boolean, -- 게임 모드 여부 (true = 측면뷰, false = 기본 카메라)
+		_cameraDistance: number, -- 적응형 카메라 거리
 	},
 	CameraController
 ))
 
 -- 카메라 설정
-local CAMERA_DISTANCE = 40 -- 캐릭터로부터 거리
+local BASE_CAMERA_DISTANCE = 40 -- 기준 카메라 거리 (1920px 기준)
+local MIN_CAMERA_DISTANCE = 28
+local MAX_CAMERA_DISTANCE = 45
 local CAMERA_HEIGHT = 15 -- 캐릭터 위 높이
 local CAMERA_ANGLE = math.rad(15) -- 아래로 내려다보는 각도
 local CAMERA_SMOOTHNESS = 0.15 -- 카메라 부드러움 (0~1, 낮을수록 부드러움)
+
+-- viewport 기반 적응형 카메라 거리 계산
+local function calculateAdaptiveDistance(): number
+	local camera = Workspace.CurrentCamera
+	if not camera then
+		return BASE_CAMERA_DISTANCE
+	end
+	local viewportX = camera.ViewportSize.X
+	local ratio = viewportX / 1920
+	return math.clamp(BASE_CAMERA_DISTANCE * ratio, MIN_CAMERA_DISTANCE, MAX_CAMERA_DISTANCE)
+end
 
 function CameraController.new(player: Player, character: Model): CameraController
 	local self = setmetatable({
@@ -44,6 +58,7 @@ function CameraController.new(player: Player, character: Model): CameraControlle
 		_shakeIntensity = 0,
 		_shakeDecay = 0.95,
 		_isGameMode = false, -- 시작 시 로비 모드 (기본 카메라)
+		_cameraDistance = calculateAdaptiveDistance(),
 	}, CameraController)
 
 	self:_initialize()
@@ -73,6 +88,15 @@ function CameraController:_initialize()
 	end)
 	table.insert(self._connections, connection)
 
+	-- ViewportSize 변경 시 카메라 거리 재계산
+	local camera = Workspace.CurrentCamera
+	if camera then
+		local viewportConn = camera:GetPropertyChangedSignal("ViewportSize"):Connect(function()
+			self._cameraDistance = calculateAdaptiveDistance()
+		end)
+		table.insert(self._connections, viewportConn)
+	end
+
 	-- 카메라 흔들림 이벤트 설정
 	self:_setupCameraShakeEvent()
 
@@ -100,6 +124,9 @@ end
 function CameraController:SetGameMode()
 	self._isGameMode = true
 	self._camera.CameraType = Enum.CameraType.Scriptable
+
+	-- 카메라 거리 재계산
+	self._cameraDistance = calculateAdaptiveDistance()
 
 	-- 초기 카메라 위치 설정
 	self._targetCFrame = self:_calculateCameraPosition()
@@ -133,9 +160,9 @@ function CameraController:_calculateCameraPosition(): CFrame
 
 	local characterPosition = self._humanoidRootPart.Position
 
-	-- 카메라 위치: 캐릭터 뒤쪽 + 위쪽
+	-- 카메라 위치: 캐릭터 뒤쪽 + 위쪽 (적응형 거리 사용)
 	local cameraPosition = characterPosition
-		+ Vector3.new(-CAMERA_DISTANCE, CAMERA_HEIGHT, 0) -- 왼쪽 뒤, 위
+		+ Vector3.new(-self._cameraDistance, CAMERA_HEIGHT, 0) -- 왼쪽 뒤, 위
 		+ self._cameraOffset
 
 	-- 카메라가 캐릭터를 바라보도록
@@ -159,8 +186,9 @@ function CameraController:_updateCamera(deltaTime: number)
 	-- 목표 카메라 위치 계산
 	local targetCFrame = self:_calculateCameraPosition()
 
-	-- 부드러운 보간 (Lerp)
-	self._targetCFrame = self._targetCFrame:Lerp(targetCFrame, CAMERA_SMOOTHNESS)
+	-- 부드러운 보간 (deltaTime 기반으로 프레임레이트 독립적)
+	local factor = 1 - math.pow(1 - CAMERA_SMOOTHNESS, deltaTime * 60)
+	self._targetCFrame = self._targetCFrame:Lerp(targetCFrame, factor)
 
 	-- 화면 흔들림 적용
 	local shakeCFrame = CFrame.new()
@@ -186,11 +214,11 @@ end
 
 -- 카메라 줌 (일시적)
 function CameraController:Zoom(amount: number, duration: number)
-	local originalDistance = CAMERA_DISTANCE
-	CAMERA_DISTANCE += amount
+	local originalDistance = self._cameraDistance
+	self._cameraDistance += amount
 
 	task.delay(duration, function()
-		CAMERA_DISTANCE = originalDistance
+		self._cameraDistance = originalDistance
 	end)
 end
 
