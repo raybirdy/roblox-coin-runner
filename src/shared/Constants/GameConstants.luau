@@ -187,52 +187,58 @@ GameConstants.DATA = {
 
 -- 로비 시스템 (확장)
 GameConstants.LOBBY = {
-	-- 크기 확장: 150 x 60 studs
-	FLOOR_SIZE = Vector3.new(150, 1, 60),
-	FLOOR_POSITION = Vector3.new(-85, 0.5, 0),
+	-- 크기 확장: 200 x 80 studs (더 넓은 로비)
+	FLOOR_SIZE = Vector3.new(200, 1, 80),
+	FLOOR_POSITION = Vector3.new(-110, 0.5, 0),
 
 	-- 주요 위치
-	SPAWN_POSITION = Vector3.new(-120, 2.5, 0),
+	SPAWN_POSITION = Vector3.new(-160, 2.5, 0),
 	PORTAL_POSITION = Vector3.new(-25, 3, 0),
-	PORTAL_SIZE = Vector3.new(2, 8, 10),
-	SHOP_POSITION = Vector3.new(-70, 5, 20),
-	LEADERBOARD_POSITION = Vector3.new(-70, 5, -20), -- 상점 반대편
-	TITLE_POSITION = Vector3.new(-85, 18, -25),
+	PORTAL_SIZE = Vector3.new(2, 10, 14), -- 더 큰 포탈
+	SHOP_POSITION = Vector3.new(-100, 5, 28), -- 더 바깥쪽 배치
+	LEADERBOARD_POSITION = Vector3.new(-100, 5, -28), -- 상점 반대편
+	TITLE_POSITION = Vector3.new(-110, 20, -35),
 
 	-- 장식물 위치
 	DECORATIONS = {
 		-- 나무
 		TREES = {
-			Vector3.new(-140, 0, -20),
-			Vector3.new(-140, 0, 20),
-			Vector3.new(-100, 0, -22),
-			Vector3.new(-100, 0, 22),
-			Vector3.new(-50, 0, -22),
-			Vector3.new(-50, 0, 22),
+			Vector3.new(-180, 0, -30),
+			Vector3.new(-180, 0, 30),
+			Vector3.new(-140, 0, -32),
+			Vector3.new(-140, 0, 32),
+			Vector3.new(-70, 0, -32),
+			Vector3.new(-70, 0, 32),
+			Vector3.new(-50, 0, -28),
+			Vector3.new(-50, 0, 28),
 		},
 		-- 꽃밭
 		FLOWERS = {
-			Vector3.new(-130, 0, 0),
-			Vector3.new(-90, 0, 15),
-			Vector3.new(-60, 0, -15),
+			Vector3.new(-170, 0, 0),
+			Vector3.new(-120, 0, 20),
+			Vector3.new(-80, 0, -20),
+			Vector3.new(-60, 0, 15),
 		},
 		-- 벤치
 		BENCHES = {
-			Vector3.new(-110, 0, -15),
-			Vector3.new(-80, 0, 18),
+			Vector3.new(-150, 0, -20),
+			Vector3.new(-110, 0, 24),
+			Vector3.new(-60, 0, -20),
 		},
 		-- 가로등
 		LAMPS = {
-			Vector3.new(-130, 0, -18),
-			Vector3.new(-130, 0, 18),
-			Vector3.new(-70, 0, -18),
+			Vector3.new(-170, 0, -28),
+			Vector3.new(-170, 0, 28),
+			Vector3.new(-130, 0, -28),
+			Vector3.new(-130, 0, 28),
+			Vector3.new(-50, 0, -25),
 		},
 		-- 분수대
-		FOUNTAIN = Vector3.new(-85, 0, 0),
+		FOUNTAIN = Vector3.new(-110, 0, 0),
 		-- 풍선
 		BALLOONS = {
-			Vector3.new(-35, 8, 15),
-			Vector3.new(-30, 10, -10),
+			Vector3.new(-40, 8, 20),
+			Vector3.new(-35, 10, -15),
 		},
 	},
 }
@@ -242,35 +248,35 @@ GameConstants.LOBBY_NPC = {
 	TYPES = {
 		Rabbit = {
 			name = "토끼",
-			position = Vector3.new(-115, 0, 5),
+			position = Vector3.new(-155, 0, 5),
 			color = Color3.fromRGB(255, 200, 200), -- 분홍
 			message = "안녕! 포탈로 들어가면 게임이 시작돼!",
 			animation = "jump", -- 점프하며 인사
 		},
 		Dog = {
 			name = "강아지",
-			position = Vector3.new(-72, 0, 15),
+			position = Vector3.new(-102, 0, 20),
 			color = Color3.fromRGB(210, 180, 140), -- 베이지
 			message = "멍! 상점에서 아이템을 구경해봐!",
 			animation = "wag", -- 꼬리 흔들기
 		},
 		Cat = {
 			name = "고양이",
-			position = Vector3.new(-110, 0, -15),
+			position = Vector3.new(-145, 0, -18),
 			color = Color3.fromRGB(255, 165, 0), -- 주황
 			message = "냥~ 점프는 2번까지 할 수 있어",
 			animation = "sit", -- 앉아서 기지개
 		},
 		Penguin = {
 			name = "펭귄",
-			position = Vector3.new(-95, 0, 8),
+			position = Vector3.new(-130, 0, 8),
 			color = Color3.fromRGB(50, 50, 60), -- 검정
 			message = "코인을 많이 모아봐!",
 			animation = "waddle", -- 뒤뚱뒤뚱
 		},
 		Bear = {
 			name = "곰돌이",
-			position = Vector3.new(-30, 0, 5),
+			position = Vector3.new(-35, 0, 5),
 			color = Color3.fromRGB(139, 90, 43), -- 갈색
 			message = "화이팅! 넌 할 수 있어!",
 			animation = "wave", -- 손 흔들기
@@ -284,21 +290,112 @@ GameConstants.SHOP = {
 	-- 스킨 (코인으로 구매)
 	SKINS = {
 		-- 기본 (무료)
-		{ id = "default", name = "기본", price = 0, currency = "coins", color = Color3.fromRGB(0, 170, 255), thumbnailId = "rbxassetid://3535928381" },
+		{
+			id = "default",
+			name = "기본",
+			price = 0,
+			currency = "coins",
+			color = Color3.fromRGB(0, 170, 255),
+			thumbnailId = "rbxassetid://3535928381",
+		},
 		-- 코인 스킨 (누구나 접근 가능)
-		{ id = "red_hat", name = "빨간 모자", price = 100, currency = "coins", color = Color3.fromRGB(220, 50, 50), thumbnailId = "rbxassetid://3535928917" },
-		{ id = "ninja", name = "닌자", price = 150, currency = "coins", color = Color3.fromRGB(30, 30, 50), thumbnailId = "rbxassetid://3535929309" },
-		{ id = "blue_cape", name = "파란 망토", price = 200, currency = "coins", color = Color3.fromRGB(50, 100, 220), thumbnailId = "rbxassetid://3535929635" },
-		{ id = "pirate", name = "해적", price = 300, currency = "coins", color = Color3.fromRGB(100, 60, 30), thumbnailId = "rbxassetid://3535929876" },
-		{ id = "robot", name = "로봇", price = 400, currency = "coins", color = Color3.fromRGB(160, 170, 180), thumbnailId = "rbxassetid://3535930077" },
-		{ id = "golden", name = "골든", price = 500, currency = "coins", color = Color3.fromRGB(255, 215, 0), thumbnailId = "rbxassetid://3535930233" },
+		{
+			id = "red_hat",
+			name = "빨간 모자",
+			price = 100,
+			currency = "coins",
+			color = Color3.fromRGB(220, 50, 50),
+			thumbnailId = "rbxassetid://3535928917",
+		},
+		{
+			id = "ninja",
+			name = "닌자",
+			price = 150,
+			currency = "coins",
+			color = Color3.fromRGB(30, 30, 50),
+			thumbnailId = "rbxassetid://3535929309",
+		},
+		{
+			id = "blue_cape",
+			name = "파란 망토",
+			price = 200,
+			currency = "coins",
+			color = Color3.fromRGB(50, 100, 220),
+			thumbnailId = "rbxassetid://3535929635",
+		},
+		{
+			id = "pirate",
+			name = "해적",
+			price = 300,
+			currency = "coins",
+			color = Color3.fromRGB(100, 60, 30),
+			thumbnailId = "rbxassetid://3535929876",
+		},
+		{
+			id = "robot",
+			name = "로봇",
+			price = 400,
+			currency = "coins",
+			color = Color3.fromRGB(160, 170, 180),
+			thumbnailId = "rbxassetid://3535930077",
+		},
+		{
+			id = "golden",
+			name = "골든",
+			price = 500,
+			currency = "coins",
+			color = Color3.fromRGB(255, 215, 0),
+			thumbnailId = "rbxassetid://3535930233",
+		},
 		-- 프리미엄 스킨 (젬으로 구매 - 희소성 높음)
-		{ id = "galaxy", name = "갤럭시", price = 80, currency = "gems", color = Color3.fromRGB(60, 20, 120), thumbnailId = "rbxassetid://3535936432" },
-		{ id = "unicorn", name = "유니콘", price = 100, currency = "gems", color = Color3.fromRGB(255, 180, 255), thumbnailId = "rbxassetid://3535936633" },
-		{ id = "ice_king", name = "아이스킹", price = 150, currency = "gems", color = Color3.fromRGB(150, 220, 255), thumbnailId = "rbxassetid://3535936812" },
-		{ id = "dragon", name = "드래곤", price = 200, currency = "gems", color = Color3.fromRGB(200, 50, 0), thumbnailId = "rbxassetid://3535937071" },
-		{ id = "rainbow", name = "레인보우", price = 300, currency = "gems", color = Color3.fromRGB(255, 100, 200), thumbnailId = "rbxassetid://3535937245" },
-		{ id = "shadow", name = "쉐도우", price = 400, currency = "gems", color = Color3.fromRGB(20, 20, 30), thumbnailId = "rbxassetid://3535937404" },
+		{
+			id = "galaxy",
+			name = "갤럭시",
+			price = 80,
+			currency = "gems",
+			color = Color3.fromRGB(60, 20, 120),
+			thumbnailId = "rbxassetid://3535936432",
+		},
+		{
+			id = "unicorn",
+			name = "유니콘",
+			price = 100,
+			currency = "gems",
+			color = Color3.fromRGB(255, 180, 255),
+			thumbnailId = "rbxassetid://3535936633",
+		},
+		{
+			id = "ice_king",
+			name = "아이스킹",
+			price = 150,
+			currency = "gems",
+			color = Color3.fromRGB(150, 220, 255),
+			thumbnailId = "rbxassetid://3535936812",
+		},
+		{
+			id = "dragon",
+			name = "드래곤",
+			price = 200,
+			currency = "gems",
+			color = Color3.fromRGB(200, 50, 0),
+			thumbnailId = "rbxassetid://3535937071",
+		},
+		{
+			id = "rainbow",
+			name = "레인보우",
+			price = 300,
+			currency = "gems",
+			color = Color3.fromRGB(255, 100, 200),
+			thumbnailId = "rbxassetid://3535937245",
+		},
+		{
+			id = "shadow",
+			name = "쉐도우",
+			price = 400,
+			currency = "gems",
+			color = Color3.fromRGB(20, 20, 30),
+			thumbnailId = "rbxassetid://3535937404",
+		},
 	},
 	-- 시작 파워업 (코인)
 	START_POWERUPS = {
@@ -490,11 +587,41 @@ GameConstants.MISSIONS = {
 	DAILY_COUNT = 3, -- 하루 3개 미션
 	-- 미션 템플릿
 	TEMPLATES = {
-		{ id = "play_games", name = "게임 플레이", desc = "게임 {target}회 플레이", targets = { 3, 5 }, reward = 30 },
-		{ id = "collect_coins", name = "코인 수집", desc = "코인 {target}개 수집", targets = { 30, 50, 100 }, reward = 40 },
-		{ id = "score_reach", name = "목표 점수", desc = "점수 {target}점 달성", targets = { 500, 1000, 2000 }, reward = 50 },
-		{ id = "near_miss", name = "니어미스", desc = "니어미스 {target}회 달성", targets = { 3, 5 }, reward = 35 },
-		{ id = "combo_reach", name = "콤보 달성", desc = "{target}콤보 달성", targets = { 10, 20 }, reward = 40 },
+		{
+			id = "play_games",
+			name = "게임 플레이",
+			desc = "게임 {target}회 플레이",
+			targets = { 3, 5 },
+			reward = 30,
+		},
+		{
+			id = "collect_coins",
+			name = "코인 수집",
+			desc = "코인 {target}개 수집",
+			targets = { 30, 50, 100 },
+			reward = 40,
+		},
+		{
+			id = "score_reach",
+			name = "목표 점수",
+			desc = "점수 {target}점 달성",
+			targets = { 500, 1000, 2000 },
+			reward = 50,
+		},
+		{
+			id = "near_miss",
+			name = "니어미스",
+			desc = "니어미스 {target}회 달성",
+			targets = { 3, 5 },
+			reward = 35,
+		},
+		{
+			id = "combo_reach",
+			name = "콤보 달성",
+			desc = "{target}콤보 달성",
+			targets = { 10, 20 },
+			reward = 40,
+		},
 		{ id = "distance_run", name = "달리기", desc = "{target}m 달리기", targets = { 500, 1000 }, reward = 35 },
 	},
 }
@@ -504,26 +631,154 @@ GameConstants.ACHIEVEMENTS = {
 	-- { id, name, desc, condition, target, rewardGems, rewardXP }
 	LIST = {
 		-- 게임 시작
-		{ id = "first_game", name = "첫 발걸음", desc = "첫 게임 플레이!", target = 1, condition = "games_played", rewardGems = 5, rewardXP = 50 },
-		{ id = "play_10", name = "단골 러너", desc = "10회 게임 플레이", target = 10, condition = "games_played", rewardGems = 10, rewardXP = 100 },
-		{ id = "play_50", name = "마라톤 러너", desc = "50회 게임 플레이", target = 50, condition = "games_played", rewardGems = 20, rewardXP = 200 },
-		{ id = "play_100", name = "전설의 러너", desc = "100회 게임 플레이", target = 100, condition = "games_played", rewardGems = 50, rewardXP = 500 },
+		{
+			id = "first_game",
+			name = "첫 발걸음",
+			desc = "첫 게임 플레이!",
+			target = 1,
+			condition = "games_played",
+			rewardGems = 5,
+			rewardXP = 50,
+		},
+		{
+			id = "play_10",
+			name = "단골 러너",
+			desc = "10회 게임 플레이",
+			target = 10,
+			condition = "games_played",
+			rewardGems = 10,
+			rewardXP = 100,
+		},
+		{
+			id = "play_50",
+			name = "마라톤 러너",
+			desc = "50회 게임 플레이",
+			target = 50,
+			condition = "games_played",
+			rewardGems = 20,
+			rewardXP = 200,
+		},
+		{
+			id = "play_100",
+			name = "전설의 러너",
+			desc = "100회 게임 플레이",
+			target = 100,
+			condition = "games_played",
+			rewardGems = 50,
+			rewardXP = 500,
+		},
 		-- 점수
-		{ id = "score_500", name = "워밍업", desc = "500점 달성", target = 500, condition = "high_score", rewardGems = 5, rewardXP = 50 },
-		{ id = "score_1000", name = "실력자", desc = "1000점 달성", target = 1000, condition = "high_score", rewardGems = 10, rewardXP = 100 },
-		{ id = "score_5000", name = "고수", desc = "5000점 달성", target = 5000, condition = "high_score", rewardGems = 25, rewardXP = 250 },
-		{ id = "score_10000", name = "챔피언", desc = "10000점 달성", target = 10000, condition = "high_score", rewardGems = 50, rewardXP = 500 },
+		{
+			id = "score_500",
+			name = "워밍업",
+			desc = "500점 달성",
+			target = 500,
+			condition = "high_score",
+			rewardGems = 5,
+			rewardXP = 50,
+		},
+		{
+			id = "score_1000",
+			name = "실력자",
+			desc = "1000점 달성",
+			target = 1000,
+			condition = "high_score",
+			rewardGems = 10,
+			rewardXP = 100,
+		},
+		{
+			id = "score_5000",
+			name = "고수",
+			desc = "5000점 달성",
+			target = 5000,
+			condition = "high_score",
+			rewardGems = 25,
+			rewardXP = 250,
+		},
+		{
+			id = "score_10000",
+			name = "챔피언",
+			desc = "10000점 달성",
+			target = 10000,
+			condition = "high_score",
+			rewardGems = 50,
+			rewardXP = 500,
+		},
 		-- 코인
-		{ id = "coins_100", name = "동전 모으기", desc = "누적 100코인 수집", target = 100, condition = "total_coins", rewardGems = 5, rewardXP = 50 },
-		{ id = "coins_1000", name = "부자 러너", desc = "누적 1000코인 수집", target = 1000, condition = "total_coins", rewardGems = 15, rewardXP = 150 },
-		{ id = "coins_5000", name = "코인 왕", desc = "누적 5000코인 수집", target = 5000, condition = "total_coins", rewardGems = 30, rewardXP = 300 },
+		{
+			id = "coins_100",
+			name = "동전 모으기",
+			desc = "누적 100코인 수집",
+			target = 100,
+			condition = "total_coins",
+			rewardGems = 5,
+			rewardXP = 50,
+		},
+		{
+			id = "coins_1000",
+			name = "부자 러너",
+			desc = "누적 1000코인 수집",
+			target = 1000,
+			condition = "total_coins",
+			rewardGems = 15,
+			rewardXP = 150,
+		},
+		{
+			id = "coins_5000",
+			name = "코인 왕",
+			desc = "누적 5000코인 수집",
+			target = 5000,
+			condition = "total_coins",
+			rewardGems = 30,
+			rewardXP = 300,
+		},
 		-- 거리
-		{ id = "dist_1000", name = "1km 러너", desc = "누적 1000m 달리기", target = 1000, condition = "total_distance", rewardGems = 5, rewardXP = 50 },
-		{ id = "dist_10000", name = "10km 러너", desc = "누적 10000m 달리기", target = 10000, condition = "total_distance", rewardGems = 20, rewardXP = 200 },
+		{
+			id = "dist_1000",
+			name = "1km 러너",
+			desc = "누적 1000m 달리기",
+			target = 1000,
+			condition = "total_distance",
+			rewardGems = 5,
+			rewardXP = 50,
+		},
+		{
+			id = "dist_10000",
+			name = "10km 러너",
+			desc = "누적 10000m 달리기",
+			target = 10000,
+			condition = "total_distance",
+			rewardGems = 20,
+			rewardXP = 200,
+		},
 		-- 레벨
-		{ id = "level_5", name = "성장중", desc = "레벨 5 달성", target = 5, condition = "level", rewardGems = 10, rewardXP = 0 },
-		{ id = "level_10", name = "중급 러너", desc = "레벨 10 달성", target = 10, condition = "level", rewardGems = 25, rewardXP = 0 },
-		{ id = "level_20", name = "만렙 러너", desc = "레벨 20 달성", target = 20, condition = "level", rewardGems = 100, rewardXP = 0 },
+		{
+			id = "level_5",
+			name = "성장중",
+			desc = "레벨 5 달성",
+			target = 5,
+			condition = "level",
+			rewardGems = 10,
+			rewardXP = 0,
+		},
+		{
+			id = "level_10",
+			name = "중급 러너",
+			desc = "레벨 10 달성",
+			target = 10,
+			condition = "level",
+			rewardGems = 25,
+			rewardXP = 0,
+		},
+		{
+			id = "level_20",
+			name = "만렙 러너",
+			desc = "레벨 20 달성",
+			target = 20,
+			condition = "level",
+			rewardGems = 100,
+			rewardXP = 0,
+		},
 	},
 }
 

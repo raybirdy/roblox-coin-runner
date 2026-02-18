@@ -92,68 +92,153 @@ function LobbyService:_createFloor()
 	path.Parent = lobbyFolder
 end
 
--- 게임 시작 포탈 생성
+-- 게임 시작 포탈 생성 (대형 + 고가시성)
 function LobbyService:_createPortal()
 	if not lobbyFolder then
 		return
 	end
 
-	-- 포탈 프레임 (아치형)
+	local portalPos = GameConstants.LOBBY.PORTAL_POSITION
+	local portalSize = GameConstants.LOBBY.PORTAL_SIZE
+
+	-- 포탈 기둥 (왼쪽)
+	local pillarL = Instance.new("Part")
+	pillarL.Name = "PortalPillarL"
+	pillarL.Size = Vector3.new(2, portalSize.Y + 4, 2)
+	pillarL.Position = portalPos + Vector3.new(0, (portalSize.Y + 4) / 2 - 2, portalSize.Z / 2 + 1)
+	pillarL.Anchored = true
+	pillarL.CanCollide = true
+	pillarL.Color = Color3.fromRGB(40, 40, 50)
+	pillarL.Material = Enum.Material.Metal
+	pillarL.Parent = lobbyFolder
+
+	-- 포탈 기둥 (오른쪽)
+	local pillarR = Instance.new("Part")
+	pillarR.Name = "PortalPillarR"
+	pillarR.Size = Vector3.new(2, portalSize.Y + 4, 2)
+	pillarR.Position = portalPos + Vector3.new(0, (portalSize.Y + 4) / 2 - 2, -portalSize.Z / 2 - 1)
+	pillarR.Anchored = true
+	pillarR.CanCollide = true
+	pillarR.Color = Color3.fromRGB(40, 40, 50)
+	pillarR.Material = Enum.Material.Metal
+	pillarR.Parent = lobbyFolder
+
+	-- 포탈 아치 (상단 연결)
+	local arch = Instance.new("Part")
+	arch.Name = "PortalArch"
+	arch.Size = Vector3.new(2, 2, portalSize.Z + 4)
+	arch.Position = portalPos + Vector3.new(0, portalSize.Y + 2, 0)
+	arch.Anchored = true
+	arch.CanCollide = false
+	arch.Color = Color3.fromRGB(40, 40, 50)
+	arch.Material = Enum.Material.Metal
+	arch.Parent = lobbyFolder
+
+	-- 포탈 프레임 (에너지 필드)
 	local portalFrame = Instance.new("Part")
 	portalFrame.Name = "PortalFrame"
-	portalFrame.Size = Vector3.new(
-		GameConstants.LOBBY.PORTAL_SIZE.X,
-		GameConstants.LOBBY.PORTAL_SIZE.Y + 2,
-		GameConstants.LOBBY.PORTAL_SIZE.Z + 2
-	)
-	portalFrame.Position = GameConstants.LOBBY.PORTAL_POSITION
+	portalFrame.Size = Vector3.new(portalSize.X, portalSize.Y + 2, portalSize.Z + 2)
+	portalFrame.Position = portalPos + Vector3.new(0, portalSize.Y / 2, 0)
 	portalFrame.Anchored = true
 	portalFrame.CanCollide = false
-	portalFrame.Color = Color3.fromRGB(0, 200, 0) -- 초록색
+	portalFrame.Color = Color3.fromRGB(0, 255, 100)
 	portalFrame.Material = Enum.Material.Neon
-	portalFrame.Transparency = 0.3
+	portalFrame.Transparency = 0.4
 	portalFrame.Parent = lobbyFolder
 
 	-- 포탈 터치 영역 (투명)
 	local portalTrigger = Instance.new("Part")
 	portalTrigger.Name = "PortalTrigger"
-	portalTrigger.Size = GameConstants.LOBBY.PORTAL_SIZE
-	portalTrigger.Position = GameConstants.LOBBY.PORTAL_POSITION
+	portalTrigger.Size = portalSize
+	portalTrigger.Position = portalPos
 	portalTrigger.Anchored = true
 	portalTrigger.CanCollide = false
 	portalTrigger.Transparency = 1
 	portalTrigger.Parent = lobbyFolder
 
-	-- 포탈 파티클 효과
+	-- 기둥 위 보석 장식 (왼쪽)
+	local gemL = Instance.new("Part")
+	gemL.Name = "PortalGemL"
+	gemL.Size = Vector3.new(1.5, 1.5, 1.5)
+	gemL.Position = pillarL.Position + Vector3.new(0, (portalSize.Y + 4) / 2 + 1, 0)
+	gemL.Anchored = true
+	gemL.CanCollide = false
+	gemL.Color = Color3.fromRGB(0, 255, 100)
+	gemL.Material = Enum.Material.Neon
+	gemL.Shape = Enum.PartType.Ball
+	gemL.Parent = lobbyFolder
+
+	-- 기둥 위 보석 장식 (오른쪽)
+	local gemR = Instance.new("Part")
+	gemR.Name = "PortalGemR"
+	gemR.Size = Vector3.new(1.5, 1.5, 1.5)
+	gemR.Position = pillarR.Position + Vector3.new(0, (portalSize.Y + 4) / 2 + 1, 0)
+	gemR.Anchored = true
+	gemR.CanCollide = false
+	gemR.Color = Color3.fromRGB(0, 255, 100)
+	gemR.Material = Enum.Material.Neon
+	gemR.Shape = Enum.PartType.Ball
+	gemR.Parent = lobbyFolder
+
+	-- 포탈 파티클 효과 (더 많은 파티클)
 	local particles = Instance.new("ParticleEmitter")
 	particles.Name = "PortalParticles"
-	particles.Color = ColorSequence.new(Color3.fromRGB(0, 255, 100))
+	particles.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 100)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(100, 255, 200)),
+	})
 	particles.Size = NumberSequence.new({
-		NumberSequenceKeypoint.new(0, 0.5),
+		NumberSequenceKeypoint.new(0, 0.8),
 		NumberSequenceKeypoint.new(1, 0),
 	})
-	particles.Lifetime = NumberRange.new(1, 2)
-	particles.Rate = 20
-	particles.Speed = NumberRange.new(2, 5)
+	particles.Lifetime = NumberRange.new(1, 2.5)
+	particles.Rate = 40
+	particles.Speed = NumberRange.new(3, 8)
 	particles.SpreadAngle = Vector2.new(180, 180)
 	particles.Parent = portalFrame
 
-	-- 포탈 텍스트 간판 (SurfaceGui로 3D 공간에 표시)
+	-- 바닥 화살표 (포탈 방향 안내)
+	for i = 1, 4 do
+		local arrow = Instance.new("Part")
+		arrow.Name = `PortalArrow{i}`
+		arrow.Size = Vector3.new(0.2, 3, 5)
+		arrow.Position = portalPos + Vector3.new(-6 * i, 0.2, 0)
+		arrow.Anchored = true
+		arrow.CanCollide = false
+		arrow.Color = Color3.fromRGB(0, 200, 80)
+		arrow.Material = Enum.Material.Neon
+		arrow.Transparency = 0.3 + (i * 0.1)
+		arrow.Parent = lobbyFolder
+	end
+
+	-- 바닥 글로우 (포탈 앞)
+	local groundGlow = Instance.new("Part")
+	groundGlow.Name = "PortalGroundGlow"
+	groundGlow.Size = Vector3.new(8, 0.1, portalSize.Z + 6)
+	groundGlow.Position = portalPos + Vector3.new(-4, 0.15, 0)
+	groundGlow.Anchored = true
+	groundGlow.CanCollide = false
+	groundGlow.Color = Color3.fromRGB(0, 255, 100)
+	groundGlow.Material = Enum.Material.Neon
+	groundGlow.Transparency = 0.7
+	groundGlow.Parent = lobbyFolder
+
+	-- 포탈 텍스트 간판 (더 크게)
 	local signPart = Instance.new("Part")
 	signPart.Name = "PortalSign"
-	signPart.Size = Vector3.new(0.3, 2, 8)
-	signPart.Position = GameConstants.LOBBY.PORTAL_POSITION + Vector3.new(-3, 7, 0)
+	signPart.Size = Vector3.new(0.3, 3, 12)
+	signPart.Position = portalPos + Vector3.new(-3, portalSize.Y + 5, 0)
 	signPart.Color = Color3.fromRGB(20, 40, 20)
 	signPart.Material = Enum.Material.SmoothPlastic
 	signPart.CanCollide = false
 	signPart.Anchored = true
 	signPart.Parent = lobbyFolder
 
-	-- 간판 테두리 (초록 네온)
+	-- 간판 테두리
 	local signBorder = Instance.new("Part")
 	signBorder.Name = "PortalSignBorder"
-	signBorder.Size = Vector3.new(0.1, 2.2, 8.2)
-	signBorder.Position = GameConstants.LOBBY.PORTAL_POSITION + Vector3.new(-3.15, 7, 0)
+	signBorder.Size = Vector3.new(0.1, 3.4, 12.4)
+	signBorder.Position = portalPos + Vector3.new(-3.15, portalSize.Y + 5, 0)
 	signBorder.Color = Color3.fromRGB(0, 200, 80)
 	signBorder.Material = Enum.Material.SmoothPlastic
 	signBorder.CanCollide = false
@@ -162,8 +247,8 @@ function LobbyService:_createPortal()
 
 	local surfaceGui = Instance.new("SurfaceGui")
 	surfaceGui.Name = "PortalGui"
-	surfaceGui.Face = Enum.NormalId.Left -- 플레이어 방향(-X)을 향함
-	surfaceGui.CanvasSize = Vector2.new(300, 75)
+	surfaceGui.Face = Enum.NormalId.Left
+	surfaceGui.CanvasSize = Vector2.new(400, 100)
 	surfaceGui.Parent = signPart
 
 	local textLabel = Instance.new("TextLabel")
@@ -171,13 +256,23 @@ function LobbyService:_createPortal()
 	textLabel.BackgroundTransparency = 1
 	textLabel.TextColor3 = Color3.fromRGB(0, 255, 100)
 	textLabel.TextScaled = true
-	textLabel.Font = Enum.Font.GothamBold
-	textLabel.Text = "ENTER TO PLAY"
+	textLabel.Font = Enum.Font.GothamBlack
+	textLabel.Text = "▶ PLAY ▶"
 	textLabel.TextStrokeTransparency = 0
 	textLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
 	textLabel.Parent = surfaceGui
 
-	-- 간판 애니메이션 (네온 테두리 펄스)
+	-- 포탈 SpotLight
+	local spotlight = Instance.new("SpotLight")
+	spotlight.Name = "PortalSpotlight"
+	spotlight.Brightness = 3
+	spotlight.Range = 30
+	spotlight.Angle = 60
+	spotlight.Color = Color3.fromRGB(0, 255, 100)
+	spotlight.Face = Enum.NormalId.Bottom
+	spotlight.Parent = arch
+
+	-- 간판 테두리 펄스 애니메이션
 	task.spawn(function()
 		while signBorder and signBorder.Parent do
 			local tween =
@@ -195,6 +290,31 @@ function LobbyService:_createPortal()
 				TweenService:Create(signBorder, TweenInfo.new(0.8, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
 					Transparency = 0,
 				})
+			tween2:Play()
+			tween2.Completed:Wait()
+		end
+	end)
+
+	-- 포탈 에너지 필드 펄스
+	task.spawn(function()
+		while portalFrame and portalFrame.Parent do
+			local tween = TweenService:Create(
+				portalFrame,
+				TweenInfo.new(1.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+				{ Transparency = 0.6 }
+			)
+			tween:Play()
+			tween.Completed:Wait()
+
+			if not portalFrame or not portalFrame.Parent then
+				break
+			end
+
+			local tween2 = TweenService:Create(
+				portalFrame,
+				TweenInfo.new(1.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+				{ Transparency = 0.3 }
+			)
 			tween2:Play()
 			tween2.Completed:Wait()
 		end
@@ -248,127 +368,213 @@ function LobbyService:_createTitle()
 	neonBorder.Parent = lobbyFolder
 end
 
--- 상점 부스 생성 (개선된 가시성)
+-- 상점 부스 생성 (대형 + 화려한 연출)
 function LobbyService:_createShop()
 	if not lobbyFolder then
 		return
 	end
 
-	-- 상점 부스 (더 밝은 보라색)
+	local shopPos = GameConstants.LOBBY.SHOP_POSITION
+
+	-- 상점 플랫폼 (바닥 스테이지)
+	local platform = Instance.new("Part")
+	platform.Name = "ShopPlatform"
+	platform.Size = Vector3.new(26, 1, 18)
+	platform.Position = shopPos + Vector3.new(0, -4.5, 0)
+	platform.Anchored = true
+	platform.CanCollide = true
+	platform.Color = Color3.fromRGB(255, 200, 50)
+	platform.Material = Enum.Material.Marble
+	platform.Parent = lobbyFolder
+
+	-- 상점 부스 (큰 보라색 건물)
 	local shopBooth = Instance.new("Part")
 	shopBooth.Name = "ShopBooth"
-	shopBooth.Size = Vector3.new(15, 10, 8)
-	shopBooth.Position = GameConstants.LOBBY.SHOP_POSITION
+	shopBooth.Size = Vector3.new(20, 14, 12)
+	shopBooth.Position = shopPos
 	shopBooth.Anchored = true
 	shopBooth.CanCollide = true
-	shopBooth.Color = Color3.fromRGB(180, 80, 200) -- 더 밝은 보라색
+	shopBooth.Color = Color3.fromRGB(160, 50, 200)
 	shopBooth.Material = Enum.Material.SmoothPlastic
 	shopBooth.Parent = lobbyFolder
 
-	-- 상점 지붕 (네온 효과)
+	-- 상점 지붕 (화려한 금색)
 	local shopRoof = Instance.new("Part")
 	shopRoof.Name = "ShopRoof"
-	shopRoof.Size = Vector3.new(17, 1, 10)
-	shopRoof.Position = GameConstants.LOBBY.SHOP_POSITION + Vector3.new(0, 5.5, 0)
+	shopRoof.Size = Vector3.new(24, 1.5, 16)
+	shopRoof.Position = shopPos + Vector3.new(0, 7.75, 0)
 	shopRoof.Anchored = true
 	shopRoof.CanCollide = false
-	shopRoof.Color = Color3.fromRGB(200, 120, 200)
+	shopRoof.Color = Color3.fromRGB(255, 200, 50)
 	shopRoof.Material = Enum.Material.SmoothPlastic
 	shopRoof.Parent = lobbyFolder
 
-	-- 상점 테두리 (금색 네온)
+	-- 상점 테두리 (금색 프레임)
 	local shopBorder = Instance.new("Part")
 	shopBorder.Name = "ShopBorder"
-	shopBorder.Size = Vector3.new(16, 10.5, 8.5)
-	shopBorder.Position = GameConstants.LOBBY.SHOP_POSITION
+	shopBorder.Size = Vector3.new(21, 14.5, 12.5)
+	shopBorder.Position = shopPos
 	shopBorder.Anchored = true
 	shopBorder.CanCollide = false
-	shopBorder.Color = Color3.fromRGB(200, 170, 0)
+	shopBorder.Color = Color3.fromRGB(255, 200, 0)
 	shopBorder.Material = Enum.Material.SmoothPlastic
 	shopBorder.Transparency = 0.7
 	shopBorder.Parent = lobbyFolder
 
-	-- 상점 터치 영역 (투명)
+	-- 상점 터치 영역 (투명, 넓은 범위)
 	local shopTrigger = Instance.new("Part")
 	shopTrigger.Name = "ShopTrigger"
-	shopTrigger.Size = Vector3.new(18, 12, 12)
-	shopTrigger.Position = GameConstants.LOBBY.SHOP_POSITION
+	shopTrigger.Size = Vector3.new(26, 16, 18)
+	shopTrigger.Position = shopPos
 	shopTrigger.Anchored = true
 	shopTrigger.CanCollide = false
 	shopTrigger.Transparency = 1
 	shopTrigger.Parent = lobbyFolder
 
-	-- 상점 간판 배경 (검은색)
+	-- 상점 간판 배경 (크고 눈에 띄게)
 	local shopSignBg = Instance.new("Part")
 	shopSignBg.Name = "ShopSignBg"
-	shopSignBg.Size = Vector3.new(14, 5, 0.5)
-	shopSignBg.Position = GameConstants.LOBBY.SHOP_POSITION + Vector3.new(0, 9, -5)
+	shopSignBg.Size = Vector3.new(20, 6, 0.5)
+	shopSignBg.Position = shopPos + Vector3.new(0, 12, -7)
 	shopSignBg.Anchored = true
 	shopSignBg.CanCollide = false
-	shopSignBg.Color = Color3.fromRGB(20, 20, 30)
+	shopSignBg.Color = Color3.fromRGB(20, 10, 30)
 	shopSignBg.Material = Enum.Material.SmoothPlastic
 	shopSignBg.Parent = lobbyFolder
 
-	-- 상점 간판 테두리 (금색 네온)
+	-- 상점 간판 테두리 (금색)
 	local shopSignBorder = Instance.new("Part")
 	shopSignBorder.Name = "ShopSignBorder"
-	shopSignBorder.Size = Vector3.new(14.5, 5.5, 0.3)
-	shopSignBorder.Position = GameConstants.LOBBY.SHOP_POSITION + Vector3.new(0, 9, -5.2)
+	shopSignBorder.Size = Vector3.new(20.5, 6.5, 0.3)
+	shopSignBorder.Position = shopPos + Vector3.new(0, 12, -7.2)
 	shopSignBorder.Anchored = true
 	shopSignBorder.CanCollide = false
-	shopSignBorder.Color = Color3.fromRGB(200, 170, 0)
+	shopSignBorder.Color = Color3.fromRGB(255, 200, 0)
 	shopSignBorder.Material = Enum.Material.SmoothPlastic
 	shopSignBorder.Parent = lobbyFolder
 
-	-- 상점 SurfaceGui (물리적 간판에 표시)
+	-- 상점 SurfaceGui
 	local surfaceGui = Instance.new("SurfaceGui")
 	surfaceGui.Name = "ShopGui"
-	surfaceGui.Face = Enum.NormalId.Front -- 플레이어 방향(로비 중앙)을 향함
-	surfaceGui.CanvasSize = Vector2.new(280, 100)
+	surfaceGui.Face = Enum.NormalId.Front
+	surfaceGui.CanvasSize = Vector2.new(400, 120)
 	surfaceGui.Parent = shopSignBg
 
-	-- 상점 텍스트 (흰색 + 금색 테두리로 잘 보이게)
+	-- 상점 텍스트 (금색 + 큰 사이즈)
 	local shopLabel = Instance.new("TextLabel")
-	shopLabel.Size = UDim2.new(1, 0, 0.65, 0)
+	shopLabel.Size = UDim2.new(1, 0, 0.6, 0)
 	shopLabel.Position = UDim2.new(0, 0, 0, 0)
 	shopLabel.BackgroundTransparency = 1
-	shopLabel.TextColor3 = Color3.fromRGB(255, 255, 255) -- 흰색 텍스트
+	shopLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
 	shopLabel.TextScaled = true
 	shopLabel.Font = Enum.Font.GothamBlack
-	shopLabel.Text = "SHOP"
+	shopLabel.Text = "★ SHOP ★"
 	shopLabel.TextStrokeTransparency = 0
-	shopLabel.TextStrokeColor3 = Color3.fromRGB(255, 180, 0) -- 금색 테두리
+	shopLabel.TextStrokeColor3 = Color3.fromRGB(150, 100, 0)
 	shopLabel.Parent = surfaceGui
 
 	-- 안내 텍스트
 	local hintLabel = Instance.new("TextLabel")
-	hintLabel.Size = UDim2.new(1, 0, 0.35, 0)
-	hintLabel.Position = UDim2.new(0, 0, 0.65, 0)
+	hintLabel.Size = UDim2.new(1, 0, 0.4, 0)
+	hintLabel.Position = UDim2.new(0, 0, 0.6, 0)
 	hintLabel.BackgroundTransparency = 1
-	hintLabel.TextColor3 = Color3.fromRGB(255, 255, 255) -- 흰색 텍스트
+	hintLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 	hintLabel.TextScaled = true
-	hintLabel.Font = Enum.Font.Gotham
+	hintLabel.Font = Enum.Font.GothamBold
 	hintLabel.Text = "Touch to open"
 	hintLabel.TextStrokeTransparency = 0
-	hintLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0) -- 검정 테두리
+	hintLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
 	hintLabel.Parent = surfaceGui
 
-	-- 상점 파티클 효과
-	local particles = Instance.new("ParticleEmitter")
-	particles.Name = "ShopSparkle"
-	particles.Color = ColorSequence.new(Color3.fromRGB(255, 215, 100))
-	particles.Size = NumberSequence.new({
-		NumberSequenceKeypoint.new(0, 0.3),
+	-- 지붕 파티클 (금빛 스파클)
+	local roofParticles = Instance.new("ParticleEmitter")
+	roofParticles.Name = "ShopSparkle"
+	roofParticles.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 215, 100)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 200)),
+	})
+	roofParticles.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.5),
 		NumberSequenceKeypoint.new(1, 0),
 	})
-	particles.Lifetime = NumberRange.new(1, 2)
-	particles.Rate = 8
-	particles.Speed = NumberRange.new(2, 4)
-	particles.SpreadAngle = Vector2.new(180, 180)
-	particles.Parent = shopRoof
+	roofParticles.Lifetime = NumberRange.new(1.5, 3)
+	roofParticles.Rate = 15
+	roofParticles.Speed = NumberRange.new(2, 6)
+	roofParticles.SpreadAngle = Vector2.new(180, 180)
+	roofParticles.Parent = shopRoof
+
+	-- 상점 앞 회전 코인 (좌)
+	local coinL = Instance.new("Part")
+	coinL.Name = "ShopCoinL"
+	coinL.Size = Vector3.new(4, 4, 0.6)
+	coinL.Position = shopPos + Vector3.new(-12, 3, -7)
+	coinL.Anchored = true
+	coinL.CanCollide = false
+	coinL.Color = Color3.fromRGB(255, 215, 0)
+	coinL.Material = Enum.Material.Neon
+	coinL.Shape = Enum.PartType.Cylinder
+	coinL.Orientation = Vector3.new(0, 0, 90)
+	coinL.Parent = lobbyFolder
+
+	-- 상점 앞 회전 코인 (우)
+	local coinR = Instance.new("Part")
+	coinR.Name = "ShopCoinR"
+	coinR.Size = Vector3.new(4, 4, 0.6)
+	coinR.Position = shopPos + Vector3.new(12, 3, -7)
+	coinR.Anchored = true
+	coinR.CanCollide = false
+	coinR.Color = Color3.fromRGB(255, 215, 0)
+	coinR.Material = Enum.Material.Neon
+	coinR.Shape = Enum.PartType.Cylinder
+	coinR.Orientation = Vector3.new(0, 0, 90)
+	coinR.Parent = lobbyFolder
+
+	-- 코인 회전 애니메이션
+	task.spawn(function()
+		while coinL and coinL.Parent and coinR and coinR.Parent do
+			coinL.CFrame = coinL.CFrame * CFrame.Angles(0, math.rad(2), 0)
+			coinR.CFrame = coinR.CFrame * CFrame.Angles(0, math.rad(2), 0)
+			task.wait(0.02)
+		end
+	end)
+
+	-- 상점 SpotLight (위에서 아래로)
+	local spotlight = Instance.new("SpotLight")
+	spotlight.Name = "ShopSpotlight"
+	spotlight.Brightness = 2
+	spotlight.Range = 25
+	spotlight.Angle = 50
+	spotlight.Color = Color3.fromRGB(255, 200, 100)
+	spotlight.Face = Enum.NormalId.Bottom
+	spotlight.Parent = shopRoof
+
+	-- 간판 테두리 펄스 애니메이션
+	task.spawn(function()
+		while shopSignBorder and shopSignBorder.Parent do
+			local tween = TweenService:Create(
+				shopSignBorder,
+				TweenInfo.new(1, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+				{ Transparency = 0.3 }
+			)
+			tween:Play()
+			tween.Completed:Wait()
+
+			if not shopSignBorder or not shopSignBorder.Parent then
+				break
+			end
+
+			local tween2 = TweenService:Create(
+				shopSignBorder,
+				TweenInfo.new(1, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+				{ Transparency = 0 }
+			)
+			tween2:Play()
+			tween2.Completed:Wait()
+		end
+	end)
 end
 
--- 리더보드 간판 생성
+-- 리더보드 간판 생성 (대형 + 포디움 + 스포트라이트)
 function LobbyService:_createLeaderboard()
 	if not lobbyFolder then
 		return
@@ -376,74 +582,96 @@ function LobbyService:_createLeaderboard()
 
 	local leaderboardPos = GameConstants.LOBBY.LEADERBOARD_POSITION
 
-	-- 리더보드 기둥 (왼쪽)
+	-- 리더보드 플랫폼 (바닥 스테이지)
+	local platform = Instance.new("Part")
+	platform.Name = "LeaderboardPlatform"
+	platform.Size = Vector3.new(22, 1, 14)
+	platform.Position = leaderboardPos + Vector3.new(0, -4.5, 0)
+	platform.Anchored = true
+	platform.CanCollide = true
+	platform.Color = Color3.fromRGB(60, 60, 80)
+	platform.Material = Enum.Material.Marble
+	platform.Parent = lobbyFolder
+
+	-- 리더보드 기둥 (왼쪽 - 더 크게)
 	local pillarLeft = Instance.new("Part")
 	pillarLeft.Name = "LeaderboardPillarL"
-	pillarLeft.Size = Vector3.new(1, 14, 1)
-	pillarLeft.Position = leaderboardPos + Vector3.new(-6, 7, 0)
+	pillarLeft.Size = Vector3.new(1.5, 18, 1.5)
+	pillarLeft.Position = leaderboardPos + Vector3.new(-9, 9, 0)
 	pillarLeft.Anchored = true
 	pillarLeft.CanCollide = true
-	pillarLeft.Color = Color3.fromRGB(50, 50, 60)
+	pillarLeft.Color = Color3.fromRGB(40, 40, 50)
 	pillarLeft.Material = Enum.Material.Metal
 	pillarLeft.Parent = lobbyFolder
 
-	-- 리더보드 기둥 (오른쪽)
+	-- 리더보드 기둥 (오른쪽 - 더 크게)
 	local pillarRight = Instance.new("Part")
 	pillarRight.Name = "LeaderboardPillarR"
-	pillarRight.Size = Vector3.new(1, 14, 1)
-	pillarRight.Position = leaderboardPos + Vector3.new(6, 7, 0)
+	pillarRight.Size = Vector3.new(1.5, 18, 1.5)
+	pillarRight.Position = leaderboardPos + Vector3.new(9, 9, 0)
 	pillarRight.Anchored = true
 	pillarRight.CanCollide = true
-	pillarRight.Color = Color3.fromRGB(50, 50, 60)
+	pillarRight.Color = Color3.fromRGB(40, 40, 50)
 	pillarRight.Material = Enum.Material.Metal
 	pillarRight.Parent = lobbyFolder
 
-	-- 리더보드 배경 (검은색 보드)
+	-- 리더보드 배경 (더 큰 보드)
 	local boardBackground = Instance.new("Part")
 	boardBackground.Name = "LeaderboardBackground"
-	boardBackground.Size = Vector3.new(12, 12, 0.5)
-	boardBackground.Position = leaderboardPos + Vector3.new(0, 8, 0)
+	boardBackground.Size = Vector3.new(16, 16, 0.5)
+	boardBackground.Position = leaderboardPos + Vector3.new(0, 10, 0)
 	boardBackground.Anchored = true
 	boardBackground.CanCollide = false
-	boardBackground.Color = Color3.fromRGB(20, 20, 30)
+	boardBackground.Color = Color3.fromRGB(15, 15, 25)
 	boardBackground.Material = Enum.Material.SmoothPlastic
 	boardBackground.Parent = lobbyFolder
 
-	-- 리더보드 테두리 (금색 네온)
+	-- 리더보드 테두리 (금색)
 	local boardBorder = Instance.new("Part")
 	boardBorder.Name = "LeaderboardBorder"
-	boardBorder.Size = Vector3.new(12.5, 12.5, 0.3)
-	boardBorder.Position = leaderboardPos + Vector3.new(0, 8, -0.2)
+	boardBorder.Size = Vector3.new(16.5, 16.5, 0.3)
+	boardBorder.Position = leaderboardPos + Vector3.new(0, 10, -0.2)
 	boardBorder.Anchored = true
 	boardBorder.CanCollide = false
-	boardBorder.Color = Color3.fromRGB(200, 170, 0)
+	boardBorder.Color = Color3.fromRGB(255, 200, 0)
 	boardBorder.Material = Enum.Material.SmoothPlastic
 	boardBorder.Parent = lobbyFolder
 
-	-- SurfaceGui로 리더보드 내용 표시
+	-- SurfaceGui로 리더보드 내용 표시 (더 큰 캔버스)
 	local surfaceGui = Instance.new("SurfaceGui")
 	surfaceGui.Name = "LeaderboardGui"
 	surfaceGui.Face = Enum.NormalId.Front
-	surfaceGui.CanvasSize = Vector2.new(600, 600)
+	surfaceGui.CanvasSize = Vector2.new(800, 800)
 	surfaceGui.Parent = boardBackground
 
-	-- 타이틀
+	-- 타이틀 (왕관 이모지 포함)
 	local titleLabel = Instance.new("TextLabel")
 	titleLabel.Name = "Title"
-	titleLabel.Size = UDim2.new(1, 0, 0, 70)
+	titleLabel.Size = UDim2.new(1, 0, 0, 90)
 	titleLabel.Position = UDim2.new(0, 0, 0, 10)
 	titleLabel.BackgroundTransparency = 1
 	titleLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
-	titleLabel.TextSize = 50
+	titleLabel.TextSize = 60
 	titleLabel.Font = Enum.Font.GothamBlack
 	titleLabel.Text = "LEADERBOARD"
+	titleLabel.TextStrokeTransparency = 0
+	titleLabel.TextStrokeColor3 = Color3.fromRGB(100, 80, 0)
 	titleLabel.Parent = surfaceGui
+
+	-- 구분선
+	local divider = Instance.new("Frame")
+	divider.Name = "Divider"
+	divider.Size = UDim2.new(0.9, 0, 0, 3)
+	divider.Position = UDim2.new(0.05, 0, 0, 105)
+	divider.BackgroundColor3 = Color3.fromRGB(255, 215, 0)
+	divider.BorderSizePixel = 0
+	divider.Parent = surfaceGui
 
 	-- 순위 컨테이너
 	local rankContainer = Instance.new("Frame")
 	rankContainer.Name = "RankContainer"
-	rankContainer.Size = UDim2.new(1, -40, 0, 480)
-	rankContainer.Position = UDim2.new(0, 20, 0, 85)
+	rankContainer.Size = UDim2.new(1, -40, 0, 660)
+	rankContainer.Position = UDim2.new(0, 20, 0, 115)
 	rankContainer.BackgroundTransparency = 1
 	rankContainer.Parent = surfaceGui
 
@@ -451,40 +679,54 @@ function LobbyService:_createLeaderboard()
 	for i = 1, 10 do
 		local rankFrame = Instance.new("Frame")
 		rankFrame.Name = `Rank{i}`
-		rankFrame.Size = UDim2.new(1, 0, 0, 45)
-		rankFrame.Position = UDim2.new(0, 0, 0, (i - 1) * 48)
-		rankFrame.BackgroundTransparency = 1
+		rankFrame.Size = UDim2.new(1, 0, 0, 60)
+		rankFrame.Position = UDim2.new(0, 0, 0, (i - 1) * 65)
+		rankFrame.BackgroundTransparency = if i <= 3 then 0.85 else 1
+		rankFrame.BackgroundColor3 = if i == 1
+			then Color3.fromRGB(255, 215, 0)
+			elseif i == 2 then Color3.fromRGB(192, 192, 192)
+			elseif i == 3 then Color3.fromRGB(205, 127, 50)
+			else Color3.fromRGB(255, 255, 255)
 		rankFrame.Parent = rankContainer
+
+		if i <= 3 then
+			local corner = Instance.new("UICorner")
+			corner.CornerRadius = UDim.new(0, 8)
+			corner.Parent = rankFrame
+		end
 
 		-- 순위별 색상
 		local rankColors = {
 			[1] = Color3.fromRGB(255, 215, 0), -- 금
-			[2] = Color3.fromRGB(192, 192, 192), -- 은
-			[3] = Color3.fromRGB(205, 127, 50), -- 동
+			[2] = Color3.fromRGB(200, 200, 210), -- 은
+			[3] = Color3.fromRGB(205, 140, 70), -- 동
 		}
 		local textColor = rankColors[i] or Color3.fromRGB(255, 255, 255)
+
+		-- 순위 아이콘 (1~3위는 메달 표시)
+		local rankIcons = { [1] = "1st", [2] = "2nd", [3] = "3rd" }
 
 		-- 순위 번호
 		local rankLabel = Instance.new("TextLabel")
 		rankLabel.Name = "RankNum"
-		rankLabel.Size = UDim2.new(0, 60, 1, 0)
-		rankLabel.Position = UDim2.new(0, 0, 0, 0)
+		rankLabel.Size = UDim2.new(0, 80, 1, 0)
+		rankLabel.Position = UDim2.new(0, 5, 0, 0)
 		rankLabel.BackgroundTransparency = 1
 		rankLabel.TextColor3 = textColor
-		rankLabel.TextSize = 32
-		rankLabel.Font = Enum.Font.GothamBold
-		rankLabel.Text = `#{i}`
+		rankLabel.TextSize = 36
+		rankLabel.Font = Enum.Font.GothamBlack
+		rankLabel.Text = rankIcons[i] or `#{i}`
 		rankLabel.TextXAlignment = Enum.TextXAlignment.Left
 		rankLabel.Parent = rankFrame
 
 		-- 이름
 		local nameLabel = Instance.new("TextLabel")
 		nameLabel.Name = "PlayerName"
-		nameLabel.Size = UDim2.new(0, 280, 1, 0)
-		nameLabel.Position = UDim2.new(0, 70, 0, 0)
+		nameLabel.Size = UDim2.new(0, 380, 1, 0)
+		nameLabel.Position = UDim2.new(0, 95, 0, 0)
 		nameLabel.BackgroundTransparency = 1
 		nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-		nameLabel.TextSize = 28
+		nameLabel.TextSize = 32
 		nameLabel.Font = Enum.Font.GothamBold
 		nameLabel.Text = "---"
 		nameLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -494,11 +736,11 @@ function LobbyService:_createLeaderboard()
 		-- 점수
 		local scoreLabel = Instance.new("TextLabel")
 		scoreLabel.Name = "Score"
-		scoreLabel.Size = UDim2.new(0, 150, 1, 0)
-		scoreLabel.Position = UDim2.new(1, -160, 0, 0)
+		scoreLabel.Size = UDim2.new(0, 200, 1, 0)
+		scoreLabel.Position = UDim2.new(1, -210, 0, 0)
 		scoreLabel.BackgroundTransparency = 1
 		scoreLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
-		scoreLabel.TextSize = 28
+		scoreLabel.TextSize = 32
 		scoreLabel.Font = Enum.Font.GothamBold
 		scoreLabel.Text = "0"
 		scoreLabel.TextXAlignment = Enum.TextXAlignment.Right
@@ -508,21 +750,96 @@ function LobbyService:_createLeaderboard()
 	-- ClickDetector (클라이언트에서 상세 리더보드 팝업 열기)
 	local clickDetector = Instance.new("ClickDetector")
 	clickDetector.Name = "LeaderboardClick"
-	clickDetector.MaxActivationDistance = 15
+	clickDetector.MaxActivationDistance = 20
 	clickDetector.Parent = boardBackground
 
-	-- 트로피 장식 (상단)
+	-- 트로피 장식 (상단 - 더 크고 화려하게)
 	local trophy = Instance.new("Part")
 	trophy.Name = "Trophy"
-	trophy.Size = Vector3.new(2, 3, 1)
-	trophy.Position = leaderboardPos + Vector3.new(0, 15, -0.5)
+	trophy.Size = Vector3.new(3, 4, 1.5)
+	trophy.Position = leaderboardPos + Vector3.new(0, 19.5, -0.5)
 	trophy.Anchored = true
 	trophy.CanCollide = false
 	trophy.Color = Color3.fromRGB(255, 215, 0)
 	trophy.Material = Enum.Material.Neon
 	trophy.Parent = lobbyFolder
 
-	print("[LobbyService] Leaderboard display created")
+	-- 트로피 파티클
+	local trophyParticles = Instance.new("ParticleEmitter")
+	trophyParticles.Name = "TrophySparkle"
+	trophyParticles.Color = ColorSequence.new(Color3.fromRGB(255, 255, 200))
+	trophyParticles.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.3),
+		NumberSequenceKeypoint.new(1, 0),
+	})
+	trophyParticles.Lifetime = NumberRange.new(0.5, 1.5)
+	trophyParticles.Rate = 10
+	trophyParticles.Speed = NumberRange.new(1, 3)
+	trophyParticles.SpreadAngle = Vector2.new(180, 180)
+	trophyParticles.Parent = trophy
+
+	-- 포디움 (1등, 2등, 3등)
+	local podiumColors = {
+		{ height = 5, color = Color3.fromRGB(255, 215, 0), x = 0 }, -- 1등 (가운데, 가장 높음)
+		{ height = 3.5, color = Color3.fromRGB(192, 192, 192), x = -5 }, -- 2등 (왼쪽)
+		{ height = 2.5, color = Color3.fromRGB(205, 127, 50), x = 5 }, -- 3등 (오른쪽)
+	}
+
+	for rank, data in podiumColors do
+		local podium = Instance.new("Part")
+		podium.Name = `Podium{rank}`
+		podium.Size = Vector3.new(4, data.height, 3)
+		podium.Position = leaderboardPos + Vector3.new(data.x, data.height / 2 - 4.5, 6)
+		podium.Anchored = true
+		podium.CanCollide = true
+		podium.Color = data.color
+		podium.Material = Enum.Material.SmoothPlastic
+		podium.Parent = lobbyFolder
+
+		-- 포디움 숫자
+		local podiumGui = Instance.new("SurfaceGui")
+		podiumGui.Name = `PodiumGui{rank}`
+		podiumGui.Face = Enum.NormalId.Front
+		podiumGui.CanvasSize = Vector2.new(100, 100)
+		podiumGui.Parent = podium
+
+		local podiumLabel = Instance.new("TextLabel")
+		podiumLabel.Size = UDim2.new(1, 0, 1, 0)
+		podiumLabel.BackgroundTransparency = 1
+		podiumLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+		podiumLabel.TextScaled = true
+		podiumLabel.Font = Enum.Font.GothamBlack
+		podiumLabel.Text = tostring(rank)
+		podiumLabel.TextStrokeTransparency = 0
+		podiumLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+		podiumLabel.Parent = podiumGui
+	end
+
+	-- 리더보드 SpotLight
+	local spotlight = Instance.new("SpotLight")
+	spotlight.Name = "LeaderboardSpotlight"
+	spotlight.Brightness = 2
+	spotlight.Range = 25
+	spotlight.Angle = 50
+	spotlight.Color = Color3.fromRGB(255, 230, 150)
+	spotlight.Face = Enum.NormalId.Bottom
+	spotlight.Parent = boardBackground
+
+	-- 별 장식 (보드 양쪽)
+	for _, xOff in { -8.5, 8.5 } do
+		local star = Instance.new("Part")
+		star.Name = "LeaderboardStar"
+		star.Size = Vector3.new(2, 2, 0.5)
+		star.Position = leaderboardPos + Vector3.new(xOff, 18.5, 0)
+		star.Anchored = true
+		star.CanCollide = false
+		star.Color = Color3.fromRGB(255, 215, 0)
+		star.Material = Enum.Material.Neon
+		star.Shape = Enum.PartType.Ball
+		star.Parent = lobbyFolder
+	end
+
+	print("[LobbyService] Leaderboard display created with podium")
 end
 
 -- 리더보드 트리거 가져오기
