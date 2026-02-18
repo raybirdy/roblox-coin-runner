@@ -131,8 +131,8 @@ function ObstacleService:_spawnObstacle(position: Vector3, obstacleType: string)
 		obstacle.Name = "Obstacle_LowWall"
 		obstacle.Size = Vector3.new(2, GameConstants.OBSTACLE.LOW_WALL_HEIGHT, 10) -- 폭×높이×깊이
 		obstacle.Position = position + Vector3.new(0, GameConstants.OBSTACLE.LOW_WALL_HEIGHT / 2, 0)
-		obstacle.Color = Color3.fromRGB(255, 80, 80) -- 빨간색 (점프 = 빨간색)
-		obstacle.Material = Enum.Material.Neon
+		obstacle.Color = Color3.fromRGB(200, 60, 60) -- 빨간색 (점프 = 빨간색)
+		obstacle.Material = Enum.Material.SmoothPlastic
 		obstacle.Transparency = 0.1
 
 		-- 점프 안내 화살표 (↑)
@@ -141,8 +141,8 @@ function ObstacleService:_spawnObstacle(position: Vector3, obstacleType: string)
 			arrow.Name = `JumpArrow_{i}`
 			arrow.Size = Vector3.new(0.3, 1.2, 1.2)
 			arrow.Position = position + Vector3.new(-3 - i * 1.5, 2 + i * 1.2, 0)
-			arrow.Color = Color3.fromRGB(255, 150, 150)
-			arrow.Material = Enum.Material.Neon
+			arrow.Color = Color3.fromRGB(200, 120, 120)
+			arrow.Material = Enum.Material.SmoothPlastic
 			arrow.Transparency = 0.3
 			arrow.CanCollide = false
 			arrow.Anchored = true
@@ -166,8 +166,8 @@ function ObstacleService:_spawnObstacle(position: Vector3, obstacleType: string)
 		signBorder.Name = "JumpSignBorder"
 		signBorder.Size = Vector3.new(0.1, 2.7, 5.2)
 		signBorder.Position = position + Vector3.new(-6.15, 5.5, 0)
-		signBorder.Color = Color3.fromRGB(255, 80, 80)
-		signBorder.Material = Enum.Material.Neon
+		signBorder.Color = Color3.fromRGB(200, 60, 60)
+		signBorder.Material = Enum.Material.SmoothPlastic
 		signBorder.CanCollide = false
 		signBorder.Anchored = true
 		signBorder.Parent = workspace
@@ -199,8 +199,8 @@ function ObstacleService:_spawnObstacle(position: Vector3, obstacleType: string)
 		obstacle.Size = Vector3.new(4, obstacleHeight, 12)
 		-- Y 위치: 터널 높이 위에 장애물 배치
 		obstacle.Position = position + Vector3.new(0, tunnelHeight + obstacleHeight / 2, 0)
-		obstacle.Color = Color3.fromRGB(0, 150, 255) -- 파란색 (슬라이드 = 파란색)
-		obstacle.Material = Enum.Material.Neon
+		obstacle.Color = Color3.fromRGB(0, 120, 200) -- 파란색 (슬라이드 = 파란색)
+		obstacle.Material = Enum.Material.SmoothPlastic
 		obstacle.Transparency = 0.2
 
 		-- ↓↓↓ 아래로 화살표 표시 (슬라이드 안내)
@@ -209,8 +209,8 @@ function ObstacleService:_spawnObstacle(position: Vector3, obstacleType: string)
 			arrow.Name = `SlideArrow_{i}`
 			arrow.Size = Vector3.new(0.3, 1.5, 1.5)
 			arrow.Position = position + Vector3.new(-6 - i * 2, 4 - i * 0.5, 0)
-			arrow.Color = Color3.fromRGB(0, 200, 255)
-			arrow.Material = Enum.Material.Neon
+			arrow.Color = Color3.fromRGB(0, 160, 200)
+			arrow.Material = Enum.Material.SmoothPlastic
 			arrow.Transparency = 0.3
 			arrow.CanCollide = false
 			arrow.Anchored = true
@@ -235,8 +235,8 @@ function ObstacleService:_spawnObstacle(position: Vector3, obstacleType: string)
 		signBorder.Name = "SlideSignBorder"
 		signBorder.Size = Vector3.new(0.1, 2.7, 5.2)
 		signBorder.Position = position + Vector3.new(-10.15, 5, 0)
-		signBorder.Color = Color3.fromRGB(0, 150, 255)
-		signBorder.Material = Enum.Material.Neon
+		signBorder.Color = Color3.fromRGB(0, 120, 200)
+		signBorder.Material = Enum.Material.SmoothPlastic
 		signBorder.CanCollide = false
 		signBorder.Anchored = true
 		signBorder.Parent = workspace
@@ -367,8 +367,8 @@ function ObstacleService:_spawnObstacle(position: Vector3, obstacleType: string)
 		signBorder.Name = "DangerSignBorder"
 		signBorder.Size = Vector3.new(0.1, 2.7, 5.2)
 		signBorder.Position = position + Vector3.new(-gapWidth / 2 - 4.15, 4, 0)
-		signBorder.Color = Color3.fromRGB(255, 150, 0)
-		signBorder.Material = Enum.Material.Neon
+		signBorder.Color = Color3.fromRGB(200, 120, 0)
+		signBorder.Material = Enum.Material.SmoothPlastic
 		signBorder.CanCollide = false
 		signBorder.Anchored = true
 		signBorder.Parent = workspace
