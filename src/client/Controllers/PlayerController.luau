@@ -606,9 +606,16 @@ function PlayerController:_endSlide()
 		rotationLock.Enabled = true
 	end
 
+	-- 자세 복원 (정상 회전으로 되돌리기)
+	local pos = self.humanoidRootPart.Position
+	self.humanoidRootPart.CFrame = CFrame.new(pos.X, pos.Y, GameConstants.PLAYER.Z_POSITION)
+		* CFrame.Angles(0, math.rad(-90), 0)
+
 	-- 바닥에 있으면 Running, 아니면 Falling
 	if self.isGrounded then
 		self.state = "Running"
+		-- 달리기 상태 복원 (Humanoid에게 이동 중임을 알림)
+		self.humanoid:Move(Vector3.new(1, 0, 0), false)
 	else
 		self.state = "Falling"
 	end

@@ -154,8 +154,8 @@ function LobbyService:_createPortal()
 	signBorder.Name = "PortalSignBorder"
 	signBorder.Size = Vector3.new(0.1, 2.2, 8.2)
 	signBorder.Position = GameConstants.LOBBY.PORTAL_POSITION + Vector3.new(-3.15, 7, 0)
-	signBorder.Color = Color3.fromRGB(0, 255, 100)
-	signBorder.Material = Enum.Material.Neon
+	signBorder.Color = Color3.fromRGB(0, 200, 80)
+	signBorder.Material = Enum.Material.SmoothPlastic
 	signBorder.CanCollide = false
 	signBorder.Anchored = true
 	signBorder.Parent = lobbyFolder
@@ -243,8 +243,8 @@ function LobbyService:_createTitle()
 	neonBorder.Position = GameConstants.LOBBY.TITLE_POSITION + Vector3.new(0, 0, -1)
 	neonBorder.Anchored = true
 	neonBorder.CanCollide = false
-	neonBorder.Color = Color3.fromRGB(255, 215, 0)
-	neonBorder.Material = Enum.Material.Neon
+	neonBorder.Color = Color3.fromRGB(200, 170, 0)
+	neonBorder.Material = Enum.Material.SmoothPlastic
 	neonBorder.Parent = lobbyFolder
 end
 
@@ -272,8 +272,8 @@ function LobbyService:_createShop()
 	shopRoof.Position = GameConstants.LOBBY.SHOP_POSITION + Vector3.new(0, 5.5, 0)
 	shopRoof.Anchored = true
 	shopRoof.CanCollide = false
-	shopRoof.Color = Color3.fromRGB(255, 150, 255)
-	shopRoof.Material = Enum.Material.Neon
+	shopRoof.Color = Color3.fromRGB(200, 120, 200)
+	shopRoof.Material = Enum.Material.SmoothPlastic
 	shopRoof.Parent = lobbyFolder
 
 	-- 상점 테두리 (금색 네온)
@@ -283,8 +283,8 @@ function LobbyService:_createShop()
 	shopBorder.Position = GameConstants.LOBBY.SHOP_POSITION
 	shopBorder.Anchored = true
 	shopBorder.CanCollide = false
-	shopBorder.Color = Color3.fromRGB(255, 215, 0)
-	shopBorder.Material = Enum.Material.Neon
+	shopBorder.Color = Color3.fromRGB(200, 170, 0)
+	shopBorder.Material = Enum.Material.SmoothPlastic
 	shopBorder.Transparency = 0.7
 	shopBorder.Parent = lobbyFolder
 
@@ -316,8 +316,8 @@ function LobbyService:_createShop()
 	shopSignBorder.Position = GameConstants.LOBBY.SHOP_POSITION + Vector3.new(0, 9, -5.2)
 	shopSignBorder.Anchored = true
 	shopSignBorder.CanCollide = false
-	shopSignBorder.Color = Color3.fromRGB(255, 215, 0)
-	shopSignBorder.Material = Enum.Material.Neon
+	shopSignBorder.Color = Color3.fromRGB(200, 170, 0)
+	shopSignBorder.Material = Enum.Material.SmoothPlastic
 	shopSignBorder.Parent = lobbyFolder
 
 	-- 상점 SurfaceGui (물리적 간판에 표시)
@@ -416,8 +416,8 @@ function LobbyService:_createLeaderboard()
 	boardBorder.Position = leaderboardPos + Vector3.new(0, 8, -0.2)
 	boardBorder.Anchored = true
 	boardBorder.CanCollide = false
-	boardBorder.Color = Color3.fromRGB(255, 215, 0)
-	boardBorder.Material = Enum.Material.Neon
+	boardBorder.Color = Color3.fromRGB(200, 170, 0)
+	boardBorder.Material = Enum.Material.SmoothPlastic
 	boardBorder.Parent = lobbyFolder
 
 	-- SurfaceGui로 리더보드 내용 표시

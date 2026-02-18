@@ -237,8 +237,8 @@ function ProceduralChunkGenerator._addBonusVisuals(chunk: Model, position: Vecto
 	arch.Position = Vector3.new(position.X + 2, 6, position.Z)
 	arch.Anchored = true
 	arch.CanCollide = false
-	arch.Color = Color3.fromRGB(255, 215, 0)
-	arch.Material = Enum.Material.Neon
+	arch.Color = Color3.fromRGB(200, 170, 0)
+	arch.Material = Enum.Material.SmoothPlastic
 	arch.Transparency = 0.3
 	arch.Parent = chunk
 
@@ -258,8 +258,8 @@ function ProceduralChunkGenerator._addBonusVisuals(chunk: Model, position: Vecto
 	signBorder.Name = "BonusSignBorder"
 	signBorder.Size = Vector3.new(0.1, 3.2, 6.2)
 	signBorder.Position = Vector3.new(position.X - 2.15, 8, position.Z)
-	signBorder.Color = Color3.fromRGB(255, 215, 0)
-	signBorder.Material = Enum.Material.Neon
+	signBorder.Color = Color3.fromRGB(200, 170, 0)
+	signBorder.Material = Enum.Material.SmoothPlastic
 	signBorder.CanCollide = false
 	signBorder.Anchored = true
 	signBorder.Parent = chunk

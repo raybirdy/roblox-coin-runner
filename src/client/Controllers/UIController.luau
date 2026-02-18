@@ -89,63 +89,25 @@ function UIController:_createUI()
 	screenGui.Parent = self._playerGui
 	self._screenGui = screenGui
 
-	-- 상단 HUD 바 (화면 전체 너비, 한 줄)
+	-- 우측 상단 HUD (세로 컴팩트 배치)
 	local hudFrame = Instance.new("Frame")
 	hudFrame.Name = "HudFrame"
-	hudFrame.Size = UDim2.new(1, 0, 0, 36)
-	hudFrame.Position = UDim2.new(0, 0, 0, 8)
-	hudFrame.BackgroundTransparency = 0.5
+	hudFrame.Size = UDim2.new(0, 160, 0, 130)
+	hudFrame.Position = UDim2.new(1, -170, 0, 8)
+	hudFrame.BackgroundTransparency = 0.4
 	hudFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 	hudFrame.Parent = screenGui
 	self._hudFrame = hudFrame
 
-	-- 점수 (왼쪽)
-	local scoreLabel = Instance.new("TextLabel")
-	scoreLabel.Name = "ScoreLabel"
-	scoreLabel.Size = UDim2.new(0.25, 0, 1, 0)
-	scoreLabel.Position = UDim2.new(0, 10, 0, 0)
-	scoreLabel.BackgroundTransparency = 1
-	scoreLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-	scoreLabel.TextSize = ResponsiveUtil.scaledTextSize(20, 16)
-	scoreLabel.Font = Enum.Font.GothamBold
-	scoreLabel.Text = "⭐ 0"
-	scoreLabel.TextXAlignment = Enum.TextXAlignment.Left
-	scoreLabel.Parent = hudFrame
-	self._scoreLabel = scoreLabel
+	local hudCorner = Instance.new("UICorner")
+	hudCorner.CornerRadius = UDim.new(0, 10)
+	hudCorner.Parent = hudFrame
 
-	-- 거리 (왼쪽 중간)
-	local distanceLabel = Instance.new("TextLabel")
-	distanceLabel.Name = "DistanceLabel"
-	distanceLabel.Size = UDim2.new(0.2, 0, 1, 0)
-	distanceLabel.Position = UDim2.new(0.25, 10, 0, 0)
-	distanceLabel.BackgroundTransparency = 1
-	distanceLabel.TextColor3 = Color3.fromRGB(100, 200, 255)
-	distanceLabel.TextSize = ResponsiveUtil.scaledTextSize(18, 15)
-	distanceLabel.Font = Enum.Font.Gotham
-	distanceLabel.Text = "🏃 0m"
-	distanceLabel.TextXAlignment = Enum.TextXAlignment.Left
-	distanceLabel.Parent = hudFrame
-	self._distanceLabel = distanceLabel
-
-	-- 코인 (중앙)
-	local coinsLabel = Instance.new("TextLabel")
-	coinsLabel.Name = "CoinsLabel"
-	coinsLabel.Size = UDim2.new(0.2, 0, 1, 0)
-	coinsLabel.Position = UDim2.new(0.45, 10, 0, 0)
-	coinsLabel.BackgroundTransparency = 1
-	coinsLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
-	coinsLabel.TextSize = ResponsiveUtil.scaledTextSize(18, 15)
-	coinsLabel.Font = Enum.Font.GothamBold
-	coinsLabel.Text = "🪙 0"
-	coinsLabel.TextXAlignment = Enum.TextXAlignment.Left
-	coinsLabel.Parent = hudFrame
-	self._coinsLabel = coinsLabel
-
-	-- 하트 (오른쪽) — HUD 바 안에 통합
+	-- 하트 (최상단)
 	local livesContainer = Instance.new("Frame")
 	livesContainer.Name = "LivesContainer"
-	livesContainer.Size = UDim2.new(0.3, -10, 1, 0)
-	livesContainer.Position = UDim2.new(0.7, 0, 0, 0)
+	livesContainer.Size = UDim2.new(1, 0, 0, 28)
+	livesContainer.Position = UDim2.new(0, 0, 0, 6)
 	livesContainer.BackgroundTransparency = 1
 	livesContainer.Parent = hudFrame
 	self._livesContainer = livesContainer
@@ -155,16 +117,58 @@ function UIController:_createUI()
 	for i = 1, GameConstants.LIFE.STARTING_LIVES do
 		local heart = Instance.new("TextLabel")
 		heart.Name = `Heart{i}`
-		heart.Size = UDim2.new(0, 30, 0, 30)
-		heart.Position = UDim2.new(0, 5 + (i - 1) * 32, 0.5, -15)
+		heart.Size = UDim2.new(0, 28, 0, 28)
+		heart.Position = UDim2.new(0, 10 + (i - 1) * 30, 0, 0)
 		heart.BackgroundTransparency = 1
 		heart.TextColor3 = Color3.fromRGB(255, 50, 50)
-		heart.TextSize = 22
+		heart.TextSize = 20
 		heart.Font = Enum.Font.GothamBold
 		heart.Text = "❤️"
 		heart.Parent = livesContainer
 		table.insert(self._heartLabels, heart)
 	end
+
+	-- 점수
+	local scoreLabel = Instance.new("TextLabel")
+	scoreLabel.Name = "ScoreLabel"
+	scoreLabel.Size = UDim2.new(1, -16, 0, 24)
+	scoreLabel.Position = UDim2.new(0, 8, 0, 34)
+	scoreLabel.BackgroundTransparency = 1
+	scoreLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	scoreLabel.TextSize = ResponsiveUtil.scaledTextSize(18, 14)
+	scoreLabel.Font = Enum.Font.GothamBold
+	scoreLabel.Text = "⭐ 0"
+	scoreLabel.TextXAlignment = Enum.TextXAlignment.Left
+	scoreLabel.Parent = hudFrame
+	self._scoreLabel = scoreLabel
+
+	-- 거리
+	local distanceLabel = Instance.new("TextLabel")
+	distanceLabel.Name = "DistanceLabel"
+	distanceLabel.Size = UDim2.new(1, -16, 0, 24)
+	distanceLabel.Position = UDim2.new(0, 8, 0, 58)
+	distanceLabel.BackgroundTransparency = 1
+	distanceLabel.TextColor3 = Color3.fromRGB(100, 200, 255)
+	distanceLabel.TextSize = ResponsiveUtil.scaledTextSize(16, 13)
+	distanceLabel.Font = Enum.Font.Gotham
+	distanceLabel.Text = "🏃 0m"
+	distanceLabel.TextXAlignment = Enum.TextXAlignment.Left
+	distanceLabel.Parent = hudFrame
+	self._distanceLabel = distanceLabel
+
+	-- 코인
+	local coinsLabel = Instance.new("TextLabel")
+	coinsLabel.Name = "CoinsLabel"
+	coinsLabel.Size = UDim2.new(1, -16, 0, 24)
+	coinsLabel.Position = UDim2.new(0, 8, 0, 82)
+	coinsLabel.BackgroundTransparency = 1
+	coinsLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
+	coinsLabel.TextSize = ResponsiveUtil.scaledTextSize(16, 13)
+	coinsLabel.Font = Enum.Font.GothamBold
+	coinsLabel.Text = "🪙 0"
+	coinsLabel.TextXAlignment = Enum.TextXAlignment.Left
+	coinsLabel.Parent = hudFrame
+	self._coinsLabel = coinsLabel
 
 	-- 기존 livesLabel은 숨김 처리 (호환성)
 	local livesLabel = Instance.new("TextLabel")
@@ -173,11 +177,11 @@ function UIController:_createUI()
 	livesLabel.Parent = screenGui
 	self._livesLabel = livesLabel
 
-	-- 게임 오버 프레임 (초기 숨김)
+	-- 게임 오버 프레임 (초기 숨김) — 컴팩트 사이즈
 	local gameOverFrame = Instance.new("Frame")
 	gameOverFrame.Name = "GameOverFrame"
-	gameOverFrame.Size = ResponsiveUtil.clampedSize(450, 480, 0.92, 0.85)
-	gameOverFrame.Position = ResponsiveUtil.clampedPosition(450, 480, 0.92, 0.85)
+	gameOverFrame.Size = ResponsiveUtil.clampedSize(380, 360, 0.88, 0.70)
+	gameOverFrame.Position = ResponsiveUtil.clampedPosition(380, 360, 0.88, 0.70)
 	gameOverFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 	gameOverFrame.BackgroundTransparency = 0.15
 	gameOverFrame.Visible = false
@@ -186,24 +190,24 @@ function UIController:_createUI()
 
 	-- 둥근 모서리
 	local gameOverCorner = Instance.new("UICorner")
-	gameOverCorner.CornerRadius = UDim.new(0, 20)
+	gameOverCorner.CornerRadius = UDim.new(0, 16)
 	gameOverCorner.Parent = gameOverFrame
 
 	-- 테두리
 	local gameOverStroke = Instance.new("UIStroke")
 	gameOverStroke.Color = Color3.fromRGB(255, 255, 255)
-	gameOverStroke.Thickness = 3
+	gameOverStroke.Thickness = 2
 	gameOverStroke.Transparency = 0.3
 	gameOverStroke.Parent = gameOverFrame
 
 	-- 게임 오버 텍스트
 	local gameOverTitle = Instance.new("TextLabel")
 	gameOverTitle.Name = "Title"
-	gameOverTitle.Size = UDim2.new(1, 0, 0, 60)
-	gameOverTitle.Position = UDim2.new(0, 0, 0, 20)
+	gameOverTitle.Size = UDim2.new(1, 0, 0, 40)
+	gameOverTitle.Position = UDim2.new(0, 0, 0, 10)
 	gameOverTitle.BackgroundTransparency = 1
 	gameOverTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-	gameOverTitle.TextSize = 42
+	gameOverTitle.TextSize = 32
 	gameOverTitle.Font = Enum.Font.GothamBold
 	gameOverTitle.Text = "GAME OVER"
 	gameOverTitle.Parent = gameOverFrame
@@ -211,12 +215,12 @@ function UIController:_createUI()
 	-- NEW RECORD 배지 (초기 숨김)
 	local newRecordLabel = Instance.new("TextLabel")
 	newRecordLabel.Name = "NewRecord"
-	newRecordLabel.Size = UDim2.new(0, 200, 0, 40)
-	newRecordLabel.Position = UDim2.new(0.5, -100, 0, 75)
+	newRecordLabel.Size = UDim2.new(0, 180, 0, 30)
+	newRecordLabel.Position = UDim2.new(0.5, -90, 0, 50)
 	newRecordLabel.BackgroundColor3 = Color3.fromRGB(255, 215, 0)
 	newRecordLabel.BackgroundTransparency = 0.1
 	newRecordLabel.TextColor3 = Color3.fromRGB(0, 0, 0)
-	newRecordLabel.TextSize = 22
+	newRecordLabel.TextSize = 18
 	newRecordLabel.Font = Enum.Font.GothamBold
 	newRecordLabel.Text = "🎉 NEW RECORD! 🎉"
 	newRecordLabel.Visible = false
@@ -229,65 +233,73 @@ function UIController:_createUI()
 	-- 최종 점수
 	local finalScoreLabel = Instance.new("TextLabel")
 	finalScoreLabel.Name = "FinalScore"
-	finalScoreLabel.Size = UDim2.new(1, 0, 0, 50)
-	finalScoreLabel.Position = UDim2.new(0, 0, 0, 130)
+	finalScoreLabel.Size = UDim2.new(1, 0, 0, 36)
+	finalScoreLabel.Position = UDim2.new(0, 0, 0, 85)
 	finalScoreLabel.BackgroundTransparency = 1
 	finalScoreLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-	finalScoreLabel.TextSize = 32
+	finalScoreLabel.TextSize = 26
 	finalScoreLabel.Font = Enum.Font.GothamBold
 	finalScoreLabel.Text = "Score: 0"
 	finalScoreLabel.Parent = gameOverFrame
 
-	-- 거리 표시
+	-- 거리 + 코인 한 줄 (가로 배치)
+	local statsRow = Instance.new("Frame")
+	statsRow.Name = "StatsRow"
+	statsRow.Size = UDim2.new(1, -20, 0, 28)
+	statsRow.Position = UDim2.new(0, 10, 0, 125)
+	statsRow.BackgroundTransparency = 1
+	statsRow.Parent = gameOverFrame
+
 	local goDistanceLabel = Instance.new("TextLabel")
 	goDistanceLabel.Name = "Distance"
-	goDistanceLabel.Size = UDim2.new(1, 0, 0, 35)
-	goDistanceLabel.Position = UDim2.new(0, 0, 0, 180)
+	goDistanceLabel.Size = UDim2.new(0.5, 0, 1, 0)
+	goDistanceLabel.Position = UDim2.new(0, 0, 0, 0)
 	goDistanceLabel.BackgroundTransparency = 1
 	goDistanceLabel.TextColor3 = Color3.fromRGB(100, 200, 255)
-	goDistanceLabel.TextSize = 20
+	goDistanceLabel.TextSize = 16
 	goDistanceLabel.Font = Enum.Font.Gotham
-	goDistanceLabel.Text = "🏃 Distance: 0m"
-	goDistanceLabel.Parent = gameOverFrame
+	goDistanceLabel.Text = "🏃 0m"
+	goDistanceLabel.TextXAlignment = Enum.TextXAlignment.Center
+	goDistanceLabel.Parent = statsRow
 
-	-- 획득 코인
 	local earnedCoinsLabel = Instance.new("TextLabel")
 	earnedCoinsLabel.Name = "EarnedCoins"
-	earnedCoinsLabel.Size = UDim2.new(1, 0, 0, 35)
-	earnedCoinsLabel.Position = UDim2.new(0, 0, 0, 220)
+	earnedCoinsLabel.Size = UDim2.new(0.5, 0, 1, 0)
+	earnedCoinsLabel.Position = UDim2.new(0.5, 0, 0, 0)
 	earnedCoinsLabel.BackgroundTransparency = 1
 	earnedCoinsLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
-	earnedCoinsLabel.TextSize = 20
+	earnedCoinsLabel.TextSize = 16
 	earnedCoinsLabel.Font = Enum.Font.Gotham
-	earnedCoinsLabel.Text = "🪙 Coins: 0"
-	earnedCoinsLabel.Parent = gameOverFrame
+	earnedCoinsLabel.Text = "🪙 0"
+	earnedCoinsLabel.TextXAlignment = Enum.TextXAlignment.Center
+	earnedCoinsLabel.Parent = statsRow
 
 	-- 최고 점수
 	local highScoreLabel = Instance.new("TextLabel")
 	highScoreLabel.Name = "HighScore"
-	highScoreLabel.Size = UDim2.new(1, 0, 0, 40)
-	highScoreLabel.Position = UDim2.new(0, 0, 0, 270)
+	highScoreLabel.Size = UDim2.new(1, 0, 0, 28)
+	highScoreLabel.Position = UDim2.new(0, 0, 0, 157)
 	highScoreLabel.BackgroundTransparency = 1
 	highScoreLabel.TextColor3 = Color3.fromRGB(255, 200, 0)
-	highScoreLabel.TextSize = 24
+	highScoreLabel.TextSize = 18
 	highScoreLabel.Font = Enum.Font.GothamBold
 	highScoreLabel.Text = "🏆 High Score: 0"
 	highScoreLabel.Parent = gameOverFrame
 
-	-- PLAY AGAIN 버튼 (바로 재시작)
+	-- PLAY AGAIN 버튼
 	local restartButton = Instance.new("TextButton")
 	restartButton.Name = "RestartButton"
-	restartButton.Size = UDim2.new(0, 200, 0, 55)
-	restartButton.Position = UDim2.new(0.5, -210, 0, 340)
+	restartButton.Size = UDim2.new(0.44, 0, 0, 48)
+	restartButton.Position = UDim2.new(0.03, 0, 1, -62)
 	restartButton.BackgroundColor3 = Color3.fromRGB(0, 180, 0)
 	restartButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-	restartButton.TextSize = 24
+	restartButton.TextSize = 18
 	restartButton.Font = Enum.Font.GothamBold
 	restartButton.Text = "▶ PLAY AGAIN"
 	restartButton.Parent = gameOverFrame
 
 	local restartCorner = Instance.new("UICorner")
-	restartCorner.CornerRadius = UDim.new(0, 12)
+	restartCorner.CornerRadius = UDim.new(0, 10)
 	restartCorner.Parent = restartButton
 
 	local restartStroke = Instance.new("UIStroke")
@@ -300,20 +312,20 @@ function UIController:_createUI()
 		self:OnRestartButtonClicked()
 	end)
 
-	-- LOBBY 버튼 (로비로 복귀)
+	-- LOBBY 버튼
 	local lobbyButton = Instance.new("TextButton")
 	lobbyButton.Name = "LobbyButton"
-	lobbyButton.Size = UDim2.new(0, 200, 0, 55)
-	lobbyButton.Position = UDim2.new(0.5, 10, 0, 340)
+	lobbyButton.Size = UDim2.new(0.44, 0, 0, 48)
+	lobbyButton.Position = UDim2.new(0.53, 0, 1, -62)
 	lobbyButton.BackgroundColor3 = Color3.fromRGB(100, 100, 120)
 	lobbyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-	lobbyButton.TextSize = 24
+	lobbyButton.TextSize = 18
 	lobbyButton.Font = Enum.Font.GothamBold
 	lobbyButton.Text = "🏠 LOBBY"
 	lobbyButton.Parent = gameOverFrame
 
 	local lobbyCorner = Instance.new("UICorner")
-	lobbyCorner.CornerRadius = UDim.new(0, 12)
+	lobbyCorner.CornerRadius = UDim.new(0, 10)
 	lobbyCorner.Parent = lobbyButton
 
 	local lobbyStroke = Instance.new("UIStroke")
@@ -329,11 +341,11 @@ function UIController:_createUI()
 	-- 부활 버튼 (초기 숨김)
 	local reviveButton = Instance.new("TextButton")
 	reviveButton.Name = "ReviveButton"
-	reviveButton.Size = UDim2.new(0, 280, 0, 70)
-	reviveButton.Position = UDim2.new(0.5, -140, 0, 340)
+	reviveButton.Size = UDim2.new(0.7, 0, 0, 50)
+	reviveButton.Position = UDim2.new(0.15, 0, 1, -118)
 	reviveButton.BackgroundColor3 = Color3.fromRGB(255, 180, 0)
 	reviveButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-	reviveButton.TextSize = 28
+	reviveButton.TextSize = 22
 	reviveButton.Font = Enum.Font.GothamBold
 	reviveButton.Text = "💫 REVIVE (FREE)"
 	reviveButton.Visible = false
@@ -341,7 +353,7 @@ function UIController:_createUI()
 	self._reviveButton = reviveButton
 
 	local reviveCorner = Instance.new("UICorner")
-	reviveCorner.CornerRadius = UDim.new(0, 16)
+	reviveCorner.CornerRadius = UDim.new(0, 12)
 	reviveCorner.Parent = reviveButton
 
 	local reviveStroke = Instance.new("UIStroke")
@@ -832,14 +844,15 @@ function UIController:ShowGameOver(
 	end
 
 	-- 거리 표시
-	local distanceLabel = self._gameOverFrame:FindFirstChild("Distance") :: TextLabel?
+	local statsRow = self._gameOverFrame:FindFirstChild("StatsRow") :: Frame?
+	local distanceLabel = if statsRow then statsRow:FindFirstChild("Distance") :: TextLabel? else nil
 	if distanceLabel then
-		distanceLabel.Text = `🏃 Distance: {distance or 0}m`
+		distanceLabel.Text = `🏃 {distance or 0}m`
 	end
 
-	local earnedCoinsLabel = self._gameOverFrame:FindFirstChild("EarnedCoins") :: TextLabel?
+	local earnedCoinsLabel = if statsRow then statsRow:FindFirstChild("EarnedCoins") :: TextLabel? else nil
 	if earnedCoinsLabel then
-		earnedCoinsLabel.Text = `🪙 Coins: {earnedCoins}`
+		earnedCoinsLabel.Text = `🪙 {earnedCoins}`
 	end
 
 	-- 최고 점수 표시
@@ -858,35 +871,32 @@ function UIController:ShowGameOver(
 	local restartButton = self._gameOverFrame:FindFirstChild("RestartButton") :: TextButton?
 	local lobbyButton = self._gameOverFrame:FindFirstChild("LobbyButton") :: TextButton?
 
-	-- 부활 가능 시 버튼 배치
+	-- 부활 가능 시 버튼 배치 (비율 기반)
 	if canRevive then
-		-- 부활 버튼 맨 위
 		if self._reviveButton then
 			self._reviveButton.Visible = true
-			self._reviveButton.Size = UDim2.new(0, 280, 0, 55)
-			self._reviveButton.Position = UDim2.new(0.5, -140, 0, 330)
+			self._reviveButton.Size = UDim2.new(0.7, 0, 0, 50)
+			self._reviveButton.Position = UDim2.new(0.15, 0, 1, -118)
 		end
-		-- PLAY AGAIN, LOBBY 아래에 나란히
 		if restartButton then
 			restartButton.Visible = true
-			restartButton.Position = UDim2.new(0.5, -210, 0, 400)
+			restartButton.Position = UDim2.new(0.03, 0, 1, -62)
 		end
 		if lobbyButton then
 			lobbyButton.Visible = true
-			lobbyButton.Position = UDim2.new(0.5, 10, 0, 400)
+			lobbyButton.Position = UDim2.new(0.53, 0, 1, -62)
 		end
 	else
-		-- 부활 없음: PLAY AGAIN, LOBBY 나란히
 		if self._reviveButton then
 			self._reviveButton.Visible = false
 		end
 		if restartButton then
 			restartButton.Visible = true
-			restartButton.Position = UDim2.new(0.5, -210, 0, 340)
+			restartButton.Position = UDim2.new(0.03, 0, 1, -62)
 		end
 		if lobbyButton then
 			lobbyButton.Visible = true
-			lobbyButton.Position = UDim2.new(0.5, 10, 0, 340)
+			lobbyButton.Position = UDim2.new(0.53, 0, 1, -62)
 		end
 	end
 
@@ -895,9 +905,9 @@ function UIController:ShowGameOver(
 	self._gameOverFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
 	self._gameOverFrame.Visible = true
 
-	local frameHeight = canRevive and 480 or 420
-	local targetSize = ResponsiveUtil.clampedSize(450, frameHeight, 0.92, 0.85)
-	local targetPos = ResponsiveUtil.clampedPosition(450, frameHeight, 0.92, 0.85)
+	local frameHeight = canRevive and 380 or 320
+	local targetSize = ResponsiveUtil.clampedSize(380, frameHeight, 0.88, 0.70)
+	local targetPos = ResponsiveUtil.clampedPosition(380, frameHeight, 0.88, 0.70)
 	local appearTween =
 		TweenService:Create(self._gameOverFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
 			Size = targetSize,
