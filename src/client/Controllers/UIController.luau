@@ -89,63 +89,25 @@ function UIController:_createUI()
 	screenGui.Parent = self._playerGui
 	self._screenGui = screenGui
 
-	-- 상단 HUD 바 (화면 전체 너비, 한 줄)
+	-- 우측 상단 HUD (세로 컴팩트 배치)
 	local hudFrame = Instance.new("Frame")
 	hudFrame.Name = "HudFrame"
-	hudFrame.Size = UDim2.new(1, 0, 0, 36)
-	hudFrame.Position = UDim2.new(0, 0, 0, 8)
-	hudFrame.BackgroundTransparency = 0.5
+	hudFrame.Size = UDim2.new(0, 160, 0, 130)
+	hudFrame.Position = UDim2.new(1, -170, 0, 8)
+	hudFrame.BackgroundTransparency = 0.4
 	hudFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 	hudFrame.Parent = screenGui
 	self._hudFrame = hudFrame
 
-	-- 점수 (왼쪽)
-	local scoreLabel = Instance.new("TextLabel")
-	scoreLabel.Name = "ScoreLabel"
-	scoreLabel.Size = UDim2.new(0.25, 0, 1, 0)
-	scoreLabel.Position = UDim2.new(0, 10, 0, 0)
-	scoreLabel.BackgroundTransparency = 1
-	scoreLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-	scoreLabel.TextSize = ResponsiveUtil.scaledTextSize(20, 16)
-	scoreLabel.Font = Enum.Font.GothamBold
-	scoreLabel.Text = "⭐ 0"
-	scoreLabel.TextXAlignment = Enum.TextXAlignment.Left
-	scoreLabel.Parent = hudFrame
-	self._scoreLabel = scoreLabel
+	local hudCorner = Instance.new("UICorner")
+	hudCorner.CornerRadius = UDim.new(0, 10)
+	hudCorner.Parent = hudFrame
 
-	-- 거리 (왼쪽 중간)
-	local distanceLabel = Instance.new("TextLabel")
-	distanceLabel.Name = "DistanceLabel"
-	distanceLabel.Size = UDim2.new(0.2, 0, 1, 0)
-	distanceLabel.Position = UDim2.new(0.25, 10, 0, 0)
-	distanceLabel.BackgroundTransparency = 1
-	distanceLabel.TextColor3 = Color3.fromRGB(100, 200, 255)
-	distanceLabel.TextSize = ResponsiveUtil.scaledTextSize(18, 15)
-	distanceLabel.Font = Enum.Font.Gotham
-	distanceLabel.Text = "🏃 0m"
-	distanceLabel.TextXAlignment = Enum.TextXAlignment.Left
-	distanceLabel.Parent = hudFrame
-	self._distanceLabel = distanceLabel
-
-	-- 코인 (중앙)
-	local coinsLabel = Instance.new("TextLabel")
-	coinsLabel.Name = "CoinsLabel"
-	coinsLabel.Size = UDim2.new(0.2, 0, 1, 0)
-	coinsLabel.Position = UDim2.new(0.45, 10, 0, 0)
-	coinsLabel.BackgroundTransparency = 1
-	coinsLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
-	coinsLabel.TextSize = ResponsiveUtil.scaledTextSize(18, 15)
-	coinsLabel.Font = Enum.Font.GothamBold
-	coinsLabel.Text = "🪙 0"
-	coinsLabel.TextXAlignment = Enum.TextXAlignment.Left
-	coinsLabel.Parent = hudFrame
-	self._coinsLabel = coinsLabel
-
-	-- 하트 (오른쪽) — HUD 바 안에 통합
+	-- 하트 (최상단)
 	local livesContainer = Instance.new("Frame")
 	livesContainer.Name = "LivesContainer"
-	livesContainer.Size = UDim2.new(0.3, -10, 1, 0)
-	livesContainer.Position = UDim2.new(0.7, 0, 0, 0)
+	livesContainer.Size = UDim2.new(1, 0, 0, 28)
+	livesContainer.Position = UDim2.new(0, 0, 0, 6)
 	livesContainer.BackgroundTransparency = 1
 	livesContainer.Parent = hudFrame
 	self._livesContainer = livesContainer
@@ -155,16 +117,58 @@ function UIController:_createUI()
 	for i = 1, GameConstants.LIFE.STARTING_LIVES do
 		local heart = Instance.new("TextLabel")
 		heart.Name = `Heart{i}`
-		heart.Size = UDim2.new(0, 30, 0, 30)
-		heart.Position = UDim2.new(0, 5 + (i - 1) * 32, 0.5, -15)
+		heart.Size = UDim2.new(0, 28, 0, 28)
+		heart.Position = UDim2.new(0, 10 + (i - 1) * 30, 0, 0)
 		heart.BackgroundTransparency = 1
 		heart.TextColor3 = Color3.fromRGB(255, 50, 50)
-		heart.TextSize = 22
+		heart.TextSize = 20
 		heart.Font = Enum.Font.GothamBold
 		heart.Text = "❤️"
 		heart.Parent = livesContainer
 		table.insert(self._heartLabels, heart)
 	end
+
+	-- 점수
+	local scoreLabel = Instance.new("TextLabel")
+	scoreLabel.Name = "ScoreLabel"
+	scoreLabel.Size = UDim2.new(1, -16, 0, 24)
+	scoreLabel.Position = UDim2.new(0, 8, 0, 34)
+	scoreLabel.BackgroundTransparency = 1
+	scoreLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	scoreLabel.TextSize = ResponsiveUtil.scaledTextSize(18, 14)
+	scoreLabel.Font = Enum.Font.GothamBold
+	scoreLabel.Text = "⭐ 0"
+	scoreLabel.TextXAlignment = Enum.TextXAlignment.Left
+	scoreLabel.Parent = hudFrame
+	self._scoreLabel = scoreLabel
+
+	-- 거리
+	local distanceLabel = Instance.new("TextLabel")
+	distanceLabel.Name = "DistanceLabel"
+	distanceLabel.Size = UDim2.new(1, -16, 0, 24)
+	distanceLabel.Position = UDim2.new(0, 8, 0, 58)
+	distanceLabel.BackgroundTransparency = 1
+	distanceLabel.TextColor3 = Color3.fromRGB(100, 200, 255)
+	distanceLabel.TextSize = ResponsiveUtil.scaledTextSize(16, 13)
+	distanceLabel.Font = Enum.Font.Gotham
+	distanceLabel.Text = "🏃 0m"
+	distanceLabel.TextXAlignment = Enum.TextXAlignment.Left
+	distanceLabel.Parent = hudFrame
+	self._distanceLabel = distanceLabel
+
+	-- 코인
+	local coinsLabel = Instance.new("TextLabel")
+	coinsLabel.Name = "CoinsLabel"
+	coinsLabel.Size = UDim2.new(1, -16, 0, 24)
+	coinsLabel.Position = UDim2.new(0, 8, 0, 82)
+	coinsLabel.BackgroundTransparency = 1
+	coinsLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
+	coinsLabel.TextSize = ResponsiveUtil.scaledTextSize(16, 13)
+	coinsLabel.Font = Enum.Font.GothamBold
+	coinsLabel.Text = "🪙 0"
+	coinsLabel.TextXAlignment = Enum.TextXAlignment.Left
+	coinsLabel.Parent = hudFrame
+	self._coinsLabel = coinsLabel
 
 	-- 기존 livesLabel은 숨김 처리 (호환성)
 	local livesLabel = Instance.new("TextLabel")
