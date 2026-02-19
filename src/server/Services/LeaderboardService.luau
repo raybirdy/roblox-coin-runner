@@ -8,6 +8,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local GameConstants = require(ReplicatedStorage.Shared.Constants.GameConstants)
 local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)
+local RateLimiter = require(ReplicatedStorage.Shared.Utils.RateLimiter)
 
 local LeaderboardService = {}
 
@@ -211,7 +212,11 @@ end
 
 -- 리더보드 요청 이벤트 핸들러
 RemoteEvents.LeaderboardRequest.OnServerEvent:Connect(function(player: Player, data: { tab: string? }?)
-	local tab = data and data.tab or "all"
+	-- 입력 검증 (data는 nil 허용)
+	if data ~= nil and type(data) ~= "table" then return end
+	if not RateLimiter.Check(player, "LeaderboardRequest", 2) then return end
+
+	local tab = (data and type(data.tab) == "string") and data.tab or "all"
 	print(`[LeaderboardService] Leaderboard requested by {player.Name} (tab: {tab})`)
 
 	local leaderboard = LeaderboardService:GetLeaderboard(10, tab)

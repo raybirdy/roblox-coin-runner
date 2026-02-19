@@ -4,16 +4,18 @@
 
 local MarketplaceService = game:GetService("MarketplaceService")
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local GameConstants = require(ReplicatedStorage.Shared.Constants.GameConstants)
 local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)
 local PlayerDataService = require(script.Parent.PlayerDataService)
+local RateLimiter = require(ReplicatedStorage.Shared.Utils.RateLimiter)
 
 local MonetizationService = {}
 
--- 처리 완료된 구매 기록 (중복 방지)
-local processedReceipts: { [string]: boolean } = {}
+-- 메모리 캐시 (서버 내 빠른 중복 체크용, DataStore 영속화와 병행)
+local processedReceiptsCache: { [string]: boolean } = {}
 
 -- 젬 상품 정보 가져오기
 local function getGemProductById(productId: string): { id: string, productId: number, gems: number, bonus: number }?
@@ -74,9 +76,9 @@ end
 local function processReceipt(
 	receiptInfo: { PlayerId: number, PurchaseId: string, ProductId: number }
 ): Enum.ProductPurchaseDecision
-	-- 중복 처리 방지
+	-- 중복 처리 방지 (메모리 캐시 + DataStore 영속화)
 	local receiptKey = `{receiptInfo.PlayerId}_{receiptInfo.PurchaseId}`
-	if processedReceipts[receiptKey] then
+	if processedReceiptsCache[receiptKey] then
 		return Enum.ProductPurchaseDecision.PurchaseGranted
 	end
 
@@ -87,6 +89,12 @@ local function processReceipt(
 		return Enum.ProductPurchaseDecision.NotProcessedYet
 	end
 
+	-- DataStore에서 영수증 중복 확인
+	if PlayerDataService:HasProcessedReceipt(player, receiptKey) then
+		processedReceiptsCache[receiptKey] = true
+		return Enum.ProductPurchaseDecision.PurchaseGranted
+	end
+
 	-- 상품 정보 확인
 	local product = getGemProductByDevProductId(receiptInfo.ProductId)
 	if not product then
@@ -95,10 +103,12 @@ local function processReceipt(
 	end
 
 	-- 구매 처리
-	local success = processGemPurchase(player, product)
+	local purchaseSuccess = processGemPurchase(player, product)
 
-	if success then
-		processedReceipts[receiptKey] = true
+	if purchaseSuccess then
+		-- 메모리 캐시 + DataStore 영속화
+		processedReceiptsCache[receiptKey] = true
+		PlayerDataService:AddProcessedReceipt(player, receiptKey)
 		return Enum.ProductPurchaseDecision.PurchaseGranted
 	else
 		return Enum.ProductPurchaseDecision.NotProcessedYet
@@ -109,9 +119,8 @@ end
 function MonetizationService:CheckVIPStatus(player: Player): boolean
 	local vipGamePassId = GameConstants.MONETIZATION.VIP_GAMEPASS_ID
 
-	-- GamePass ID가 설정되지 않은 경우 (개발 중)
+	-- GamePass ID가 설정되지 않은 경우
 	if vipGamePassId == 0 then
-		-- Studio 모드에서는 기존 데이터 유지
 		return PlayerDataService:HasVIP(player)
 	end
 
@@ -139,6 +148,10 @@ end
 
 -- 젬 구매 요청 처리
 RemoteEvents.PurchaseGems.OnServerEvent:Connect(function(player: Player, data: { productId: string })
+	if type(data) ~= "table" then return end
+	if type(data.productId) ~= "string" then return end
+	if not RateLimiter.Check(player, "PurchaseGems", 2) then return end
+
 	local productId = data.productId
 
 	print(`[MonetizationService] Purchase request from {player.Name}: {productId}`)
@@ -156,11 +169,19 @@ RemoteEvents.PurchaseGems.OnServerEvent:Connect(function(player: Player, data: {
 			return
 		end
 
-		-- GamePass ID가 설정되지 않은 경우 (개발 중 테스트 모드)
+		-- GamePass ID가 설정되지 않은 경우 (개발 중 테스트 모드 - Studio에서만 허용)
 		if vipGamePassId == 0 then
-			print(`[MonetizationService] Test mode - granting VIP for free`)
-			PlayerDataService:SetVIP(player, true)
-			RemoteEvents.VIPStatusChanged:FireClient(player, { hasVIP = true })
+			if RunService:IsStudio() then
+				print(`[MonetizationService] Studio test mode - granting VIP for free`)
+				PlayerDataService:SetVIP(player, true)
+				RemoteEvents.VIPStatusChanged:FireClient(player, { hasVIP = true })
+			else
+				warn(`[MonetizationService] VIP GamePass ID not configured! Rejecting purchase.`)
+				RemoteEvents.PurchaseGemsResult:FireClient(player, {
+					success = false,
+					error = "not_configured",
+				})
+			end
 			return
 		end
 
@@ -189,11 +210,18 @@ RemoteEvents.PurchaseGems.OnServerEvent:Connect(function(player: Player, data: {
 		return
 	end
 
-	-- DevProduct ID가 설정되지 않은 경우 (개발 중)
+	-- DevProduct ID가 설정되지 않은 경우 (개발 중 - Studio에서만 허용)
 	if product.productId == 0 then
-		-- 테스트 모드: 무료로 젬 지급
-		print(`[MonetizationService] Test mode - granting gems for free`)
-		processGemPurchase(player, product)
+		if RunService:IsStudio() then
+			print(`[MonetizationService] Studio test mode - granting gems for free`)
+			processGemPurchase(player, product)
+		else
+			warn(`[MonetizationService] DevProduct ID not configured for {productId}! Rejecting purchase.`)
+			RemoteEvents.PurchaseGemsResult:FireClient(player, {
+				success = false,
+				error = "not_configured",
+			})
+		end
 		return
 	end
 

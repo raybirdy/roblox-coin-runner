@@ -7,6 +7,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local GameConstants = require(ReplicatedStorage.Shared.Constants.GameConstants)
 local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)
 local PlayerDataService = require(script.Parent.PlayerDataService)
+local RateLimiter = require(ReplicatedStorage.Shared.Utils.RateLimiter)
 
 local ProgressionService = {}
 
@@ -364,6 +365,8 @@ end
 
 -- 진행도 데이터 요청 이벤트 핸들러
 RemoteEvents.ProgressionDataRequest.OnServerEvent:Connect(function(player: Player)
+	if not RateLimiter.Check(player, "ProgressionDataRequest", 1) then return end
+
 	ProgressionService:SendProgressionData(player)
 end)
 

@@ -21,6 +21,7 @@ local BackgroundService = require(script.Parent.BackgroundService)
 local LeaderboardService = require(script.Parent.LeaderboardService)
 local MonetizationService = require(script.Parent.MonetizationService)
 local ProgressionService = require(script.Parent.ProgressionService)
+local RateLimiter = require(ReplicatedStorage.Shared.Utils.RateLimiter)
 
 local GameManager = {}
 
@@ -102,9 +103,12 @@ end
 RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { startPowerups: { string }? }?)
 	print(`[GameManager] Portal enter confirmed by {player.Name}`)
 
+	-- 입력 검증 (data는 nil 허용)
+	if data ~= nil and type(data) ~= "table" then return end
+
 	-- 시작 파워업 검증 및 사용
 	local validPowerups: { string } = {}
-	if data and data.startPowerups then
+	if data and type(data.startPowerups) == "table" then
 		for _, powerupId in data.startPowerups do
 			if PlayerDataService:UseStartPowerup(player, powerupId) then
 				table.insert(validPowerups, powerupId)
@@ -277,6 +281,8 @@ end)
 
 -- 게임 시작 요청 처리
 RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
+	if not RateLimiter.Check(player, "GameStart", 2) then return end
+
 	print(`[GameManager] Game start requested by {player.Name}`)
 
 	-- 기존 세션이 있으면 정리
@@ -290,6 +296,7 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 	local obstacleService = ObstacleService.new(player)
 	local powerupService = PowerupService.new(player)
 	local npcService = NPCService.new(player)
+	local backgroundService = BackgroundService.new()
 
 	-- 시작 위치 설정 및 플레이어 텔레포트
 	local startPosition = Vector3.new(0, 2.5, GameConstants.PLAYER.Z_POSITION)
@@ -311,6 +318,7 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 		powerupService = powerupService,
 		npcService = npcService,
 		tutorialService = globalTutorialService,
+		backgroundService = backgroundService,
 		isPlaying = true,
 		startTime = tick(),
 		startPosition = startPosition,
@@ -321,15 +329,22 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 		comboCount = 0,
 		lastCoinTime = 0,
 		nearMissedObstacles = {},
+		consecutiveHits = 0,
 	}
 
 	activeSessions[player] = session
 
-	-- 청크 서비스에 코인/장애물/파워업/NPC 서비스 연결
+	-- 청크 서비스에 코인/장애물/파워업/NPC/배경 서비스 연결
 	chunkService:SetCoinService(coinService)
 	chunkService:SetObstacleService(obstacleService)
 	chunkService:SetPowerupService(powerupService)
 	chunkService:SetNPCService(npcService)
+	chunkService:SetBackgroundService(backgroundService)
+
+	-- 배경 서비스 시작
+	backgroundService:StartGame()
+
+	-- 청크 서비스 시작
 	chunkService:StartGame()
 
 	-- 파워업 서비스 시작
@@ -351,12 +366,16 @@ end)
 
 -- 게임 오버 요청 처리
 RemoteEvents.GameOver.OnServerEvent:Connect(function(player: Player)
+	if not RateLimiter.Check(player, "GameOver", 1) then return end
+
 	print(`[GameManager] Game over requested by {player.Name}`)
 	GameManager.EndGame(player)
 end)
 
 -- 부활 요청 처리
 RemoteEvents.Revive.OnServerEvent:Connect(function(player: Player)
+	if not RateLimiter.Check(player, "Revive", 2) then return end
+
 	local session = activeSessions[player]
 	if not session then
 		warn(`[GameManager] No session found for {player.Name} to revive`)
@@ -514,6 +533,7 @@ Players.PlayerRemoving:Connect(function(player: Player)
 	shopDebounce[player] = nil
 	portalDebounce[player] = nil
 	consolationTracker[player] = nil
+	RateLimiter.CleanupPlayer(player)
 end)
 
 -- 메인 업데이트 루프 (모든 활성 세션)

@@ -8,6 +8,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local GameConstants = require(ReplicatedStorage.Shared.Constants.GameConstants)
 local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)
 local PlayerDataService = require(script.Parent.PlayerDataService)
+local RateLimiter = require(ReplicatedStorage.Shared.Utils.RateLimiter)
 
 local ShopService = {}
 
@@ -35,6 +36,11 @@ end
 
 -- 상점 구매 요청 처리
 RemoteEvents.ShopPurchase.OnServerEvent:Connect(function(player: Player, data: { itemType: string, itemId: string })
+	if type(data) ~= "table" then return end
+	if type(data.itemType) ~= "string" then return end
+	if type(data.itemId) ~= "string" then return end
+	if not RateLimiter.Check(player, "ShopPurchase", 1) then return end
+
 	local itemType = data.itemType
 	local itemId = data.itemId
 
@@ -111,6 +117,10 @@ end)
 
 -- 스킨 장착 요청 처리
 RemoteEvents.EquipSkin.OnServerEvent:Connect(function(player: Player, data: { skinId: string })
+	if type(data) ~= "table" then return end
+	if type(data.skinId) ~= "string" then return end
+	if not RateLimiter.Check(player, "EquipSkin", 1) then return end
+
 	local skinId = data.skinId
 
 	print(`[ShopService] Equip skin request from {player.Name}: {skinId}`)
@@ -135,6 +145,10 @@ end)
 
 -- 시작 파워업 사용 요청 처리
 RemoteEvents.UseStartPowerup.OnServerEvent:Connect(function(player: Player, data: { powerupId: string })
+	if type(data) ~= "table" then return end
+	if type(data.powerupId) ~= "string" then return end
+	if not RateLimiter.Check(player, "UseStartPowerup", 1) then return end
+
 	local powerupId = data.powerupId
 
 	print(`[ShopService] Use start powerup request from {player.Name}: {powerupId}`)
@@ -241,6 +255,8 @@ end
 
 -- 상점 데이터 요청 처리
 RemoteEvents.ShopDataRequest.OnServerEvent:Connect(function(player: Player)
+	if not RateLimiter.Check(player, "ShopDataRequest", 1) then return end
+
 	print(`[ShopService] Shop data request from {player.Name}`)
 
 	local shopData = ShopService:GetShopData(player)
