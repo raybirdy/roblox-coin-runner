@@ -21,29 +21,30 @@ export type CameraController = typeof(setmetatable(
 		_targetCFrame: CFrame,
 		_shakeIntensity: number,
 		_shakeDecay: number,
-		_isGameMode: boolean, -- 게임 모드 여부 (true = 3인칭 후방뷰, false = 기본 카메라)
+		_isGameMode: boolean, -- 게임 모드 여부 (true = 사이드뷰, false = 기본 카메라)
 		_cameraDistance: number, -- 적응형 카메라 거리
 	},
 	CameraController
 ))
 
--- 카메라 설정
-local BASE_CAMERA_DISTANCE = 40 -- 기준 카메라 거리 (1920px 기준)
-local MIN_CAMERA_DISTANCE = 28
-local MAX_CAMERA_DISTANCE = 45
-local CAMERA_HEIGHT = 25 -- 캐릭터 위 높이
-local CAMERA_ANGLE = math.rad(5) -- 아래로 내려다보는 각도
+-- 사이드뷰 카메라 설정
+local BASE_SIDE_DISTANCE = 40 -- 기준 카메라 Z축 거리 (1920px 기준)
+local MIN_SIDE_DISTANCE = 32
+local MAX_SIDE_DISTANCE = 45
+local CAMERA_HEIGHT = 12 -- 카메라 높이
+local LOOK_AHEAD = 20 -- 캐릭터를 화면 왼쪽 ~30%에 배치하기 위한 X 오프셋
+local LOOK_HEIGHT = 5 -- 시선 기준 높이
 local CAMERA_SMOOTHNESS = 0.15 -- 카메라 부드러움 (0~1, 낮을수록 부드러움)
 
 -- viewport 기반 적응형 카메라 거리 계산
 local function calculateAdaptiveDistance(): number
 	local camera = Workspace.CurrentCamera
 	if not camera then
-		return BASE_CAMERA_DISTANCE
+		return BASE_SIDE_DISTANCE
 	end
 	local viewportX = camera.ViewportSize.X
 	local ratio = viewportX / 1920
-	return math.clamp(BASE_CAMERA_DISTANCE * ratio, MIN_CAMERA_DISTANCE, MAX_CAMERA_DISTANCE)
+	return math.clamp(BASE_SIDE_DISTANCE * ratio, MIN_SIDE_DISTANCE, MAX_SIDE_DISTANCE)
 end
 
 function CameraController.new(player: Player, character: Model): CameraController
@@ -120,7 +121,7 @@ function CameraController:SetLobbyMode()
 	print("[CameraController] Switched to lobby mode (default camera)")
 end
 
--- 게임 모드 (3인칭 후방 뷰 카메라)
+-- 게임 모드 (사이드뷰 카메라)
 function CameraController:SetGameMode()
 	self._isGameMode = true
 	self._camera.CameraType = Enum.CameraType.Scriptable
@@ -132,7 +133,7 @@ function CameraController:SetGameMode()
 	self._targetCFrame = self:_calculateCameraPosition()
 	self._camera.CFrame = self._targetCFrame
 
-	print("[CameraController] Switched to game mode (3rd person chase camera)")
+	print("[CameraController] Switched to game mode (side-view camera)")
 end
 
 -- 카메라 흔들림 이벤트 설정
@@ -152,7 +153,7 @@ function CameraController:_setupCameraShakeEvent()
 	table.insert(self._connections, connection)
 end
 
--- 카메라 위치 계산 (3인칭 후방 뷰)
+-- 카메라 위치 계산 (사이드뷰)
 function CameraController:_calculateCameraPosition(): CFrame
 	if not self._humanoidRootPart then
 		return CFrame.new()
@@ -160,21 +161,21 @@ function CameraController:_calculateCameraPosition(): CFrame
 
 	local characterPosition = self._humanoidRootPart.Position
 
-	-- 카메라 위치: 캐릭터 뒤쪽 + 위쪽 (적응형 거리 사용)
-	local cameraPosition = characterPosition
-		+ Vector3.new(-self._cameraDistance, CAMERA_HEIGHT, 0) -- 뒤, 위
-		+ self._cameraOffset
+	-- 사이드뷰: 카메라를 Z축 양방향(+Z)에 배치, 캐릭터 앞쪽을 더 보여줌
+	local cameraPosition = Vector3.new(
+		characterPosition.X + LOOK_AHEAD,
+		CAMERA_HEIGHT,
+		self._cameraDistance
+	) + self._cameraOffset
 
-	-- 캐릭터 앞쪽을 바라봄 (캐릭터가 화면 하단 ~25-30%에 위치하도록)
-	local lookAtPosition = characterPosition + Vector3.new(45, 10, 0)
+	-- 캐릭터 평면(Z=0)을 바라봄
+	local lookAtPosition = Vector3.new(
+		characterPosition.X + LOOK_AHEAD,
+		LOOK_HEIGHT,
+		0
+	)
 
-	-- CFrame 생성
-	local cameraCFrame = CFrame.lookAt(cameraPosition, lookAtPosition)
-
-	-- 약간 아래로 기울이기
-	cameraCFrame = cameraCFrame * CFrame.Angles(-CAMERA_ANGLE, 0, 0)
-
-	return cameraCFrame
+	return CFrame.lookAt(cameraPosition, lookAtPosition)
 end
 
 -- 카메라 업데이트 (매 프레임)
