@@ -544,13 +544,11 @@ function PlayerController:Slide()
 
 	-- 이미 슬라이드 중이면 무시
 	if self.isSliding then
-		print("[PlayerController] Already sliding")
 		return
 	end
 
 	-- 공중에서는 슬라이드 불가
 	if not self.isGrounded then
-		print("[PlayerController] Cannot slide while airborne")
 		return
 	end
 
@@ -566,22 +564,30 @@ function PlayerController:Slide()
 		rotationLock.Enabled = false
 	end
 
-	-- 슬라이드 시각 효과: 캐릭터를 앞으로 기울이기
+	-- 슬라이드 시각 효과: 캐릭터를 앞으로 기울이기 (사이드뷰 기준 거의 눕힘)
 	local pos = self.humanoidRootPart.Position
 	self.humanoidRootPart.CFrame = CFrame.new(pos.X, pos.Y - 0.5, GameConstants.PLAYER.Z_POSITION)
-		* CFrame.Angles(math.rad(-45), math.rad(-90), 0) -- 앞으로 45도 기울임
+		* CFrame.Angles(math.rad(-75), math.rad(-90), 0) -- 앞으로 75도 기울임 (거의 눕기)
 
 	-- 달리기 애니메이션 정지
 	self.humanoid:Move(Vector3.zero, false)
 
-	print("[PlayerController] Slide started")
+	print("[PlayerController] Slide started (hold-to-slide)")
 
-	-- 자동 해제 타이머
-	task.delay(GameConstants.PHYSICS.SLIDE_DURATION, function()
+	-- 안전 최대 슬라이드 시간 (버튼 릴리즈 못 받았을 때 대비)
+	local MAX_SLIDE_DURATION = 3.0
+	task.delay(MAX_SLIDE_DURATION, function()
 		if self.isSliding then
 			self:_endSlide()
 		end
 	end)
+end
+
+-- 슬라이드 종료 (버튼 릴리즈 시 호출)
+function PlayerController:SlideEnd()
+	if self.isSliding then
+		self:_endSlide()
+	end
 end
 
 -- 슬라이드 업데이트

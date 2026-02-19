@@ -18,6 +18,7 @@ export type InputController = typeof(setmetatable(
 		_connections: { RBXScriptConnection },
 		_jumpCallback: ((any) -> ())?,
 		_slideCallback: ((any) -> ())?,
+		_slideEndCallback: (() -> ())?,
 		_touchStartPos: Vector2?,
 		_touchStartTime: number,
 		_isGameActive: boolean,
@@ -31,6 +32,7 @@ function InputController.new(): InputController
 		_connections = {},
 		_jumpCallback = nil,
 		_slideCallback = nil,
+		_slideEndCallback = nil,
 		_touchStartPos = nil,
 		_touchStartTime = 0,
 		_isGameActive = false,
@@ -51,6 +53,11 @@ end
 -- 슬라이드 콜백 등록
 function InputController:OnSlide(callback: (any) -> ())
 	self._slideCallback = callback
+end
+
+-- 슬라이드 종료 콜백 등록
+function InputController:OnSlideEnd(callback: () -> ())
+	self._slideEndCallback = callback
 end
 
 -- 게임 활성화 상태 설정 (스와이프는 게임 중에만)
@@ -83,8 +90,20 @@ function InputController:_setupKeyboardInput()
 			end
 		end
 	end)
-
 	table.insert(self._connections, connection)
+
+	-- 키보드 릴리즈 (슬라이드 종료)
+	local releaseConn = UserInputService.InputEnded:Connect(function(input: InputObject, gameProcessed: boolean)
+		if gameProcessed then
+			return
+		end
+		if input.KeyCode == Enum.KeyCode.S or input.KeyCode == Enum.KeyCode.Down then
+			if self._slideEndCallback then
+				self._slideEndCallback()
+			end
+		end
+	end)
+	table.insert(self._connections, releaseConn)
 end
 
 -- 터치 스와이프 입력 설정
@@ -182,6 +201,13 @@ function InputController:TriggerSlide()
 	end
 end
 
+-- 슬라이드 종료 트리거 (UI 버튼 릴리즈용)
+function InputController:TriggerSlideEnd()
+	if self._slideEndCallback then
+		self._slideEndCallback()
+	end
+end
+
 -- 정리
 function InputController:Destroy()
 	for _, connection in self._connections do
@@ -190,6 +216,7 @@ function InputController:Destroy()
 	self._connections = {}
 	self._jumpCallback = nil
 	self._slideCallback = nil
+	self._slideEndCallback = nil
 end
 
 return InputController
