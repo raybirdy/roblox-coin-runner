@@ -43,6 +43,7 @@ type PlayerData = {
 	dailyMissions: { any }?, -- { { id, target, progress, completed } }
 	dailyMissionDate: string?, -- "YYYY-MM-DD" (미션 리셋 날짜)
 	completedAchievements: { string }?, -- 달성한 업적 ID 목록
+	processedReceipts: { string }?, -- 처리된 구매 영수증 ID 목록
 }
 
 local DEFAULT_DATA: PlayerData = {
@@ -66,6 +67,8 @@ local DEFAULT_DATA: PlayerData = {
 	dailyMissions = nil,
 	dailyMissionDate = nil,
 	completedAchievements = {},
+	-- 구매 영수증 중복 방지 (최근 50개)
+	processedReceipts = {},
 }
 
 -- 메모리 캐시 (활성 플레이어)
@@ -490,11 +493,52 @@ function PlayerDataService:GetEquippedSkin(player: Player): string
 	return playerData.equippedSkin or "default"
 end
 
--- 유틸리티: 테이블 복사
+-- 영수증 중복 확인
+function PlayerDataService:HasProcessedReceipt(player: Player, receiptKey: string): boolean
+	local playerData = playerDataCache[player]
+	if not playerData or not playerData.processedReceipts then
+		return false
+	end
+
+	for _, key in playerData.processedReceipts do
+		if key == receiptKey then
+			return true
+		end
+	end
+
+	return false
+end
+
+-- 영수증 처리 기록 (최근 50개만 유지)
+function PlayerDataService:AddProcessedReceipt(player: Player, receiptKey: string)
+	local playerData = playerDataCache[player]
+	if not playerData then
+		return
+	end
+
+	if not playerData.processedReceipts then
+		playerData.processedReceipts = {}
+	end
+
+	table.insert(playerData.processedReceipts, receiptKey)
+
+	-- 최근 50개만 유지 (DataStore 용량 절약)
+	while #playerData.processedReceipts > 50 do
+		table.remove(playerData.processedReceipts, 1)
+	end
+
+	self:SavePlayerData(player)
+end
+
+-- 유틸리티: 테이블 깊은 복사 (nested table 참조 공유 방지)
 function PlayerDataService:_copyTable(original: any): any
 	local copy = {}
 	for key, value in original do
-		copy[key] = value
+		if type(value) == "table" then
+			copy[key] = self:_copyTable(value)
+		else
+			copy[key] = value
+		end
 	end
 	return copy
 end

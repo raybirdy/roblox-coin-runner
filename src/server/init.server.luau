@@ -17,6 +17,7 @@ end
 -- 공유 모듈 로드
 local GameConstants = require(ReplicatedStorage.Shared.Constants.GameConstants)
 local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)
+local RateLimiter = require(ReplicatedStorage.Shared.Utils.RateLimiter)
 
 -- 서버 서비스 로드
 local GameManager = require(ServerScriptService.Server.Services.GameManager)
@@ -59,6 +60,8 @@ end)
 
 -- 클라이언트 초기화 후 데이터 요청 처리
 RemoteEvents.PlayerDataRequest.OnServerEvent:Connect(function(player: Player)
+	if not RateLimiter.Check(player, "PlayerDataRequest", 1) then return end
+
 	local playerData = PlayerDataService:GetPlayerData(player)
 	if playerData then
 		RemoteEvents.PlayerDataLoaded:FireClient(player, playerData)
@@ -81,7 +84,7 @@ game:BindToClose(function()
 	-- 모든 플레이어 데이터 저장
 	PlayerDataService:SaveAllPlayers()
 
-	wait(3) -- DataStore 저장 완료 대기
+	task.wait(3) -- DataStore 저장 완료 대기
 end)
 
 print("[Server] Coin Runner Server Ready")
