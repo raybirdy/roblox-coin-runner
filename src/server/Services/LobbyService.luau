@@ -387,13 +387,13 @@ function LobbyService:_createShop()
 	platform.Material = Enum.Material.Marble
 	platform.Parent = lobbyFolder
 
-	-- 상점 부스 (큰 보라색 건물)
+	-- 상점 부스 (큰 보라색 건물 - 통과 가능)
 	local shopBooth = Instance.new("Part")
 	shopBooth.Name = "ShopBooth"
 	shopBooth.Size = Vector3.new(20, 14, 12)
 	shopBooth.Position = shopPos
 	shopBooth.Anchored = true
-	shopBooth.CanCollide = true
+	shopBooth.CanCollide = false
 	shopBooth.Color = Color3.fromRGB(160, 50, 200)
 	shopBooth.Material = Enum.Material.SmoothPlastic
 	shopBooth.Parent = lobbyFolder
@@ -421,11 +421,11 @@ function LobbyService:_createShop()
 	shopBorder.Transparency = 0.7
 	shopBorder.Parent = lobbyFolder
 
-	-- 상점 터치 영역 (투명, 넓은 범위)
+	-- 상점 터치 영역 (투명, 넓은 범위 - 플레이어 방향으로 확장)
 	local shopTrigger = Instance.new("Part")
 	shopTrigger.Name = "ShopTrigger"
-	shopTrigger.Size = Vector3.new(26, 16, 18)
-	shopTrigger.Position = shopPos
+	shopTrigger.Size = Vector3.new(26, 16, 26)
+	shopTrigger.Position = shopPos + Vector3.new(0, 0, -4)
 	shopTrigger.Anchored = true
 	shopTrigger.CanCollide = false
 	shopTrigger.Transparency = 1

@@ -546,11 +546,11 @@ function UIController:_createUI()
 	guideLabel.TextStrokeColor3 = Color3.fromRGB(0, 100, 0)
 	guideLabel.Parent = lobbyGuide
 
-	-- 로비 최고 점수 표시 (화면 상단) - 개선된 가시성
+	-- 로비 최고 점수 표시 (우측 상단 - 이동 방해 안 함)
 	local highScoreDisplay = Instance.new("Frame")
 	highScoreDisplay.Name = "HighScoreDisplay"
-	highScoreDisplay.Size = UDim2.new(0, 300, 0, 130)
-	highScoreDisplay.Position = UDim2.new(0.5, -150, 0, 10)
+	highScoreDisplay.Size = UDim2.new(0, 200, 0, 100)
+	highScoreDisplay.Position = UDim2.new(1, -210, 0, 10)
 	highScoreDisplay.BackgroundColor3 = Color3.fromRGB(20, 20, 40)
 	highScoreDisplay.BackgroundTransparency = 0.15
 	highScoreDisplay.Visible = false
@@ -569,11 +569,11 @@ function UIController:_createUI()
 
 	local hsTitle = Instance.new("TextLabel")
 	hsTitle.Name = "Title"
-	hsTitle.Size = UDim2.new(1, 0, 0, 35)
-	hsTitle.Position = UDim2.new(0, 0, 0, 8)
+	hsTitle.Size = UDim2.new(1, 0, 0, 25)
+	hsTitle.Position = UDim2.new(0, 0, 0, 5)
 	hsTitle.BackgroundTransparency = 1
 	hsTitle.TextColor3 = Color3.fromRGB(255, 215, 0)
-	hsTitle.TextSize = 24
+	hsTitle.TextSize = 16
 	hsTitle.Font = Enum.Font.GothamBlack
 	hsTitle.Text = "MY BEST"
 	hsTitle.TextStrokeTransparency = 0.5
@@ -582,11 +582,11 @@ function UIController:_createUI()
 
 	local hsScore = Instance.new("TextLabel")
 	hsScore.Name = "Score"
-	hsScore.Size = UDim2.new(1, 0, 0, 35)
-	hsScore.Position = UDim2.new(0, 0, 0, 45)
+	hsScore.Size = UDim2.new(1, 0, 0, 28)
+	hsScore.Position = UDim2.new(0, 0, 0, 32)
 	hsScore.BackgroundTransparency = 1
 	hsScore.TextColor3 = Color3.fromRGB(255, 255, 255)
-	hsScore.TextSize = 28
+	hsScore.TextSize = 20
 	hsScore.Font = Enum.Font.GothamBold
 	hsScore.Text = "Score: 0"
 	hsScore.TextStrokeTransparency = 0.3
@@ -595,11 +595,11 @@ function UIController:_createUI()
 
 	local hsCoins = Instance.new("TextLabel")
 	hsCoins.Name = "Coins"
-	hsCoins.Size = UDim2.new(1, 0, 0, 30)
-	hsCoins.Position = UDim2.new(0, 0, 0, 85)
+	hsCoins.Size = UDim2.new(1, 0, 0, 25)
+	hsCoins.Position = UDim2.new(0, 0, 0, 62)
 	hsCoins.BackgroundTransparency = 1
 	hsCoins.TextColor3 = Color3.fromRGB(255, 215, 0)
-	hsCoins.TextSize = 20
+	hsCoins.TextSize = 16
 	hsCoins.Font = Enum.Font.GothamBold
 	hsCoins.Text = "Coins: 0"
 	hsCoins.TextStrokeTransparency = 0.3
