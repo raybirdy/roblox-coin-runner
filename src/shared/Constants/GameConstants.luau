@@ -412,15 +412,15 @@ GameConstants.SHOP = {
 -- 수익화 시스템 (Robux 상품)
 -- 주의: 실제 Product/GamePass ID는 Roblox Creator Hub에서 생성 후 교체 필요
 GameConstants.MONETIZATION = {
-	-- DevProducts (젬 구매) - ID는 Creator Hub에서 생성 후 교체
+	-- DevProducts (젬 구매)
 	GEM_PRODUCTS = {
-		{ id = "gems_50", productId = 0, gems = 50, robux = 25, bonus = 0 },
-		{ id = "gems_200", productId = 0, gems = 200, robux = 75, bonus = 50 },
-		{ id = "gems_500", productId = 0, gems = 500, robux = 149, bonus = 150 },
-		{ id = "starter_pack", productId = 0, gems = 100, robux = 49, bonus = 0, includesPet = true },
+		{ id = "gems_50", productId = 3540343000, gems = 50, robux = 25, bonus = 0 },
+		{ id = "gems_200", productId = 3540343177, gems = 200, robux = 75, bonus = 50 },
+		{ id = "gems_500", productId = 3540343329, gems = 500, robux = 149, bonus = 150 },
+		{ id = "starter_pack", productId = 3540343511, gems = 100, robux = 49, bonus = 0, includesPet = true },
 	},
 	-- GamePass (VIP)
-	VIP_GAMEPASS_ID = 0, -- Creator Hub에서 생성 후 교체
+	VIP_GAMEPASS_ID = 1720352633,
 	VIP_BENEFITS = {
 		coinMultiplier = 2, -- 코인 획득 2배
 		badge = "VIP",
