@@ -78,8 +78,8 @@ function AnimationController:_initialize()
 				track.Looped = false
 			end
 
-			-- 우선순위 설정
-			track.Priority = Enum.AnimationPriority.Action
+			-- 우선순위 설정 (기본 Animate 스크립트보다 높은 우선순위)
+			track.Priority = Enum.AnimationPriority.Action4
 		else
 			warn(`[AnimationController] Failed to load animation: {name}`)
 		end
@@ -88,17 +88,19 @@ function AnimationController:_initialize()
 	print("[AnimationController] Initialized with animations")
 end
 
--- 애니메이션 재생
-function AnimationController:Play(state: string, speed: number?)
+-- 애니메이션 재생 (fadeTime: 전환 시간, 기본 0.1초)
+function AnimationController:Play(state: string, speed: number?, fadeTime: number?)
 	-- 같은 상태면 무시
 	if self._currentState == state and self._currentTrack and self._currentTrack.IsPlaying then
 		return
 	end
 
+	local fade = fadeTime or 0.1
+
 	-- 이전 애니메이션 정지
 	if self._currentTrack then
 		pcall(function()
-			self._currentTrack:Stop(0.2) -- 0.2초 페이드아웃
+			self._currentTrack:Stop(fade)
 		end)
 	end
 
@@ -106,7 +108,7 @@ function AnimationController:Play(state: string, speed: number?)
 	local track = self._tracks[state]
 	if track then
 		local success = pcall(function()
-			track:Play(0.2) -- 0.2초 페이드인
+			track:Play(fade)
 
 			-- 속도 조절 (달리기 속도에 맞춤)
 			if speed then
@@ -122,9 +124,10 @@ function AnimationController:Play(state: string, speed: number?)
 end
 
 -- 달리기 애니메이션 (속도에 따라 조절)
-function AnimationController:PlayRun(speedMultiplier: number?)
+function AnimationController:PlayRun(speedMultiplier: number?, immediate: boolean?)
 	local speed = speedMultiplier or 1.0
-	self:Play("Run", speed)
+	local fade = immediate and 0 or nil
+	self:Play("Run", speed, fade)
 end
 
 -- 점프 애니메이션
@@ -139,7 +142,7 @@ end
 
 -- 슬라이드 애니메이션
 function AnimationController:PlaySlide()
-	self:Play("Slide", 0.5) -- 느리게 재생
+	self:Play("Slide", 0.5)
 end
 
 -- 대기 애니메이션
