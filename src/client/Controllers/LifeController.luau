@@ -76,9 +76,10 @@ end
 function LifeController:_playDamageEffect()
 	-- 빨간 화면 플래시
 	if self._damageFrame then
-		self._damageFrame.BackgroundTransparency = 0.5
+		-- Phase 2: Enhanced vignette damage effect
+		self._damageFrame.BackgroundTransparency = 0.4
 
-		local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+		local tweenInfo = TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 		local tween = TweenService:Create(self._damageFrame, tweenInfo, {
 			BackgroundTransparency = 1,
 		})
@@ -111,6 +112,19 @@ function LifeController:OnLifeUpdate(data: { lives: number })
 
 		-- 피격 이펙트 재생
 		self:_playDamageEffect()
+
+		-- Phase 2: Haptic feedback for damage
+		pcall(function()
+			local HapticService = game:GetService("HapticService")
+			if HapticService:IsVibrationSupported(Enum.UserInputType.Gamepad1) then
+				HapticService:SetMotor(Enum.UserInputType.Gamepad1, Enum.VibrationMotor.Large, 0.8)
+				task.delay(0.3, function()
+					pcall(function()
+						HapticService:SetMotor(Enum.UserInputType.Gamepad1, Enum.VibrationMotor.Large, 0)
+					end)
+				end)
+			end
+		end)
 
 		-- 화면 흔들림 트리거 (CameraController에 알림)
 		local cameraShakeEvent = ReplicatedStorage:FindFirstChild("CameraShake")

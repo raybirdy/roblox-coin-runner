@@ -7,6 +7,7 @@ local Workspace = game:GetService("Workspace")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local GameConstants = require(ReplicatedStorage.Shared.Constants.GameConstants)
+local HapticService = game:GetService("HapticService")
 
 local InputController = {}
 InputController.__index = InputController
@@ -145,8 +146,7 @@ function InputController:_setupTouchInput()
 		local swipeThreshold = GameConstants.UI.SWIPE_THRESHOLD
 
 		-- Dynamic swipe threshold based on screen size
-		local viewport = Workspace.CurrentCamera and Workspace.CurrentCamera.ViewportSize
-			or Vector2.new(1920, 1080)
+		local viewport = Workspace.CurrentCamera and Workspace.CurrentCamera.ViewportSize or Vector2.new(1920, 1080)
 		local dynamicThreshold = math.max(swipeThreshold, viewport.Y * 0.08)
 
 		-- 수직 스와이프가 수평보다 큰 경우만 처리
@@ -181,6 +181,20 @@ function InputController:_canTriggerAction(): boolean
 	return true
 end
 
+-- Phase 2: Haptic feedback (vibration)
+function InputController:TriggerHaptic(intensity: number)
+	pcall(function()
+		if HapticService:IsVibrationSupported(Enum.UserInputType.Gamepad1) then
+			HapticService:SetMotor(Enum.UserInputType.Gamepad1, Enum.VibrationMotor.Small, intensity)
+			task.delay(0.15, function()
+				pcall(function()
+					HapticService:SetMotor(Enum.UserInputType.Gamepad1, Enum.VibrationMotor.Small, 0)
+				end)
+			end)
+		end
+	end)
+end
+
 -- 점프 트리거 (UI 버튼용 public 메서드)
 function InputController:TriggerJump()
 	if not self:_canTriggerAction() then
@@ -189,6 +203,7 @@ function InputController:TriggerJump()
 	if self._jumpCallback then
 		self._jumpCallback()
 	end
+	self:TriggerHaptic(0.3)
 end
 
 -- 슬라이드 트리거 (UI 버튼용 public 메서드)
@@ -199,6 +214,7 @@ function InputController:TriggerSlide()
 	if self._slideCallback then
 		self._slideCallback()
 	end
+	self:TriggerHaptic(0.2)
 end
 
 -- 슬라이드 종료 트리거 (UI 버튼 릴리즈용)
