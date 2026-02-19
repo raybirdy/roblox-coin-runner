@@ -39,6 +39,7 @@ export type UIController = typeof(setmetatable(
 		_connections: { RBXScriptConnection },
 		_onJumpCallback: (() -> ())?,
 		_onSlideCallback: (() -> ())?,
+		_onSlideEndCallback: (() -> ())?,
 	},
 	UIController
 ))
@@ -69,6 +70,7 @@ function UIController.new(player: Player): UIController
 		_connections = {},
 		_onJumpCallback = nil,
 		_onSlideCallback = nil,
+		_onSlideEndCallback = nil,
 	}, UIController)
 
 	self:_createUI()
@@ -708,6 +710,12 @@ function UIController:_createMobileControls()
 		end
 	end)
 
+	slideButton.MouseButton1Up:Connect(function()
+		if self._onSlideEndCallback then
+			self._onSlideEndCallback()
+		end
+	end)
+
 	-- 초기에는 숨김 (게임 시작 시 표시)
 	jumpButton.Visible = false
 	slideButton.Visible = false
@@ -822,6 +830,11 @@ end
 -- 슬라이드 콜백 설정
 function UIController:OnSlide(callback: () -> ())
 	self._onSlideCallback = callback
+end
+
+-- 슬라이드 종료 콜백 설정
+function UIController:OnSlideEnd(callback: () -> ())
+	self._onSlideEndCallback = callback
 end
 
 -- 게임 오버 화면 표시
