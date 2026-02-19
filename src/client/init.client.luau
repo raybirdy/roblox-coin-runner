@@ -79,6 +79,7 @@ local SpeedEffectController = require(script.Controllers.SpeedEffectController)
 local LeaderboardController = require(script.Controllers.LeaderboardController)
 local StartPowerupController = require(script.Controllers.StartPowerupController)
 local ProgressionController = require(script.Controllers.ProgressionController)
+local LoginRewardController = require(script.Controllers.LoginRewardController)
 
 -- 컨트롤러 인스턴스 생성
 local inputController = InputController.new()
@@ -96,6 +97,7 @@ local speedEffectController = SpeedEffectController.new(player)
 local leaderboardController = LeaderboardController.new(player)
 local startPowerupController = StartPowerupController.new(player)
 local progressionController = ProgressionController.new(player)
+local loginRewardController = LoginRewardController.new(player)
 
 -- 배경 음악 시작
 musicController:Start()
