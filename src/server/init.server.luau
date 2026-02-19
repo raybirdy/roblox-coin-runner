@@ -26,6 +26,7 @@ local LobbyService = require(ServerScriptService.Server.Services.LobbyService)
 local ShopService = require(ServerScriptService.Server.Services.ShopService)
 local MonetizationService = require(ServerScriptService.Server.Services.MonetizationService)
 local ProgressionService = require(ServerScriptService.Server.Services.ProgressionService)
+local LuckySpinService = require(ServerScriptService.Server.Services.LuckySpinService)
 
 print("[Server] Game Constants Loaded")
 print("[Server] Remote Events Initialized")
@@ -35,6 +36,7 @@ print("[Server] LobbyService Loaded")
 print("[Server] ShopService Loaded")
 print("[Server] MonetizationService Loaded")
 print("[Server] ProgressionService Loaded")
+print("[Server] LuckySpinService Loaded")
 
 -- 플레이어 참가 처리
 game.Players.PlayerAdded:Connect(function(player: Player)
@@ -60,7 +62,9 @@ end)
 
 -- 클라이언트 초기화 후 데이터 요청 처리
 RemoteEvents.PlayerDataRequest.OnServerEvent:Connect(function(player: Player)
-	if not RateLimiter.Check(player, "PlayerDataRequest", 1) then return end
+	if not RateLimiter.Check(player, "PlayerDataRequest", 1) then
+		return
+	end
 
 	local playerData = PlayerDataService:GetPlayerData(player)
 	if playerData then
