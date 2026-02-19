@@ -44,6 +44,11 @@ type PlayerData = {
 	dailyMissionDate: string?, -- "YYYY-MM-DD" (미션 리셋 날짜)
 	completedAchievements: { string }?, -- 달성한 업적 ID 목록
 	processedReceipts: { string }?, -- 처리된 구매 영수증 ID 목록
+	-- Phase 2: Daily Login
+	loginStreak: number, -- 연속 출석 일수
+	lastLoginDate: string?, -- "YYYY-MM-DD"
+	-- Phase 2: Lucky Spin
+	lastSpinDate: string?, -- 마지막 스핀 날짜
 }
 
 local DEFAULT_DATA: PlayerData = {
@@ -69,6 +74,11 @@ local DEFAULT_DATA: PlayerData = {
 	completedAchievements = {},
 	-- 구매 영수증 중복 방지 (최근 50개)
 	processedReceipts = {},
+	-- Phase 2: Daily Login
+	loginStreak = 0,
+	lastLoginDate = nil,
+	-- Phase 2: Lucky Spin
+	lastSpinDate = nil,
 }
 
 -- 메모리 캐시 (활성 플레이어)
@@ -129,7 +139,9 @@ function PlayerDataService:SavePlayerData(player: Player): boolean
 
 	for attempt = 1, retryCount do
 		local success, error = pcall(function()
-			playerDataStore:SetAsync("Player_" .. userId, playerData)
+			playerDataStore:UpdateAsync("Player_" .. userId, function()
+				return playerData
+			end)
 		end)
 
 		if success then
@@ -543,12 +555,25 @@ function PlayerDataService:_copyTable(original: any): any
 	return copy
 end
 
+-- Valid keys set (nil-default fields included for merge support)
+local VALID_KEYS: { [string]: boolean } = {}
+for key, _ in DEFAULT_DATA do
+	VALID_KEYS[key] = true
+end
+-- Nullable fields not iterable from DEFAULT_DATA
+VALID_KEYS["dailyMissions"] = true
+VALID_KEYS["dailyMissionDate"] = true
+VALID_KEYS["completedAchievements"] = true
+VALID_KEYS["processedReceipts"] = true
+VALID_KEYS["lastLoginDate"] = true
+VALID_KEYS["lastSpinDate"] = true
+
 -- 유틸리티: 기본값 병합
 function PlayerDataService:_mergeWithDefaults(data: any): PlayerData
 	local merged = self:_copyTable(DEFAULT_DATA)
 
 	for key, value in data do
-		if merged[key] ~= nil then
+		if VALID_KEYS[key] then
 			merged[key] = value
 		end
 	end

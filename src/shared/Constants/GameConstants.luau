@@ -782,4 +782,45 @@ GameConstants.ACHIEVEMENTS = {
 	},
 }
 
+-- ==================== Phase 2: 리텐션 시스템 ====================
+
+-- 일일 출석 보상
+GameConstants.LOGIN_REWARDS = {
+	CYCLE_DAYS = 7,
+	REWARDS = {
+		{ day = 1, type = "coins", amount = 50 },
+		{ day = 2, type = "coins", amount = 100 },
+		{ day = 3, type = "gems", amount = 5 },
+		{ day = 4, type = "coins", amount = 200 },
+		{ day = 5, type = "gems", amount = 10 },
+		{ day = 6, type = "coins", amount = 300 },
+		{ day = 7, type = "gems", amount = 20 },
+	},
+	STREAK_MULTIPLIERS = {
+		{ week = 2, multiplier = 1.5 },
+		{ week = 3, multiplier = 2.0 },
+	},
+}
+
+-- 럭키 스핀
+GameConstants.LUCKY_SPIN = {
+	FREE_SPINS_PER_DAY = 1,
+	EXTRA_SPIN_GEM_COST = 5,
+	REWARDS = {
+		{ id = "coins_50", name = "50 코인", type = "coins", amount = 50, weight = 40 },
+		{ id = "coins_100", name = "100 코인", type = "coins", amount = 100, weight = 25 },
+		{ id = "coins_200", name = "200 코인", type = "coins", amount = 200, weight = 15 },
+		{ id = "gems_5", name = "5 젬", type = "gems", amount = 5, weight = 10 },
+		{ id = "gems_10", name = "10 젬", type = "gems", amount = 10, weight = 5 },
+		{ id = "gems_20", name = "20 젬", type = "gems", amount = 20, weight = 3 },
+		{ id = "skin_piece", name = "스킨 조각", type = "skin_piece", amount = 1, weight = 2 },
+	},
+}
+
+-- 신기록 임박 알림
+GameConstants.NEAR_RECORD = {
+	THRESHOLD_RATIO = 0.80,
+	PULSE_INTERVAL = 2.0,
+}
+
 return GameConstants

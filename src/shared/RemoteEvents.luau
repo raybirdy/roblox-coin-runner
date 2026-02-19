@@ -235,4 +235,32 @@ RemoteEvents.ProgressionDataResponse = getOrCreateRemoteEvent("ProgressionDataRe
 -- 서버 → 클라이언트: 전체 진행도 데이터 전송
 -- 파라미터: { level, xp, xpToNext, missions, achievements }
 
+-- ==================== Phase 2: 리텐션 시스템 ====================
+
+-- 일일 출석 보상
+RemoteEvents.LoginRewardClaim = getOrCreateRemoteEvent("LoginRewardClaim")
+-- 클라이언트 → 서버: 출석 보상 수령 요청
+
+RemoteEvents.LoginRewardData = getOrCreateRemoteEvent("LoginRewardData")
+-- 서버 → 클라이언트: 출석 보상 정보 전송
+-- 파라미터: { loginStreak, rewardDay, reward, multiplier, alreadyClaimed }
+
+-- 럭키 스핀
+RemoteEvents.SpinRequest = getOrCreateRemoteEvent("SpinRequest")
+-- 클라이언트 → 서버: 스핀 요청
+-- 파라미터: { useGems: boolean }
+
+RemoteEvents.SpinResult = getOrCreateRemoteEvent("SpinResult")
+-- 서버 → 클라이언트: 스핀 결과
+-- 파라미터: { rewardId, rewardName, type, amount, freeSpinsLeft }
+
+-- 신기록 임박 알림
+RemoteEvents.NearRecordAlert = getOrCreateRemoteEvent("NearRecordAlert")
+-- 서버 → 클라이언트: 신기록 임박 알림
+-- 파라미터: { currentScore, highScore }
+
+RemoteEvents.NewRecordCelebration = getOrCreateRemoteEvent("NewRecordCelebration")
+-- 서버 → 클라이언트: 신기록 달성 축하
+-- 파라미터: { newRecord: number }
+
 return RemoteEvents
