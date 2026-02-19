@@ -80,6 +80,7 @@ local LeaderboardController = require(script.Controllers.LeaderboardController)
 local StartPowerupController = require(script.Controllers.StartPowerupController)
 local ProgressionController = require(script.Controllers.ProgressionController)
 local LoginRewardController = require(script.Controllers.LoginRewardController)
+local LuckySpinController = require(script.Controllers.LuckySpinController)
 
 -- 컨트롤러 인스턴스 생성
 local inputController = InputController.new()
@@ -98,6 +99,7 @@ local leaderboardController = LeaderboardController.new(player)
 local startPowerupController = StartPowerupController.new(player)
 local progressionController = ProgressionController.new(player)
 local loginRewardController = LoginRewardController.new(player)
+local luckySpinController = LuckySpinController.new(player)
 
 -- 배경 음악 시작
 musicController:Start()

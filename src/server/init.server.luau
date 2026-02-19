@@ -27,6 +27,7 @@ local ShopService = require(ServerScriptService.Server.Services.ShopService)
 local MonetizationService = require(ServerScriptService.Server.Services.MonetizationService)
 local ProgressionService = require(ServerScriptService.Server.Services.ProgressionService)
 local LoginRewardService = require(ServerScriptService.Server.Services.LoginRewardService)
+local LuckySpinService = require(ServerScriptService.Server.Services.LuckySpinService)
 
 print("[Server] Game Constants Loaded")
 print("[Server] Remote Events Initialized")
@@ -37,6 +38,7 @@ print("[Server] ShopService Loaded")
 print("[Server] MonetizationService Loaded")
 print("[Server] ProgressionService Loaded")
 print("[Server] LoginRewardService Loaded")
+print("[Server] LuckySpinService Loaded")
 
 -- 플레이어 참가 처리
 game.Players.PlayerAdded:Connect(function(player: Player)
