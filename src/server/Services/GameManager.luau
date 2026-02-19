@@ -47,6 +47,7 @@ type GameSession = {
 	lastCoinTime: number, -- 마지막 코인 수집 시간
 	nearMissedObstacles: { [any]: boolean }, -- 니어미스 처리된 장애물 추적
 	consecutiveHits: number, -- 연속 피격 횟수 (자비 청크용)
+	nearRecordAlerted: boolean, -- Phase 2: near record alert sent
 }
 
 local activeSessions: { [Player]: GameSession } = {}
@@ -104,7 +105,9 @@ RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { 
 	print(`[GameManager] Portal enter confirmed by {player.Name}`)
 
 	-- 입력 검증 (data는 nil 허용)
-	if data ~= nil and type(data) ~= "table" then return end
+	if data ~= nil and type(data) ~= "table" then
+		return
+	end
 
 	-- 시작 파워업 검증 및 사용
 	local validPowerups: { string } = {}
@@ -162,6 +165,7 @@ RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { 
 		lastCoinTime = 0,
 		nearMissedObstacles = {},
 		consecutiveHits = 0,
+		nearRecordAlerted = false,
 	}
 
 	activeSessions[player] = session
@@ -281,7 +285,9 @@ end)
 
 -- 게임 시작 요청 처리
 RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
-	if not RateLimiter.Check(player, "GameStart", 2) then return end
+	if not RateLimiter.Check(player, "GameStart", 2) then
+		return
+	end
 
 	print(`[GameManager] Game start requested by {player.Name}`)
 
@@ -330,6 +336,7 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 		lastCoinTime = 0,
 		nearMissedObstacles = {},
 		consecutiveHits = 0,
+		nearRecordAlerted = false,
 	}
 
 	activeSessions[player] = session
@@ -366,7 +373,9 @@ end)
 
 -- 게임 오버 요청 처리
 RemoteEvents.GameOver.OnServerEvent:Connect(function(player: Player)
-	if not RateLimiter.Check(player, "GameOver", 1) then return end
+	if not RateLimiter.Check(player, "GameOver", 1) then
+		return
+	end
 
 	print(`[GameManager] Game over requested by {player.Name}`)
 	GameManager.EndGame(player)
@@ -374,7 +383,9 @@ end)
 
 -- 부활 요청 처리
 RemoteEvents.Revive.OnServerEvent:Connect(function(player: Player)
-	if not RateLimiter.Check(player, "Revive", 2) then return end
+	if not RateLimiter.Check(player, "Revive", 2) then
+		return
+	end
 
 	local session = activeSessions[player]
 	if not session then
@@ -487,6 +498,13 @@ function GameManager.EndGame(player: Player)
 
 	-- 신기록 여부 확인
 	local isNewRecord = finalScore > 0 and finalScore >= highScore
+
+	-- Phase 2: 신기록 축하 이벤트
+	if isNewRecord then
+		RemoteEvents.NewRecordCelebration:FireClient(player, {
+			newRecord = finalScore,
+		})
+	end
 
 	-- 위로 보상 체크
 	local consolationReward = 0
@@ -714,8 +732,8 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 
 						-- 현재 점수 계산 (UI 표시용)
 						local reviveX = player.Character
-							and player.Character:FindFirstChild("HumanoidRootPart")
-							and (player.Character.HumanoidRootPart :: BasePart).Position.X
+								and player.Character:FindFirstChild("HumanoidRootPart")
+								and (player.Character.HumanoidRootPart :: BasePart).Position.X
 							or session.startPosition.X
 						local reviveDist = math.max(0, math.floor(reviveX - session.startPosition.X))
 						local reviveData = PlayerDataService:GetPlayerData(player)
@@ -754,6 +772,19 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 			ProgressionService:OnNearMiss(player)
 
 			print(`[GameManager] Near miss! +{GameConstants.SCORE.NEAR_MISS_BONUS} for {player.Name}`)
+		end
+
+		-- Phase 2: 신기록 임박 알림 (1회만)
+		if not session.nearRecordAlerted then
+			local playerData = PlayerDataService:GetPlayerData(player)
+			local highScore = playerData and playerData.highScore or 0
+			if highScore > 0 and session.score / highScore >= GameConstants.NEAR_RECORD.THRESHOLD_RATIO then
+				session.nearRecordAlerted = true
+				RemoteEvents.NearRecordAlert:FireClient(player, {
+					currentScore = session.score,
+					highScore = highScore,
+				})
+			end
 		end
 
 		-- 점수 업데이트 (이동 거리 기반)
