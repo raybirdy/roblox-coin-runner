@@ -401,9 +401,9 @@ function PlayerController:_moveForward(deltaTime: number)
 
 	-- X축 이동, Y는 현재 위치 유지 (물리 엔진이 처리), Z는 고정
 	if self.isSliding then
-		-- 슬라이드 중: 앞으로 기울인 상태 유지 (낮은 자세)
+		-- 슬라이드 중: 완전히 엎드린 자세 유지
 		self.humanoidRootPart.CFrame = CFrame.new(newX, pos.Y, GameConstants.PLAYER.Z_POSITION)
-			* CFrame.Angles(math.rad(-45), math.rad(-90), 0)
+			* CFrame.Angles(math.rad(-90), math.rad(-90), 0)
 	else
 		-- 일반 상태: 정상 자세
 		self.humanoidRootPart.CFrame = CFrame.new(newX, pos.Y, GameConstants.PLAYER.Z_POSITION)
@@ -564,13 +564,16 @@ function PlayerController:Slide()
 		rotationLock.Enabled = false
 	end
 
-	-- 슬라이드 시각 효과: 캐릭터를 앞으로 기울이기 (사이드뷰 기준 거의 눕힘)
+	-- 슬라이드 시각 효과: 캐릭터를 완전히 엎드리기
 	local pos = self.humanoidRootPart.Position
-	self.humanoidRootPart.CFrame = CFrame.new(pos.X, pos.Y - 0.5, GameConstants.PLAYER.Z_POSITION)
-		* CFrame.Angles(math.rad(-75), math.rad(-90), 0) -- 앞으로 75도 기울임 (거의 눕기)
+	self.humanoidRootPart.CFrame = CFrame.new(pos.X, pos.Y - 1.0, GameConstants.PLAYER.Z_POSITION)
+		* CFrame.Angles(math.rad(-90), math.rad(-90), 0) -- 완전히 엎드린 자세
 
-	-- 달리기 애니메이션 정지
+	-- 달리기 애니메이션 정지 후 슬라이드 애니메이션 재생
 	self.humanoid:Move(Vector3.zero, false)
+	if self._animationController then
+		self._animationController:PlaySlide()
+	end
 
 	print("[PlayerController] Slide started (hold-to-slide)")
 
@@ -617,13 +620,24 @@ function PlayerController:_endSlide()
 	self.humanoidRootPart.CFrame = CFrame.new(pos.X, pos.Y, GameConstants.PLAYER.Z_POSITION)
 		* CFrame.Angles(0, math.rad(-90), 0)
 
+	-- Humanoid 상태를 Running으로 강제 전환
+	self.humanoid:ChangeState(Enum.HumanoidStateType.Running)
+
 	-- 바닥에 있으면 Running, 아니면 Falling
 	if self.isGrounded then
 		self.state = "Running"
 		-- 달리기 상태 복원 (Humanoid에게 이동 중임을 알림)
 		self.humanoid:Move(Vector3.new(1, 0, 0), false)
+		-- 달리기 애니메이션 즉시 재생 (fade 없이)
+		if self._animationController then
+			self._animationController:PlayRun(nil, true)
+		end
 	else
 		self.state = "Falling"
+		-- 낙하 애니메이션 재생
+		if self._animationController then
+			self._animationController:PlayFall()
+		end
 	end
 
 	-- 서버에 슬라이딩 종료 전달

@@ -1,8 +1,10 @@
 --!strict
 -- Coin Controller
 -- 코인 수집 피드백 처리 (시각/청각 효과)
+-- 클라이언트 측 근접 감지로 즉시 이펙트 재생 (서버 네트워크 지연 해소)
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 local SoundService = game:GetService("SoundService")
 local TweenService = game:GetService("TweenService")
@@ -13,6 +15,7 @@ local CoinController = {}
 CoinController.__index = CoinController
 
 local PARTICLE_POOL_SIZE = 5
+local LOCAL_COLLECTION_RADIUS = 3.5 -- 서버(3)보다 약간 넓게 (선제 감지)
 
 type ParticlePoolEntry = {
 	attachment: Attachment,
@@ -27,6 +30,8 @@ export type CoinController = typeof(setmetatable(
 		_popupGui: ScreenGui?,
 		_coinSound: Sound?,
 		_particlePool: { ParticlePoolEntry },
+		_isGameActive: boolean,
+		_localCollectedCoins: { [Model]: boolean },
 	},
 	CoinController
 ))
@@ -38,14 +43,25 @@ function CoinController.new(): CoinController
 		_popupGui = nil,
 		_coinSound = nil,
 		_particlePool = {},
+		_isGameActive = false,
+		_localCollectedCoins = {},
 	}, CoinController)
 
 	self:_setupEventHandlers()
 	self:_createPopupGui()
 	self:_createCoinSound()
 	self:_createParticlePool()
+	self:_setupLocalCollectionCheck()
 
 	return self
+end
+
+-- 게임 활성화/비활성화
+function CoinController:SetGameActive(active: boolean)
+	self._isGameActive = active
+	if not active then
+		self._localCollectedCoins = {}
+	end
 end
 
 -- 팝업 GUI 생성
@@ -126,7 +142,7 @@ function CoinController:_setupEventHandlers()
 	table.insert(self._connections, connection)
 end
 
--- 코인 수집 시 호출
+-- 서버 코인 수집 이벤트 (점수/팝업만 처리, 이펙트는 로컬에서 이미 재생됨)
 function CoinController:OnCoinCollected(data: {
 	coinType: string,
 	coinValue: number,
@@ -135,19 +151,92 @@ function CoinController:OnCoinCollected(data: {
 })
 	self._totalCoins = data.totalCoins
 
-	-- 사운드 재생
-	if self._coinSound then
-		self._coinSound:Play()
-	end
-
-	-- 팝업 표시 (2배 코인인 경우 특별 표시)
+	-- 팝업 표시 (서버에서 확정된 실제 값으로)
 	self:_showCoinPopup(data.coinValue, data.coinType, data.isDoubled)
-
-	-- 파티클 효과 재생
-	self:_playCoinParticle(data.coinType, data.isDoubled)
 
 	local doubledText = data.isDoubled and " (x2!)" or ""
 	print(`[CoinController] Collected {data.coinType} coin! +{data.coinValue}{doubledText} (Total: {data.totalCoins})`)
+end
+
+-- 클라이언트 측 코인 근접 감지 (즉시 이펙트 재생)
+function CoinController:_setupLocalCollectionCheck()
+	local conn = RunService.Heartbeat:Connect(function()
+		if not self._isGameActive then
+			return
+		end
+
+		local player = Players.LocalPlayer
+		local character = player.Character
+		if not character then
+			return
+		end
+
+		local hrp = character:FindFirstChild("HumanoidRootPart") :: BasePart?
+		if not hrp then
+			return
+		end
+
+		local playerPos = hrp.Position
+
+		-- workspace:GetPartBoundsInBox로 주변 파트 검색
+		local params = OverlapParams.new()
+		params.FilterDescendantsInstances = { character }
+		params.FilterType = Enum.RaycastFilterType.Exclude
+
+		local nearbyParts = workspace:GetPartBoundsInBox(
+			CFrame.new(playerPos),
+			Vector3.new(LOCAL_COLLECTION_RADIUS * 2, LOCAL_COLLECTION_RADIUS * 2, LOCAL_COLLECTION_RADIUS * 2),
+			params
+		)
+
+		for _, part in nearbyParts do
+			-- OuterRing 파트에 CoinType Attribute가 있는 코인만 처리
+			if part.Name ~= "OuterRing" then
+				continue
+			end
+
+			local coinType = part:GetAttribute("CoinType")
+			if not coinType then
+				continue
+			end
+
+			local coinModel = part.Parent
+			if not coinModel or not coinModel:IsA("Model") then
+				continue
+			end
+
+			-- 이미 로컬에서 처리한 코인 스킵
+			if self._localCollectedCoins[coinModel] then
+				continue
+			end
+
+			-- 정확한 거리 체크
+			local distance = (part.Position - playerPos).Magnitude
+			if distance > LOCAL_COLLECTION_RADIUS then
+				continue
+			end
+
+			-- 로컬에서 즉시 이펙트 재생
+			self._localCollectedCoins[coinModel] = true
+
+			-- 사운드 재생
+			if self._coinSound then
+				self._coinSound:Play()
+			end
+
+			-- 파티클 효과 (플레이어 위치에서)
+			self:_playCoinParticle(coinType :: string, false)
+
+			-- 코인 즉시 숨기기 (서버가 나중에 Destroy 처리)
+			for _, child in coinModel:GetChildren() do
+				if child:IsA("BasePart") then
+					child.Transparency = 1
+				end
+			end
+		end
+	end)
+
+	table.insert(self._connections, conn)
 end
 
 -- 파티클 풀 생성 (사전 할당으로 GC 부하 감소)
@@ -262,6 +351,8 @@ function CoinController:Destroy()
 	if self._coinSound then
 		self._coinSound:Destroy()
 	end
+
+	self._localCollectedCoins = {}
 end
 
 return CoinController
