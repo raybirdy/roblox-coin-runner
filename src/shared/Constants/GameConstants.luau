@@ -478,9 +478,9 @@ GameConstants.NPC = {
 
 -- 게임 배경 시스템
 GameConstants.BACKGROUND = {
-	-- 관중석 위치 (양쪽)
-	CROWD_Z_FRONT = 20, -- 앞쪽 관중석
-	CROWD_Z_BACK = -20, -- 뒤쪽 관중석
+	-- 관중석 위치 (사이드뷰: 카메라 반대편에 배치)
+	CROWD_Z_FRONT = -15, -- 가까운 관중석 (카메라 뒤쪽)
+	CROWD_Z_BACK = -25, -- 먼 관중석 (배경)
 	CROWD_Y = 0, -- 관중 높이
 
 	-- 관중 NPC 설정
@@ -524,7 +524,7 @@ GameConstants.BACKGROUND = {
 	-- 스피드 라인
 	SPEED_LINES = {
 		ENABLED = true,
-		Z_RANGE = { -8, 8 }, -- Z 위치 범위
+		Z_RANGE = { -12, -2 }, -- Z 위치 범위 (사이드뷰: 카메라 뒤쪽에 배치)
 		Y_RANGE = { 2, 12 }, -- Y 위치 범위
 		COUNT = 6, -- 동시 표시 개수
 		LENGTH = 8, -- 라인 길이
