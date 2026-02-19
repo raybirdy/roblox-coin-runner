@@ -53,10 +53,13 @@ function CoinService:SpawnCoinsInChunk(chunk: Model, difficulty: string)
 	local spawnAreaWidth = chunkSize.X * 0.6
 	local spawnAreaHeight = chunkSize.Y * 0.8
 
+	-- 코인 최소 높이: 바닥 표면(+0.5) + 코인 반지름(1.4) + 여유(0.1)
+	local COIN_MIN_Y = 2.0
+
 	for i = 1, coinCount do
 		-- 랜덤 위치 생성
 		local randomX = (math.random() - 0.5) * spawnAreaWidth
-		local randomY = math.random() * spawnAreaHeight
+		local randomY = COIN_MIN_Y + math.random() * math.max(0, spawnAreaHeight - COIN_MIN_Y)
 		local randomZ = 0
 
 		local coinPosition = chunkCFrame.Position + Vector3.new(randomX, randomY, randomZ)
@@ -162,12 +165,12 @@ function CoinService:_spawnCoin(position: Vector3, coinType: string)
 	local coinModel = Instance.new("Model")
 	coinModel.Name = "Coin_" .. coinType
 
-	-- 외부 링 (코인 테두리) - Cylinder를 Z축으로 회전하여 원형 면이 플레이어를 향하게
+	-- 외부 링 (코인 테두리) - Y축 90도 회전하여 원형 면이 카메라(+Z)를 향하게
 	local outerRing = Instance.new("Part")
 	outerRing.Name = "OuterRing"
 	outerRing.Shape = Enum.PartType.Cylinder
 	outerRing.Size = Vector3.new(0.25, 2.8, 2.8) -- 얇고 넓은 원기둥 (X가 두께)
-	outerRing.CFrame = CFrame.new(position) * CFrame.Angles(0, 0, math.rad(90)) -- Z축 90도 회전
+	outerRing.CFrame = CFrame.new(position) * CFrame.Angles(0, math.rad(90), 0) -- Y축 90도 회전 (사이드뷰)
 	outerRing.Anchored = true
 	outerRing.CanCollide = false
 	outerRing.Color = outerColor
@@ -180,7 +183,7 @@ function CoinService:_spawnCoin(position: Vector3, coinType: string)
 	innerCircle.Name = "InnerCircle"
 	innerCircle.Shape = Enum.PartType.Cylinder
 	innerCircle.Size = Vector3.new(0.28, 2.0, 2.0) -- 약간 두껍고 작은 원
-	innerCircle.CFrame = CFrame.new(position) * CFrame.Angles(0, 0, math.rad(90))
+	innerCircle.CFrame = CFrame.new(position) * CFrame.Angles(0, math.rad(90), 0)
 	innerCircle.Anchored = true
 	innerCircle.CanCollide = false
 	innerCircle.Color = innerColor
@@ -192,7 +195,7 @@ function CoinService:_spawnCoin(position: Vector3, coinType: string)
 	centerDot.Name = "CenterDot"
 	centerDot.Shape = Enum.PartType.Cylinder
 	centerDot.Size = Vector3.new(0.3, 0.8, 0.8) -- 작은 중앙 점
-	centerDot.CFrame = CFrame.new(position) * CFrame.Angles(0, 0, math.rad(90))
+	centerDot.CFrame = CFrame.new(position) * CFrame.Angles(0, math.rad(90), 0)
 	centerDot.Anchored = true
 	centerDot.CanCollide = false
 	centerDot.Color = outerColor
@@ -241,8 +244,8 @@ function CoinService:_startCoinRotation(coinModel: Model)
 				angle = angle - 360
 			end
 
-			-- Y축 기준 회전 + 기본 Z축 90도 유지 (코인이 세로로 서서 빙글빙글)
-			local newCFrame = CFrame.new(basePosition) * CFrame.Angles(0, math.rad(angle), math.rad(90))
+			-- Y축 기준 회전 (사이드뷰에서 코인이 빙글빙글 돌며 면이 보였다 안 보였다)
+			local newCFrame = CFrame.new(basePosition) * CFrame.Angles(0, math.rad(angle), 0)
 			coinModel:SetPrimaryPartCFrame(newCFrame)
 
 			task.wait(0.025) -- ~40 FPS 회전
