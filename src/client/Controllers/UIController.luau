@@ -767,6 +767,18 @@ function UIController:_setupEventHandlers()
 	end)
 	table.insert(self._connections, reviveConnection)
 
+	-- Phase 2: Near Record Alert
+	local nearRecordConn = RemoteEvents.NearRecordAlert.OnClientEvent:Connect(function(data)
+		self:ShowNearRecordAlert(data)
+	end)
+	table.insert(self._connections, nearRecordConn)
+
+	-- Phase 2: New Record Celebration
+	local newRecordConn = RemoteEvents.NewRecordCelebration.OnClientEvent:Connect(function(_data)
+		self:ShowNewRecordCelebration()
+	end)
+	table.insert(self._connections, newRecordConn)
+
 	print("[UIController] Event handlers set up")
 end
 
@@ -1232,6 +1244,136 @@ function UIController:Destroy()
 		connection:Disconnect()
 	end
 	self._connections = {}
+end
+
+-- Phase 2: 신기록 임박 알림 HUD
+function UIController:ShowNearRecordAlert(data: { currentScore: number, highScore: number })
+	if not self._screenGui then
+		return
+	end
+
+	-- 기존 알림 제거
+	local existing = self._screenGui:FindFirstChild("NearRecordFrame")
+	if existing then
+		existing:Destroy()
+	end
+
+	local frame = Instance.new("Frame")
+	frame.Name = "NearRecordFrame"
+	frame.Size = UDim2.new(0, 300, 0, 36)
+	frame.Position = UDim2.new(0.5, -150, 1, -120)
+	frame.BackgroundColor3 = Color3.fromRGB(255, 200, 50)
+	frame.BackgroundTransparency = 0.2
+	frame.BorderSizePixel = 0
+	frame.Parent = self._screenGui
+
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, 8)
+	corner.Parent = frame
+
+	local label = Instance.new("TextLabel")
+	label.Name = "Label"
+	label.Size = UDim2.new(1, 0, 1, 0)
+	label.BackgroundTransparency = 1
+	label.Text = `MY BEST: {data.highScore} <- YOU: {data.currentScore}`
+	label.TextColor3 = Color3.fromRGB(50, 30, 0)
+	label.TextSize = 14
+	label.Font = Enum.Font.GothamBold
+	label.Parent = frame
+
+	-- Pulse animation
+	task.spawn(function()
+		for _ = 1, 15 do
+			if not frame or not frame.Parent then
+				break
+			end
+			local fadeOut =
+				TweenService:Create(frame, TweenInfo.new(0.5, Enum.EasingStyle.Sine), { BackgroundTransparency = 0.7 })
+			fadeOut:Play()
+			fadeOut.Completed:Wait()
+			if not frame or not frame.Parent then
+				break
+			end
+			local fadeIn =
+				TweenService:Create(frame, TweenInfo.new(0.5, Enum.EasingStyle.Sine), { BackgroundTransparency = 0.2 })
+			fadeIn:Play()
+			fadeIn.Completed:Wait()
+		end
+		if frame and frame.Parent then
+			frame:Destroy()
+		end
+	end)
+end
+
+-- Phase 2: 신기록 축하 이펙트
+function UIController:ShowNewRecordCelebration()
+	if not self._screenGui then
+		return
+	end
+
+	local celebFrame = Instance.new("Frame")
+	celebFrame.Name = "CelebrationFrame"
+	celebFrame.Size = UDim2.new(1, 0, 1, 0)
+	celebFrame.BackgroundColor3 = Color3.fromRGB(255, 215, 0)
+	celebFrame.BackgroundTransparency = 0.8
+	celebFrame.BorderSizePixel = 0
+	celebFrame.Parent = self._screenGui
+
+	local celebLabel = Instance.new("TextLabel")
+	celebLabel.Name = "CelebLabel"
+	celebLabel.Size = UDim2.new(1, 0, 0, 60)
+	celebLabel.Position = UDim2.new(0, 0, 0.35, 0)
+	celebLabel.BackgroundTransparency = 1
+	celebLabel.Text = "NEW RECORD!"
+	celebLabel.TextColor3 = Color3.fromRGB(255, 220, 50)
+	celebLabel.TextSize = 40
+	celebLabel.Font = Enum.Font.GothamBold
+	celebLabel.TextStrokeTransparency = 0
+	celebLabel.TextStrokeColor3 = Color3.fromRGB(150, 80, 0)
+	celebLabel.Parent = celebFrame
+
+	-- Scale animation
+	celebLabel.TextSize = 10
+	local growTween = TweenService:Create(
+		celebLabel,
+		TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+		{ TextSize = 40 }
+	)
+	growTween:Play()
+
+	-- Flash effect
+	task.spawn(function()
+		for _ = 1, 4 do
+			if not celebFrame or not celebFrame.Parent then
+				break
+			end
+			local flashTween = TweenService:Create(celebFrame, TweenInfo.new(0.2), { BackgroundTransparency = 0.5 })
+			flashTween:Play()
+			flashTween.Completed:Wait()
+			if not celebFrame or not celebFrame.Parent then
+				break
+			end
+			local unflashTween = TweenService:Create(celebFrame, TweenInfo.new(0.2), { BackgroundTransparency = 0.9 })
+			unflashTween:Play()
+			unflashTween.Completed:Wait()
+		end
+
+		task.wait(1)
+		if celebFrame and celebFrame.Parent then
+			local fadeTween = TweenService:Create(celebFrame, TweenInfo.new(0.5), { BackgroundTransparency = 1 })
+			local labelFade = TweenService:Create(
+				celebLabel,
+				TweenInfo.new(0.5),
+				{ TextTransparency = 1, TextStrokeTransparency = 1 }
+			)
+			fadeTween:Play()
+			labelFade:Play()
+			fadeTween.Completed:Wait()
+			if celebFrame and celebFrame.Parent then
+				celebFrame:Destroy()
+			end
+		end
+	end)
 end
 
 return UIController
