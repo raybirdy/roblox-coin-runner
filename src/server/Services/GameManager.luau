@@ -61,6 +61,9 @@ globalTutorialService:SetPlayerDataService(PlayerDataService)
 LobbyService:Initialize()
 
 -- 포탈 터치 감지 설정
+local portalDebounce: { [Player]: number } = {}
+local PORTAL_DEBOUNCE_TIME = 2 -- 2초 디바운스
+
 local function setupPortalDetection()
 	local portalTrigger = LobbyService:GetPortalTrigger()
 	if portalTrigger then
@@ -79,6 +82,13 @@ local function setupPortalDetection()
 			if activeSessions[player] then
 				return
 			end
+
+			-- 디바운스 체크
+			local now = tick()
+			if portalDebounce[player] and (now - portalDebounce[player]) < PORTAL_DEBOUNCE_TIME then
+				return
+			end
+			portalDebounce[player] = now
 
 			-- 게임 시작 요청 처리
 			print(`[GameManager] Portal touched by {player.Name}`)
@@ -212,6 +222,13 @@ end
 -- 클라이언트에서 로비 복귀 요청
 RemoteEvents.ReturnToLobby.OnServerEvent:Connect(function(player: Player)
 	print(`[GameManager] Return to lobby requested by {player.Name}`)
+
+	-- 활성 세션이 남아있으면 정리 (부활 대기 중 로비 복귀 등)
+	if activeSessions[player] then
+		print(`[GameManager] Cleaning up active session for {player.Name} before returning to lobby`)
+		GameManager.EndGame(player)
+	end
+
 	GameManager.ReturnToLobby(player)
 end)
 
@@ -495,6 +512,7 @@ Players.PlayerRemoving:Connect(function(player: Player)
 		GameManager.EndGame(player)
 	end
 	shopDebounce[player] = nil
+	portalDebounce[player] = nil
 	consolationTracker[player] = nil
 end)
 
