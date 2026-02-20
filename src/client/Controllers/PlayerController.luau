@@ -57,6 +57,9 @@ export type PlayerController = typeof(setmetatable(
 		_connections: { RBXScriptConnection },
 		_gameConnection: RBXScriptConnection?, -- Heartbeat 게임 루프 연결
 
+		-- 슬라이드 세션 카운터 (stale task.delay 방지)
+		_slideSessionId: number,
+
 		-- 디버그
 		_lastJumpTime: number,
 	},
@@ -93,6 +96,7 @@ function PlayerController.new(player: Player, character: Model): PlayerControlle
 		_connections = {},
 		_gameConnection = nil,
 
+		_slideSessionId = 0,
 		_lastJumpTime = 0,
 	}, PlayerController)
 
@@ -127,6 +131,7 @@ function PlayerController:StartGame()
 	self.canDoubleJump = false
 	self.isSliding = false
 	self.verticalVelocity = 0
+	self._slideSessionId += 1 -- invalidate any pending slide task.delay
 	self._lastJumpTime = 0
 
 	-- Anchored 해제 (Play Again 버그 방지)
@@ -174,11 +179,26 @@ function PlayerController:StopGame()
 	-- 게임 루프 연결 해제 (먼저!)
 	self:_cleanupGameConnection()
 
+	-- 슬라이드 중이었다면 CFrame/Attribute 정리 (stale 상태 방지)
+	if self.isSliding then
+		self.humanoidRootPart:SetAttribute("IsSliding", false)
+		-- 자세 복원 (엎드린 상태 → 정상)
+		local pos = self.humanoidRootPart.Position
+		self.humanoidRootPart.CFrame = CFrame.new(pos.X, pos.Y, GameConstants.PLAYER.Z_POSITION)
+			* CFrame.Angles(0, math.rad(-90), 0)
+		-- AlignOrientation 복원
+		local rotationLock = self.humanoidRootPart:FindFirstChild("RotationLock")
+		if rotationLock then
+			rotationLock.Enabled = true
+		end
+	end
+
 	-- 상태 초기화
 	self.state = "Idle"
 	self.currentSpeed = 0
 	self.speedMultiplier = 1.0
 	self.isSliding = false
+	self._slideSessionId += 1 -- invalidate any pending slide task.delay
 	self.canDoubleJump = false
 	self.verticalVelocity = 0
 
@@ -578,9 +598,11 @@ function PlayerController:Slide()
 	print("[PlayerController] Slide started (hold-to-slide)")
 
 	-- 안전 최대 슬라이드 시간 (버튼 릴리즈 못 받았을 때 대비)
+	-- sessionId를 캡처하여 StopGame/StartGame 이후 stale 타이머가 새 슬라이드를 종료하지 않도록 함
 	local MAX_SLIDE_DURATION = 3.0
+	local capturedSessionId = self._slideSessionId
 	task.delay(MAX_SLIDE_DURATION, function()
-		if self.isSliding then
+		if self.isSliding and self._slideSessionId == capturedSessionId then
 			self:_endSlide()
 		end
 	end)
@@ -604,6 +626,13 @@ end
 -- 슬라이드 종료
 function PlayerController:_endSlide()
 	if not self.isSliding then
+		return
+	end
+
+	-- 게임이 이미 정지된 상태에서는 상태 복원하지 않음
+	if self.state == "Idle" then
+		self.isSliding = false
+		self.humanoidRootPart:SetAttribute("IsSliding", false)
 		return
 	end
 

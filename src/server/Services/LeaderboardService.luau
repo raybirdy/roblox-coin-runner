@@ -156,6 +156,11 @@ function LeaderboardService:GetLeaderboard(count: number?, tab: string?): { Lead
 		})
 	end
 
+	-- DataStore is available but empty (fresh game) -> fallback to dummy data
+	if #leaderboard == 0 then
+		return self:_getDummyLeaderboard()
+	end
+
 	-- 캐시 업데이트
 	cachedLeaderboards[tabKey] = leaderboard
 	lastUpdateTimes[tabKey] = tick()
@@ -213,8 +218,12 @@ end
 -- 리더보드 요청 이벤트 핸들러
 RemoteEvents.LeaderboardRequest.OnServerEvent:Connect(function(player: Player, data: { tab: string? }?)
 	-- 입력 검증 (data는 nil 허용)
-	if data ~= nil and type(data) ~= "table" then return end
-	if not RateLimiter.Check(player, "LeaderboardRequest", 2) then return end
+	if data ~= nil and type(data) ~= "table" then
+		return
+	end
+	if not RateLimiter.Check(player, "LeaderboardRequest", 2) then
+		return
+	end
 
 	local tab = (data and type(data.tab) == "string") and data.tab or "all"
 	print(`[LeaderboardService] Leaderboard requested by {player.Name} (tab: {tab})`)

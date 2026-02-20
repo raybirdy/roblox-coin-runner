@@ -36,6 +36,7 @@ export type UIController = typeof(setmetatable(
 		_countdownLabel: TextLabel?, -- 카운트다운 표시
 		_lobbyGuide: Frame?, -- 로비 안내 텍스트
 		_highScoreDisplay: Frame?, -- 로비 최고 점수 표시
+		_lobbyGuideAnimation: boolean?, -- 로비 안내 펄스 애니메이션 활성 여부
 		_connections: { RBXScriptConnection },
 		_onJumpCallback: (() -> ())?,
 		_onSlideCallback: (() -> ())?,
@@ -67,6 +68,7 @@ function UIController.new(player: Player): UIController
 		_countdownLabel = nil,
 		_lobbyGuide = nil,
 		_highScoreDisplay = nil,
+		_lobbyGuideAnimation = false,
 		_connections = {},
 		_onJumpCallback = nil,
 		_onSlideCallback = nil,
@@ -543,7 +545,7 @@ function UIController:_createUI()
 	guideLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 	guideLabel.TextSize = 26
 	guideLabel.Font = Enum.Font.GothamBlack
-	guideLabel.Text = "포탈로 들어가서 게임 시작!"
+	guideLabel.Text = "➤ 포탈로 이동해서 게임 시작! ➤"
 	guideLabel.TextStrokeTransparency = 0
 	guideLabel.TextStrokeColor3 = Color3.fromRGB(0, 100, 0)
 	guideLabel.Parent = lobbyGuide
@@ -1035,10 +1037,91 @@ function UIController:ShowLobbyUI()
 	if self._startMenuFrame then
 		self._startMenuFrame.Visible = false
 	end
+
+	-- 로비 안내 텍스트 펄스 애니메이션 (task.spawn 루프 - 코드베이스 표준 패턴)
+	self._lobbyGuideAnimation = true
+	if self._lobbyGuide then
+		task.spawn(function()
+			local guide = self._lobbyGuide
+			if not guide then
+				return
+			end
+			local stroke = guide:FindFirstChildOfClass("UIStroke")
+			local label = guide:FindFirstChild("Label") :: TextLabel?
+
+			while self._lobbyGuideAnimation and guide and guide.Parent do
+				-- Fade out (밝아짐)
+				local tweenOut = TweenService:Create(
+					guide,
+					TweenInfo.new(1, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+					{ BackgroundTransparency = 0.55 }
+				)
+				tweenOut:Play()
+				if stroke then
+					TweenService:Create(
+						stroke :: UIStroke,
+						TweenInfo.new(1, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+						{ Thickness = 5 }
+					):Play()
+				end
+				if label then
+					TweenService:Create(
+						label,
+						TweenInfo.new(1, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+						{ TextSize = 30 }
+					):Play()
+				end
+				tweenOut.Completed:Wait()
+
+				if not self._lobbyGuideAnimation or not guide or not guide.Parent then
+					break
+				end
+
+				-- Fade in (원래대로)
+				local tweenIn = TweenService:Create(
+					guide,
+					TweenInfo.new(1, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+					{ BackgroundTransparency = 0.15 }
+				)
+				tweenIn:Play()
+				if stroke then
+					TweenService:Create(
+						stroke :: UIStroke,
+						TweenInfo.new(1, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+						{ Thickness = 3 }
+					):Play()
+				end
+				if label then
+					TweenService:Create(
+						label,
+						TweenInfo.new(1, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+						{ TextSize = 26 }
+					):Play()
+				end
+				tweenIn.Completed:Wait()
+			end
+		end)
+	end
 end
 
 -- 로비 UI 숨기기 (게임 시작 시)
 function UIController:HideLobbyUI()
+	-- 로비 안내 펄스 애니메이션 정리 (플래그 off → 루프 자동 종료)
+	self._lobbyGuideAnimation = false
+	if self._lobbyGuide then
+		self._lobbyGuide.BackgroundTransparency = 0.15
+
+		local stroke = self._lobbyGuide:FindFirstChildOfClass("UIStroke")
+		if stroke then
+			(stroke :: UIStroke).Thickness = 3
+		end
+
+		local label = self._lobbyGuide:FindFirstChild("Label") :: TextLabel?
+		if label then
+			label.TextSize = 26
+		end
+	end
+
 	-- 로비 UI 숨기기
 	if self._lobbyGuide then
 		self._lobbyGuide.Visible = false

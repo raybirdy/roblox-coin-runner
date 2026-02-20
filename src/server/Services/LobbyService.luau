@@ -319,6 +319,181 @@ function LobbyService:_createPortal()
 			tween2.Completed:Wait()
 		end
 	end)
+
+	-- ============================================================
+	-- 포탈 가시성 강화 요소들
+	-- ============================================================
+
+	-- 수직 빛기둥 (Light Pillar) - 로비 어디서든 포탈 위치 인식
+	local pillarCenterY = portalPos.Y + portalSize.Y / 2 + 40
+
+	local pillarOuter = Instance.new("Part")
+	pillarOuter.Name = "PortalLightPillarOuter"
+	pillarOuter.Size = Vector3.new(1, 80, 1)
+	pillarOuter.Position = Vector3.new(portalPos.X, pillarCenterY, portalPos.Z)
+	pillarOuter.Anchored = true
+	pillarOuter.CanCollide = false
+	pillarOuter.Color = Color3.fromRGB(0, 255, 100)
+	pillarOuter.Material = Enum.Material.Neon
+	pillarOuter.Transparency = 0.5
+	pillarOuter.Parent = lobbyFolder
+
+	local pillarCore = Instance.new("Part")
+	pillarCore.Name = "PortalLightPillarCore"
+	pillarCore.Size = Vector3.new(0.5, 80, 0.5)
+	pillarCore.Position = Vector3.new(portalPos.X, pillarCenterY, portalPos.Z)
+	pillarCore.Anchored = true
+	pillarCore.CanCollide = false
+	pillarCore.Color = Color3.fromRGB(100, 255, 200)
+	pillarCore.Material = Enum.Material.Neon
+	pillarCore.Transparency = 0.3
+	pillarCore.Parent = lobbyFolder
+
+	-- 빛기둥 펄스 애니메이션
+	task.spawn(function()
+		while pillarOuter and pillarOuter.Parent and pillarCore and pillarCore.Parent do
+			local tweenOut = TweenService:Create(
+				pillarOuter,
+				TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+				{ Transparency = 0.7 }
+			)
+			local tweenCore = TweenService:Create(
+				pillarCore,
+				TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+				{ Transparency = 0.5 }
+			)
+			tweenOut:Play()
+			tweenCore:Play()
+			tweenOut.Completed:Wait()
+
+			if not pillarOuter or not pillarOuter.Parent then
+				break
+			end
+
+			local tweenOut2 = TweenService:Create(
+				pillarOuter,
+				TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+				{ Transparency = 0.5 }
+			)
+			local tweenCore2 = TweenService:Create(
+				pillarCore,
+				TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+				{ Transparency = 0.3 }
+			)
+			tweenOut2:Play()
+			tweenCore2:Play()
+			tweenOut2.Completed:Wait()
+		end
+	end)
+
+	-- BillboardGui "게임 시작!" - 항상 플레이어를 바라보는 3D 안내 텍스트
+	local billboardGui = Instance.new("BillboardGui")
+	billboardGui.Name = "PortalBillboard"
+	billboardGui.Size = UDim2.new(8, 0, 3, 0)
+	billboardGui.StudsOffset = Vector3.new(0, portalSize.Y + 8, 0)
+	billboardGui.AlwaysOnTop = true
+	billboardGui.MaxDistance = 200
+	billboardGui.Parent = portalFrame
+
+	local bbBackground = Instance.new("Frame")
+	bbBackground.Name = "Background"
+	bbBackground.Size = UDim2.new(1, 0, 1, 0)
+	bbBackground.BackgroundColor3 = Color3.fromRGB(0, 180, 50)
+	bbBackground.BackgroundTransparency = 0.15
+	bbBackground.Parent = billboardGui
+
+	local bbCorner = Instance.new("UICorner")
+	bbCorner.CornerRadius = UDim.new(0, 12)
+	bbCorner.Parent = bbBackground
+
+	local bbStroke = Instance.new("UIStroke")
+	bbStroke.Color = Color3.fromRGB(100, 255, 180)
+	bbStroke.Thickness = 3
+	bbStroke.Parent = bbBackground
+
+	local bbLabel = Instance.new("TextLabel")
+	bbLabel.Name = "Label"
+	bbLabel.Size = UDim2.new(1, 0, 1, 0)
+	bbLabel.BackgroundTransparency = 1
+	bbLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	bbLabel.TextScaled = true
+	bbLabel.Font = Enum.Font.FredokaOne
+	bbLabel.Text = "게임 시작!"
+	bbLabel.TextStrokeTransparency = 0
+	bbLabel.TextStrokeColor3 = Color3.fromRGB(0, 80, 0)
+	bbLabel.Parent = bbBackground
+
+	-- BillboardGui 스케일 펄스 애니메이션
+	task.spawn(function()
+		while billboardGui and billboardGui.Parent do
+			local tweenGrow = TweenService:Create(
+				billboardGui,
+				TweenInfo.new(1, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+				{ Size = UDim2.new(9, 0, 3.4, 0) }
+			)
+			tweenGrow:Play()
+			tweenGrow.Completed:Wait()
+
+			if not billboardGui or not billboardGui.Parent then
+				break
+			end
+
+			local tweenShrink = TweenService:Create(
+				billboardGui,
+				TweenInfo.new(1, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+				{ Size = UDim2.new(8, 0, 3, 0) }
+			)
+			tweenShrink:Play()
+			tweenShrink.Completed:Wait()
+		end
+	end)
+
+	-- 바운싱 화살표 (▼) - portalFrame에 직접 부착 (별도 Part 불필요)
+	local arrowBaseOffset = Vector3.new(0, portalSize.Y / 2 + 3, 0)
+	local arrowBillboard = Instance.new("BillboardGui")
+	arrowBillboard.Name = "ArrowBillboard"
+	arrowBillboard.Size = UDim2.new(6, 0, 6, 0)
+	arrowBillboard.StudsOffset = arrowBaseOffset
+	arrowBillboard.AlwaysOnTop = true
+	arrowBillboard.MaxDistance = 200
+	arrowBillboard.Parent = portalFrame
+
+	local arrowLabel = Instance.new("TextLabel")
+	arrowLabel.Name = "ArrowLabel"
+	arrowLabel.Size = UDim2.new(1, 0, 1, 0)
+	arrowLabel.BackgroundTransparency = 1
+	arrowLabel.TextColor3 = Color3.fromRGB(0, 255, 100)
+	arrowLabel.TextScaled = true
+	arrowLabel.Font = Enum.Font.GothamBlack
+	arrowLabel.Text = "▼"
+	arrowLabel.TextStrokeTransparency = 0
+	arrowLabel.TextStrokeColor3 = Color3.fromRGB(0, 80, 0)
+	arrowLabel.Parent = arrowBillboard
+
+	-- 바운싱 화살표 애니메이션 (StudsOffset 트윈)
+	task.spawn(function()
+		while arrowBillboard and arrowBillboard.Parent do
+			local tweenUp = TweenService:Create(
+				arrowBillboard,
+				TweenInfo.new(0.8, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut),
+				{ StudsOffset = arrowBaseOffset + Vector3.new(0, 3, 0) }
+			)
+			tweenUp:Play()
+			tweenUp.Completed:Wait()
+
+			if not arrowBillboard or not arrowBillboard.Parent then
+				break
+			end
+
+			local tweenDown = TweenService:Create(
+				arrowBillboard,
+				TweenInfo.new(0.8, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut),
+				{ StudsOffset = arrowBaseOffset }
+			)
+			tweenDown:Play()
+			tweenDown.Completed:Wait()
+		end
+	end)
 end
 
 -- 타이틀 간판 생성
@@ -640,7 +815,7 @@ function LobbyService:_createLeaderboard()
 	-- SurfaceGui로 리더보드 내용 표시 (더 큰 캔버스)
 	local surfaceGui = Instance.new("SurfaceGui")
 	surfaceGui.Name = "LeaderboardGui"
-	surfaceGui.Face = Enum.NormalId.Front
+	surfaceGui.Face = Enum.NormalId.Back
 	surfaceGui.CanvasSize = Vector2.new(800, 800)
 	surfaceGui.Parent = boardBackground
 
@@ -799,7 +974,7 @@ function LobbyService:_createLeaderboard()
 		-- 포디움 숫자
 		local podiumGui = Instance.new("SurfaceGui")
 		podiumGui.Name = `PodiumGui{rank}`
-		podiumGui.Face = Enum.NormalId.Front
+		podiumGui.Face = Enum.NormalId.Back
 		podiumGui.CanvasSize = Vector2.new(100, 100)
 		podiumGui.Parent = podium
 

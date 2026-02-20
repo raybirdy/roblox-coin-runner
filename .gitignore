@@ -6,6 +6,7 @@
 
 # Wally packages
 Packages/
+DevPackages/
 wally.lock
 
 # OS
