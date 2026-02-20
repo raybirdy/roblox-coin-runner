@@ -38,8 +38,10 @@ function ObstacleService.new(player: Player): ObstacleService
 	return self
 end
 
--- 청크 내 장애물 생성
-function ObstacleService:SpawnObstaclesInChunk(chunk: Model, difficulty: string)
+-- 청크 내 장애물 생성 (생성된 장애물 위치 목록 반환)
+function ObstacleService:SpawnObstaclesInChunk(chunk: Model, difficulty: string): { Vector3 }
+	local obstaclePositions: { Vector3 } = {}
+
 	-- 난이도별 장애물 개수 결정
 	local obstacleCount = self:_getObstacleCountForDifficulty(difficulty)
 
@@ -65,7 +67,11 @@ function ObstacleService:SpawnObstaclesInChunk(chunk: Model, difficulty: string)
 
 		-- 장애물 생성
 		self:_spawnObstacle(obstaclePosition, obstacleType)
+
+		table.insert(obstaclePositions, obstaclePosition)
 	end
+
+	return obstaclePositions
 end
 
 -- 난이도별 장애물 개수 결정

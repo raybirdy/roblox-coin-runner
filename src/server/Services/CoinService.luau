@@ -40,8 +40,14 @@ function CoinService.new(player: Player): CoinService
 	return self
 end
 
--- 청크 내 코인 생성
-function CoinService:SpawnCoinsInChunk(chunk: Model, difficulty: string)
+-- 청크 내 코인 생성 (장애물 위치를 받아 겹침 방지)
+function CoinService:SpawnCoinsInChunk(chunk: Model, difficulty: string, obstaclePositions: { Vector3 }?)
+	obstaclePositions = obstaclePositions or {}
+
+	-- 장애물 중심으로부터 안전 거리 (studs)
+	local SAFE_DISTANCE = 6
+	local MAX_RETRIES = 3
+
 	-- 난이도별 코인 개수 결정
 	local coinCount = self:_getCoinCountForDifficulty(difficulty)
 
@@ -60,9 +66,25 @@ function CoinService:SpawnCoinsInChunk(chunk: Model, difficulty: string)
 		-- 랜덤 위치 생성
 		local randomX = (math.random() - 0.5) * spawnAreaWidth
 		local randomY = COIN_MIN_Y + math.random() * math.max(0, spawnAreaHeight - COIN_MIN_Y)
-		local randomZ = 0
 
-		local coinPosition = chunkCFrame.Position + Vector3.new(randomX, randomY, randomZ)
+		local coinPosition = chunkCFrame.Position + Vector3.new(randomX, randomY, 0)
+
+		-- 장애물 겹침 검사 (최대 MAX_RETRIES회 재배치 시도)
+		for _attempt = 1, MAX_RETRIES do
+			local overlaps = false
+			for _, obsPos in obstaclePositions :: { Vector3 } do
+				if math.abs(coinPosition.X - obsPos.X) < SAFE_DISTANCE then
+					overlaps = true
+					break
+				end
+			end
+			if not overlaps then
+				break
+			end
+			-- 재배치: 새로운 랜덤 X 위치
+			randomX = (math.random() - 0.5) * spawnAreaWidth
+			coinPosition = chunkCFrame.Position + Vector3.new(randomX, randomY, 0)
+		end
 
 		-- 코인 타입 결정 (MVP: 대부분 Bronze)
 		local coinType = self:_selectCoinType(difficulty)
