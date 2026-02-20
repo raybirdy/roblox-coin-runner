@@ -51,48 +51,49 @@ function LeaderboardService:UpdateScore(player: Player, score: number)
 	local userId = player.UserId
 	local playerName = player.Name
 
-	-- 전체 리더보드: 최고 점수만 저장
-	local currentScore = 0
-	local getSuccess, getData = pcall(function()
-		return highScoreStore:GetAsync(userId)
+	-- 전체 리더보드: 최고 점수만 저장 (UpdateAsync로 원자적 갱신)
+	local updateSuccess, updateErr = pcall(function()
+		highScoreStore:UpdateAsync(userId, function(oldValue)
+			local current = oldValue or 0
+			if score > current then
+				return score
+			end
+			return nil -- nil 반환 시 갱신하지 않음
+		end)
 	end)
 
-	if getSuccess and getData then
-		currentScore = getData
-	end
-
-	if score > currentScore then
-		local setSuccess, setErr = pcall(function()
-			highScoreStore:SetAsync(userId, score)
-		end)
-
-		if setSuccess then
-			print(`[LeaderboardService] Updated high score for {playerName}: {score}`)
-			lastUpdateTimes.all = 0
-		else
-			warn(`[LeaderboardService] Failed to update score: {setErr}`)
-		end
+	if updateSuccess then
+		print(`[LeaderboardService] Updated high score for {playerName}: {score}`)
+		lastUpdateTimes.all = 0
+	else
+		warn(`[LeaderboardService] Failed to update score: {updateErr}`)
 	end
 
 	-- 일간 리더보드: 오늘 최고 점수
 	if dailyScoreStore then
 		pcall(function()
-			local dailyCurrent = dailyScoreStore:GetAsync(userId) or 0
-			if score > dailyCurrent then
-				dailyScoreStore:SetAsync(userId, score)
-				lastUpdateTimes.daily = 0
-			end
+			dailyScoreStore:UpdateAsync(userId, function(oldValue)
+				local current = oldValue or 0
+				if score > current then
+					lastUpdateTimes.daily = 0
+					return score
+				end
+				return nil
+			end)
 		end)
 	end
 
 	-- 주간 리더보드: 이번 주 최고 점수
 	if weeklyScoreStore then
 		pcall(function()
-			local weeklyCurrent = weeklyScoreStore:GetAsync(userId) or 0
-			if score > weeklyCurrent then
-				weeklyScoreStore:SetAsync(userId, score)
-				lastUpdateTimes.weekly = 0
-			end
+			weeklyScoreStore:UpdateAsync(userId, function(oldValue)
+				local current = oldValue or 0
+				if score > current then
+					lastUpdateTimes.weekly = 0
+					return score
+				end
+				return nil
+			end)
 		end)
 	end
 end
