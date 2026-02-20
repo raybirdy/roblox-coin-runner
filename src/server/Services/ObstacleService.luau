@@ -23,6 +23,7 @@ export type ObstacleService = typeof(setmetatable(
 		_player: Player,
 		_lastHitTime: number,
 		_isInvincible: boolean,
+		_collidedObstacles: { [BasePart]: boolean }, -- already-hit tracking
 	},
 	ObstacleService
 ))
@@ -33,6 +34,7 @@ function ObstacleService.new(player: Player): ObstacleService
 		_player = player,
 		_lastHitTime = 0,
 		_isInvincible = false,
+		_collidedObstacles = {},
 	}, ObstacleService)
 
 	return self
@@ -244,6 +246,11 @@ function ObstacleService:CheckObstacleCollision(playerPosition: Vector3, isSlidi
 		local obstaclePart = obstacleData.part
 		local obstacleType = obstacleData.obstacleType
 
+		-- Skip obstacles that already caused a collision (prevents re-hit after slide end)
+		if self._collidedObstacles[obstaclePart] then
+			continue
+		end
+
 		-- 거리 체크
 		local distance = (obstaclePart.Position - playerPosition).Magnitude
 
@@ -260,7 +267,8 @@ function ObstacleService:CheckObstacleCollision(playerPosition: Vector3, isSlidi
 					print(`[ObstacleService] {self._player.Name} jumped over LowWall!`)
 					continue
 				else
-					-- 충돌
+					-- 충돌 (mark to prevent re-hit after state change)
+					self._collidedObstacles[obstaclePart] = true
 					return true
 				end
 			elseif obstacleType == "Tunnel" then
@@ -278,6 +286,7 @@ function ObstacleService:CheckObstacleCollision(playerPosition: Vector3, isSlidi
 					continue
 				else
 					-- 충돌 (서 있거나 점프 중인데 터널 높이 이상)
+					self._collidedObstacles[obstaclePart] = true
 					print(`[ObstacleService] {self._player.Name} hit Tunnel! (Y: {playerHeight}, sliding: {isSliding})`)
 					return true
 				end
@@ -288,6 +297,7 @@ function ObstacleService:CheckObstacleCollision(playerPosition: Vector3, isSlidi
 					continue
 				else
 					-- 충돌
+					self._collidedObstacles[obstaclePart] = true
 					return true
 				end
 			elseif obstacleType == "DoubleWall" then
@@ -297,6 +307,7 @@ function ObstacleService:CheckObstacleCollision(playerPosition: Vector3, isSlidi
 					continue
 				else
 					-- 충돌
+					self._collidedObstacles[obstaclePart] = true
 					return true
 				end
 			elseif obstacleType == "Gap" then
@@ -306,6 +317,7 @@ function ObstacleService:CheckObstacleCollision(playerPosition: Vector3, isSlidi
 					continue
 				else
 					-- 낙사
+					self._collidedObstacles[obstaclePart] = true
 					return true
 				end
 			end
@@ -406,6 +418,7 @@ function ObstacleService:CleanupObstaclesInChunk(chunkPosition: Vector3, chunkSi
 			and math.abs(obstaclePos.Z - chunkPosition.Z) < chunkSize.Z / 2
 
 		if isInChunk then
+			self._collidedObstacles[obstacleData.part] = nil
 			obstacleData.part:Destroy()
 			table.remove(self._activeObstacles, i)
 		end
@@ -420,6 +433,7 @@ function ObstacleService:Destroy()
 		end
 	end
 	self._activeObstacles = {}
+	self._collidedObstacles = {}
 end
 
 return ObstacleService
