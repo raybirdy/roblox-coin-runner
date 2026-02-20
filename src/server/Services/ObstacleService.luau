@@ -251,13 +251,15 @@ function ObstacleService:CheckObstacleCollision(playerPosition: Vector3, isSlidi
 			continue
 		end
 
-		-- 거리 체크
-		local distance = (obstaclePart.Position - playerPosition).Magnitude
+		-- X-axis distance for side-scrolling runner
+		-- (Y is handled by type-specific evasion checks below)
+		local xDistance = math.abs(obstaclePart.Position.X - playerPosition.X)
 
-		-- 충돌 반경 (캐릭터 크기 + 장애물 크기 고려)
-		local collisionRadius = 5
+		-- Collision range: half obstacle width + player body margin
+		local PLAYER_MARGIN = 2
+		local collisionRadius = obstaclePart.Size.X / 2 + PLAYER_MARGIN
 
-		if distance < collisionRadius then
+		if xDistance < collisionRadius then
 			-- 장애물 타입별 회피 조건 확인
 			if obstacleType == "LowWall" then
 				-- LowWall: 점프 중이면 회피 성공
