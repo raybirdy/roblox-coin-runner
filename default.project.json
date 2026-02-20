@@ -50,6 +50,15 @@
       "$properties": {
         "RespectFilteringEnabled": true
       }
+    },
+
+    "TestService": {
+      "Tests": {
+        "$path": "src/test"
+      },
+      "TestEZ": {
+        "$path": "DevPackages/_Index/roblox_testez@0.4.1/testez/src"
+      }
     }
   }
 }
