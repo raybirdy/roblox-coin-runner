@@ -6,6 +6,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local GameConstants = require(ReplicatedStorage.Shared.Constants.GameConstants)
 local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)
+local RateLimiter = require(ReplicatedStorage.Shared.Utils.RateLimiter)
 local PlayerDataService = require(script.Parent.PlayerDataService)
 
 local LoginRewardService = {}
@@ -125,6 +126,9 @@ end
 
 -- 이벤트 연결
 RemoteEvents.LoginRewardClaim.OnServerEvent:Connect(function(player: Player)
+	if not RateLimiter.Check(player, "LoginRewardClaim", 2) then
+		return
+	end
 	LoginRewardService:_onClaimReward(player)
 end)
 
