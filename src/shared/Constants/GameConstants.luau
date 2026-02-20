@@ -194,7 +194,7 @@ GameConstants.LOBBY = {
 	-- 주요 위치
 	SPAWN_POSITION = Vector3.new(-160, 2.5, 0),
 	PORTAL_POSITION = Vector3.new(-25, 3, 0),
-	PORTAL_SIZE = Vector3.new(2, 10, 14), -- 더 큰 포탈
+	PORTAL_SIZE = Vector3.new(6, 10, 18), -- 더 큰 포탈 (진입 용이)
 	SHOP_POSITION = Vector3.new(-100, 5, 28), -- 더 바깥쪽 배치
 	LEADERBOARD_POSITION = Vector3.new(-100, 5, -28), -- 상점 반대편
 	TITLE_POSITION = Vector3.new(-110, 20, -35),
