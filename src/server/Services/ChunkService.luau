@@ -262,17 +262,18 @@ function ChunkService:SpawnNextChunk(): Model?
 	self._chunkCounter += 1
 	self._lastChunkEndHeight = endHeight
 
-	-- 청크 내 코인 생성
-	if self._coinService then
-		self._coinService:SpawnCoinsInChunk(chunk, difficulty)
-	end
-
-	-- 청크 내 장애물 생성 (안전 구역 이후부터)
+	-- 청크 내 장애물 생성 (안전 구역 이후부터) — 코인보다 먼저 생성하여 위치 확보
+	local obstaclePositions: { Vector3 } = {}
 	local isInSafeZone = self._chunkCounter <= GameConstants.CHUNK.SAFE_ZONE_CHUNKS
 	if self._obstacleService and not isInSafeZone then
-		self._obstacleService:SpawnObstaclesInChunk(chunk, difficulty)
+		obstaclePositions = self._obstacleService:SpawnObstaclesInChunk(chunk, difficulty)
 	elseif isInSafeZone then
 		print(`[ChunkService] Chunk #{self._chunkCounter} is in safe zone - no obstacles`)
+	end
+
+	-- 청크 내 코인 생성 (장애물 위치를 전달하여 겹침 방지)
+	if self._coinService then
+		self._coinService:SpawnCoinsInChunk(chunk, difficulty, obstaclePositions)
 	end
 
 	-- 청크 내 파워업 생성 (확률적, 안전 구역 이후부터)
