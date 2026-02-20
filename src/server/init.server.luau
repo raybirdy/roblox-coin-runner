@@ -96,4 +96,16 @@ game:BindToClose(function()
 	task.wait(3) -- DataStore 저장 완료 대기
 end)
 
+-- 주기적 자동 저장 (서버 크래시/모바일 강제 종료 대비)
+task.spawn(function()
+	while true do
+		task.wait(GameConstants.DATA.AUTO_SAVE_INTERVAL)
+		for _, player in game.Players:GetPlayers() do
+			task.spawn(function()
+				PlayerDataService:SavePlayerData(player)
+			end)
+		end
+	end
+end)
+
 print("[Server] Coin Runner Server Ready")
