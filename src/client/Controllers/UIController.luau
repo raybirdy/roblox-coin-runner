@@ -96,8 +96,10 @@ function UIController:_createUI()
 	-- 우측 상단 HUD (세로 컴팩트 배치)
 	local hudFrame = Instance.new("Frame")
 	hudFrame.Name = "HudFrame"
-	hudFrame.Size = UDim2.new(0, 160, 0, 130)
-	hudFrame.Position = UDim2.new(1, -170, 0, 8)
+	local hudW = ResponsiveUtil.scaledOffset(160)
+	local hudH = ResponsiveUtil.scaledOffset(130)
+	hudFrame.Size = UDim2.new(0, hudW, 0, hudH)
+	hudFrame.Position = UDim2.new(1, -hudW - ResponsiveUtil.scaledOffset(10), 0, ResponsiveUtil.scaledOffset(8))
 	hudFrame.BackgroundTransparency = 0.4
 	hudFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 	hudFrame.Parent = screenGui
@@ -444,8 +446,15 @@ function UIController:_createUI()
 	-- 튜토리얼 배너 (화면 상단)
 	local tutorialBanner = Instance.new("Frame")
 	tutorialBanner.Name = "TutorialBanner"
-	tutorialBanner.Size = UDim2.new(0, 300, 0, 50)
-	tutorialBanner.Position = UDim2.new(0.5, -150, 0, 120)
+	tutorialBanner.Size = ResponsiveUtil.clampedSize(300, 50, 0.80, 0.10)
+	tutorialBanner.Position = ResponsiveUtil.clampedPosition(300, 50, 0.80, 0.10)
+	-- Shift upward from center
+	tutorialBanner.Position = UDim2.new(
+		tutorialBanner.Position.X.Scale,
+		tutorialBanner.Position.X.Offset,
+		0,
+		ResponsiveUtil.scaledOffset(120)
+	)
 	tutorialBanner.BackgroundColor3 = Color3.fromRGB(50, 150, 255)
 	tutorialBanner.BackgroundTransparency = 0.2
 	tutorialBanner.Visible = false
@@ -466,7 +475,7 @@ function UIController:_createUI()
 	tutorialLabel.Size = UDim2.new(1, 0, 1, 0)
 	tutorialLabel.BackgroundTransparency = 1
 	tutorialLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-	tutorialLabel.TextSize = 22
+	tutorialLabel.TextSize = ResponsiveUtil.scaledTextSize(22, 16)
 	tutorialLabel.Font = Enum.Font.GothamBold
 	tutorialLabel.Text = "연습 모드"
 	tutorialLabel.Parent = tutorialBanner
@@ -474,8 +483,8 @@ function UIController:_createUI()
 	-- 튜토리얼 종료 알림 (화면 중앙)
 	local tutorialNotification = Instance.new("Frame")
 	tutorialNotification.Name = "TutorialNotification"
-	tutorialNotification.Size = UDim2.new(0, 400, 0, 100)
-	tutorialNotification.Position = UDim2.new(0.5, -200, 0.4, -50)
+	tutorialNotification.Size = ResponsiveUtil.clampedSize(400, 100, 0.85, 0.20)
+	tutorialNotification.Position = ResponsiveUtil.clampedPosition(400, 100, 0.85, 0.20)
 	tutorialNotification.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
 	tutorialNotification.BackgroundTransparency = 0.1
 	tutorialNotification.Visible = false
@@ -496,7 +505,7 @@ function UIController:_createUI()
 	notificationLabel.Size = UDim2.new(1, 0, 1, 0)
 	notificationLabel.BackgroundTransparency = 1
 	notificationLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-	notificationLabel.TextSize = 28
+	notificationLabel.TextSize = ResponsiveUtil.scaledTextSize(28, 18)
 	notificationLabel.Font = Enum.Font.GothamBold
 	notificationLabel.Text = "연습 완료! 게임 시작!"
 	notificationLabel.Parent = tutorialNotification
@@ -504,11 +513,11 @@ function UIController:_createUI()
 	-- 카운트다운 표시 (화면 중앙, 크게)
 	local countdownLabel = Instance.new("TextLabel")
 	countdownLabel.Name = "CountdownLabel"
-	countdownLabel.Size = UDim2.new(0, 300, 0, 200)
-	countdownLabel.Position = UDim2.new(0.5, -150, 0.5, -100)
+	countdownLabel.Size = ResponsiveUtil.clampedSize(300, 200, 0.60, 0.40)
+	countdownLabel.Position = ResponsiveUtil.clampedPosition(300, 200, 0.60, 0.40)
 	countdownLabel.BackgroundTransparency = 1
 	countdownLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-	countdownLabel.TextSize = 120
+	countdownLabel.TextSize = ResponsiveUtil.scaledTextSize(120, 60)
 	countdownLabel.Font = Enum.Font.GothamBold
 	countdownLabel.Text = ""
 	countdownLabel.TextStrokeTransparency = 0.3
@@ -553,8 +562,10 @@ function UIController:_createUI()
 	-- 로비 최고 점수 표시 (우측 상단 - 이동 방해 안 함)
 	local highScoreDisplay = Instance.new("Frame")
 	highScoreDisplay.Name = "HighScoreDisplay"
-	highScoreDisplay.Size = UDim2.new(0, 200, 0, 100)
-	highScoreDisplay.Position = UDim2.new(1, -210, 0, 10)
+	local hsW = ResponsiveUtil.scaledOffset(200)
+	local hsH = ResponsiveUtil.scaledOffset(100)
+	highScoreDisplay.Size = UDim2.new(0, hsW, 0, hsH)
+	highScoreDisplay.Position = UDim2.new(1, -hsW - ResponsiveUtil.scaledOffset(10), 0, ResponsiveUtil.scaledOffset(10))
 	highScoreDisplay.BackgroundColor3 = Color3.fromRGB(20, 20, 40)
 	highScoreDisplay.BackgroundTransparency = 0.15
 	highScoreDisplay.Visible = false
@@ -1293,11 +1304,12 @@ function UIController:ShowGameFeedback(text: string, color: Color3)
 
 	local feedbackLabel = Instance.new("TextLabel")
 	feedbackLabel.Name = "GameFeedback"
-	feedbackLabel.Size = UDim2.new(0, 300, 0, 50)
-	feedbackLabel.Position = UDim2.new(0.5, -150, 0.4, 0)
+	feedbackLabel.Size = ResponsiveUtil.clampedSize(300, 50, 0.70, 0.10)
+	local feedbackW = math.min(300, ResponsiveUtil.getViewportSize().X * 0.70)
+	feedbackLabel.Position = UDim2.new(0.5, -feedbackW / 2, 0.4, 0)
 	feedbackLabel.BackgroundTransparency = 1
 	feedbackLabel.TextColor3 = color
-	feedbackLabel.TextSize = 28
+	feedbackLabel.TextSize = ResponsiveUtil.scaledTextSize(28, 18)
 	feedbackLabel.Font = Enum.Font.GothamBlack
 	feedbackLabel.Text = text
 	feedbackLabel.TextStrokeTransparency = 0
@@ -1343,8 +1355,13 @@ function UIController:ShowNearRecordAlert(data: { currentScore: number, highScor
 
 	local frame = Instance.new("Frame")
 	frame.Name = "NearRecordFrame"
-	frame.Size = UDim2.new(0, 300, 0, 36)
-	frame.Position = UDim2.new(0.5, -150, 1, -120)
+	frame.Size = ResponsiveUtil.clampedSize(300, 36, 0.80, 0.08)
+	frame.Position = UDim2.new(
+		0.5,
+		-math.min(300, ResponsiveUtil.getViewportSize().X * 0.80) / 2,
+		1,
+		-ResponsiveUtil.scaledOffset(120)
+	)
 	frame.BackgroundColor3 = Color3.fromRGB(255, 200, 50)
 	frame.BackgroundTransparency = 0.2
 	frame.BorderSizePixel = 0
@@ -1360,7 +1377,7 @@ function UIController:ShowNearRecordAlert(data: { currentScore: number, highScor
 	label.BackgroundTransparency = 1
 	label.Text = `MY BEST: {data.highScore} <- YOU: {data.currentScore}`
 	label.TextColor3 = Color3.fromRGB(50, 30, 0)
-	label.TextSize = 14
+	label.TextSize = ResponsiveUtil.scaledTextSize(14, 11)
 	label.Font = Enum.Font.GothamBold
 	label.Parent = frame
 

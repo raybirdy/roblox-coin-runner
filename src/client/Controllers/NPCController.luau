@@ -7,6 +7,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local GameConstants = require(ReplicatedStorage.Shared.Constants.GameConstants)
 local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)
+local ResponsiveUtil = require(ReplicatedStorage.Shared.Utils.ResponsiveUtil)
 
 local NPCController = {}
 NPCController.__index = NPCController
@@ -80,7 +81,9 @@ function NPCController:ShowSpeechBubble(npcModel: Model, npcType: string, messag
 	-- BillboardGui 생성
 	local billboardGui = Instance.new("BillboardGui")
 	billboardGui.Name = "SpeechBubble"
-	billboardGui.Size = UDim2.new(0, 250, 0, 80) -- 더 크게
+	local bubbleW = ResponsiveUtil.scaledOffset(250)
+	local bubbleH = ResponsiveUtil.scaledOffset(80)
+	billboardGui.Size = UDim2.new(0, bubbleW, 0, bubbleH)
 	billboardGui.StudsOffset = Vector3.new(0, 4, 0) -- 더 높이
 	billboardGui.Adornee = head
 	billboardGui.AlwaysOnTop = true
@@ -115,7 +118,7 @@ function NPCController:ShowSpeechBubble(npcModel: Model, npcType: string, messag
 	textLabel.BackgroundTransparency = 1
 	textLabel.Text = `{emoji} {message}`
 	textLabel.TextColor3 = Color3.fromRGB(50, 50, 50)
-	textLabel.TextSize = 22
+	textLabel.TextSize = ResponsiveUtil.scaledTextSize(22, 14)
 	textLabel.Font = Enum.Font.GothamBold
 	textLabel.TextWrapped = true
 	textLabel.Parent = frame
@@ -124,7 +127,7 @@ function NPCController:ShowSpeechBubble(npcModel: Model, npcType: string, messag
 	billboardGui.Size = UDim2.new(0, 0, 0, 0)
 	local appearTween =
 		TweenService:Create(billboardGui, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-			Size = UDim2.new(0, 250, 0, 80),
+			Size = UDim2.new(0, bubbleW, 0, bubbleH),
 		})
 	appearTween:Play()
 
@@ -159,8 +162,9 @@ function NPCController:_createTutorialGui()
 	-- 부엉이 아이콘 (왼쪽 상단)
 	local owlIcon = Instance.new("Frame")
 	owlIcon.Name = "OwlIcon"
-	owlIcon.Size = UDim2.new(0, 80, 0, 80)
-	owlIcon.Position = UDim2.new(0, 20, 0, 120)
+	local owlSize = ResponsiveUtil.scaledOffset(80)
+	owlIcon.Size = UDim2.new(0, owlSize, 0, owlSize)
+	owlIcon.Position = UDim2.new(0, ResponsiveUtil.scaledOffset(20), 0, ResponsiveUtil.scaledOffset(120))
 	owlIcon.BackgroundColor3 = GameConstants.NPC.TYPES.Owl.color
 	owlIcon.BackgroundTransparency = 0.2
 	owlIcon.Parent = tutorialGui
@@ -174,14 +178,14 @@ function NPCController:_createTutorialGui()
 	owlEmoji.Size = UDim2.new(1, 0, 1, 0)
 	owlEmoji.BackgroundTransparency = 1
 	owlEmoji.Text = "🦉"
-	owlEmoji.TextSize = 48
+	owlEmoji.TextSize = ResponsiveUtil.scaledTextSize(48, 32)
 	owlEmoji.Parent = owlIcon
 
 	-- 메시지 프레임
 	local messageFrame = Instance.new("Frame")
 	messageFrame.Name = "MessageFrame"
-	messageFrame.Size = UDim2.new(0, 300, 0, 80)
-	messageFrame.Position = UDim2.new(0, 110, 0, 130)
+	messageFrame.Size = UDim2.new(0, ResponsiveUtil.scaledOffset(300), 0, ResponsiveUtil.scaledOffset(80))
+	messageFrame.Position = UDim2.new(0, ResponsiveUtil.scaledOffset(110), 0, ResponsiveUtil.scaledOffset(130))
 	messageFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 	messageFrame.BackgroundTransparency = 0.1
 	messageFrame.Parent = tutorialGui
@@ -203,7 +207,7 @@ function NPCController:_createTutorialGui()
 	messageLabel.BackgroundTransparency = 1
 	messageLabel.Text = ""
 	messageLabel.TextColor3 = Color3.fromRGB(0, 0, 0)
-	messageLabel.TextSize = 20
+	messageLabel.TextSize = ResponsiveUtil.scaledTextSize(20, 14)
 	messageLabel.Font = Enum.Font.GothamBold
 	messageLabel.TextWrapped = true
 	messageLabel.TextXAlignment = Enum.TextXAlignment.Left

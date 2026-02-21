@@ -10,6 +10,7 @@ local SoundService = game:GetService("SoundService")
 local TweenService = game:GetService("TweenService")
 
 local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)
+local ResponsiveUtil = require(ReplicatedStorage.Shared.Utils.ResponsiveUtil)
 
 local CoinController = {}
 CoinController.__index = CoinController
@@ -108,13 +109,14 @@ function CoinController:_showCoinPopup(value: number, coinType: string, isDouble
 	-- 팝업 라벨 생성
 	local popup = Instance.new("TextLabel")
 	popup.Name = "CoinPopup"
-	popup.Size = UDim2.new(0, 150, 0, 50)
-	popup.Position = UDim2.new(0.5, -75, 0.4, 0)
+	local popupW = ResponsiveUtil.scaledOffset(150)
+	popup.Size = UDim2.new(0, popupW, 0, ResponsiveUtil.scaledOffset(50))
+	popup.Position = UDim2.new(0.5, -popupW / 2, 0.4, 0)
 	popup.BackgroundTransparency = 1
 	popup.TextColor3 = color
 	popup.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
 	popup.TextStrokeTransparency = 0.3
-	popup.TextSize = isDoubled and 42 or 36 -- 2배일 때 더 크게
+	popup.TextSize = isDoubled and ResponsiveUtil.scaledTextSize(42, 28) or ResponsiveUtil.scaledTextSize(36, 24)
 	popup.Font = Enum.Font.GothamBold
 	popup.Text = isDoubled and `+{value} x2!` or `+{value}`
 	popup.Parent = self._popupGui
@@ -122,7 +124,7 @@ function CoinController:_showCoinPopup(value: number, coinType: string, isDouble
 	-- 위로 올라가면서 사라지는 애니메이션
 	local tweenInfo = TweenInfo.new(0.8, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 	local tween = TweenService:Create(popup, tweenInfo, {
-		Position = UDim2.new(0.5, -75, 0.3, 0),
+		Position = UDim2.new(0.5, -popupW / 2, 0.3, 0),
 		TextTransparency = 1,
 		TextStrokeTransparency = 1,
 	})

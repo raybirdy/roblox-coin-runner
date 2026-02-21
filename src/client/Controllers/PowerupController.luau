@@ -9,6 +9,7 @@ local SoundService = game:GetService("SoundService")
 
 local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)
 local GameConstants = require(ReplicatedStorage.Shared.Constants.GameConstants)
+local ResponsiveUtil = require(ReplicatedStorage.Shared.Utils.ResponsiveUtil)
 
 local PowerupController = {}
 PowerupController.__index = PowerupController
@@ -57,8 +58,9 @@ function PowerupController:_createPowerupUI()
 	-- 파워업 아이콘 컨테이너 (화면 왼쪽 중앙)
 	local container = Instance.new("Frame")
 	container.Name = "PowerupContainer"
-	container.Size = UDim2.new(0, 80, 0, 300)
-	container.Position = UDim2.new(0, 10, 0.5, -140)
+	local containerW = ResponsiveUtil.scaledOffset(80)
+	container.Size = UDim2.new(0, containerW, 0, ResponsiveUtil.scaledOffset(300))
+	container.Position = UDim2.new(0, ResponsiveUtil.scaledOffset(10), 0.5, -ResponsiveUtil.scaledOffset(140))
 	container.BackgroundTransparency = 1
 	container.Parent = powerupGui
 	self._powerupContainer = container
@@ -108,9 +110,10 @@ function PowerupController:_showPowerupIcon(powerupType: string, duration: numbe
 	end
 
 	-- 아이콘 프레임 생성
+	local iconSize = ResponsiveUtil.scaledOffset(70)
 	local iconFrame = Instance.new("Frame")
 	iconFrame.Name = `PowerupIcon_{powerupType}`
-	iconFrame.Size = UDim2.new(0, 70, 0, 70)
+	iconFrame.Size = UDim2.new(0, iconSize, 0, iconSize)
 	iconFrame.BackgroundColor3 = config.color
 	iconFrame.BackgroundTransparency = 0.2
 	iconFrame.Parent = self._powerupContainer
@@ -132,7 +135,7 @@ function PowerupController:_showPowerupIcon(powerupType: string, duration: numbe
 	emoji.Size = UDim2.new(1, 0, 0.7, 0)
 	emoji.BackgroundTransparency = 1
 	emoji.Text = config.emoji
-	emoji.TextSize = 36
+	emoji.TextSize = ResponsiveUtil.scaledTextSize(36, 24)
 	emoji.Parent = iconFrame
 
 	-- 이름
@@ -143,7 +146,7 @@ function PowerupController:_showPowerupIcon(powerupType: string, duration: numbe
 	nameLabel.BackgroundTransparency = 1
 	nameLabel.Text = config.name
 	nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-	nameLabel.TextSize = 14
+	nameLabel.TextSize = ResponsiveUtil.scaledTextSize(14, 10)
 	nameLabel.Font = Enum.Font.GothamBold
 	nameLabel.Parent = iconFrame
 
@@ -154,7 +157,7 @@ function PowerupController:_showPowerupIcon(powerupType: string, duration: numbe
 	iconFrame.Size = UDim2.new(0, 0, 0, 0)
 	local appearTween =
 		TweenService:Create(iconFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-			Size = UDim2.new(0, 70, 0, 70),
+			Size = UDim2.new(0, iconSize, 0, iconSize),
 		})
 	appearTween:Play()
 

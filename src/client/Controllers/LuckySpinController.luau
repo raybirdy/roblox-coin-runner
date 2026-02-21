@@ -8,6 +8,7 @@ local Players = game:GetService("Players")
 
 local GameConstants = require(ReplicatedStorage.Shared.Constants.GameConstants)
 local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)
+local ResponsiveUtil = require(ReplicatedStorage.Shared.Utils.ResponsiveUtil)
 
 local LuckySpinController = {}
 LuckySpinController.__index = LuckySpinController
@@ -76,11 +77,11 @@ function LuckySpinController:_createLobbyButton()
 
 	local spinBtn = Instance.new("TextButton")
 	spinBtn.Name = "LuckySpinButton"
-	spinBtn.Size = UDim2.new(0, 56, 0, 56)
-	spinBtn.Position = UDim2.new(0, 12, 0.5, -28)
+	spinBtn.Size = UDim2.new(0, ResponsiveUtil.scaledOffset(56), 0, ResponsiveUtil.scaledOffset(56))
+	spinBtn.Position = UDim2.new(0, ResponsiveUtil.scaledOffset(12), 0.5, -ResponsiveUtil.scaledOffset(28))
 	spinBtn.BackgroundColor3 = Color3.fromRGB(200, 80, 255)
 	spinBtn.Text = "🎰"
-	spinBtn.TextSize = 28
+	spinBtn.TextSize = ResponsiveUtil.scaledTextSize(28, 20)
 	spinBtn.Font = Enum.Font.GothamBold
 	spinBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 	spinBtn.AutoButtonColor = true
@@ -123,8 +124,8 @@ function LuckySpinController:_createUI()
 	-- Main panel
 	local panel = Instance.new("Frame")
 	panel.Name = "Panel"
-	panel.Size = UDim2.new(0, 340, 0, 460)
-	panel.Position = UDim2.new(0.5, -170, 0.5, -230)
+	panel.Size = ResponsiveUtil.clampedSize(340, 460, 0.90, 0.88)
+	panel.Position = ResponsiveUtil.clampedPosition(340, 460, 0.90, 0.88)
 	panel.BackgroundColor3 = Color3.fromRGB(25, 25, 45)
 	panel.BorderSizePixel = 0
 	panel.Visible = false
@@ -147,15 +148,16 @@ function LuckySpinController:_createUI()
 	title.BackgroundTransparency = 1
 	title.Text = "Lucky Spin!"
 	title.TextColor3 = Color3.fromRGB(255, 200, 100)
-	title.TextSize = 22
+	title.TextSize = ResponsiveUtil.scaledTextSize(22, 16)
 	title.Font = Enum.Font.GothamBold
 	title.Parent = panel
 
 	-- Wheel container (clipped circle)
 	local wheelContainer = Instance.new("Frame")
 	wheelContainer.Name = "WheelContainer"
-	wheelContainer.Size = UDim2.new(0, 260, 0, 260)
-	wheelContainer.Position = UDim2.new(0.5, -130, 0, 50)
+	local wheelSize = ResponsiveUtil.scaledOffset(260)
+	wheelContainer.Size = UDim2.new(0, wheelSize, 0, wheelSize)
+	wheelContainer.Position = UDim2.new(0.5, -wheelSize / 2, 0, ResponsiveUtil.scaledOffset(50))
 	wheelContainer.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
 	wheelContainer.ClipsDescendants = true
 	wheelContainer.Parent = panel
@@ -183,15 +185,19 @@ function LuckySpinController:_createUI()
 	-- Create segments (text labels arranged in circle)
 	local rewards = GameConstants.LUCKY_SPIN.REWARDS
 	local segmentCount = #rewards
+	local halfWheel = wheelSize / 2
+	local segW = ResponsiveUtil.scaledOffset(80)
+	local segH = ResponsiveUtil.scaledOffset(30)
+	local segRadius = wheelSize * 0.346 -- 90/260 ratio
 	for i, reward in rewards do
 		local angle = (i - 1) * (360 / segmentCount)
 		local segFrame = Instance.new("Frame")
 		segFrame.Name = `Segment{i}`
-		segFrame.Size = UDim2.new(0, 80, 0, 30)
+		segFrame.Size = UDim2.new(0, segW, 0, segH)
 		-- Position segments in a circle
 		local rad = math.rad(angle - 90) -- start from top
-		local cx = 130 + math.cos(rad) * 90 - 40
-		local cy = 130 + math.sin(rad) * 90 - 15
+		local cx = halfWheel + math.cos(rad) * segRadius - segW / 2
+		local cy = halfWheel + math.sin(rad) * segRadius - segH / 2
 		segFrame.Position = UDim2.new(0, cx, 0, cy)
 		segFrame.BackgroundColor3 = SEGMENT_COLORS[(i - 1) % #SEGMENT_COLORS + 1]
 		segFrame.BackgroundTransparency = 0.2
@@ -208,7 +214,7 @@ function LuckySpinController:_createUI()
 		segLabel.BackgroundTransparency = 1
 		segLabel.Text = reward.name
 		segLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-		segLabel.TextSize = 11
+		segLabel.TextSize = ResponsiveUtil.scaledTextSize(11, 9)
 		segLabel.Font = Enum.Font.GothamBold
 		segLabel.TextScaled = true
 		segLabel.Parent = segFrame
@@ -217,12 +223,12 @@ function LuckySpinController:_createUI()
 	-- Pointer (top center)
 	local pointer = Instance.new("TextLabel")
 	pointer.Name = "Pointer"
-	pointer.Size = UDim2.new(0, 30, 0, 30)
-	pointer.Position = UDim2.new(0.5, -15, 0, 42)
+	pointer.Size = UDim2.new(0, ResponsiveUtil.scaledOffset(30), 0, ResponsiveUtil.scaledOffset(30))
+	pointer.Position = UDim2.new(0.5, -ResponsiveUtil.scaledOffset(15), 0, ResponsiveUtil.scaledOffset(42))
 	pointer.BackgroundTransparency = 1
 	pointer.Text = "▼"
 	pointer.TextColor3 = Color3.fromRGB(255, 50, 50)
-	pointer.TextSize = 24
+	pointer.TextSize = ResponsiveUtil.scaledTextSize(24, 18)
 	pointer.Font = Enum.Font.GothamBold
 	pointer.ZIndex = 10
 	pointer.Parent = panel
@@ -230,12 +236,12 @@ function LuckySpinController:_createUI()
 	-- Free spin button
 	local spinButton = Instance.new("TextButton")
 	spinButton.Name = "SpinButton"
-	spinButton.Size = UDim2.new(0, 140, 0, 44)
-	spinButton.Position = UDim2.new(0.5, -148, 1, -80)
+	spinButton.Size = UDim2.new(0.42, 0, 0, ResponsiveUtil.scaledOffset(44))
+	spinButton.Position = UDim2.new(0.04, 0, 1, -ResponsiveUtil.scaledOffset(80))
 	spinButton.BackgroundColor3 = Color3.fromRGB(50, 180, 80)
 	spinButton.Text = "FREE Spin!"
 	spinButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-	spinButton.TextSize = 16
+	spinButton.TextSize = ResponsiveUtil.scaledTextSize(16, 12)
 	spinButton.Font = Enum.Font.GothamBold
 	spinButton.AutoButtonColor = true
 	spinButton.Parent = panel
@@ -248,12 +254,12 @@ function LuckySpinController:_createUI()
 	-- Gem spin button
 	local gemSpinBtn = Instance.new("TextButton")
 	gemSpinBtn.Name = "GemSpinButton"
-	gemSpinBtn.Size = UDim2.new(0, 140, 0, 44)
-	gemSpinBtn.Position = UDim2.new(0.5, 8, 1, -80)
+	gemSpinBtn.Size = UDim2.new(0.42, 0, 0, ResponsiveUtil.scaledOffset(44))
+	gemSpinBtn.Position = UDim2.new(0.54, 0, 1, -ResponsiveUtil.scaledOffset(80))
 	gemSpinBtn.BackgroundColor3 = Color3.fromRGB(100, 50, 200)
 	gemSpinBtn.Text = `💎 {GameConstants.LUCKY_SPIN.EXTRA_SPIN_GEM_COST} Spin`
 	gemSpinBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-	gemSpinBtn.TextSize = 16
+	gemSpinBtn.TextSize = ResponsiveUtil.scaledTextSize(16, 12)
 	gemSpinBtn.Font = Enum.Font.GothamBold
 	gemSpinBtn.AutoButtonColor = true
 	gemSpinBtn.Parent = panel
@@ -271,15 +277,15 @@ function LuckySpinController:_createUI()
 	closeBtn.BackgroundTransparency = 1
 	closeBtn.Text = "X"
 	closeBtn.TextColor3 = Color3.fromRGB(180, 180, 180)
-	closeBtn.TextSize = 18
+	closeBtn.TextSize = ResponsiveUtil.scaledTextSize(18, 14)
 	closeBtn.Font = Enum.Font.GothamBold
 	closeBtn.Parent = panel
 
 	-- Result frame
 	local resultFrame = Instance.new("Frame")
 	resultFrame.Name = "ResultFrame"
-	resultFrame.Size = UDim2.new(0, 240, 0, 80)
-	resultFrame.Position = UDim2.new(0.5, -120, 0, 320)
+	resultFrame.Size = UDim2.new(0.72, 0, 0, ResponsiveUtil.scaledOffset(80))
+	resultFrame.Position = UDim2.new(0.14, 0, 0, ResponsiveUtil.scaledOffset(320))
 	resultFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
 	resultFrame.BorderSizePixel = 0
 	resultFrame.Visible = false
@@ -296,7 +302,7 @@ function LuckySpinController:_createUI()
 	resultLabel.BackgroundTransparency = 1
 	resultLabel.Text = ""
 	resultLabel.TextColor3 = Color3.fromRGB(255, 220, 100)
-	resultLabel.TextSize = 18
+	resultLabel.TextSize = ResponsiveUtil.scaledTextSize(18, 14)
 	resultLabel.Font = Enum.Font.GothamBold
 	resultLabel.Parent = resultFrame
 
@@ -441,8 +447,8 @@ function LuckySpinController:_showWheel()
 		panel.Position = UDim2.new(0.5, 0, 0.5, 0)
 
 		local tween = TweenService:Create(panel, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-			Size = UDim2.new(0, 340, 0, 460),
-			Position = UDim2.new(0.5, -170, 0.5, -230),
+			Size = ResponsiveUtil.clampedSize(340, 460, 0.90, 0.88),
+			Position = ResponsiveUtil.clampedPosition(340, 460, 0.90, 0.88),
 		})
 		tween:Play()
 	end
