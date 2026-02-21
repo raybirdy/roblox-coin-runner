@@ -36,10 +36,18 @@ end
 
 -- 상점 구매 요청 처리
 RemoteEvents.ShopPurchase.OnServerEvent:Connect(function(player: Player, data: { itemType: string, itemId: string })
-	if type(data) ~= "table" then return end
-	if type(data.itemType) ~= "string" then return end
-	if type(data.itemId) ~= "string" then return end
-	if not RateLimiter.Check(player, "ShopPurchase", 1) then return end
+	if type(data) ~= "table" then
+		return
+	end
+	if type(data.itemType) ~= "string" then
+		return
+	end
+	if type(data.itemId) ~= "string" then
+		return
+	end
+	if not RateLimiter.Check(player, "ShopPurchase", 1) then
+		return
+	end
 
 	local itemType = data.itemType
 	local itemId = data.itemId
@@ -55,8 +63,18 @@ RemoteEvents.ShopPurchase.OnServerEvent:Connect(function(player: Player, data: {
 		local skinInfo = getSkinInfo(itemId)
 		if not skinInfo then
 			errorMsg = "invalid_item"
+		elseif skinInfo.availableUntil and os.time() > skinInfo.availableUntil then
+			errorMsg = "expired"
 		elseif PlayerDataService:OwnsSkin(player, itemId) then
 			errorMsg = "already_owned"
+		elseif skinInfo.currency == "pieces" then
+			-- 조각 교환 구매
+			if not PlayerDataService:RedeemSkinPieces(player, itemId) then
+				errorMsg = "insufficient_pieces"
+			else
+				success = true
+				print(`[ShopService] {player.Name} redeemed skin: {itemId} with pieces`)
+			end
 		else
 			-- 재화 종류 확인 (coins 또는 gems)
 			local currency = skinInfo.currency or "coins"
@@ -117,9 +135,15 @@ end)
 
 -- 스킨 장착 요청 처리
 RemoteEvents.EquipSkin.OnServerEvent:Connect(function(player: Player, data: { skinId: string })
-	if type(data) ~= "table" then return end
-	if type(data.skinId) ~= "string" then return end
-	if not RateLimiter.Check(player, "EquipSkin", 1) then return end
+	if type(data) ~= "table" then
+		return
+	end
+	if type(data.skinId) ~= "string" then
+		return
+	end
+	if not RateLimiter.Check(player, "EquipSkin", 1) then
+		return
+	end
 
 	local skinId = data.skinId
 
@@ -145,9 +169,15 @@ end)
 
 -- 시작 파워업 사용 요청 처리
 RemoteEvents.UseStartPowerup.OnServerEvent:Connect(function(player: Player, data: { powerupId: string })
-	if type(data) ~= "table" then return end
-	if type(data.powerupId) ~= "string" then return end
-	if not RateLimiter.Check(player, "UseStartPowerup", 1) then return end
+	if type(data) ~= "table" then
+		return
+	end
+	if type(data.powerupId) ~= "string" then
+		return
+	end
+	if not RateLimiter.Check(player, "UseStartPowerup", 1) then
+		return
+	end
 
 	local powerupId = data.powerupId
 
@@ -195,7 +225,7 @@ end
 function ShopService:GetShopData(player: Player)
 	local playerData = PlayerDataService:GetPlayerData(player)
 
-	-- 스킨 목록 (코인/젬 재화 정보 포함)
+	-- 스킨 목록 (코인/젬 재화 정보 + 시즌 정보 포함)
 	local skins = {}
 	for _, skin in GameConstants.SHOP.SKINS do
 		table.insert(skins, {
@@ -205,6 +235,9 @@ function ShopService:GetShopData(player: Player)
 			currency = skin.currency or "coins",
 			owned = playerData and PlayerDataService:OwnsSkin(player, skin.id) or skin.id == "default",
 			equipped = playerData and PlayerDataService:GetEquippedSkin(player) == skin.id or skin.id == "default",
+			availableUntil = skin.availableUntil,
+			pieces = playerData and PlayerDataService:GetSkinPieces(player, skin.id) or 0,
+			piecesRequired = GameConstants.SHOP.SEASON.SKIN_PIECES_REQUIRED,
 		})
 	end
 
@@ -255,7 +288,9 @@ end
 
 -- 상점 데이터 요청 처리
 RemoteEvents.ShopDataRequest.OnServerEvent:Connect(function(player: Player)
-	if not RateLimiter.Check(player, "ShopDataRequest", 1) then return end
+	if not RateLimiter.Check(player, "ShopDataRequest", 1) then
+		return
+	end
 
 	print(`[ShopService] Shop data request from {player.Name}`)
 

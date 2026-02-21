@@ -49,6 +49,8 @@ type PlayerData = {
 	lastLoginDate: string?, -- "YYYY-MM-DD"
 	-- Phase 2: Lucky Spin
 	lastSpinDate: string?, -- 마지막 스핀 날짜
+	-- Phase 2: Season Skin Pieces
+	skinPieces: { [string]: number }?, -- { ["cherry_blossom"] = 3, ["spring_fairy"] = 7 }
 }
 
 local DEFAULT_DATA: PlayerData = {
@@ -79,6 +81,8 @@ local DEFAULT_DATA: PlayerData = {
 	lastLoginDate = nil,
 	-- Phase 2: Lucky Spin
 	lastSpinDate = nil,
+	-- Phase 2: Season Skin Pieces
+	skinPieces = {},
 }
 
 -- 메모리 캐시 (활성 플레이어)
@@ -479,6 +483,63 @@ function PlayerDataService:GetReviveTicketCount(player: Player): number
 	return playerData.reviveTickets or 0
 end
 
+-- 스킨 조각 추가
+function PlayerDataService:AddSkinPieces(player: Player, skinId: string, count: number)
+	local playerData = playerDataCache[player]
+	if not playerData then
+		return
+	end
+
+	if not playerData.skinPieces then
+		playerData.skinPieces = {}
+	end
+
+	playerData.skinPieces[skinId] = (playerData.skinPieces[skinId] or 0) + count
+	print(
+		`[PlayerDataService] Added {count} skin pieces ({skinId}) to {player.Name}, total: {playerData.skinPieces[skinId]}`
+	)
+end
+
+-- 스킨 조각 개수 조회
+function PlayerDataService:GetSkinPieces(player: Player, skinId: string): number
+	local playerData = playerDataCache[player]
+	if not playerData or not playerData.skinPieces then
+		return 0
+	end
+
+	return playerData.skinPieces[skinId] or 0
+end
+
+-- 스킨 조각 교환 (10개 → 스킨 획득)
+function PlayerDataService:RedeemSkinPieces(player: Player, skinId: string): boolean
+	local playerData = playerDataCache[player]
+	if not playerData then
+		return false
+	end
+
+	-- Already owned check
+	for _, ownedSkin in playerData.ownedSkins do
+		if ownedSkin == skinId then
+			return false
+		end
+	end
+
+	local required = GameConstants.SHOP.SEASON.SKIN_PIECES_REQUIRED
+	local pieces = playerData.skinPieces and playerData.skinPieces[skinId] or 0
+	if pieces < required then
+		return false
+	end
+
+	-- Deduct pieces
+	playerData.skinPieces[skinId] = pieces - required
+	-- Add skin
+	table.insert(playerData.ownedSkins, skinId)
+	self:SavePlayerData(player)
+
+	print(`[PlayerDataService] {player.Name} redeemed skin pieces for {skinId}`)
+	return true
+end
+
 -- 스킨 소유 여부 확인
 function PlayerDataService:OwnsSkin(player: Player, skinId: string): boolean
 	local playerData = playerDataCache[player]
@@ -567,6 +628,7 @@ VALID_KEYS["completedAchievements"] = true
 VALID_KEYS["processedReceipts"] = true
 VALID_KEYS["lastLoginDate"] = true
 VALID_KEYS["lastSpinDate"] = true
+VALID_KEYS["skinPieces"] = true
 
 -- 유틸리티: 기본값 병합
 function PlayerDataService:_mergeWithDefaults(data: any): PlayerData

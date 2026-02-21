@@ -331,6 +331,36 @@ function ShopController:_refreshCurrentTab()
 		end
 	end
 
+	-- 스킨 탭: UIListLayout 사용 (섹션 헤더 + 다양한 크기)
+	-- 기타 탭: UIGridLayout 사용
+	local existingGrid = itemContainer:FindFirstChild("UIGridLayout")
+	local existingList = itemContainer:FindFirstChild("UIListLayout")
+
+	if self._currentTab == "skins" then
+		if existingGrid then
+			existingGrid.Parent = nil
+		end
+		if not existingList then
+			local listLayout = Instance.new("UIListLayout")
+			listLayout.Name = "UIListLayout"
+			listLayout.FillDirection = Enum.FillDirection.Vertical
+			listLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+			listLayout.Padding = UDim.new(0, 10)
+			listLayout.Parent = itemContainer
+		end
+	else
+		if existingList then
+			existingList.Parent = nil
+		end
+		if not existingGrid then
+			local gridLayout = Instance.new("UIGridLayout")
+			gridLayout.CellSize = UDim2.new(0, 130, 0, 100)
+			gridLayout.CellPadding = UDim2.new(0, 15, 0, 15)
+			gridLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+			gridLayout.Parent = itemContainer
+		end
+	end
+
 	if self._currentTab == "skins" then
 		self:_populateSkins(itemContainer)
 	elseif self._currentTab == "powerups" then
@@ -343,30 +373,241 @@ function ShopController:_refreshCurrentTab()
 
 	-- 캔버스 크기 업데이트
 	task.defer(function()
-		local layout = itemContainer:FindFirstChild("UIGridLayout") :: UIGridLayout?
+		local layout = itemContainer:FindFirstChild("UIGridLayout") or itemContainer:FindFirstChild("UIListLayout")
 		if layout then
 			itemContainer.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 30)
 		end
 	end)
 end
 
--- 스킨 탭 채우기
-function ShopController:_populateSkins(container: ScrollingFrame)
-	for _, skin in GameConstants.SHOP.SKINS do
-		local owned = self._playerData and self:_ownsSkin(skin.id) or skin.id == "default"
-		local equipped = self._playerData and self._playerData.equippedSkin == skin.id or skin.id == "default"
+-- 시즌 한정 스킨 섹션 헤더
+function ShopController:_createSectionHeader(container: ScrollingFrame, text: string)
+	local header = Instance.new("Frame")
+	header.Name = "SectionHeader_" .. text
+	header.Size = UDim2.new(1, -30, 0, 30)
+	header.BackgroundColor3 = Color3.fromRGB(80, 60, 120)
+	header.BackgroundTransparency = 0.3
+	header.Parent = container
 
-		local itemFrame = self:_createItemFrame(container, {
-			id = skin.id,
-			name = skin.name,
-			price = skin.price,
-			owned = owned,
-			equipped = equipped,
-			itemType = "skin",
-			currency = skin.currency,
-			thumbnailId = skin.thumbnailId,
-			color = skin.color,
-		})
+	local headerCorner = Instance.new("UICorner")
+	headerCorner.CornerRadius = UDim.new(0, 6)
+	headerCorner.Parent = header
+
+	local headerLabel = Instance.new("TextLabel")
+	headerLabel.Size = UDim2.new(1, 0, 1, 0)
+	headerLabel.BackgroundTransparency = 1
+	headerLabel.TextColor3 = Color3.fromRGB(255, 220, 150)
+	headerLabel.TextSize = 16
+	headerLabel.Font = Enum.Font.GothamBold
+	headerLabel.Text = text
+	headerLabel.Parent = header
+end
+
+-- 스킨 탭 채우기 (시즌 한정 → 일반 순서)
+function ShopController:_populateSkins(container: ScrollingFrame)
+	-- 1) 시즌 한정 스킨 (availableUntil 있고, 아직 만료 안 된 것)
+	local hasSeasonSection = false
+	for _, skin in GameConstants.SHOP.SKINS do
+		if skin.availableUntil and os.time() <= skin.availableUntil then
+			if not hasSeasonSection then
+				self:_createSectionHeader(container, "시즌 한정")
+				hasSeasonSection = true
+			end
+
+			local owned = self._playerData and self:_ownsSkin(skin.id) or false
+			local equipped = self._playerData and self._playerData.equippedSkin == skin.id or false
+			local pieces = self._playerData and self._playerData.skinPieces and self._playerData.skinPieces[skin.id]
+				or 0
+			local piecesRequired = GameConstants.SHOP.SEASON.SKIN_PIECES_REQUIRED
+
+			self:_createSeasonSkinCard(container, skin, owned, equipped, pieces, piecesRequired)
+		end
+	end
+
+	-- 2) 일반 스킨 (availableUntil 없는 것)
+	self:_createSectionHeader(container, "스킨")
+	for _, skin in GameConstants.SHOP.SKINS do
+		if not skin.availableUntil then
+			local owned = self._playerData and self:_ownsSkin(skin.id) or skin.id == "default"
+			local equipped = self._playerData and self._playerData.equippedSkin == skin.id or skin.id == "default"
+
+			self:_createItemFrame(container, {
+				id = skin.id,
+				name = skin.name,
+				price = skin.price,
+				owned = owned,
+				equipped = equipped,
+				itemType = "skin",
+				currency = skin.currency,
+				thumbnailId = skin.thumbnailId,
+				color = skin.color,
+			})
+		end
+	end
+end
+
+-- 시즌 스킨 카드 생성 (카운트다운 + 조각 진행률)
+function ShopController:_createSeasonSkinCard(
+	container: ScrollingFrame,
+	skin: any,
+	owned: boolean,
+	equipped: boolean,
+	pieces: number,
+	piecesRequired: number
+)
+	local itemFrame = Instance.new("Frame")
+	itemFrame.Name = skin.id
+	itemFrame.Size = UDim2.new(0, 130, 0, 130)
+	itemFrame.BackgroundColor3 = Color3.fromRGB(70, 50, 90)
+	itemFrame.Parent = container
+
+	local frameCorner = Instance.new("UICorner")
+	frameCorner.CornerRadius = UDim.new(0, 8)
+	frameCorner.Parent = itemFrame
+
+	-- Season border
+	local seasonStroke = Instance.new("UIStroke")
+	seasonStroke.Color = Color3.fromRGB(255, 180, 220)
+	seasonStroke.Thickness = 2
+	seasonStroke.Parent = itemFrame
+
+	-- Skin name
+	local nameLabel = Instance.new("TextLabel")
+	nameLabel.Name = "Name"
+	nameLabel.Size = UDim2.new(1, 0, 0, 22)
+	nameLabel.Position = UDim2.new(0, 0, 0, 4)
+	nameLabel.BackgroundTransparency = 1
+	nameLabel.TextColor3 = Color3.fromRGB(255, 220, 255)
+	nameLabel.TextSize = 14
+	nameLabel.Font = Enum.Font.GothamBold
+	nameLabel.Text = skin.name
+	nameLabel.TextTruncate = Enum.TextTruncate.AtEnd
+	nameLabel.Parent = itemFrame
+
+	-- Countdown timer
+	local remaining = skin.availableUntil - os.time()
+	local days = math.floor(remaining / 86400)
+	local hours = math.floor((remaining % 86400) / 3600)
+	local timeText = if days > 0 then `{days}일 남음` else `{hours}시간 남음`
+
+	local timerLabel = Instance.new("TextLabel")
+	timerLabel.Name = "Timer"
+	timerLabel.Size = UDim2.new(1, 0, 0, 16)
+	timerLabel.Position = UDim2.new(0, 0, 0, 24)
+	timerLabel.BackgroundTransparency = 1
+	timerLabel.TextColor3 = Color3.fromRGB(255, 150, 150)
+	timerLabel.TextSize = ResponsiveUtil.scaledTextSize(12, 11)
+	timerLabel.Font = Enum.Font.Gotham
+	timerLabel.Text = timeText
+	timerLabel.Parent = itemFrame
+
+	-- Thumbnail
+	if skin.thumbnailId then
+		local thumbnail = Instance.new("ImageLabel")
+		thumbnail.Name = "Thumbnail"
+		thumbnail.Size = UDim2.new(0, 26, 0, 26)
+		thumbnail.Position = UDim2.new(0.5, -13, 0, 42)
+		thumbnail.BackgroundTransparency = 1
+		thumbnail.Image = skin.thumbnailId
+		thumbnail.ScaleType = Enum.ScaleType.Fit
+		thumbnail.Parent = itemFrame
+	end
+
+	-- Pieces progress (for currency == "pieces")
+	if skin.currency == "pieces" then
+		-- Progress bar background
+		local barBg = Instance.new("Frame")
+		barBg.Name = "BarBg"
+		barBg.Size = UDim2.new(1, -20, 0, 10)
+		barBg.Position = UDim2.new(0, 10, 0, 72)
+		barBg.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+		barBg.Parent = itemFrame
+
+		local barBgCorner = Instance.new("UICorner")
+		barBgCorner.CornerRadius = UDim.new(0, 4)
+		barBgCorner.Parent = barBg
+
+		-- Progress bar fill
+		local fillRatio = math.min(pieces / piecesRequired, 1)
+		local barFill = Instance.new("Frame")
+		barFill.Name = "BarFill"
+		barFill.Size = UDim2.new(fillRatio, 0, 1, 0)
+		barFill.BackgroundColor3 = Color3.fromRGB(100, 220, 100)
+		barFill.Parent = barBg
+
+		local barFillCorner = Instance.new("UICorner")
+		barFillCorner.CornerRadius = UDim.new(0, 4)
+		barFillCorner.Parent = barFill
+
+		-- Pieces text
+		local piecesLabel = Instance.new("TextLabel")
+		piecesLabel.Name = "Pieces"
+		piecesLabel.Size = UDim2.new(1, 0, 0, 14)
+		piecesLabel.Position = UDim2.new(0, 0, 0, 83)
+		piecesLabel.BackgroundTransparency = 1
+		piecesLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+		piecesLabel.TextSize = ResponsiveUtil.scaledTextSize(12, 11)
+		piecesLabel.Font = Enum.Font.Gotham
+		piecesLabel.Text = `{pieces}/{piecesRequired} 조각`
+		piecesLabel.Parent = itemFrame
+	end
+
+	-- Button
+	local button = Instance.new("TextButton")
+	button.Name = "Button"
+	button.Size = UDim2.new(1, -20, 0, 30)
+	button.Position = UDim2.new(0, 10, 1, -36)
+	button.Font = Enum.Font.GothamBold
+	button.TextSize = 13
+	button.Parent = itemFrame
+
+	local buttonCorner = Instance.new("UICorner")
+	buttonCorner.CornerRadius = UDim.new(0, 6)
+	buttonCorner.Parent = button
+
+	if owned then
+		if equipped then
+			button.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+			button.TextColor3 = Color3.fromRGB(200, 200, 200)
+			button.Text = "장착중"
+			button.Active = false
+		else
+			button.BackgroundColor3 = Color3.fromRGB(0, 150, 200)
+			button.TextColor3 = Color3.fromRGB(255, 255, 255)
+			button.Text = "장착"
+			button.MouseButton1Click:Connect(function()
+				RemoteEvents.EquipSkin:FireServer({ skinId = skin.id })
+			end)
+		end
+	elseif skin.currency == "pieces" then
+		if pieces >= piecesRequired then
+			button.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
+			button.TextColor3 = Color3.fromRGB(255, 255, 255)
+			button.Text = "교환하기"
+			button.MouseButton1Click:Connect(function()
+				RemoteEvents.ShopPurchase:FireServer({
+					itemType = "skin",
+					itemId = skin.id,
+				})
+			end)
+		else
+			button.BackgroundColor3 = Color3.fromRGB(80, 80, 100)
+			button.TextColor3 = Color3.fromRGB(150, 150, 150)
+			button.Text = "조각 부족"
+			button.Active = false
+		end
+	else
+		button.BackgroundColor3 = Color3.fromRGB(130, 70, 200)
+		button.TextColor3 = Color3.fromRGB(255, 255, 255)
+		button.Text = `💎 {skin.price}`
+		button.MouseButton1Click:Connect(function()
+			self:_showConfirmPopup(`{skin.name}을(를) 💎 {skin.price} 젬에\n구매하시겠습니까?`, function()
+				RemoteEvents.ShopPurchase:FireServer({
+					itemType = "skin",
+					itemId = skin.id,
+				})
+			end)
+		end)
 	end
 end
 

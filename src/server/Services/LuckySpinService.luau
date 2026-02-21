@@ -80,8 +80,14 @@ function LuckySpinService:_onSpinRequest(player: Player, data: any)
 	elseif reward.type == "gems" then
 		PlayerDataService:AddGems(player, reward.amount)
 	elseif reward.type == "skin_piece" then
-		-- skin_piece: 향후 확장 (현재는 코인 100으로 대체)
-		PlayerDataService:AddCoins(player, 100)
+		-- 활성 시즌 스킨 중 미보유 스킨에 조각 지급
+		local targetSkinId = self:_getRandomSeasonSkinId(player)
+		if targetSkinId then
+			PlayerDataService:AddSkinPieces(player, targetSkinId, reward.amount)
+		else
+			-- 모든 시즌 스킨 보유 시 젬 5개로 대체
+			PlayerDataService:AddGems(player, 5)
+		end
 	end
 
 	-- 저장
@@ -103,6 +109,22 @@ function LuckySpinService:_onSpinRequest(player: Player, data: any)
 	RemoteEvents.PlayerDataLoaded:FireClient(player, playerData)
 
 	print(`[LuckySpinService] {player.Name} spin result: {reward.name} ({reward.amount} {reward.type})`)
+end
+
+-- 활성 시즌 스킨 중 미보유 스킨 랜덤 선택
+function LuckySpinService:_getRandomSeasonSkinId(player: Player): string?
+	local candidates = {}
+	for _, skin in GameConstants.SHOP.SKINS do
+		if skin.availableUntil and os.time() <= skin.availableUntil then
+			if not PlayerDataService:OwnsSkin(player, skin.id) then
+				table.insert(candidates, skin.id)
+			end
+		end
+	end
+	if #candidates == 0 then
+		return nil
+	end
+	return candidates[math.random(1, #candidates)]
 end
 
 -- 이벤트 연결
