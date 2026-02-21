@@ -257,7 +257,7 @@ function LuckySpinController:_createUI()
 	gemSpinBtn.Size = UDim2.new(0.42, 0, 0, ResponsiveUtil.scaledOffset(44))
 	gemSpinBtn.Position = UDim2.new(0.54, 0, 1, -ResponsiveUtil.scaledOffset(80))
 	gemSpinBtn.BackgroundColor3 = Color3.fromRGB(100, 50, 200)
-	gemSpinBtn.Text = `💎 {GameConstants.LUCKY_SPIN.EXTRA_SPIN_GEM_COST} Spin`
+	gemSpinBtn.Text = `◆ {GameConstants.LUCKY_SPIN.EXTRA_SPIN_GEM_COST} Spin`
 	gemSpinBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 	gemSpinBtn.TextSize = ResponsiveUtil.scaledTextSize(16, 12)
 	gemSpinBtn.Font = Enum.Font.GothamBold
@@ -398,7 +398,7 @@ function LuckySpinController:_showResult(data: any)
 		self._resultFrame.Visible = true
 		local label = self._resultFrame:FindFirstChild("ResultLabel") :: TextLabel?
 		if label then
-			local icon = if data.type == "gems" then "💎" else "🪙"
+			local icon = if data.type == "gems" then "◆" else "●"
 			label.Text = `{icon} {data.rewardName}!`
 		end
 	end
