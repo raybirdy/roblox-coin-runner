@@ -396,6 +396,25 @@ GameConstants.SHOP = {
 			color = Color3.fromRGB(20, 20, 30),
 			thumbnailId = "rbxassetid://3535937404",
 		},
+		-- 시즌 한정 스킨 (availableUntil: Unix timestamp, nil이면 상시 판매)
+		{
+			id = "cherry_blossom",
+			name = "벚꽃",
+			price = 150,
+			currency = "gems",
+			color = Color3.fromRGB(255, 183, 197),
+			thumbnailId = "rbxassetid://3535928381",
+			availableUntil = 1743465600, -- 2025-04-01 00:00 UTC (예시)
+		},
+		{
+			id = "spring_fairy",
+			name = "봄 요정",
+			price = 0,
+			currency = "pieces", -- 조각 교환 전용
+			color = Color3.fromRGB(144, 238, 144),
+			thumbnailId = "rbxassetid://3535928381",
+			availableUntil = 1743465600,
+		},
 	},
 	-- 시작 파워업 (코인)
 	START_POWERUPS = {
@@ -407,6 +426,10 @@ GameConstants.SHOP = {
 	REVIVE_TICKET_PRICE = 100,
 	-- 젬으로 부활 (게임 중)
 	REVIVE_GEM_COST = 5,
+	-- 시즌 한정 스킨
+	SEASON = {
+		SKIN_PIECES_REQUIRED = 10, -- 스킨 조각 10개 → 스킨 1개 교환
+	},
 }
 
 -- 수익화 시스템 (Robux 상품)
