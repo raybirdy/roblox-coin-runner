@@ -599,9 +599,9 @@ function ShopController:_createSeasonSkinCard(
 	else
 		button.BackgroundColor3 = Color3.fromRGB(130, 70, 200)
 		button.TextColor3 = Color3.fromRGB(255, 255, 255)
-		button.Text = `💎 {skin.price}`
+		button.Text = `◆ {skin.price}`
 		button.MouseButton1Click:Connect(function()
-			self:_showConfirmPopup(`{skin.name}을(를) 💎 {skin.price} 젬에\n구매하시겠습니까?`, function()
+			self:_showConfirmPopup(`{skin.name}을(를) ◆ {skin.price} 젬에\n구매하시겠습니까?`, function()
 				RemoteEvents.ShopPurchase:FireServer({
 					itemType = "skin",
 					itemId = skin.id,
@@ -751,11 +751,11 @@ function ShopController:_createItemFrame(
 		local isGemCurrency = item.currency == "gems"
 		button.BackgroundColor3 = isGemCurrency and Color3.fromRGB(130, 70, 200) or Color3.fromRGB(0, 180, 0)
 		button.TextColor3 = Color3.fromRGB(255, 255, 255)
-		button.Text = isGemCurrency and `💎 {item.price}` or `{item.price}`
+		button.Text = isGemCurrency and `◆ {item.price}` or `{item.price}`
 		if isGemCurrency then
 			button.MouseButton1Click:Connect(function()
 				self:_showConfirmPopup(
-					`{item.name}을(를) 💎 {item.price} 젬에\n구매하시겠습니까?`,
+					`{item.name}을(를) ◆ {item.price} 젬에\n구매하시겠습니까?`,
 					function()
 						RemoteEvents.ShopPurchase:FireServer({
 							itemType = item.itemType,
@@ -840,7 +840,7 @@ function ShopController:_createGemProductFrame(
 	nameLabel.TextColor3 = Color3.fromRGB(170, 100, 255)
 	nameLabel.TextSize = 14
 	nameLabel.Font = Enum.Font.GothamBold
-	nameLabel.Text = `💎 {product.gems} 젬`
+	nameLabel.Text = `◆ {product.gems} 젬`
 	nameLabel.Parent = frame
 
 	-- 보너스 또는 펫 포함 텍스트
@@ -881,7 +881,7 @@ function ShopController:_createGemProductFrame(
 	buttonCorner.Parent = button
 
 	button.MouseButton1Click:Connect(function()
-		self:_showConfirmPopup(`💎 {product.gems} 젬을 R$ {product.robux}에\n구매하시겠습니까?`, function()
+		self:_showConfirmPopup(`◆ {product.gems} 젬을 R$ {product.robux}에\n구매하시겠습니까?`, function()
 			RemoteEvents.PurchaseGems:FireServer({ productId = product.id })
 		end)
 	end)

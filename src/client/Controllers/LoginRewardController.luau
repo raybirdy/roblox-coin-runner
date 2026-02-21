@@ -163,7 +163,7 @@ function LoginRewardController:_createUI()
 		rewardIcon.Position = UDim2.new(0, 0, 0, 26)
 		rewardIcon.BackgroundTransparency = 1
 		local reward = rewards[i]
-		rewardIcon.Text = if reward.type == "gems" then "💎" else "🪙"
+		rewardIcon.Text = if reward.type == "gems" then "◆" else "●"
 		rewardIcon.TextSize = ResponsiveUtil.scaledTextSize(28, 20)
 		rewardIcon.Font = Enum.Font.GothamBold
 		rewardIcon.Parent = dayFrame

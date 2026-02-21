@@ -143,7 +143,7 @@ function UIController:_createUI()
 	scoreLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 	scoreLabel.TextSize = ResponsiveUtil.scaledTextSize(18, 14)
 	scoreLabel.Font = Enum.Font.GothamBold
-	scoreLabel.Text = "⭐ 0"
+	scoreLabel.Text = "★ 0"
 	scoreLabel.TextXAlignment = Enum.TextXAlignment.Left
 	scoreLabel.Parent = hudFrame
 	self._scoreLabel = scoreLabel
@@ -157,7 +157,7 @@ function UIController:_createUI()
 	distanceLabel.TextColor3 = Color3.fromRGB(100, 200, 255)
 	distanceLabel.TextSize = ResponsiveUtil.scaledTextSize(16, 13)
 	distanceLabel.Font = Enum.Font.Gotham
-	distanceLabel.Text = "🏃 0m"
+	distanceLabel.Text = "► 0m"
 	distanceLabel.TextXAlignment = Enum.TextXAlignment.Left
 	distanceLabel.Parent = hudFrame
 	self._distanceLabel = distanceLabel
@@ -171,7 +171,7 @@ function UIController:_createUI()
 	coinsLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
 	coinsLabel.TextSize = ResponsiveUtil.scaledTextSize(16, 13)
 	coinsLabel.Font = Enum.Font.GothamBold
-	coinsLabel.Text = "🪙 0"
+	coinsLabel.Text = "● 0"
 	coinsLabel.TextXAlignment = Enum.TextXAlignment.Left
 	coinsLabel.Parent = hudFrame
 	self._coinsLabel = coinsLabel
@@ -228,7 +228,7 @@ function UIController:_createUI()
 	newRecordLabel.TextColor3 = Color3.fromRGB(0, 0, 0)
 	newRecordLabel.TextSize = 18
 	newRecordLabel.Font = Enum.Font.GothamBold
-	newRecordLabel.Text = "🎉 NEW RECORD! 🎉"
+	newRecordLabel.Text = "★ NEW RECORD! ★"
 	newRecordLabel.Visible = false
 	newRecordLabel.Parent = gameOverFrame
 
@@ -264,7 +264,7 @@ function UIController:_createUI()
 	goDistanceLabel.TextColor3 = Color3.fromRGB(100, 200, 255)
 	goDistanceLabel.TextSize = 16
 	goDistanceLabel.Font = Enum.Font.Gotham
-	goDistanceLabel.Text = "🏃 0m"
+	goDistanceLabel.Text = "► 0m"
 	goDistanceLabel.TextXAlignment = Enum.TextXAlignment.Center
 	goDistanceLabel.Parent = statsRow
 
@@ -276,7 +276,7 @@ function UIController:_createUI()
 	earnedCoinsLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
 	earnedCoinsLabel.TextSize = 16
 	earnedCoinsLabel.Font = Enum.Font.Gotham
-	earnedCoinsLabel.Text = "🪙 0"
+	earnedCoinsLabel.Text = "● 0"
 	earnedCoinsLabel.TextXAlignment = Enum.TextXAlignment.Center
 	earnedCoinsLabel.Parent = statsRow
 
@@ -289,7 +289,7 @@ function UIController:_createUI()
 	highScoreLabel.TextColor3 = Color3.fromRGB(255, 200, 0)
 	highScoreLabel.TextSize = 18
 	highScoreLabel.Font = Enum.Font.GothamBold
-	highScoreLabel.Text = "🏆 High Score: 0"
+	highScoreLabel.Text = "★ High Score: 0"
 	highScoreLabel.Parent = gameOverFrame
 
 	-- PLAY AGAIN 버튼
@@ -327,7 +327,7 @@ function UIController:_createUI()
 	lobbyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 	lobbyButton.TextSize = 18
 	lobbyButton.Font = Enum.Font.GothamBold
-	lobbyButton.Text = "🏠 LOBBY"
+	lobbyButton.Text = "◀ LOBBY"
 	lobbyButton.Parent = gameOverFrame
 
 	local lobbyCorner = Instance.new("UICorner")
@@ -353,7 +353,7 @@ function UIController:_createUI()
 	reviveButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 	reviveButton.TextSize = 22
 	reviveButton.Font = Enum.Font.GothamBold
-	reviveButton.Text = "💫 REVIVE (FREE)"
+	reviveButton.Text = "★ REVIVE (FREE)"
 	reviveButton.Visible = false
 	reviveButton.Parent = gameOverFrame
 	self._reviveButton = reviveButton
@@ -798,17 +798,17 @@ end
 -- 점수 업데이트
 function UIController:UpdateScore(score: number, distance: number, _coins: number)
 	if self._scoreLabel then
-		self._scoreLabel.Text = `⭐ {score}`
+		self._scoreLabel.Text = `★ {score}`
 	end
 	if self._distanceLabel then
-		self._distanceLabel.Text = `🏃 {distance}m`
+		self._distanceLabel.Text = `► {distance}m`
 	end
 end
 
 -- 코인 업데이트
 function UIController:UpdateCoins(coins: number)
 	if self._coinsLabel then
-		self._coinsLabel.Text = `🪙 {coins}`
+		self._coinsLabel.Text = `● {coins}`
 	end
 end
 
@@ -885,18 +885,18 @@ function UIController:ShowGameOver(
 	local statsRow = self._gameOverFrame:FindFirstChild("StatsRow") :: Frame?
 	local distanceLabel = if statsRow then statsRow:FindFirstChild("Distance") :: TextLabel? else nil
 	if distanceLabel then
-		distanceLabel.Text = `🏃 {distance or 0}m`
+		distanceLabel.Text = `► {distance or 0}m`
 	end
 
 	local earnedCoinsLabel = if statsRow then statsRow:FindFirstChild("EarnedCoins") :: TextLabel? else nil
 	if earnedCoinsLabel then
-		earnedCoinsLabel.Text = `🪙 {earnedCoins}`
+		earnedCoinsLabel.Text = `● {earnedCoins}`
 	end
 
 	-- 최고 점수 표시
 	local highScoreLabel = self._gameOverFrame:FindFirstChild("HighScore") :: TextLabel?
 	if highScoreLabel and highScore then
-		highScoreLabel.Text = `🏆 High Score: {highScore}`
+		highScoreLabel.Text = `★ High Score: {highScore}`
 	end
 
 	-- NEW RECORD 표시

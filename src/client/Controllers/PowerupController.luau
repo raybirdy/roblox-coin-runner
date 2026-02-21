@@ -79,7 +79,8 @@ function PowerupController:_createPowerupSound()
 	local sound = Instance.new("Sound")
 	sound.Name = "PowerupSound"
 	sound.SoundId = "rbxassetid://138446295" -- 파워업 사운드
-	sound.Volume = 0.6
+	sound.Volume = 0.7
+	sound.PlaybackSpeed = 1.5 -- 높은 피치로 보상감 강조
 	sound.Parent = SoundService
 	self._powerupSound = sound
 end
