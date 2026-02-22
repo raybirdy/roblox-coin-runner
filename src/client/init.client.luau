@@ -81,6 +81,7 @@ local StartPowerupController = require(script.Controllers.StartPowerupController
 local ProgressionController = require(script.Controllers.ProgressionController)
 local LoginRewardController = require(script.Controllers.LoginRewardController)
 local LuckySpinController = require(script.Controllers.LuckySpinController)
+local FeverController = require(script.Controllers.FeverController)
 
 -- 컨트롤러 인스턴스 생성
 local inputController = InputController.new()
@@ -100,6 +101,16 @@ local startPowerupController = StartPowerupController.new(player)
 local progressionController = ProgressionController.new(player)
 local loginRewardController = LoginRewardController.new(player)
 local luckySpinController = LuckySpinController.new(player)
+local feverController = FeverController.new()
+
+-- Fever mode callbacks (speed boost)
+feverController:OnFeverStart(function(speedBoost: number)
+	playerController:SetSpeedMultiplier(speedBoost)
+end)
+
+feverController:OnFeverEnd(function()
+	playerController:SetSpeedMultiplier(1.0)
+end)
 
 -- 배경 음악 시작
 musicController:Start()
@@ -129,6 +140,7 @@ RemoteEvents.PlayerDataRequest:FireServer()
 RemoteEvents.ReturnToLobby.OnClientEvent:Connect(function()
 	print("[Client] Returned to lobby")
 	uiController:ShowLobbyUI()
+	feverController:HideGauge()
 
 	-- 로비에서는 기본 이동 활성화
 	enableDefaultControls()
@@ -256,6 +268,7 @@ RemoteEvents.GameStart.OnClientEvent:Connect(function(data)
 		playerController:StartGame()
 		inputController:SetGameActive(true)
 		coinController:SetGameActive(true)
+		feverController:ShowGauge()
 
 		-- 속도 연출 효과 시작
 		if charNow then
@@ -288,6 +301,9 @@ RemoteEvents.GameOver.OnClientEvent:Connect(function(data)
 	-- 스와이프 입력 비활성화
 	inputController:SetGameActive(false)
 	coinController:SetGameActive(false)
+
+	-- 피버 게이지 숨기기
+	feverController:HideGauge()
 
 	-- 부활 가능한 경우 게임 일시정지만 (완전 종료 아님)
 	if data.canRevive then
@@ -344,9 +360,23 @@ RemoteEvents.ConsolationReward.OnClientEvent:Connect(function(data)
 	uiController:ShowGameFeedback(`힘내! +{data.coins} 코인 선물!`, Color3.fromRGB(255, 150, 255))
 end)
 
--- 니어미스 피드백
-RemoteEvents.NearMiss.OnClientEvent:Connect(function(data)
-	uiController:ShowGameFeedback(`NEAR MISS! +{data.bonus}`, Color3.fromRGB(255, 200, 0))
+-- 니어미스 피드백 (기존 - 호환용)
+RemoteEvents.NearMiss.OnClientEvent:Connect(function(_data)
+	-- NearMissChain handles enhanced feedback now
+end)
+
+-- 니어미스 체인 피드백 (강화 버전)
+RemoteEvents.NearMissChain.OnClientEvent:Connect(function(data)
+	-- Chain color escalation
+	local chainColors = {
+		Color3.fromRGB(255, 200, 0), -- Close! (yellow)
+		Color3.fromRGB(255, 150, 0), -- NICE! (orange)
+		Color3.fromRGB(255, 50, 50), -- PERFECT! (red)
+		Color3.fromRGB(200, 50, 255), -- INSANE! (purple)
+		Color3.fromRGB(255, 50, 255), -- GODLIKE! (magenta)
+	}
+	local color = chainColors[data.chain] or Color3.fromRGB(255, 200, 0)
+	uiController:ShowGameFeedback(`{data.text} +{data.bonus}`, color)
 end)
 
 -- 콤보 피드백

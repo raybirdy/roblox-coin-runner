@@ -48,6 +48,13 @@ type GameSession = {
 	nearMissedObstacles: { [any]: boolean }, -- 니어미스 처리된 장애물 추적
 	consecutiveHits: number, -- 연속 피격 횟수 (자비 청크용)
 	nearRecordAlerted: boolean, -- Phase 2: near record alert sent
+	-- Fever mode
+	isFever: boolean,
+	feverEndTime: number,
+	feverCooldownEnd: number,
+	-- Near miss chain
+	nearMissChain: number,
+	lastNearMissTime: number,
 }
 
 local activeSessions: { [Player]: GameSession } = {}
@@ -166,6 +173,11 @@ RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { 
 		nearMissedObstacles = {},
 		consecutiveHits = 0,
 		nearRecordAlerted = false,
+		isFever = false,
+		feverEndTime = 0,
+		feverCooldownEnd = 0,
+		nearMissChain = 0,
+		lastNearMissTime = 0,
 	}
 
 	activeSessions[player] = session
@@ -337,6 +349,11 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 		nearMissedObstacles = {},
 		consecutiveHits = 0,
 		nearRecordAlerted = false,
+		isFever = false,
+		feverEndTime = 0,
+		feverCooldownEnd = 0,
+		nearMissChain = 0,
+		lastNearMissTime = 0,
 	}
 
 	activeSessions[player] = session
@@ -606,9 +623,16 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 			print(`[GameManager] Player {player.Name} collected {powerupData.powerupType} powerup`)
 		end
 
-		-- 코인 수집 체크 (자석 효과 적용)
-		local collectedCoins = coinService:CheckCoinCollection(hrp.Position, powerupService:GetMagnetRadius())
+		-- 코인 수집 체크 (자석 효과 적용, 피버 시 초강력 자석)
+		local magnetRadius = powerupService:GetMagnetRadius()
+		if session.isFever then
+			magnetRadius = math.max(magnetRadius, GameConstants.FEVER.MAGNET_RADIUS)
+		end
+		local collectedCoins = coinService:CheckCoinCollection(hrp.Position, magnetRadius)
 		local coinMultiplier = powerupService:GetCoinMultiplier() * MonetizationService:GetCoinMultiplier(player)
+		if session.isFever then
+			coinMultiplier *= GameConstants.FEVER.COIN_MULTIPLIER
+		end
 		for _, coinData in collectedCoins do
 			-- 2배 코인 적용 (파워업 + VIP 배율)
 			local actualValue = coinData.value * coinMultiplier
@@ -656,6 +680,28 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 				print(`[GameManager] Combo {session.comboCount}x! +{comboBonus} bonus for {player.Name}`)
 			end
 
+			-- 피버 모드 발동 체크
+			if
+				not session.isFever
+				and session.comboCount >= GameConstants.FEVER.COMBO_THRESHOLD
+				and now > session.feverCooldownEnd
+			then
+				session.isFever = true
+				session.feverEndTime = now + GameConstants.FEVER.DURATION
+				RemoteEvents.FeverStart:FireClient(player, {
+					duration = GameConstants.FEVER.DURATION,
+					speedBoost = GameConstants.FEVER.SPEED_BOOST,
+				})
+				print(`[GameManager] FEVER MODE activated for {player.Name}!`)
+			end
+
+			-- 피버 게이지 업데이트
+			RemoteEvents.FeverGaugeUpdate:FireClient(player, {
+				combo = session.comboCount,
+				threshold = GameConstants.FEVER.COMBO_THRESHOLD,
+				onCooldown = now < session.feverCooldownEnd,
+			})
+
 			-- 콤보 미션 진행도 업데이트
 			ProgressionService:OnComboReached(player, session.comboCount)
 
@@ -669,7 +715,26 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 			if session.comboCount > 0 and tick() - session.lastCoinTime >= GameConstants.SCORE.COMBO_TIMEOUT then
 				session.comboCount = 0
 				RemoteEvents.ComboUpdate:FireClient(player, { combo = 0 })
+				RemoteEvents.FeverGaugeUpdate:FireClient(player, {
+					combo = 0,
+					threshold = GameConstants.FEVER.COMBO_THRESHOLD,
+					onCooldown = tick() < session.feverCooldownEnd,
+				})
 			end
+		end
+
+		-- 피버 모드 종료 체크
+		if session.isFever and tick() >= session.feverEndTime then
+			session.isFever = false
+			session.feverCooldownEnd = tick() + GameConstants.FEVER.COOLDOWN
+			session.comboCount = 0 -- 피버 종료 시 콤보 리셋
+			RemoteEvents.FeverEnd:FireClient(player)
+			RemoteEvents.FeverGaugeUpdate:FireClient(player, {
+				combo = 0,
+				threshold = GameConstants.FEVER.COMBO_THRESHOLD,
+				onCooldown = true,
+			})
+			print(`[GameManager] FEVER MODE ended for {player.Name}`)
 		end
 
 		-- 낙하 감지 (Y < -10 이면 낙사)
@@ -688,8 +753,12 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 		local hitObstacle = obstacleService:CheckObstacleCollision(hrp.Position, isSliding)
 
 		if hitObstacle and session.lives > 0 then
+			-- 피버 모드 무적 체크
+			if session.isFever and GameConstants.FEVER.INVINCIBLE then
+				-- 피버 무적으로 통과
+				print(`[GameManager] Player {player.Name} passed through obstacle (FEVER)!`)
 			-- 무적 상태 체크
-			if powerupService:IsInvincible() then
+			elseif powerupService:IsInvincible() then
 				-- 무적으로 통과
 				print(`[GameManager] Player {player.Name} passed through obstacle (Invincible)!`)
 			-- 쉴드 사용 시도
@@ -757,21 +826,45 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 			end
 		end
 
-		-- 니어미스 감지 (장애물 근접 회피 보너스)
+		-- 니어미스 감지 (장애물 근접 회피 보너스) + 체인 시스템
 		local nearMisses = obstacleService:CheckNearMiss(hrp.Position, isSliding, session.nearMissedObstacles)
 		for _, obstaclePart in nearMisses do
 			session.nearMissedObstacles[obstaclePart] = true
-			session.score += GameConstants.SCORE.NEAR_MISS_BONUS
 			session.consecutiveHits = 0 -- 회피 성공 시 연속 피격 리셋
 
+			-- 체인 업데이트
+			local now = tick()
+			local chainTimeout = GameConstants.NEAR_MISS_CHAIN.CHAIN_TIMEOUT
+			if now - session.lastNearMissTime < chainTimeout then
+				session.nearMissChain = math.min(session.nearMissChain + 1, 5)
+			else
+				session.nearMissChain = 1
+			end
+			session.lastNearMissTime = now
+
+			-- 체인 등급에 따른 보너스 결정
+			local chainData = GameConstants.NEAR_MISS_CHAIN.GRADES[session.nearMissChain]
+			local bonus = if chainData then chainData.bonus else GameConstants.SCORE.NEAR_MISS_BONUS
+			local chainText = if chainData then chainData.text else "Close!"
+
+			session.score += bonus
+
+			-- 기존 NearMiss 이벤트 (호환)
 			RemoteEvents.NearMiss:FireClient(player, {
-				bonus = GameConstants.SCORE.NEAR_MISS_BONUS,
+				bonus = bonus,
+			})
+
+			-- 체인 이벤트 (강화 피드백)
+			RemoteEvents.NearMissChain:FireClient(player, {
+				chain = session.nearMissChain,
+				bonus = bonus,
+				text = chainText,
 			})
 
 			-- 미션 진행도 업데이트
 			ProgressionService:OnNearMiss(player)
 
-			print(`[GameManager] Near miss! +{GameConstants.SCORE.NEAR_MISS_BONUS} for {player.Name}`)
+			print(`[GameManager] Near miss chain {session.nearMissChain}x! +{bonus} ({chainText}) for {player.Name}`)
 		end
 
 		-- Phase 2: 신기록 임박 알림 (1회만)

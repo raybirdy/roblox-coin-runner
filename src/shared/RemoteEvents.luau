@@ -263,4 +263,25 @@ RemoteEvents.NewRecordCelebration = getOrCreateRemoteEvent("NewRecordCelebration
 -- 서버 → 클라이언트: 신기록 달성 축하
 -- 파라미터: { newRecord: number }
 
+-- ==================== Phase 2: 게임성 개선 ====================
+
+-- 피버 모드 시작
+RemoteEvents.FeverStart = getOrCreateRemoteEvent("FeverStart")
+-- 서버 → 클라이언트: 피버 모드 발동 알림
+-- 파라미터: { duration: number, speedBoost: number }
+
+-- 피버 모드 종료
+RemoteEvents.FeverEnd = getOrCreateRemoteEvent("FeverEnd")
+-- 서버 → 클라이언트: 피버 모드 종료 알림
+
+-- 피버 게이지 업데이트
+RemoteEvents.FeverGaugeUpdate = getOrCreateRemoteEvent("FeverGaugeUpdate")
+-- 서버 → 클라이언트: 피버 게이지 진행도 알림
+-- 파라미터: { combo: number, threshold: number, onCooldown: boolean }
+
+-- 니어미스 체인 (강화된 니어미스)
+RemoteEvents.NearMissChain = getOrCreateRemoteEvent("NearMissChain")
+-- 서버 → 클라이언트: 니어미스 체인 알림
+-- 파라미터: { chain: number, bonus: number, text: string }
+
 return RemoteEvents

@@ -408,8 +408,8 @@ end
 function PlayerController:_moveForward(deltaTime: number)
 	local targetSpeedX = self.currentSpeed * self.speedMultiplier
 
-	-- 속도 상한선 (버그 방지)
-	local maxSpeed = GameConstants.PHYSICS.SPEED_MAX
+	-- 속도 상한선 (버그 방지, 피버 부스트 허용)
+	local maxSpeed = GameConstants.PHYSICS.SPEED_MAX * self.speedMultiplier
 	targetSpeedX = math.min(targetSpeedX, maxSpeed)
 
 	-- 이동 거리 계산
