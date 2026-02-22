@@ -859,6 +859,14 @@ GameConstants.FEVER = {
 	INVINCIBLE = true, -- 무적 여부
 }
 
+-- 퍼펙트 런 (무피격 보너스)
+GameConstants.PERFECT_RUN = {
+	MILESTONES = {
+		{ distance = 500, bonus = 100, title = "무피격 500m!" },
+		{ distance = 1000, bonus = 300, title = "불사신!" },
+	},
+}
+
 -- 니어미스 연속 체인 보너스
 GameConstants.NEAR_MISS_CHAIN = {
 	CHAIN_TIMEOUT = 3, -- 체인 리셋 시간 (초)

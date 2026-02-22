@@ -103,14 +103,37 @@ local loginRewardController = LoginRewardController.new(player)
 local luckySpinController = LuckySpinController.new(player)
 local feverController = FeverController.new()
 
--- Fever mode callbacks (speed boost)
+-- Fever mode callbacks (speed boost + camera shake)
 feverController:OnFeverStart(function(speedBoost: number)
 	playerController:SetSpeedMultiplier(speedBoost)
+	cameraController:Shake(0.8) -- strong shake on fever start
 end)
 
 feverController:OnFeverEnd(function()
 	playerController:SetSpeedMultiplier(1.0)
 end)
+
+-- Diamond coin slowmo + zoom + sound
+local diamondSlowmoActive = false
+coinController:OnDiamondCollected(function()
+	if feverController:IsFever() or diamondSlowmoActive then
+		return
+	end
+	diamondSlowmoActive = true
+	playerController:SetSpeedMultiplier(0.3)
+	cameraController:Zoom(-3, 1.0)
+	cameraController:Shake(0.3)
+	task.delay(1.0, function()
+		diamondSlowmoActive = false
+		if playerController:IsPlaying() and not feverController:IsFever() then
+			playerController:SetSpeedMultiplier(1.0)
+		end
+	end)
+end)
+
+-- Mass coin collection zoom tracking
+local massCollectCount = 0
+local massCollectResetTime = 0
 
 -- 배경 음악 시작
 musicController:Start()
@@ -365,7 +388,7 @@ RemoteEvents.NearMiss.OnClientEvent:Connect(function(_data)
 	-- NearMissChain handles enhanced feedback now
 end)
 
--- 니어미스 체인 피드백 (강화 버전)
+-- 니어미스 체인 피드백 (강화 버전 + 카메라 흔들림)
 RemoteEvents.NearMissChain.OnClientEvent:Connect(function(data)
 	-- Chain color escalation
 	local chainColors = {
@@ -377,6 +400,40 @@ RemoteEvents.NearMissChain.OnClientEvent:Connect(function(data)
 	}
 	local color = chainColors[data.chain] or Color3.fromRGB(255, 200, 0)
 	uiController:ShowGameFeedback(`{data.text} +{data.bonus}`, color)
+
+	-- Camera shake (escalating intensity)
+	local shakeIntensities = { 0.05, 0.1, 0.15, 0.25, 0.4 }
+	cameraController:Shake(shakeIntensities[data.chain] or 0.05)
+end)
+
+-- 라이프 감소 시 카메라 흔들림
+local previousLives = GameConstants.LIFE.STARTING_LIVES
+RemoteEvents.LifeUpdate.OnClientEvent:Connect(function(data)
+	if data.lives < previousLives then
+		cameraController:Shake(0.5) -- hit shake
+	end
+	previousLives = data.lives
+end)
+
+-- 퍼펙트 런 보너스 피드백
+RemoteEvents.PerfectRunBonus.OnClientEvent:Connect(function(data)
+	uiController:ShowGameFeedback(`{data.title} +{data.bonus}`, Color3.fromRGB(50, 255, 100))
+	cameraController:Shake(0.4)
+end)
+
+-- 코인 수집 시 대량 수집 카메라 줌
+RemoteEvents.CoinCollected.OnClientEvent:Connect(function(_data)
+	local now = tick()
+	if now - massCollectResetTime < 1 then
+		massCollectCount += 1
+	else
+		massCollectCount = 1
+		massCollectResetTime = now
+	end
+	if massCollectCount == 5 then
+		cameraController:Zoom(-2, 0.3) -- subtle zoom-in
+		massCollectCount = 0
+	end
 end)
 
 -- 콤보 피드백

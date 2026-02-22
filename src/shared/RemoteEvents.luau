@@ -284,4 +284,9 @@ RemoteEvents.NearMissChain = getOrCreateRemoteEvent("NearMissChain")
 -- 서버 → 클라이언트: 니어미스 체인 알림
 -- 파라미터: { chain: number, bonus: number, text: string }
 
+-- 퍼펙트 런 보너스
+RemoteEvents.PerfectRunBonus = getOrCreateRemoteEvent("PerfectRunBonus")
+-- 서버 → 클라이언트: 무피격 보너스 알림
+-- 파라미터: { distance: number, bonus: number, title: string }
+
 return RemoteEvents

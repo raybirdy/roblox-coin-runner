@@ -33,6 +33,7 @@ export type CoinController = typeof(setmetatable(
 		_particlePool: { ParticlePoolEntry },
 		_isGameActive: boolean,
 		_localCollectedCoins: { [Model]: boolean },
+		_onDiamondCollected: (() -> ())?,
 	},
 	CoinController
 ))
@@ -46,6 +47,7 @@ function CoinController.new(): CoinController
 		_particlePool = {},
 		_isGameActive = false,
 		_localCollectedCoins = {},
+		_onDiamondCollected = nil,
 	}, CoinController)
 
 	self:_setupEventHandlers()
@@ -231,6 +233,11 @@ function CoinController:_setupLocalCollectionCheck()
 			-- 파티클 효과 (플레이어 위치에서)
 			self:_playCoinParticle(coinType :: string, false)
 
+			-- 다이아몬드 코인 특수 콜백
+			if coinType == "Diamond" and self._onDiamondCollected then
+				self._onDiamondCollected()
+			end
+
 			-- 코인 즉시 숨기기 (서버가 나중에 Destroy 처리)
 			for _, child in coinModel:GetChildren() do
 				if child:IsA("BasePart") then
@@ -329,6 +336,11 @@ function CoinController:_playCoinParticle(coinType: string, isDoubled: boolean?)
 		poolEntry.attachment.Parent = nil
 		poolEntry.inUse = false
 	end)
+end
+
+-- 다이아몬드 코인 수집 콜백 설정
+function CoinController:OnDiamondCollected(callback: () -> ())
+	self._onDiamondCollected = callback
 end
 
 -- 현재 총 코인 수 반환

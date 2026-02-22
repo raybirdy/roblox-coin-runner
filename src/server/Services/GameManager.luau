@@ -55,6 +55,9 @@ type GameSession = {
 	-- Near miss chain
 	nearMissChain: number,
 	lastNearMissTime: number,
+	-- Perfect run
+	lastHitDistance: number,
+	perfectRunAwarded: { [number]: boolean },
 }
 
 local activeSessions: { [Player]: GameSession } = {}
@@ -178,6 +181,8 @@ RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { 
 		feverCooldownEnd = 0,
 		nearMissChain = 0,
 		lastNearMissTime = 0,
+		lastHitDistance = 0,
+		perfectRunAwarded = {},
 	}
 
 	activeSessions[player] = session
@@ -354,6 +359,8 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 		feverCooldownEnd = 0,
 		nearMissChain = 0,
 		lastNearMissTime = 0,
+		lastHitDistance = 0,
+		perfectRunAwarded = {},
 	}
 
 	activeSessions[player] = session
@@ -775,6 +782,10 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 				session.lives -= 1
 				obstacleService:OnObstacleHit()
 
+				-- 퍼펙트 런 리셋 (피격 시 현재 거리 기록)
+				local hitX = hrp.Position.X - session.startPosition.X
+				session.lastHitDistance = math.max(0, math.floor(hitX))
+
 				-- 연속 피격 추적 (자비 청크)
 				session.consecutiveHits += 1
 				if session.consecutiveHits >= GameConstants.LIFE.MERCY_CHUNK_THRESHOLD then
@@ -883,6 +894,21 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 		-- 점수 업데이트 (이동 거리 기반)
 		local distanceTraveled = hrp.Position.X - session.startPosition.X
 		local distanceScore = math.max(0, math.floor(distanceTraveled * GameConstants.SCORE.DISTANCE_MULTIPLIER))
+
+		-- 퍼펙트 런 마일스톤 체크
+		local noHitDistance = math.floor(distanceTraveled) - session.lastHitDistance
+		for _, milestone in GameConstants.PERFECT_RUN.MILESTONES do
+			if noHitDistance >= milestone.distance and not session.perfectRunAwarded[milestone.distance] then
+				session.perfectRunAwarded[milestone.distance] = true
+				session.coins += milestone.bonus
+				RemoteEvents.PerfectRunBonus:FireClient(player, {
+					distance = milestone.distance,
+					bonus = milestone.bonus,
+					title = milestone.title,
+				})
+				print(`[GameManager] Perfect Run: {milestone.title} +{milestone.bonus} for {player.Name}`)
+			end
+		end
 
 		-- 총 점수 = 거리 점수 + 코인 점수 (코인 수집 시 이미 추가됨)
 		local previousScore = session.score
