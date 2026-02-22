@@ -408,8 +408,8 @@ end
 function PlayerController:_moveForward(deltaTime: number)
 	local targetSpeedX = self.currentSpeed * self.speedMultiplier
 
-	-- 속도 상한선 (버그 방지)
-	local maxSpeed = GameConstants.PHYSICS.SPEED_MAX
+	-- 속도 상한선 (버그 방지, 피버 부스트 허용)
+	local maxSpeed = GameConstants.PHYSICS.SPEED_MAX * self.speedMultiplier
 	targetSpeedX = math.min(targetSpeedX, maxSpeed)
 
 	-- 이동 거리 계산
@@ -473,6 +473,15 @@ function PlayerController:_checkGrounded()
 			-- 달리기 애니메이션 재생
 			if self._animationController then
 				self._animationController:PlayRun()
+			end
+
+			-- 착지 먼지 이펙트
+			self:_spawnLandingDust()
+
+			-- 착지 카메라 흔들림 (미약)
+			local cameraShakeEvent = ReplicatedStorage:FindFirstChild("CameraShake") :: BindableEvent?
+			if cameraShakeEvent then
+				cameraShakeEvent:Fire(0.15)
 			end
 
 			print(`[PlayerController] Landed - Y: {currentY}`)
@@ -673,6 +682,40 @@ function PlayerController:_endSlide()
 	self.humanoidRootPart:SetAttribute("IsSliding", false)
 
 	print("[PlayerController] Slide ended")
+end
+
+-- 착지 먼지 파티클 이펙트
+function PlayerController:_spawnLandingDust()
+	local hrp = self.humanoidRootPart
+	if not hrp then
+		return
+	end
+
+	local attachment = Instance.new("Attachment")
+	attachment.Position = Vector3.new(0, -2, 0) -- feet level
+	attachment.Parent = hrp
+
+	local particle = Instance.new("ParticleEmitter")
+	particle.Color = ColorSequence.new(Color3.fromRGB(180, 160, 140))
+	particle.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.5),
+		NumberSequenceKeypoint.new(1, 2),
+	})
+	particle.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.3),
+		NumberSequenceKeypoint.new(1, 1),
+	})
+	particle.Lifetime = NumberRange.new(0.3, 0.6)
+	particle.Speed = NumberRange.new(2, 5)
+	particle.SpreadAngle = Vector2.new(90, 30)
+	particle.Rate = 0
+	particle.Acceleration = Vector3.new(0, -5, 0)
+	particle.Parent = attachment
+
+	particle:Emit(8)
+	task.delay(1, function()
+		attachment:Destroy()
+	end)
 end
 
 -- 정리

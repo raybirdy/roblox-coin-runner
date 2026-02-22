@@ -846,4 +846,37 @@ GameConstants.NEAR_RECORD = {
 	PULSE_INTERVAL = 2.0,
 }
 
+-- ==================== Phase 2: 게임성 개선 ====================
+
+-- 피버 모드
+GameConstants.FEVER = {
+	COMBO_THRESHOLD = 50, -- 피버 발동 콤보 수
+	DURATION = 5, -- 지속 시간 (초)
+	COIN_MULTIPLIER = 3, -- 코인 가치 배율
+	SPEED_BOOST = 1.5, -- 속도 배율
+	MAGNET_RADIUS = 30, -- 초강력 자석 반경 (studs)
+	COOLDOWN = 10, -- 피버 종료 후 재발동 쿨타임 (초)
+	INVINCIBLE = true, -- 무적 여부
+}
+
+-- 퍼펙트 런 (무피격 보너스)
+GameConstants.PERFECT_RUN = {
+	MILESTONES = {
+		{ distance = 500, bonus = 100, title = "무피격 500m!" },
+		{ distance = 1000, bonus = 300, title = "불사신!" },
+	},
+}
+
+-- 니어미스 연속 체인 보너스
+GameConstants.NEAR_MISS_CHAIN = {
+	CHAIN_TIMEOUT = 3, -- 체인 리셋 시간 (초)
+	GRADES = {
+		{ count = 1, bonus = 5, text = "Close!" },
+		{ count = 2, bonus = 10, text = "NICE!" },
+		{ count = 3, bonus = 20, text = "PERFECT!" },
+		{ count = 4, bonus = 30, text = "INSANE!" },
+		{ count = 5, bonus = 50, text = "GODLIKE!" },
+	},
+}
+
 return GameConstants
