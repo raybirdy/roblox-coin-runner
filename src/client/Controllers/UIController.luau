@@ -764,7 +764,8 @@ function UIController:_setupEventHandlers()
 			data.highScore,
 			data.distance,
 			data.isNewRecord,
-			data.canRevive
+			data.canRevive,
+			data -- Phase B: 추가 통계 전체 전달
 		)
 	end)
 	table.insert(self._connections, gameOverConnection)
@@ -869,7 +870,8 @@ function UIController:ShowGameOver(
 	highScore: number?,
 	distance: number?,
 	isNewRecord: boolean?,
-	canRevive: boolean?
+	canRevive: boolean?,
+	extraData: any? -- Phase B: 추가 통계
 )
 	if not self._gameOverFrame then
 		return
@@ -903,6 +905,95 @@ function UIController:ShowGameOver(
 	local newRecordLabel = self._gameOverFrame:FindFirstChild("NewRecord") :: TextLabel?
 	if newRecordLabel then
 		newRecordLabel.Visible = isNewRecord == true
+	end
+
+	-- Phase B: 추가 통계 행 (기존 것 제거 후 재생성)
+	local existingStats2 = self._gameOverFrame:FindFirstChild("StatsRow2")
+	if existingStats2 then
+		existingStats2:Destroy()
+	end
+	local existingZone = self._gameOverFrame:FindFirstChild("ZoneReached")
+	if existingZone then
+		existingZone:Destroy()
+	end
+	local existingAlmost = self._gameOverFrame:FindFirstChild("AlmostMessage")
+	if existingAlmost then
+		existingAlmost:Destroy()
+	end
+
+	if extraData and not canRevive then
+		-- StatsRow2: NearMiss + MaxCombo + FeverCount
+		local statsRow2 = Instance.new("Frame")
+		statsRow2.Name = "StatsRow2"
+		statsRow2.Size = UDim2.new(1, -20, 0, 24)
+		statsRow2.Position = UDim2.new(0, 10, 0, 190)
+		statsRow2.BackgroundTransparency = 1
+		statsRow2.Parent = self._gameOverFrame
+
+		local nearMissLabel = Instance.new("TextLabel")
+		nearMissLabel.Name = "NearMiss"
+		nearMissLabel.Size = UDim2.new(0.33, 0, 1, 0)
+		nearMissLabel.Position = UDim2.new(0, 0, 0, 0)
+		nearMissLabel.BackgroundTransparency = 1
+		nearMissLabel.TextColor3 = Color3.fromRGB(255, 200, 0)
+		nearMissLabel.TextSize = 14
+		nearMissLabel.Font = Enum.Font.Gotham
+		nearMissLabel.Text = `NearMiss {extraData.nearMissCount or 0}`
+		nearMissLabel.TextXAlignment = Enum.TextXAlignment.Center
+		nearMissLabel.Parent = statsRow2
+
+		local maxComboLabel = Instance.new("TextLabel")
+		maxComboLabel.Name = "MaxCombo"
+		maxComboLabel.Size = UDim2.new(0.33, 0, 1, 0)
+		maxComboLabel.Position = UDim2.new(0.33, 0, 0, 0)
+		maxComboLabel.BackgroundTransparency = 1
+		maxComboLabel.TextColor3 = Color3.fromRGB(255, 100, 50)
+		maxComboLabel.TextSize = 14
+		maxComboLabel.Font = Enum.Font.Gotham
+		maxComboLabel.Text = `Combo {extraData.maxCombo or 0}`
+		maxComboLabel.TextXAlignment = Enum.TextXAlignment.Center
+		maxComboLabel.Parent = statsRow2
+
+		local feverLabel = Instance.new("TextLabel")
+		feverLabel.Name = "Fever"
+		feverLabel.Size = UDim2.new(0.34, 0, 1, 0)
+		feverLabel.Position = UDim2.new(0.66, 0, 0, 0)
+		feverLabel.BackgroundTransparency = 1
+		feverLabel.TextColor3 = Color3.fromRGB(255, 50, 255)
+		feverLabel.TextSize = 14
+		feverLabel.Font = Enum.Font.Gotham
+		feverLabel.Text = `Fever {extraData.feverCount or 0}`
+		feverLabel.TextXAlignment = Enum.TextXAlignment.Center
+		feverLabel.Parent = statsRow2
+
+		-- Zone 도달 라벨
+		if extraData.zoneName then
+			local zoneLabel = Instance.new("TextLabel")
+			zoneLabel.Name = "ZoneReached"
+			zoneLabel.Size = UDim2.new(1, -20, 0, 22)
+			zoneLabel.Position = UDim2.new(0, 10, 0, 218)
+			zoneLabel.BackgroundTransparency = 1
+			zoneLabel.TextColor3 = Color3.fromRGB(150, 200, 255)
+			zoneLabel.TextSize = 14
+			zoneLabel.Font = Enum.Font.GothamBold
+			zoneLabel.Text = `{extraData.zoneName}까지 도달!`
+			zoneLabel.Parent = self._gameOverFrame
+		end
+
+		-- "거의 다 왔어!" 메시지
+		if extraData.almostMessage then
+			local almostLabel = Instance.new("TextLabel")
+			almostLabel.Name = "AlmostMessage"
+			almostLabel.Size = UDim2.new(1, -20, 0, 28)
+			almostLabel.Position = UDim2.new(0, 10, 0, 244)
+			almostLabel.BackgroundTransparency = 1
+			almostLabel.TextColor3 = Color3.fromRGB(255, 220, 100)
+			almostLabel.TextSize = 13
+			almostLabel.Font = Enum.Font.GothamBold
+			almostLabel.Text = `"{extraData.almostMessage}"`
+			almostLabel.TextWrapped = true
+			almostLabel.Parent = self._gameOverFrame
+		end
 	end
 
 	-- 버튼들 가져오기
@@ -943,9 +1034,11 @@ function UIController:ShowGameOver(
 	self._gameOverFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
 	self._gameOverFrame.Visible = true
 
-	local frameHeight = canRevive and 380 or 320
-	local targetSize = ResponsiveUtil.clampedSize(380, frameHeight, 0.88, 0.70)
-	local targetPos = ResponsiveUtil.clampedPosition(380, frameHeight, 0.88, 0.70)
+	-- Phase B: 추가 통계가 있을 때 프레임 높이 확장
+	local hasExtraStats = extraData and not canRevive
+	local frameHeight = if canRevive then 380 elseif hasExtraStats then 460 else 320
+	local targetSize = ResponsiveUtil.clampedSize(380, frameHeight, 0.88, 0.78)
+	local targetPos = ResponsiveUtil.clampedPosition(380, frameHeight, 0.88, 0.78)
 	local appearTween =
 		TweenService:Create(self._gameOverFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
 			Size = targetSize,
@@ -1197,6 +1290,20 @@ function UIController:HideGameOver()
 		local newRecordLabel = self._gameOverFrame:FindFirstChild("NewRecord") :: TextLabel?
 		if newRecordLabel then
 			newRecordLabel.Visible = false
+		end
+
+		-- Phase B: 추가 통계 UI 정리
+		local statsRow2 = self._gameOverFrame:FindFirstChild("StatsRow2")
+		if statsRow2 then
+			statsRow2:Destroy()
+		end
+		local zoneReached = self._gameOverFrame:FindFirstChild("ZoneReached")
+		if zoneReached then
+			zoneReached:Destroy()
+		end
+		local almostMsg = self._gameOverFrame:FindFirstChild("AlmostMessage")
+		if almostMsg then
+			almostMsg:Destroy()
 		end
 
 		-- 버튼 위치 초기화

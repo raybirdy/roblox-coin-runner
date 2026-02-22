@@ -20,6 +20,7 @@ export type BackgroundService = typeof(setmetatable(
 		_floorParts: { Part }, -- 게임 바닥 파트들
 		_isRunning: boolean,
 		_playerPosition: Vector3,
+		_currentTheme: any?, -- Phase B: 현재 zone 테마
 	},
 	BackgroundService
 ))
@@ -33,6 +34,7 @@ function BackgroundService.new(): BackgroundService
 		_floorParts = {},
 		_isRunning = false,
 		_playerPosition = Vector3.zero,
+		_currentTheme = nil,
 	}, BackgroundService)
 
 	return self
@@ -53,10 +55,13 @@ function BackgroundService:StartGame()
 end
 
 -- 청크에 배경 요소 추가
-function BackgroundService:AddBackgroundForChunk(chunkPosition: Vector3, chunkLength: number)
+function BackgroundService:AddBackgroundForChunk(chunkPosition: Vector3, chunkLength: number, theme: any?)
 	if not self._backgroundFolder then
 		return
 	end
+
+	-- Phase B: 현재 테마 저장
+	self._currentTheme = theme
 
 	local bgConfig = GameConstants.BACKGROUND
 
@@ -92,7 +97,7 @@ function BackgroundService:_spawnFloorForChunk(chunkPosition: Vector3, chunkLeng
 	)
 	floor.Anchored = true
 	floor.CanCollide = true
-	floor.Color = Color3.fromRGB(80, 80, 90) -- 진한 회색 (도로 느낌)
+	floor.Color = if self._currentTheme then self._currentTheme.floorColor else Color3.fromRGB(80, 80, 90)
 	floor.Material = Enum.Material.Concrete
 	floor.Parent = self._backgroundFolder
 
@@ -440,7 +445,7 @@ function BackgroundService:_createBackgroundTree(position: Vector3): Model?
 	trunk.Position = position + Vector3.new(0, 6, 0)
 	trunk.Anchored = true
 	trunk.CanCollide = false
-	trunk.Color = Color3.fromRGB(101, 67, 33)
+	trunk.Color = if self._currentTheme then self._currentTheme.treeTrunkColor else Color3.fromRGB(101, 67, 33)
 	trunk.Material = Enum.Material.Wood
 	trunk.Parent = treeModel
 
@@ -451,7 +456,7 @@ function BackgroundService:_createBackgroundTree(position: Vector3): Model?
 	leaves.Position = position + Vector3.new(0, 15, 0)
 	leaves.Anchored = true
 	leaves.CanCollide = false
-	leaves.Color = Color3.fromRGB(34, 139, 34)
+	leaves.Color = if self._currentTheme then self._currentTheme.treeLeafColor else Color3.fromRGB(34, 139, 34)
 	leaves.Material = Enum.Material.Grass
 	leaves.Shape = Enum.PartType.Ball
 	leaves.Parent = treeModel
@@ -474,7 +479,7 @@ function BackgroundService:_spawnHillForChunk(chunkPosition: Vector3, chunkLengt
 	hill.Position = Vector3.new(chunkPosition.X + chunkLength / 2, -5, bgConfig.SCENERY_Z - 15)
 	hill.Anchored = true
 	hill.CanCollide = false
-	hill.Color = Color3.fromRGB(80, 150, 80) -- 연한 초록
+	hill.Color = if self._currentTheme then self._currentTheme.hillColor else Color3.fromRGB(80, 150, 80)
 	hill.Material = Enum.Material.Grass
 	hill.Parent = self._backgroundFolder
 

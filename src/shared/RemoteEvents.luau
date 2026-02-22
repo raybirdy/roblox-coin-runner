@@ -289,4 +289,21 @@ RemoteEvents.PerfectRunBonus = getOrCreateRemoteEvent("PerfectRunBonus")
 -- 서버 → 클라이언트: 무피격 보너스 알림
 -- 파라미터: { distance: number, bonus: number, title: string }
 
+-- ==================== Phase B: 게임성 다양화 ====================
+
+-- Zone 전환
+RemoteEvents.ZoneTransition = getOrCreateRemoteEvent("ZoneTransition")
+-- 서버 → 클라이언트: 구간 전환 알림
+-- 파라미터: { zoneIndex: number, zoneName: string, displayName: string }
+
+-- 이벤트 청크 알림
+RemoteEvents.EventChunkAlert = getOrCreateRemoteEvent("EventChunkAlert")
+-- 서버 → 클라이언트: 이벤트 청크 등장 알림
+-- 파라미터: { eventType: string } ("CoinRush" | "GiantCoin")
+
+-- 거인 코인 수집
+RemoteEvents.GiantCoinCollected = getOrCreateRemoteEvent("GiantCoinCollected")
+-- 서버 → 클라이언트: 거인 코인 수집 알림
+-- 파라미터: { reward: number }
+
 return RemoteEvents

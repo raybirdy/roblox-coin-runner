@@ -54,7 +54,13 @@ local CHUNK_CONFIG = {
 }
 
 -- 청크 생성 (메인 함수)
-function ProceduralChunkGenerator.Generate(difficulty: string, startHeight: string, position: Vector3): Model
+function ProceduralChunkGenerator.Generate(
+	difficulty: string,
+	startHeight: string,
+	position: Vector3,
+	theme: any?, -- Phase B: Zone 테마
+	eventType: string? -- Phase B: 이벤트 타입
+): Model
 	local chunk = Instance.new("Model")
 	chunk.Name = `Chunk_{difficulty}_{startHeight}`
 
@@ -67,13 +73,13 @@ function ProceduralChunkGenerator.Generate(difficulty: string, startHeight: stri
 	chunk:SetAttribute("EndHeight", endHeight)
 	chunk:SetAttribute("Procedural", true)
 
-	-- 바닥 생성
-	local floor = ProceduralChunkGenerator._createFloor(position, startHeight, endHeight)
+	-- 바닥 생성 (테마 색상 적용)
+	local floor = ProceduralChunkGenerator._createFloor(position, startHeight, endHeight, theme)
 	floor.Parent = chunk
 	chunk.PrimaryPart = floor
 
-	-- 난이도별 장식 생성
-	ProceduralChunkGenerator._addDecorations(chunk, position, difficulty)
+	-- 난이도별 장식 생성 (테마 색상 적용)
+	ProceduralChunkGenerator._addDecorations(chunk, position, difficulty, theme)
 
 	-- 높이 전환 경사로 (필요시)
 	if startHeight ~= endHeight then
@@ -82,6 +88,13 @@ function ProceduralChunkGenerator.Generate(difficulty: string, startHeight: stri
 
 	-- 난이도별 시각 효과
 	ProceduralChunkGenerator._addDifficultyVisuals(chunk, position, difficulty)
+
+	-- Phase B: 이벤트 청크 시각 효과
+	if eventType == "CoinRush" then
+		ProceduralChunkGenerator._addCoinRushVisuals(chunk, position)
+	elseif eventType == "GiantCoin" then
+		ProceduralChunkGenerator._addGiantCoinVisuals(chunk, position)
+	end
 
 	chunk.Parent = workspace
 
@@ -109,7 +122,12 @@ function ProceduralChunkGenerator._selectEndHeight(startHeight: string): string
 end
 
 -- 바닥 생성
-function ProceduralChunkGenerator._createFloor(position: Vector3, startHeight: string, endHeight: string): Part
+function ProceduralChunkGenerator._createFloor(
+	position: Vector3,
+	startHeight: string,
+	endHeight: string,
+	theme: any?
+): Part
 	local chunkLength = GameConstants.CHUNK.LENGTH
 
 	-- 높이값 계산
@@ -123,7 +141,7 @@ function ProceduralChunkGenerator._createFloor(position: Vector3, startHeight: s
 	floor.Position = Vector3.new(position.X + chunkLength / 2, avgY + CHUNK_CONFIG.FLOOR_THICKNESS / 2, position.Z)
 	floor.Anchored = true
 	floor.CanCollide = true
-	floor.Color = Color3.fromRGB(90, 90, 100)
+	floor.Color = if theme then theme.floorColor else Color3.fromRGB(90, 90, 100)
 	floor.Material = Enum.Material.Concrete
 
 	return floor
@@ -179,7 +197,7 @@ function ProceduralChunkGenerator._createRamp(chunk: Model, position: Vector3, s
 end
 
 -- 장식 추가
-function ProceduralChunkGenerator._addDecorations(chunk: Model, position: Vector3, difficulty: string)
+function ProceduralChunkGenerator._addDecorations(chunk: Model, position: Vector3, difficulty: string, theme: any?)
 	local chunkLength = GameConstants.CHUNK.LENGTH
 
 	-- 측면 레일/가드
@@ -190,7 +208,7 @@ function ProceduralChunkGenerator._addDecorations(chunk: Model, position: Vector
 		rail.Position = Vector3.new(position.X + chunkLength / 2, 1.25, position.Z + zOffset)
 		rail.Anchored = true
 		rail.CanCollide = false
-		rail.Color = Color3.fromRGB(150, 150, 160)
+		rail.Color = if theme then theme.railColor else Color3.fromRGB(150, 150, 160)
 		rail.Material = Enum.Material.Metal
 		rail.Parent = chunk
 	end
@@ -377,6 +395,116 @@ function ProceduralChunkGenerator._addNPCVisuals(chunk: Model, position: Vector3
 		heart.Color = Color3.fromRGB(255, 100, 150)
 		heart.Material = Enum.Material.Neon
 		heart.Parent = chunk
+	end
+end
+
+-- Phase B: 코인 러시 이벤트 시각 효과
+function ProceduralChunkGenerator._addCoinRushVisuals(chunk: Model, position: Vector3)
+	local chunkLength = GameConstants.CHUNK.LENGTH
+
+	-- "COIN RUSH!" 간판
+	local signPart = Instance.new("Part")
+	signPart.Name = "CoinRushSign"
+	signPart.Size = Vector3.new(0.3, 3, 8)
+	signPart.Position = Vector3.new(position.X - 2, 8, position.Z)
+	signPart.Color = Color3.fromRGB(40, 30, 10)
+	signPart.Material = Enum.Material.SmoothPlastic
+	signPart.CanCollide = false
+	signPart.Anchored = true
+	signPart.Parent = chunk
+
+	local signBorder = Instance.new("Part")
+	signBorder.Name = "CoinRushSignBorder"
+	signBorder.Size = Vector3.new(0.1, 3.2, 8.2)
+	signBorder.Position = Vector3.new(position.X - 2.15, 8, position.Z)
+	signBorder.Color = Color3.fromRGB(255, 215, 0)
+	signBorder.Material = Enum.Material.Neon
+	signBorder.CanCollide = false
+	signBorder.Anchored = true
+	signBorder.Parent = chunk
+
+	local surfaceGui = Instance.new("SurfaceGui")
+	surfaceGui.Name = "CoinRushGui"
+	surfaceGui.Face = Enum.NormalId.Left
+	surfaceGui.CanvasSize = Vector2.new(300, 100)
+	surfaceGui.Parent = signPart
+
+	local text = Instance.new("TextLabel")
+	text.Size = UDim2.new(1, 0, 1, 0)
+	text.BackgroundTransparency = 1
+	text.Text = "COIN RUSH!"
+	text.TextColor3 = Color3.fromRGB(255, 255, 255)
+	text.TextScaled = true
+	text.Font = Enum.Font.GothamBlack
+	text.TextStrokeTransparency = 0
+	text.TextStrokeColor3 = Color3.fromRGB(200, 150, 0)
+	text.Parent = surfaceGui
+
+	-- 금색 아치
+	local arch = Instance.new("Part")
+	arch.Name = "CoinRushArch"
+	arch.Size = Vector3.new(2, 10, 22)
+	arch.Position = Vector3.new(position.X + 2, 6, position.Z)
+	arch.Anchored = true
+	arch.CanCollide = false
+	arch.Color = Color3.fromRGB(255, 215, 0)
+	arch.Material = Enum.Material.Neon
+	arch.Transparency = 0.5
+	arch.Parent = chunk
+end
+
+-- Phase B: 거인 코인 이벤트 시각 효과
+function ProceduralChunkGenerator._addGiantCoinVisuals(chunk: Model, position: Vector3)
+	-- "???" 간판 (보라색)
+	local signPart = Instance.new("Part")
+	signPart.Name = "GiantCoinSign"
+	signPart.Size = Vector3.new(0.3, 3, 6)
+	signPart.Position = Vector3.new(position.X - 2, 8, position.Z)
+	signPart.Color = Color3.fromRGB(20, 10, 40)
+	signPart.Material = Enum.Material.SmoothPlastic
+	signPart.CanCollide = false
+	signPart.Anchored = true
+	signPart.Parent = chunk
+
+	local signBorder = Instance.new("Part")
+	signBorder.Name = "GiantCoinSignBorder"
+	signBorder.Size = Vector3.new(0.1, 3.2, 6.2)
+	signBorder.Position = Vector3.new(position.X - 2.15, 8, position.Z)
+	signBorder.Color = Color3.fromRGB(150, 50, 255)
+	signBorder.Material = Enum.Material.Neon
+	signBorder.CanCollide = false
+	signBorder.Anchored = true
+	signBorder.Parent = chunk
+
+	local surfaceGui = Instance.new("SurfaceGui")
+	surfaceGui.Name = "GiantCoinGui"
+	surfaceGui.Face = Enum.NormalId.Left
+	surfaceGui.CanvasSize = Vector2.new(200, 100)
+	surfaceGui.Parent = signPart
+
+	local text = Instance.new("TextLabel")
+	text.Size = UDim2.new(1, 0, 1, 0)
+	text.BackgroundTransparency = 1
+	text.Text = "???"
+	text.TextColor3 = Color3.fromRGB(200, 150, 255)
+	text.TextScaled = true
+	text.Font = Enum.Font.GothamBlack
+	text.TextStrokeTransparency = 0
+	text.TextStrokeColor3 = Color3.fromRGB(80, 20, 150)
+	text.Parent = surfaceGui
+
+	-- 별 장식
+	for i = 1, 3 do
+		local star = Instance.new("Part")
+		star.Name = `Star_{i}`
+		star.Shape = Enum.PartType.Ball
+		star.Size = Vector3.new(1, 1, 1)
+		star.Position = Vector3.new(position.X + 10 + i * 15, 10 + math.sin(i) * 2, position.Z + math.cos(i * 2) * 4)
+		star.Anchored = true
+		star.CanCollide = false
+		star.Color = Color3.fromRGB(150, 100, 255)
+		star.Material = Enum.Material.Neon
+		star.Parent = chunk
 	end
 end
 

@@ -82,6 +82,7 @@ local ProgressionController = require(script.Controllers.ProgressionController)
 local LoginRewardController = require(script.Controllers.LoginRewardController)
 local LuckySpinController = require(script.Controllers.LuckySpinController)
 local FeverController = require(script.Controllers.FeverController)
+local ZoneController = require(script.Controllers.ZoneController)
 
 -- 컨트롤러 인스턴스 생성
 local inputController = InputController.new()
@@ -102,6 +103,7 @@ local progressionController = ProgressionController.new(player)
 local loginRewardController = LoginRewardController.new(player)
 local luckySpinController = LuckySpinController.new(player)
 local feverController = FeverController.new()
+local zoneController = ZoneController.new()
 
 -- Fever mode callbacks (speed boost + camera shake)
 feverController:OnFeverStart(function(speedBoost: number)
@@ -337,6 +339,7 @@ RemoteEvents.GameOver.OnClientEvent:Connect(function(data)
 		print("[Client] Game ended by server")
 		playerController:StopGame()
 		speedEffectController:StopGame()
+		zoneController:ResetToDefault() -- Phase B: zone 복원
 
 		-- 튜토리얼 종료 (활성화된 경우)
 		if tutorialController:IsActive() then
@@ -419,6 +422,35 @@ end)
 RemoteEvents.PerfectRunBonus.OnClientEvent:Connect(function(data)
 	uiController:ShowGameFeedback(`{data.title} +{data.bonus}`, Color3.fromRGB(50, 255, 100))
 	cameraController:Shake(0.4)
+end)
+
+-- Phase B: Zone 전환 이벤트
+RemoteEvents.ZoneTransition.OnClientEvent:Connect(function(data)
+	zoneController:TransitionToZone(data.zoneIndex, data.displayName)
+end)
+
+-- Phase B: 이벤트 청크 알림
+RemoteEvents.EventChunkAlert.OnClientEvent:Connect(function(data)
+	if data.eventType == "CoinRush" then
+		uiController:ShowGameFeedback("COIN RUSH!", Color3.fromRGB(255, 215, 0))
+		cameraController:Shake(0.3)
+	elseif data.eventType == "GiantCoin" then
+		uiController:ShowGameFeedback("GIANT COIN!", Color3.fromRGB(0, 191, 255))
+	end
+end)
+
+-- Phase B: 거인 코인 수집 연출
+RemoteEvents.GiantCoinCollected.OnClientEvent:Connect(function(data)
+	uiController:ShowGameFeedback(`+{data.reward}!`, Color3.fromRGB(0, 255, 200))
+	cameraController:Shake(0.6)
+	cameraController:Zoom(-4, 0.5)
+	-- 슬로모 0.5초
+	playerController:SetSpeedMultiplier(0.3)
+	task.delay(0.5, function()
+		if playerController:IsPlaying() and not feverController:IsFever() then
+			playerController:SetSpeedMultiplier(1.0)
+		end
+	end)
 end)
 
 -- 코인 수집 시 대량 수집 카메라 줌
