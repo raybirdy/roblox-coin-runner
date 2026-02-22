@@ -403,7 +403,7 @@ GameConstants.SHOP = {
 			price = 150,
 			currency = "gems",
 			color = Color3.fromRGB(255, 183, 197),
-			thumbnailId = "rbxassetid://3535928381",
+			thumbnailId = "rbxassetid://3535936633", -- 고유 썸네일 (분홍)
 			availableUntil = 1743465600, -- 2025-04-01 00:00 UTC (예시)
 		},
 		{
@@ -412,7 +412,7 @@ GameConstants.SHOP = {
 			price = 0,
 			currency = "pieces", -- 조각 교환 전용
 			color = Color3.fromRGB(144, 238, 144),
-			thumbnailId = "rbxassetid://3535928381",
+			thumbnailId = "rbxassetid://3535936812", -- 고유 썸네일 (연두)
 			availableUntil = 1743465600,
 		},
 	},
