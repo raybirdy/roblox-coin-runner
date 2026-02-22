@@ -879,4 +879,87 @@ GameConstants.NEAR_MISS_CHAIN = {
 	},
 }
 
+-- ==================== Phase B: 게임성 다양화 ====================
+
+-- Zone 테마 (시간 기반 전환)
+GameConstants.ZONE_THEMES = {
+	{
+		name = "Meadow",
+		displayName = "초원",
+		startTime = 0,
+		floorColor = Color3.fromRGB(80, 80, 90),
+		railColor = Color3.fromRGB(150, 150, 160),
+		treeLeafColor = Color3.fromRGB(34, 139, 34),
+		treeTrunkColor = Color3.fromRGB(101, 67, 33),
+		hillColor = Color3.fromRGB(80, 150, 80),
+		skyAmbient = Color3.fromRGB(135, 206, 235),
+		clockTime = 14,
+	},
+	{
+		name = "FlowerPath",
+		displayName = "꽃길",
+		startTime = 60,
+		floorColor = Color3.fromRGB(180, 140, 160),
+		railColor = Color3.fromRGB(220, 180, 200),
+		treeLeafColor = Color3.fromRGB(255, 150, 200),
+		treeTrunkColor = Color3.fromRGB(120, 80, 60),
+		hillColor = Color3.fromRGB(200, 160, 180),
+		skyAmbient = Color3.fromRGB(255, 200, 220),
+		clockTime = 15,
+	},
+	{
+		name = "MushroomWood",
+		displayName = "버섯숲",
+		startTime = 120,
+		floorColor = Color3.fromRGB(70, 60, 50),
+		railColor = Color3.fromRGB(120, 100, 80),
+		treeLeafColor = Color3.fromRGB(180, 80, 180),
+		treeTrunkColor = Color3.fromRGB(80, 50, 30),
+		hillColor = Color3.fromRGB(100, 80, 60),
+		skyAmbient = Color3.fromRGB(160, 140, 180),
+		clockTime = 17,
+	},
+	{
+		name = "Sunset",
+		displayName = "석양",
+		startTime = 180,
+		floorColor = Color3.fromRGB(120, 80, 50),
+		railColor = Color3.fromRGB(180, 120, 60),
+		treeLeafColor = Color3.fromRGB(200, 100, 30),
+		treeTrunkColor = Color3.fromRGB(60, 30, 10),
+		hillColor = Color3.fromRGB(150, 90, 40),
+		skyAmbient = Color3.fromRGB(255, 140, 50),
+		clockTime = 18.5,
+	},
+	{
+		name = "Starlight",
+		displayName = "별빛",
+		startTime = 240,
+		floorColor = Color3.fromRGB(30, 30, 50),
+		railColor = Color3.fromRGB(80, 80, 120),
+		treeLeafColor = Color3.fromRGB(40, 60, 100),
+		treeTrunkColor = Color3.fromRGB(30, 20, 40),
+		hillColor = Color3.fromRGB(20, 20, 40),
+		skyAmbient = Color3.fromRGB(20, 20, 50),
+		clockTime = 22,
+	},
+}
+
+-- 이벤트 청크
+GameConstants.EVENT_CHUNKS = {
+	COIN_RUSH = {
+		MIN_TIME = 90, -- 90초 이후 출현 가능
+		CHANCE = 0.05, -- 청크당 5% 확률
+		COIN_COUNT = 30, -- 코인 대량 배치
+	},
+	GIANT_COIN = {
+		MIN_TIME = 120, -- 120초 이후
+		CHANCE = 0.03, -- 3% 확률
+		REWARD = 100, -- 획득 시 100점
+		HEIGHT = 12, -- 높은 위치 (2단 점프 필요)
+		SIZE = 8, -- 일반 코인의 ~4배 크기
+	},
+	COOLDOWN = 30, -- 이벤트 간 최소 간격 (초)
+}
+
 return GameConstants

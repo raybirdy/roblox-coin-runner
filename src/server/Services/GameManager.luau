@@ -58,6 +58,12 @@ type GameSession = {
 	-- Perfect run
 	lastHitDistance: number,
 	perfectRunAwarded: { [number]: boolean },
+	-- Phase B: Zone + Events + Stats
+	currentZoneIndex: number,
+	lastEventTime: number,
+	nearMissCount: number,
+	maxCombo: number,
+	feverCount: number,
 }
 
 local activeSessions: { [Player]: GameSession } = {}
@@ -183,6 +189,11 @@ RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { 
 		lastNearMissTime = 0,
 		lastHitDistance = 0,
 		perfectRunAwarded = {},
+		currentZoneIndex = 1,
+		lastEventTime = 0,
+		nearMissCount = 0,
+		maxCombo = 0,
+		feverCount = 0,
 	}
 
 	activeSessions[player] = session
@@ -361,6 +372,11 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 		lastNearMissTime = 0,
 		lastHitDistance = 0,
 		perfectRunAwarded = {},
+		currentZoneIndex = 1,
+		lastEventTime = 0,
+		nearMissCount = 0,
+		maxCombo = 0,
+		feverCount = 0,
 	}
 
 	activeSessions[player] = session
@@ -551,6 +567,12 @@ function GameManager.EndGame(player: Player)
 		highScore = highScore,
 		distance = distance,
 		isNewRecord = isNewRecord,
+		-- Phase B: 추가 통계
+		nearMissCount = session.nearMissCount,
+		maxCombo = session.maxCombo,
+		feverCount = session.feverCount,
+		zoneName = GameConstants.ZONE_THEMES[session.currentZoneIndex].displayName,
+		almostMessage = GameManager._generateAlmostMessage(session),
 	})
 
 	-- 위로 보상 알림 (별도 이벤트)
@@ -611,6 +633,49 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 			backgroundService:UpdatePlayerPosition(hrp.Position)
 		end
 
+		-- Phase B: Zone 전환 체크
+		local elapsedTime = tick() - session.startTime
+		local newZoneIndex = 1
+		for i = #GameConstants.ZONE_THEMES, 1, -1 do
+			if elapsedTime >= GameConstants.ZONE_THEMES[i].startTime then
+				newZoneIndex = i
+				break
+			end
+		end
+		if newZoneIndex ~= session.currentZoneIndex then
+			session.currentZoneIndex = newZoneIndex
+			local theme = GameConstants.ZONE_THEMES[newZoneIndex]
+			RemoteEvents.ZoneTransition:FireClient(player, {
+				zoneIndex = newZoneIndex,
+				zoneName = theme.name,
+				displayName = theme.displayName,
+			})
+			chunkService:RequestTransitionChunk()
+		end
+
+		-- Phase B: ChunkService에 현재 zone 전달
+		chunkService:SetCurrentZone(session.currentZoneIndex)
+
+		-- Phase B: 이벤트 청크 확률 체크
+		local eventCooldown = GameConstants.EVENT_CHUNKS.COOLDOWN
+		if (tick() - session.lastEventTime) >= eventCooldown then
+			if
+				elapsedTime >= GameConstants.EVENT_CHUNKS.GIANT_COIN.MIN_TIME
+				and math.random() < GameConstants.EVENT_CHUNKS.GIANT_COIN.CHANCE
+			then
+				session.lastEventTime = tick()
+				chunkService:RequestEventChunk("GiantCoin")
+				RemoteEvents.EventChunkAlert:FireClient(player, { eventType = "GiantCoin" })
+			elseif
+				elapsedTime >= GameConstants.EVENT_CHUNKS.COIN_RUSH.MIN_TIME
+				and math.random() < GameConstants.EVENT_CHUNKS.COIN_RUSH.CHANCE
+			then
+				session.lastEventTime = tick()
+				chunkService:RequestEventChunk("CoinRush")
+				RemoteEvents.EventChunkAlert:FireClient(player, { eventType = "CoinRush" })
+			end
+		end
+
 		-- 새 청크 생성 필요 시
 		if chunkService:CheckSpawnNewChunk(hrp.Position) then
 			chunkService:SpawnNextChunk()
@@ -661,6 +726,15 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 			)
 		end
 
+		-- Phase B: 거인 코인 수집 체크
+		if coinService:CheckGiantCoinCollection(hrp.Position) then
+			session.coins += GameConstants.EVENT_CHUNKS.GIANT_COIN.REWARD
+			session.score += GameConstants.EVENT_CHUNKS.GIANT_COIN.REWARD
+			RemoteEvents.GiantCoinCollected:FireClient(player, {
+				reward = GameConstants.EVENT_CHUNKS.GIANT_COIN.REWARD,
+			})
+		end
+
 		-- 콤보 시스템
 		if #collectedCoins > 0 then
 			local now = tick()
@@ -687,6 +761,9 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 				print(`[GameManager] Combo {session.comboCount}x! +{comboBonus} bonus for {player.Name}`)
 			end
 
+			-- Phase B: 최대 콤보 추적
+			session.maxCombo = math.max(session.maxCombo, session.comboCount)
+
 			-- 피버 모드 발동 체크
 			if
 				not session.isFever
@@ -695,6 +772,7 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 			then
 				session.isFever = true
 				session.feverEndTime = now + GameConstants.FEVER.DURATION
+				session.feverCount += 1 -- Phase B: 피버 횟수 추적
 				RemoteEvents.FeverStart:FireClient(player, {
 					duration = GameConstants.FEVER.DURATION,
 					speedBoost = GameConstants.FEVER.SPEED_BOOST,
@@ -842,6 +920,7 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 		for _, obstaclePart in nearMisses do
 			session.nearMissedObstacles[obstaclePart] = true
 			session.consecutiveHits = 0 -- 회피 성공 시 연속 피격 리셋
+			session.nearMissCount += 1 -- Phase B: 니어미스 횟수 추적
 
 			-- 체인 업데이트
 			local now = tick()
@@ -924,6 +1003,38 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 		end
 	end
 end)
+
+-- Phase B: "거의 다 왔어!" 메시지 생성
+function GameManager._generateAlmostMessage(session: GameSession): string?
+	local elapsed = tick() - session.startTime
+	local currentZoneIdx = session.currentZoneIndex
+	local nextZone = GameConstants.ZONE_THEMES[currentZoneIdx + 1]
+
+	-- 다음 zone까지 20초 이내였으면
+	if nextZone then
+		local timeToNext = nextZone.startTime - elapsed
+		if timeToNext > 0 and timeToNext < 20 then
+			return `{math.ceil(timeToNext)}초만 더 버텼으면 {nextZone.displayName}이었어!`
+		end
+	end
+
+	-- 피버까지 남은 콤보
+	local comboToFever = GameConstants.FEVER.COMBO_THRESHOLD - session.comboCount
+	if comboToFever > 0 and comboToFever <= 15 then
+		return `콤보 {comboToFever}개만 더 모았으면 피버였어!`
+	end
+
+	-- 신기록까지 남은 점수
+	local playerData = PlayerDataService:GetPlayerData(session.player)
+	if playerData then
+		local scoreToRecord = playerData.highScore - session.score
+		if scoreToRecord > 0 and scoreToRecord <= 200 then
+			return `신기록까지 {scoreToRecord}점만 남았었어!`
+		end
+	end
+
+	return nil
+end
 
 print("[GameManager] Initialized")
 

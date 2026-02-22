@@ -352,6 +352,76 @@ function CoinService:CleanupCoinsInChunk(chunkPosition: Vector3, chunkSize: Vect
 	end
 end
 
+-- Phase B: 거인 코인 생성
+function CoinService:SpawnGiantCoin(chunk: Model, chunkPosition: Vector3)
+	local config = GameConstants.EVENT_CHUNKS.GIANT_COIN
+
+	local coinModel = Instance.new("Model")
+	coinModel.Name = "GiantCoin"
+
+	-- 큰 크기의 네온 코인
+	local outerRing = Instance.new("Part")
+	outerRing.Name = "OuterRing"
+	outerRing.Shape = Enum.PartType.Cylinder
+	outerRing.Size = Vector3.new(1, config.SIZE, config.SIZE)
+	outerRing.CFrame = CFrame.new(chunkPosition.X + GameConstants.CHUNK.LENGTH / 2, config.HEIGHT, chunkPosition.Z)
+		* CFrame.Angles(0, math.rad(90), 0)
+	outerRing.Anchored = true
+	outerRing.CanCollide = false
+	outerRing.Color = Color3.fromRGB(0, 191, 255)
+	outerRing.Material = Enum.Material.Neon
+	outerRing:SetAttribute("GiantCoin", true)
+	outerRing.Parent = coinModel
+
+	-- 내부 원 (밝은 색)
+	local innerCircle = Instance.new("Part")
+	innerCircle.Name = "InnerCircle"
+	innerCircle.Shape = Enum.PartType.Cylinder
+	innerCircle.Size = Vector3.new(1.2, config.SIZE * 0.7, config.SIZE * 0.7)
+	innerCircle.CFrame = outerRing.CFrame
+	innerCircle.Anchored = true
+	innerCircle.CanCollide = false
+	innerCircle.Color = Color3.fromRGB(150, 230, 255)
+	innerCircle.Material = Enum.Material.Neon
+	innerCircle.Parent = coinModel
+
+	coinModel.PrimaryPart = outerRing
+	coinModel.Parent = chunk
+
+	-- 회전 애니메이션
+	self:_startCoinRotation(coinModel)
+
+	-- 코인 데이터 저장 (수집 체크용)
+	local coinData: CoinData = {
+		part = outerRing,
+		value = config.REWARD,
+		type = "Giant",
+		spawnTime = tick(),
+	}
+	table.insert(self._activeCoins, coinData)
+end
+
+-- Phase B: 거인 코인 수집 체크
+function CoinService:CheckGiantCoinCollection(playerPosition: Vector3): boolean
+	for i = #self._activeCoins, 1, -1 do
+		local coinData = self._activeCoins[i]
+		if coinData.part and coinData.part:GetAttribute("GiantCoin") then
+			local distance = (coinData.part.Position - playerPosition).Magnitude
+			if distance < 6 then
+				local coinModel = coinData.part.Parent
+				if coinModel and coinModel:IsA("Model") then
+					coinModel:Destroy()
+				else
+					coinData.part:Destroy()
+				end
+				table.remove(self._activeCoins, i)
+				return true
+			end
+		end
+	end
+	return false
+end
+
 -- 모든 코인 정리 (게임 종료 시)
 function CoinService:Destroy()
 	for _, coinData in self._activeCoins do

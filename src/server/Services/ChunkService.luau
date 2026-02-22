@@ -34,6 +34,9 @@ export type ChunkService = typeof(setmetatable(
 		_backgroundService: any?, -- BackgroundService 참조 (배경 생성용)
 		_startZone: Model?, -- 시작 구역 (출발선 포함)
 		_mercyChunkCount: number, -- 남은 자비 청크 수
+		_currentZoneIndex: number, -- Phase B: 현재 zone
+		_pendingTransitionChunk: boolean, -- Phase B: 전환 터널 대기
+		_pendingEventChunk: string?, -- Phase B: 이벤트 청크 대기
 	},
 	ChunkService
 ))
@@ -52,6 +55,9 @@ function ChunkService.new(): ChunkService
 		_backgroundService = nil,
 		_startZone = nil,
 		_mercyChunkCount = 0,
+		_currentZoneIndex = 1,
+		_pendingTransitionChunk = false,
+		_pendingEventChunk = nil,
 	}, ChunkService)
 
 	self:_loadChunkTemplates()
@@ -82,6 +88,21 @@ end
 -- BackgroundService 설정 (GameManager에서 호출)
 function ChunkService:SetBackgroundService(backgroundService: any)
 	self._backgroundService = backgroundService
+end
+
+-- Phase B: 현재 zone 설정
+function ChunkService:SetCurrentZone(zoneIndex: number)
+	self._currentZoneIndex = zoneIndex
+end
+
+-- Phase B: 전환 터널 요청
+function ChunkService:RequestTransitionChunk()
+	self._pendingTransitionChunk = true
+end
+
+-- Phase B: 이벤트 청크 요청
+function ChunkService:RequestEventChunk(eventType: string)
+	self._pendingEventChunk = eventType
 end
 
 -- 청크 템플릿 로드
@@ -227,8 +248,25 @@ end
 
 -- 다음 청크 생성
 function ChunkService:SpawnNextChunk(): Model?
-	local difficulty = self:_selectDifficulty()
+	local difficulty: string
+	local eventType: string? = nil
+
+	-- Phase B: 전환 터널 우선 → 이벤트 청크 → 일반 난이도
+	if self._pendingTransitionChunk then
+		self._pendingTransitionChunk = false
+		difficulty = "Bonus"
+	elseif self._pendingEventChunk then
+		eventType = self._pendingEventChunk
+		self._pendingEventChunk = nil
+		difficulty = "Easy" -- 이벤트 청크는 Easy 기반
+	else
+		difficulty = self:_selectDifficulty()
+	end
+
 	local spawnPosition = self:_calculateSpawnPosition()
+
+	-- Phase B: 현재 zone 테마
+	local theme = GameConstants.ZONE_THEMES[self._currentZoneIndex]
 
 	-- 템플릿 찾기 시도
 	local chunkTemplate = self:_getChunkTemplate(difficulty, self._lastChunkEndHeight)
@@ -240,9 +278,9 @@ function ChunkService:SpawnNextChunk(): Model?
 		chunk:SetPrimaryPartCFrame(CFrame.new(spawnPosition))
 		chunk.Parent = workspace
 	else
-		-- 절차적 생성 (템플릿 없을 때)
-		chunk = ProceduralChunkGenerator.Generate(difficulty, self._lastChunkEndHeight, spawnPosition)
-		print(`[ChunkService] Generated procedural chunk: {difficulty}`)
+		-- 절차적 생성 (템플릿 없을 때) - theme + eventType 전달
+		chunk = ProceduralChunkGenerator.Generate(difficulty, self._lastChunkEndHeight, spawnPosition, theme, eventType)
+		print(`[ChunkService] Generated procedural chunk: {difficulty}{eventType and ` (Event: {eventType})` or ""}`)
 	end
 
 	-- 청크 데이터 저장
@@ -262,10 +300,10 @@ function ChunkService:SpawnNextChunk(): Model?
 	self._chunkCounter += 1
 	self._lastChunkEndHeight = endHeight
 
-	-- 청크 내 장애물 생성 (안전 구역 이후부터) — 코인보다 먼저 생성하여 위치 확보
+	-- 청크 내 장애물 생성 (안전 구역 이후부터, 이벤트 청크에는 장애물 없음)
 	local obstaclePositions: { Vector3 } = {}
 	local isInSafeZone = self._chunkCounter <= GameConstants.CHUNK.SAFE_ZONE_CHUNKS
-	if self._obstacleService and not isInSafeZone then
+	if self._obstacleService and not isInSafeZone and not eventType then
 		obstaclePositions = self._obstacleService:SpawnObstaclesInChunk(chunk, difficulty)
 	elseif isInSafeZone then
 		print(`[ChunkService] Chunk #{self._chunkCounter} is in safe zone - no obstacles`)
@@ -273,22 +311,33 @@ function ChunkService:SpawnNextChunk(): Model?
 
 	-- 청크 내 코인 생성 (장애물 위치를 전달하여 겹침 방지)
 	if self._coinService then
-		self._coinService:SpawnCoinsInChunk(chunk, difficulty, obstaclePositions)
+		if eventType == "CoinRush" then
+			-- 코인 러시: 대량 코인 (3회 호출)
+			self._coinService:SpawnCoinsInChunk(chunk, "Bonus", obstaclePositions)
+			self._coinService:SpawnCoinsInChunk(chunk, "Bonus", obstaclePositions)
+			self._coinService:SpawnCoinsInChunk(chunk, "Bonus", obstaclePositions)
+		elseif eventType == "GiantCoin" then
+			-- 일반 코인 + 거인 코인
+			self._coinService:SpawnCoinsInChunk(chunk, difficulty, obstaclePositions)
+			self._coinService:SpawnGiantCoin(chunk, spawnPosition)
+		else
+			self._coinService:SpawnCoinsInChunk(chunk, difficulty, obstaclePositions)
+		end
 	end
 
 	-- 청크 내 파워업 생성 (확률적, 안전 구역 이후부터)
-	if self._powerupService and not isInSafeZone then
+	if self._powerupService and not isInSafeZone and not eventType then
 		self._powerupService:TrySpawnPowerupInChunk(chunk, difficulty)
 	end
 
 	-- 청크 내 NPC 생성 (NPC 청크만)
-	if self._npcService and difficulty == "NPC" then
+	if self._npcService and difficulty == "NPC" and not eventType then
 		self._npcService:SpawnNPCInChunk(chunk, difficulty)
 	end
 
-	-- 청크 배경 요소 생성 (관중, 나무, 언덕)
+	-- 청크 배경 요소 생성 (관중, 나무, 언덕) - theme 전달
 	if self._backgroundService then
-		self._backgroundService:AddBackgroundForChunk(spawnPosition, GameConstants.CHUNK.LENGTH)
+		self._backgroundService:AddBackgroundForChunk(spawnPosition, GameConstants.CHUNK.LENGTH, theme)
 	end
 
 	print(`[ChunkService] Spawned chunk #{self._chunkCounter}: {difficulty} at {spawnPosition}`)
