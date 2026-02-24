@@ -3,11 +3,8 @@
 -- 코인 생성 및 수집 처리
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Players = game:GetService("Players")
-local TweenService = game:GetService("TweenService")
 
 local GameConstants = require(ReplicatedStorage.Shared.Constants.GameConstants)
-local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)
 
 local CoinService = {}
 CoinService.__index = CoinService
@@ -62,7 +59,7 @@ function CoinService:SpawnCoinsInChunk(chunk: Model, difficulty: string, obstacl
 	-- 코인 최소 높이: 바닥 표면(+0.5) + 코인 반지름(1.4) + 여유(0.1)
 	local COIN_MIN_Y = 2.0
 
-	for i = 1, coinCount do
+	for _ = 1, coinCount do
 		-- 랜덤 위치 생성
 		local randomX = (math.random() - 0.5) * spawnAreaWidth
 		local randomY = COIN_MIN_Y + math.random() * math.max(0, spawnAreaHeight - COIN_MIN_Y)

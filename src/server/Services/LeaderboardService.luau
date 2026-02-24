@@ -6,7 +6,6 @@ local DataStoreService = game:GetService("DataStoreService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local GameConstants = require(ReplicatedStorage.Shared.Constants.GameConstants)
 local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)
 local RateLimiter = require(ReplicatedStorage.Shared.Utils.RateLimiter)
 
@@ -17,7 +16,7 @@ local highScoreStore = nil
 local dailyScoreStore = nil
 local weeklyScoreStore = nil
 
-local success, err = pcall(function()
+local initSuccess, initErr = pcall(function()
 	highScoreStore = DataStoreService:GetOrderedDataStore("HighScores_v1")
 
 	-- 일간/주간 키는 날짜 기반
@@ -27,8 +26,8 @@ local success, err = pcall(function()
 	weeklyScoreStore = DataStoreService:GetOrderedDataStore("WeeklyScores_" .. weekNum)
 end)
 
-if not success then
-	warn("[LeaderboardService] OrderedDataStore unavailable (Studio mode): " .. tostring(err))
+if not initSuccess then
+	warn("[LeaderboardService] OrderedDataStore unavailable (Studio mode): " .. tostring(initErr))
 end
 
 -- 캐시된 리더보드 데이터 (탭별)

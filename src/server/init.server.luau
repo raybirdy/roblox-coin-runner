@@ -20,14 +20,14 @@ local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)
 local RateLimiter = require(ReplicatedStorage.Shared.Utils.RateLimiter)
 
 -- 서버 서비스 로드
-local GameManager = require(ServerScriptService.Server.Services.GameManager)
+local _GameManager = require(ServerScriptService.Server.Services.GameManager)
 local PlayerDataService = require(ServerScriptService.Server.Services.PlayerDataService)
-local LobbyService = require(ServerScriptService.Server.Services.LobbyService)
-local ShopService = require(ServerScriptService.Server.Services.ShopService)
-local MonetizationService = require(ServerScriptService.Server.Services.MonetizationService)
+local _LobbyService = require(ServerScriptService.Server.Services.LobbyService)
+local _ShopService = require(ServerScriptService.Server.Services.ShopService)
+local _MonetizationService = require(ServerScriptService.Server.Services.MonetizationService)
 local ProgressionService = require(ServerScriptService.Server.Services.ProgressionService)
 local LoginRewardService = require(ServerScriptService.Server.Services.LoginRewardService)
-local LuckySpinService = require(ServerScriptService.Server.Services.LuckySpinService)
+local _LuckySpinService = require(ServerScriptService.Server.Services.LuckySpinService)
 
 print("[Server] Game Constants Loaded")
 print("[Server] Remote Events Initialized")
@@ -60,7 +60,7 @@ game.Players.PlayerAdded:Connect(function(player: Player)
 	end
 
 	-- 플레이어 캐릭터 설정 대기
-	player.CharacterAdded:Connect(function(character: Model)
+	player.CharacterAdded:Connect(function(_character: Model)
 		print(`[Server] Character spawned for {player.Name}`)
 	end)
 end)

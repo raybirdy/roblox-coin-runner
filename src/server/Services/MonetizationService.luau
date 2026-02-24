@@ -148,9 +148,15 @@ end
 
 -- 젬 구매 요청 처리
 RemoteEvents.PurchaseGems.OnServerEvent:Connect(function(player: Player, data: { productId: string })
-	if type(data) ~= "table" then return end
-	if type(data.productId) ~= "string" then return end
-	if not RateLimiter.Check(player, "PurchaseGems", 2) then return end
+	if type(data) ~= "table" then
+		return
+	end
+	if type(data.productId) ~= "string" then
+		return
+	end
+	if not RateLimiter.Check(player, "PurchaseGems", 2) then
+		return
+	end
 
 	local productId = data.productId
 

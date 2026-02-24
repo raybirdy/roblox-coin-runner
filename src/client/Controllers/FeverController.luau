@@ -442,7 +442,7 @@ function FeverController:_showFeverAnnouncement()
 	label.Position = UDim2.new(0, 0, 0.3, 0)
 	label.BackgroundTransparency = 1
 	label.TextColor3 = Color3.fromRGB(255, 220, 50)
-	label.TextSize = 10
+	label.TextSize = ResponsiveUtil.scaledTextSize(10, 8)
 	label.Font = Enum.Font.GothamBlack
 	label.Text = "FEVER!"
 	label.TextStrokeTransparency = 0

@@ -197,7 +197,7 @@ function ProceduralChunkGenerator._createRamp(chunk: Model, position: Vector3, s
 end
 
 -- 장식 추가
-function ProceduralChunkGenerator._addDecorations(chunk: Model, position: Vector3, difficulty: string, theme: any?)
+function ProceduralChunkGenerator._addDecorations(chunk: Model, position: Vector3, _difficulty: string, theme: any?)
 	local chunkLength = GameConstants.CHUNK.LENGTH
 
 	-- 측면 레일/가드
@@ -230,8 +230,6 @@ end
 
 -- 난이도별 시각 효과
 function ProceduralChunkGenerator._addDifficultyVisuals(chunk: Model, position: Vector3, difficulty: string)
-	local chunkLength = GameConstants.CHUNK.LENGTH
-
 	if difficulty == "Bonus" then
 		-- 보너스 청크: 반짝이는 테두리
 		ProceduralChunkGenerator._addBonusVisuals(chunk, position)
@@ -246,8 +244,6 @@ end
 
 -- 보너스 청크 시각 효과
 function ProceduralChunkGenerator._addBonusVisuals(chunk: Model, position: Vector3)
-	local chunkLength = GameConstants.CHUNK.LENGTH
-
 	-- 입구 아치 (금색)
 	local arch = Instance.new("Part")
 	arch.Name = "BonusArch"
@@ -400,8 +396,6 @@ end
 
 -- Phase B: 코인 러시 이벤트 시각 효과
 function ProceduralChunkGenerator._addCoinRushVisuals(chunk: Model, position: Vector3)
-	local chunkLength = GameConstants.CHUNK.LENGTH
-
 	-- "COIN RUSH!" 간판
 	local signPart = Instance.new("Part")
 	signPart.Name = "CoinRushSign"

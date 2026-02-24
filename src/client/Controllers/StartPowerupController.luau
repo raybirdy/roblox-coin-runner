@@ -83,7 +83,7 @@ function StartPowerupController:_createUI()
 	title.Position = UDim2.new(0, 0, 0, 10)
 	title.BackgroundTransparency = 1
 	title.TextColor3 = Color3.fromRGB(100, 200, 255)
-	title.TextSize = 24
+	title.TextSize = ResponsiveUtil.scaledTextSize(24, 16)
 	title.Font = Enum.Font.GothamBold
 	title.Text = "시작 파워업 선택"
 	title.Parent = popup
@@ -109,7 +109,7 @@ function StartPowerupController:_createUI()
 	startButton.Position = UDim2.new(0.5, -100, 1, -65)
 	startButton.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
 	startButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-	startButton.TextSize = 20
+	startButton.TextSize = ResponsiveUtil.scaledTextSize(20, 14)
 	startButton.Font = Enum.Font.GothamBold
 	startButton.Text = "게임 시작!"
 	startButton.Parent = popup
@@ -129,7 +129,7 @@ function StartPowerupController:_createUI()
 	skipButton.Position = UDim2.new(0.5, -70, 1, -38)
 	skipButton.BackgroundTransparency = 1
 	skipButton.TextColor3 = Color3.fromRGB(180, 180, 180)
-	skipButton.TextSize = 14
+	skipButton.TextSize = ResponsiveUtil.scaledTextSize(14, 11)
 	skipButton.Font = Enum.Font.Gotham
 	skipButton.Text = "건너뛰기"
 	skipButton.Parent = popup
@@ -229,7 +229,7 @@ function StartPowerupController:_populateCards(startPowerups: { [string]: number
 		nameLabel.Position = UDim2.new(0, 0, 0, 5)
 		nameLabel.BackgroundTransparency = 1
 		nameLabel.TextColor3 = count > 0 and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(100, 100, 100)
-		nameLabel.TextSize = 13
+		nameLabel.TextSize = ResponsiveUtil.scaledTextSize(13, 10)
 		nameLabel.Font = Enum.Font.GothamBold
 		nameLabel.Text = powerup.name
 		nameLabel.TextWrapped = true
@@ -242,7 +242,7 @@ function StartPowerupController:_populateCards(startPowerups: { [string]: number
 		countLabel.Position = UDim2.new(0, 0, 0, 40)
 		countLabel.BackgroundTransparency = 1
 		countLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
-		countLabel.TextSize = 12
+		countLabel.TextSize = ResponsiveUtil.scaledTextSize(12, 10)
 		countLabel.Font = Enum.Font.Gotham
 		countLabel.Text = `{count}개 보유`
 		countLabel.Parent = card
@@ -252,7 +252,7 @@ function StartPowerupController:_populateCards(startPowerups: { [string]: number
 		selectBtn.Name = "SelectButton"
 		selectBtn.Size = UDim2.new(1, -16, 0, 44)
 		selectBtn.Position = UDim2.new(0, 8, 1, -52)
-		selectBtn.TextSize = 13
+		selectBtn.TextSize = ResponsiveUtil.scaledTextSize(13, 10)
 		selectBtn.Font = Enum.Font.GothamBold
 		selectBtn.Parent = card
 

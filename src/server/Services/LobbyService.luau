@@ -1170,7 +1170,7 @@ function LobbyService:_createFlowerBed(position: Vector3)
 		Color3.fromRGB(100, 200, 255), -- 하늘
 	}
 
-	for i = 1, 8 do
+	for _ = 1, 8 do
 		local offsetX = math.random(-3, 3)
 		local offsetZ = math.random(-3, 3)
 
@@ -1437,8 +1437,6 @@ function LobbyService:_createAnimalNPC(
 	npcFolder.Name = "LobbyNPC_" .. npcId
 	npcFolder.Parent = lobbyFolder
 
-	local baseY = npcData.position.Y + 1
-
 	-- 몸통
 	local body = Instance.new("Part")
 	body.Name = "Body"
@@ -1549,7 +1547,7 @@ function LobbyService:_createAnimalNPC(
 			ear.Parent = npcFolder
 		end
 		-- 수염
-		for _, zOffset in { 0.3, -0.3 } do
+		for _, _zOffset in { 0.3, -0.3 } do
 			local whisker = Instance.new("Part")
 			whisker.Name = "Whisker"
 			whisker.Size = Vector3.new(1.5, 0.05, 0.05)

@@ -3,7 +3,6 @@
 -- 플레이어 캐릭터 이동 및 물리 제어
 -- 물리 엔진과 협력하는 방식으로 구현
 
-local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -625,7 +624,7 @@ function PlayerController:SlideEnd()
 end
 
 -- 슬라이드 업데이트
-function PlayerController:_updateSlide(deltaTime: number)
+function PlayerController:_updateSlide(_deltaTime: number)
 	-- 슬라이드 중 바닥을 벗어나면 즉시 종료
 	if not self.isGrounded then
 		self:_endSlide()

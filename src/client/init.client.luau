@@ -14,13 +14,13 @@ local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)
 
 local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
-local humanoid = character:WaitForChild("Humanoid") :: Humanoid
+local _humanoid = character:WaitForChild("Humanoid") :: Humanoid
 
 print("[Client] Game Constants Loaded")
 print("[Client] Remote Events Connected")
 
 -- Roblox 기본 컨트롤 관리
-local PlayerGui = player:WaitForChild("PlayerGui")
+local _PlayerGui = player:WaitForChild("PlayerGui")
 local controlModule = require(player.PlayerScripts:WaitForChild("PlayerModule"):WaitForChild("ControlModule"))
 
 local function disableDefaultControls()
@@ -88,9 +88,9 @@ local ZoneController = require(script.Controllers.ZoneController)
 local inputController = InputController.new()
 local playerController = PlayerController.new(player, character)
 local coinController = CoinController.new()
-local lifeController = LifeController.new()
+local _lifeController = LifeController.new()
 local uiController = UIController.new(player)
-local powerupController = PowerupController.new()
+local _powerupController = PowerupController.new()
 local cameraController = CameraController.new(player, character)
 local npcController = NPCController.new()
 local tutorialController = TutorialController.new()
@@ -100,8 +100,8 @@ local speedEffectController = SpeedEffectController.new(player)
 local leaderboardController = LeaderboardController.new(player)
 local startPowerupController = StartPowerupController.new(player)
 local progressionController = ProgressionController.new(player)
-local loginRewardController = LoginRewardController.new(player)
-local luckySpinController = LuckySpinController.new(player)
+local _loginRewardController = LoginRewardController.new(player)
+local _luckySpinController = LuckySpinController.new(player)
 local feverController = FeverController.new()
 local zoneController = ZoneController.new()
 
@@ -208,7 +208,7 @@ tutorialController:SetNPCController(npcController)
 -- 캐릭터 리스폰 시 PlayerController 업데이트
 player.CharacterAdded:Connect(function(newCharacter: Model)
 	character = newCharacter
-	humanoid = character:WaitForChild("Humanoid") :: Humanoid
+	_humanoid = character:WaitForChild("Humanoid") :: Humanoid
 	-- 리스폰 시 로비 모드로 (기본 이동 활성화)
 	enableDefaultControls()
 	playerController:UpdateCharacter(newCharacter)
@@ -478,7 +478,7 @@ RemoteEvents.ComboUpdate.OnClientEvent:Connect(function(data)
 end)
 
 -- 튜토리얼 거리 업데이트 및 속도 연출 동기화 (RunService)
-RunService.Heartbeat:Connect(function(deltaTime: number)
+RunService.Heartbeat:Connect(function(_deltaTime: number)
 	-- 튜토리얼 거리 업데이트
 	if tutorialController:IsActive() and character then
 		local hrp = character:FindFirstChild("HumanoidRootPart") :: BasePart?

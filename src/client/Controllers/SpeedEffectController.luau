@@ -3,7 +3,6 @@
 -- 속도감 연출: 스피드 라인 + 캐릭터 Trail
 -- 파티클 없이 가벼운 효과
 
-local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 

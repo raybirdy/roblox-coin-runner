@@ -91,7 +91,7 @@ function ProgressionController:_createLevelDisplay()
 	levelLabel.Position = UDim2.new(0, 8, 0, 2)
 	levelLabel.BackgroundTransparency = 1
 	levelLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
-	levelLabel.TextSize = 14
+	levelLabel.TextSize = ResponsiveUtil.scaledTextSize(14, 11)
 	levelLabel.Font = Enum.Font.GothamBlack
 	levelLabel.Text = "Lv.1"
 	levelLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -144,7 +144,7 @@ function ProgressionController:_createLevelDisplay()
 	missionBtn.Position = UDim2.new(0, 175, 0, 16)
 	missionBtn.BackgroundColor3 = Color3.fromRGB(50, 120, 50)
 	missionBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-	missionBtn.TextSize = 20
+	missionBtn.TextSize = ResponsiveUtil.scaledTextSize(20, 14)
 	missionBtn.Font = Enum.Font.GothamBold
 	missionBtn.Text = "!"
 	missionBtn.Parent = screenGui
@@ -215,7 +215,7 @@ function ProgressionController:_createMissionPopup()
 	titleLabel.Position = UDim2.new(0, 15, 0, 10)
 	titleLabel.BackgroundTransparency = 1
 	titleLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
-	titleLabel.TextSize = 20
+	titleLabel.TextSize = ResponsiveUtil.scaledTextSize(20, 14)
 	titleLabel.Font = Enum.Font.GothamBlack
 	titleLabel.Text = "DAILY MISSIONS"
 	titleLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -228,7 +228,7 @@ function ProgressionController:_createMissionPopup()
 	closeBtn.Position = UDim2.new(1, -52, 0, 6)
 	closeBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
 	closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-	closeBtn.TextSize = 16
+	closeBtn.TextSize = ResponsiveUtil.scaledTextSize(16, 12)
 	closeBtn.Font = Enum.Font.GothamBold
 	closeBtn.Text = "X"
 	closeBtn.Parent = missionFrame
@@ -275,7 +275,7 @@ function ProgressionController:_createMissionPopup()
 		rewardLabel.Position = UDim2.new(0.7, 0, 0, 5)
 		rewardLabel.BackgroundTransparency = 1
 		rewardLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
-		rewardLabel.TextSize = 12
+		rewardLabel.TextSize = ResponsiveUtil.scaledTextSize(12, 10)
 		rewardLabel.Font = Enum.Font.GothamBold
 		rewardLabel.Text = ""
 		rewardLabel.TextXAlignment = Enum.TextXAlignment.Right
@@ -522,7 +522,7 @@ function ProgressionController:_showNextNotification()
 	titleLabel.Position = UDim2.new(0, 10, 0, 5)
 	titleLabel.BackgroundTransparency = 1
 	titleLabel.TextColor3 = notification.color
-	titleLabel.TextSize = 16
+	titleLabel.TextSize = ResponsiveUtil.scaledTextSize(16, 12)
 	titleLabel.Font = Enum.Font.GothamBlack
 	titleLabel.Text = notification.title
 	titleLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -533,7 +533,7 @@ function ProgressionController:_showNextNotification()
 	descLabel.Position = UDim2.new(0, 10, 0, 32)
 	descLabel.BackgroundTransparency = 1
 	descLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
-	descLabel.TextSize = 12
+	descLabel.TextSize = ResponsiveUtil.scaledTextSize(12, 10)
 	descLabel.Font = Enum.Font.Gotham
 	descLabel.Text = notification.desc
 	descLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -547,9 +547,10 @@ function ProgressionController:_showNextNotification()
 	-- 3초 후 슬라이드 아웃
 	task.delay(3, function()
 		if banner and banner.Parent then
-			local tweenOut = TweenService:Create(banner, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-				Position = UDim2.new(0.5, -150, 0, -70),
-			})
+			local tweenOut =
+				TweenService:Create(banner, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+					Position = UDim2.new(0.5, -150, 0, -70),
+				})
 			tweenOut:Play()
 			tweenOut.Completed:Connect(function()
 				if banner and banner.Parent then
@@ -600,10 +601,14 @@ function ProgressionController:CloseMissions()
 
 	if self._missionFrame then
 		local currentW = self._missionFrame.Size.X.Offset
-		local tween = TweenService:Create(self._missionFrame, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-			Size = UDim2.new(0, currentW, 0, 0),
-			Position = UDim2.new(0.5, -currentW / 2, 0.5, 0),
-		})
+		local tween = TweenService:Create(
+			self._missionFrame,
+			TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
+			{
+				Size = UDim2.new(0, currentW, 0, 0),
+				Position = UDim2.new(0.5, -currentW / 2, 0.5, 0),
+			}
+		)
 		tween:Play()
 		tween.Completed:Connect(function()
 			if self._missionGui then

@@ -3,10 +3,7 @@
 -- 파워업 생성 및 효과 관리 (자석, 쉴드)
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
-
 local GameConstants = require(ReplicatedStorage.Shared.Constants.GameConstants)
-local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)
 
 local PowerupService = {}
 PowerupService.__index = PowerupService
@@ -62,7 +59,7 @@ function PowerupService:StartGame()
 end
 
 -- 청크 내 파워업 생성 (확률적)
-function PowerupService:TrySpawnPowerupInChunk(chunk: Model, difficulty: string): boolean
+function PowerupService:TrySpawnPowerupInChunk(chunk: Model, _difficulty: string): boolean
 	local elapsedTime = tick() - self._gameStartTime
 
 	-- 첫 파워업은 20초 후부터
