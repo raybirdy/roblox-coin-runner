@@ -2,7 +2,6 @@
 -- Shop Controller
 -- 상점 UI 관리
 
-local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 
@@ -87,7 +86,7 @@ function ShopController:_createUI()
 	titleLabel.Position = UDim2.new(0, 0, 0, 10)
 	titleLabel.BackgroundTransparency = 1
 	titleLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
-	titleLabel.TextSize = 32
+	titleLabel.TextSize = ResponsiveUtil.scaledTextSize(32, 20)
 	titleLabel.Font = Enum.Font.GothamBold
 	titleLabel.Text = "SHOP"
 	titleLabel.Parent = shopFrame
@@ -99,7 +98,7 @@ function ShopController:_createUI()
 	coinsLabel.Position = UDim2.new(0.5, -155, 0, 55)
 	coinsLabel.BackgroundTransparency = 1
 	coinsLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
-	coinsLabel.TextSize = 20
+	coinsLabel.TextSize = ResponsiveUtil.scaledTextSize(20, 14)
 	coinsLabel.Font = Enum.Font.GothamBold
 	coinsLabel.Text = "Coins: 0"
 	coinsLabel.Parent = shopFrame
@@ -111,7 +110,7 @@ function ShopController:_createUI()
 	gemsLabel.Position = UDim2.new(0.5, 5, 0, 55)
 	gemsLabel.BackgroundTransparency = 1
 	gemsLabel.TextColor3 = Color3.fromRGB(170, 100, 255)
-	gemsLabel.TextSize = 20
+	gemsLabel.TextSize = ResponsiveUtil.scaledTextSize(20, 14)
 	gemsLabel.Font = Enum.Font.GothamBold
 	gemsLabel.Text = "Gems: 0"
 	gemsLabel.Parent = shopFrame
@@ -145,7 +144,7 @@ function ShopController:_createUI()
 		tabButton.Size = UDim2.new(0, 100, 0, 44)
 		tabButton.BackgroundColor3 = Color3.fromRGB(80, 80, 100)
 		tabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-		tabButton.TextSize = 18
+		tabButton.TextSize = ResponsiveUtil.scaledTextSize(18, 13)
 		tabButton.Font = Enum.Font.GothamBold
 		tabButton.Text = tab.name
 		tabButton.Parent = tabContainer
@@ -194,7 +193,7 @@ function ShopController:_createUI()
 	closeButton.Position = UDim2.new(1, -54, 0, 8)
 	closeButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
 	closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-	closeButton.TextSize = 24
+	closeButton.TextSize = ResponsiveUtil.scaledTextSize(24, 18)
 	closeButton.Font = Enum.Font.GothamBold
 	closeButton.Text = "X"
 	closeButton.Parent = shopFrame
@@ -397,7 +396,7 @@ function ShopController:_createSectionHeader(container: ScrollingFrame, text: st
 	headerLabel.Size = UDim2.new(1, 0, 1, 0)
 	headerLabel.BackgroundTransparency = 1
 	headerLabel.TextColor3 = Color3.fromRGB(255, 220, 150)
-	headerLabel.TextSize = 16
+	headerLabel.TextSize = ResponsiveUtil.scaledTextSize(16, 12)
 	headerLabel.Font = Enum.Font.GothamBold
 	headerLabel.Text = text
 	headerLabel.Parent = header
@@ -478,7 +477,7 @@ function ShopController:_createSeasonSkinCard(
 	nameLabel.Position = UDim2.new(0, 0, 0, 4)
 	nameLabel.BackgroundTransparency = 1
 	nameLabel.TextColor3 = Color3.fromRGB(255, 220, 255)
-	nameLabel.TextSize = 14
+	nameLabel.TextSize = ResponsiveUtil.scaledTextSize(14, 11)
 	nameLabel.Font = Enum.Font.GothamBold
 	nameLabel.Text = skin.name
 	nameLabel.TextTruncate = Enum.TextTruncate.AtEnd
@@ -558,7 +557,7 @@ function ShopController:_createSeasonSkinCard(
 	button.Size = UDim2.new(1, -20, 0, 30)
 	button.Position = UDim2.new(0, 10, 1, -36)
 	button.Font = Enum.Font.GothamBold
-	button.TextSize = 13
+	button.TextSize = ResponsiveUtil.scaledTextSize(13, 10)
 	button.Parent = itemFrame
 
 	local buttonCorner = Instance.new("UICorner")
@@ -617,7 +616,7 @@ function ShopController:_populatePowerups(container: ScrollingFrame)
 		local count = self._playerData and self._playerData.startPowerups and self._playerData.startPowerups[powerup.id]
 			or 0
 
-		local itemFrame = self:_createItemFrame(container, {
+		self:_createItemFrame(container, {
 			id = powerup.id,
 			name = powerup.name,
 			price = powerup.price,
@@ -631,7 +630,7 @@ end
 function ShopController:_populateReviveTickets(container: ScrollingFrame)
 	local count = self._playerData and self._playerData.reviveTickets or 0
 
-	local itemFrame = self:_createItemFrame(container, {
+	self:_createItemFrame(container, {
 		id = "revive_ticket",
 		name = "부활권",
 		price = GameConstants.SHOP.REVIVE_TICKET_PRICE,
@@ -673,7 +672,7 @@ function ShopController:_createItemFrame(
 	nameLabel.Position = UDim2.new(0, 0, 0, 5)
 	nameLabel.BackgroundTransparency = 1
 	nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-	nameLabel.TextSize = 14
+	nameLabel.TextSize = ResponsiveUtil.scaledTextSize(14, 11)
 	nameLabel.Font = Enum.Font.GothamBold
 	nameLabel.Text = item.name
 	nameLabel.TextTruncate = Enum.TextTruncate.AtEnd
@@ -726,7 +725,7 @@ function ShopController:_createItemFrame(
 	button.Size = UDim2.new(1, -20, 0, 44)
 	button.Position = UDim2.new(0, 10, 1, -52)
 	button.Font = Enum.Font.GothamBold
-	button.TextSize = 14
+	button.TextSize = ResponsiveUtil.scaledTextSize(14, 11)
 	button.Parent = itemFrame
 
 	local buttonCorner = Instance.new("UICorner")
@@ -818,7 +817,6 @@ function ShopController:_createGemProductFrame(
 		gems: number,
 		robux: number,
 		bonus: number,
-		includesPet: boolean?,
 	}
 ): Frame
 	local frame = Instance.new("Frame")
@@ -838,16 +836,14 @@ function ShopController:_createGemProductFrame(
 	nameLabel.Position = UDim2.new(0, 0, 0, 5)
 	nameLabel.BackgroundTransparency = 1
 	nameLabel.TextColor3 = Color3.fromRGB(170, 100, 255)
-	nameLabel.TextSize = 14
+	nameLabel.TextSize = ResponsiveUtil.scaledTextSize(14, 11)
 	nameLabel.Font = Enum.Font.GothamBold
 	nameLabel.Text = `💎 {product.gems} 젬`
 	nameLabel.Parent = frame
 
-	-- 보너스 또는 펫 포함 텍스트
+	-- 보너스 텍스트
 	local subText = ""
-	if product.includesPet then
-		subText = "펫 포함!"
-	elseif product.bonus > 0 then
+	if product.bonus > 0 then
 		subText = `+{product.bonus} 보너스`
 	end
 
@@ -871,7 +867,7 @@ function ShopController:_createGemProductFrame(
 	button.Position = UDim2.new(0, 10, 1, -52)
 	button.BackgroundColor3 = Color3.fromRGB(0, 150, 50)
 	button.TextColor3 = Color3.fromRGB(255, 255, 255)
-	button.TextSize = 14
+	button.TextSize = ResponsiveUtil.scaledTextSize(14, 11)
 	button.Font = Enum.Font.GothamBold
 	button.Text = `R$ {product.robux}`
 	button.Parent = frame
@@ -919,7 +915,7 @@ function ShopController:_populateGems(container: ScrollingFrame)
 	vipName.Position = UDim2.new(0, 0, 0, 5)
 	vipName.BackgroundTransparency = 1
 	vipName.TextColor3 = Color3.fromRGB(255, 215, 0)
-	vipName.TextSize = 14
+	vipName.TextSize = ResponsiveUtil.scaledTextSize(14, 11)
 	vipName.Font = Enum.Font.GothamBold
 	vipName.Text = "VIP PASS"
 	vipName.Parent = vipFrame
@@ -941,7 +937,7 @@ function ShopController:_populateGems(container: ScrollingFrame)
 	vipButton.Name = "Button"
 	vipButton.Size = UDim2.new(1, -20, 0, 30)
 	vipButton.Position = UDim2.new(0, 10, 1, -40)
-	vipButton.TextSize = 14
+	vipButton.TextSize = ResponsiveUtil.scaledTextSize(14, 11)
 	vipButton.Font = Enum.Font.GothamBold
 	vipButton.Parent = vipFrame
 
@@ -1007,7 +1003,7 @@ function ShopController:_showNotification(title: string, message: string)
 	titleLabel.Position = UDim2.new(0, 0, 0, 5)
 	titleLabel.BackgroundTransparency = 1
 	titleLabel.TextColor3 = toastStroke.Color
-	titleLabel.TextSize = 16
+	titleLabel.TextSize = ResponsiveUtil.scaledTextSize(16, 12)
 	titleLabel.Font = Enum.Font.GothamBold
 	titleLabel.Text = title
 	titleLabel.Parent = toast
@@ -1018,7 +1014,7 @@ function ShopController:_showNotification(title: string, message: string)
 	msgLabel.Position = UDim2.new(0, 0, 0, 30)
 	msgLabel.BackgroundTransparency = 1
 	msgLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
-	msgLabel.TextSize = 13
+	msgLabel.TextSize = ResponsiveUtil.scaledTextSize(13, 10)
 	msgLabel.Font = Enum.Font.Gotham
 	msgLabel.Text = message
 	msgLabel.TextTruncate = Enum.TextTruncate.AtEnd
@@ -1091,7 +1087,7 @@ function ShopController:_showConfirmPopup(message: string, onConfirm: () -> ())
 	titleLabel.Position = UDim2.new(0, 0, 0, 10)
 	titleLabel.BackgroundTransparency = 1
 	titleLabel.TextColor3 = Color3.fromRGB(255, 200, 0)
-	titleLabel.TextSize = 20
+	titleLabel.TextSize = ResponsiveUtil.scaledTextSize(20, 14)
 	titleLabel.Font = Enum.Font.GothamBold
 	titleLabel.Text = "구매 확인"
 	titleLabel.Parent = popup
@@ -1103,7 +1099,7 @@ function ShopController:_showConfirmPopup(message: string, onConfirm: () -> ())
 	msgLabel.Position = UDim2.new(0, 10, 0, 48)
 	msgLabel.BackgroundTransparency = 1
 	msgLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
-	msgLabel.TextSize = 16
+	msgLabel.TextSize = ResponsiveUtil.scaledTextSize(16, 12)
 	msgLabel.Font = Enum.Font.Gotham
 	msgLabel.Text = message
 	msgLabel.TextWrapped = true
@@ -1131,7 +1127,7 @@ function ShopController:_showConfirmPopup(message: string, onConfirm: () -> ())
 	confirmBtn.Position = UDim2.new(0.5, -130, 1, -60)
 	confirmBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
 	confirmBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-	confirmBtn.TextSize = 18
+	confirmBtn.TextSize = ResponsiveUtil.scaledTextSize(18, 13)
 	confirmBtn.Font = Enum.Font.GothamBold
 	confirmBtn.Text = "확인"
 	confirmBtn.Parent = popup
@@ -1147,7 +1143,7 @@ function ShopController:_showConfirmPopup(message: string, onConfirm: () -> ())
 	cancelBtn.Position = UDim2.new(0.5, 10, 1, -60)
 	cancelBtn.BackgroundColor3 = Color3.fromRGB(150, 50, 50)
 	cancelBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-	cancelBtn.TextSize = 18
+	cancelBtn.TextSize = ResponsiveUtil.scaledTextSize(18, 13)
 	cancelBtn.Font = Enum.Font.GothamBold
 	cancelBtn.Text = "취소"
 	cancelBtn.Parent = popup

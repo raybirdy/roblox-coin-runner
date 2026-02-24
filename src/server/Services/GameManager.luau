@@ -16,7 +16,7 @@ local NPCService = require(script.Parent.NPCService)
 local TutorialService = require(script.Parent.TutorialService)
 local PlayerDataService = require(script.Parent.PlayerDataService)
 local LobbyService = require(script.Parent.LobbyService)
-local ShopService = require(script.Parent.ShopService)
+local _ShopService = require(script.Parent.ShopService)
 local BackgroundService = require(script.Parent.BackgroundService)
 local LeaderboardService = require(script.Parent.LeaderboardService)
 local MonetizationService = require(script.Parent.MonetizationService)
@@ -58,6 +58,8 @@ type GameSession = {
 	-- Perfect run
 	lastHitDistance: number,
 	perfectRunAwarded: { [number]: boolean },
+	-- Bonus score accumulator (near miss + combo bonuses)
+	bonusScore: number,
 	-- Phase B: Zone + Events + Stats
 	currentZoneIndex: number,
 	lastEventTime: number,
@@ -189,6 +191,7 @@ RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { 
 		lastNearMissTime = 0,
 		lastHitDistance = 0,
 		perfectRunAwarded = {},
+		bonusScore = 0,
 		currentZoneIndex = 1,
 		lastEventTime = 0,
 		nearMissCount = 0,
@@ -213,6 +216,9 @@ RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { 
 
 	-- 파워업 서비스 시작
 	powerupService:StartGame()
+
+	-- Initial zone setup
+	chunkService:SetCurrentZone(1)
 
 	-- 시작 파워업 적용
 	for _, powerupId in validPowerups do
@@ -372,6 +378,7 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 		lastNearMissTime = 0,
 		lastHitDistance = 0,
 		perfectRunAwarded = {},
+		bonusScore = 0,
 		currentZoneIndex = 1,
 		lastEventTime = 0,
 		nearMissCount = 0,
@@ -396,6 +403,9 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 
 	-- 파워업 서비스 시작
 	powerupService:StartGame()
+
+	-- Initial zone setup
+	chunkService:SetCurrentZone(1)
 
 	-- 튜토리얼 필요 여부 확인
 	local needsTutorial = globalTutorialService:NeedsTutorial(player)
@@ -644,6 +654,7 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 		end
 		if newZoneIndex ~= session.currentZoneIndex then
 			session.currentZoneIndex = newZoneIndex
+			chunkService:SetCurrentZone(session.currentZoneIndex)
 			local theme = GameConstants.ZONE_THEMES[newZoneIndex]
 			RemoteEvents.ZoneTransition:FireClient(player, {
 				zoneIndex = newZoneIndex,
@@ -652,9 +663,6 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 			})
 			chunkService:RequestTransitionChunk()
 		end
-
-		-- Phase B: ChunkService에 현재 zone 전달
-		chunkService:SetCurrentZone(session.currentZoneIndex)
 
 		-- Phase B: 이벤트 청크 확률 체크
 		local eventCooldown = GameConstants.EVENT_CHUNKS.COOLDOWN
@@ -711,7 +719,6 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 
 			-- 세션 데이터 업데이트
 			session.coins += actualValue
-			session.score += actualValue
 
 			-- 클라이언트에 수집 알림
 			RemoteEvents.CoinCollected:FireClient(player, {
@@ -729,7 +736,6 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 		-- Phase B: 거인 코인 수집 체크
 		if coinService:CheckGiantCoinCollection(hrp.Position) then
 			session.coins += GameConstants.EVENT_CHUNKS.GIANT_COIN.REWARD
-			session.score += GameConstants.EVENT_CHUNKS.GIANT_COIN.REWARD
 			RemoteEvents.GiantCoinCollected:FireClient(player, {
 				reward = GameConstants.EVENT_CHUNKS.GIANT_COIN.REWARD,
 			})
@@ -757,7 +763,7 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 			end
 
 			if comboBonus > 0 then
-				session.score += comboBonus
+				session.bonusScore += comboBonus
 				print(`[GameManager] Combo {session.comboCount}x! +{comboBonus} bonus for {player.Name}`)
 			end
 
@@ -937,7 +943,7 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 			local bonus = if chainData then chainData.bonus else GameConstants.SCORE.NEAR_MISS_BONUS
 			local chainText = if chainData then chainData.text else "Close!"
 
-			session.score += bonus
+			session.bonusScore += bonus
 
 			-- 기존 NearMiss 이벤트 (호환)
 			RemoteEvents.NearMiss:FireClient(player, {
@@ -989,9 +995,8 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 			end
 		end
 
-		-- 총 점수 = 거리 점수 + 코인 점수 (코인 수집 시 이미 추가됨)
-		local previousScore = session.score
-		session.score = distanceScore + session.coins
+		-- 총 점수 = 거리 점수 + 코인 점수 + 보너스 점수 (니어미스/콤보)
+		session.score = distanceScore + session.coins + session.bonusScore
 
 		-- 점수 변경 시 클라이언트에 업데이트 알림 (0.5초마다)
 		if tick() % 0.5 < deltaTime then
