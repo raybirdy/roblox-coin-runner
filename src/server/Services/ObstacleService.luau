@@ -3,10 +3,7 @@
 -- 장애물 생성 및 충돌 처리
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Players = game:GetService("Players")
-
 local GameConstants = require(ReplicatedStorage.Shared.Constants.GameConstants)
-local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)
 
 local ObstacleService = {}
 ObstacleService.__index = ObstacleService
@@ -52,7 +49,6 @@ function ObstacleService:SpawnObstaclesInChunk(chunk: Model, difficulty: string)
 	local chunkSize = chunk:GetExtentsSize()
 
 	-- 장애물 배치 (간격 확보)
-	local minSpacing = GameConstants.OBSTACLE.MIN_SPACING
 	local availableLength = chunkSize.X - 10 -- 양끝 여유 공간
 
 	for i = 1, obstacleCount do

@@ -25,17 +25,6 @@ local function getOrCreateRemoteEvent(name: string): RemoteEvent
 	return remote :: RemoteEvent
 end
 
--- 함수: RemoteFunction 생성 또는 가져오기
-local function getOrCreateRemoteFunction(name: string): RemoteFunction
-	local remote = remoteFolder:FindFirstChild(name)
-	if not remote then
-		remote = Instance.new("RemoteFunction")
-		remote.Name = name
-		remote.Parent = remoteFolder
-	end
-	return remote :: RemoteFunction
-end
-
 -- 코인 수집
 RemoteEvents.CoinCollected = getOrCreateRemoteEvent("CoinCollected")
 -- 클라이언트 → 서버: 코인 수집 요청

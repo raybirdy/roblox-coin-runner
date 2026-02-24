@@ -251,7 +251,6 @@ end
 
 -- 파워업 획득 파티클 효과
 function PowerupController:_playPowerupParticle(powerupType: string)
-	local Players = game:GetService("Players")
 	local player = Players.LocalPlayer
 	local character = player.Character
 	if not character then
@@ -306,7 +305,6 @@ end
 
 -- 쉴드 파괴 파티클 효과
 function PowerupController:_playShieldBreakParticle()
-	local Players = game:GetService("Players")
 	local player = Players.LocalPlayer
 	local character = player.Character
 	if not character then

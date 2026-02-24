@@ -137,7 +137,7 @@ function ChunkService:StartGame()
 
 	-- 초기 청크 생성
 	print("[ChunkService] Spawning initial chunks...")
-	for i = 1, GameConstants.CHUNK.MAX_LOADED do
+	for _ = 1, GameConstants.CHUNK.MAX_LOADED do
 		self:SpawnNextChunk()
 	end
 

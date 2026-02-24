@@ -117,7 +117,7 @@ function BackgroundService:_spawnFloorForChunk(chunkPosition: Vector3, chunkLeng
 end
 
 -- 관중석 NPC 생성
-function BackgroundService:_spawnCrowdForChunk(chunkPosition: Vector3, chunkLength: number)
+function BackgroundService:_spawnCrowdForChunk(chunkPosition: Vector3, _chunkLength: number)
 	if not self._backgroundFolder then
 		return
 	end

@@ -2,10 +2,6 @@
 -- Animation Controller
 -- 캐릭터 애니메이션 관리
 
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-local GameConstants = require(ReplicatedStorage.Shared.Constants.GameConstants)
-
 local AnimationController = {}
 AnimationController.__index = AnimationController
 

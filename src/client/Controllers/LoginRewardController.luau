@@ -4,7 +4,6 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
-local Players = game:GetService("Players")
 
 local GameConstants = require(ReplicatedStorage.Shared.Constants.GameConstants)
 local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)

@@ -3,7 +3,6 @@
 -- 카메라 위치 및 시각 효과 관리
 
 local RunService = game:GetService("RunService")
-local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -162,18 +161,11 @@ function CameraController:_calculateCameraPosition(): CFrame
 	local characterPosition = self._humanoidRootPart.Position
 
 	-- 사이드뷰: 카메라를 Z축 양방향(+Z)에 배치, 캐릭터 앞쪽을 더 보여줌
-	local cameraPosition = Vector3.new(
-		characterPosition.X + LOOK_AHEAD,
-		CAMERA_HEIGHT,
-		self._cameraDistance
-	) + self._cameraOffset
+	local cameraPosition = Vector3.new(characterPosition.X + LOOK_AHEAD, CAMERA_HEIGHT, self._cameraDistance)
+		+ self._cameraOffset
 
 	-- 캐릭터 평면(Z=0)을 바라봄
-	local lookAtPosition = Vector3.new(
-		characterPosition.X + LOOK_AHEAD,
-		LOOK_HEIGHT,
-		0
-	)
+	local lookAtPosition = Vector3.new(characterPosition.X + LOOK_AHEAD, LOOK_HEIGHT, 0)
 
 	return CFrame.lookAt(cameraPosition, lookAtPosition)
 end

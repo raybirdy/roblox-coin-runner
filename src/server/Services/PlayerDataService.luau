@@ -12,12 +12,12 @@ local PlayerDataService = {}
 
 -- DataStore (Studio에서는 사용 불가, 에러 무시)
 local playerDataStore = nil
-local success, err = pcall(function()
+local initSuccess, initErr = pcall(function()
 	playerDataStore = DataStoreService:GetDataStore(GameConstants.DATA.DATASTORE_NAME)
 end)
 
-if not success then
-	warn("[PlayerDataService] DataStore unavailable (Studio mode): " .. tostring(err))
+if not initSuccess then
+	warn("[PlayerDataService] DataStore unavailable (Studio mode): " .. tostring(initErr))
 	warn("[PlayerDataService] Player data will not be saved")
 end
 
@@ -142,7 +142,7 @@ function PlayerDataService:SavePlayerData(player: Player): boolean
 	local retryCount = GameConstants.DATA.SAVE_RETRY_COUNT
 
 	for attempt = 1, retryCount do
-		local success, error = pcall(function()
+		local success, err = pcall(function()
 			playerDataStore:UpdateAsync("Player_" .. userId, function()
 				return playerData
 			end)
@@ -152,7 +152,7 @@ function PlayerDataService:SavePlayerData(player: Player): boolean
 			print(`[PlayerDataService] Saved data for {player.Name}`)
 			return true
 		else
-			warn(`[PlayerDataService] Save attempt {attempt}/{retryCount} failed for {player.Name}: {error}`)
+			warn(`[PlayerDataService] Save attempt {attempt}/{retryCount} failed for {player.Name}: {err}`)
 			if attempt < retryCount then
 				task.wait(1) -- 재시도 전 대기
 			end

@@ -103,7 +103,7 @@ function LeaderboardController:_createPopupGui()
 	titleLabel.Position = UDim2.new(0, 15, 0, 10)
 	titleLabel.BackgroundTransparency = 1
 	titleLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
-	titleLabel.TextSize = 24
+	titleLabel.TextSize = ResponsiveUtil.scaledTextSize(24, 16)
 	titleLabel.Font = Enum.Font.GothamBlack
 	titleLabel.Text = "LEADERBOARD"
 	titleLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -116,7 +116,7 @@ function LeaderboardController:_createPopupGui()
 	closeBtn.Position = UDim2.new(1, -54, 0, 8)
 	closeBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
 	closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-	closeBtn.TextSize = 20
+	closeBtn.TextSize = ResponsiveUtil.scaledTextSize(20, 14)
 	closeBtn.Font = Enum.Font.GothamBold
 	closeBtn.Text = "X"
 	closeBtn.Parent = popupFrame
@@ -152,7 +152,7 @@ function LeaderboardController:_createPopupGui()
 		tabBtn.Position = UDim2.new(0, (i - 1) * (tabWidth + 5), 0, 0)
 		tabBtn.BackgroundColor3 = tab.key == "all" and Color3.fromRGB(255, 215, 0) or Color3.fromRGB(50, 50, 70)
 		tabBtn.TextColor3 = tab.key == "all" and Color3.fromRGB(0, 0, 0) or Color3.fromRGB(200, 200, 200)
-		tabBtn.TextSize = 14
+		tabBtn.TextSize = ResponsiveUtil.scaledTextSize(14, 11)
 		tabBtn.Font = Enum.Font.GothamBold
 		tabBtn.Text = tab.label
 		tabBtn.Parent = tabContainer
@@ -211,7 +211,7 @@ function LeaderboardController:_createPopupGui()
 		rankLabel.Position = UDim2.new(0, 5, 0, 0)
 		rankLabel.BackgroundTransparency = 1
 		rankLabel.TextColor3 = textColor
-		rankLabel.TextSize = 16
+		rankLabel.TextSize = ResponsiveUtil.scaledTextSize(16, 12)
 		rankLabel.Font = Enum.Font.GothamBold
 		rankLabel.Text = `#{i}`
 		rankLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -224,7 +224,7 @@ function LeaderboardController:_createPopupGui()
 		nameLabel.Position = UDim2.new(0, 45, 0, 0)
 		nameLabel.BackgroundTransparency = 1
 		nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-		nameLabel.TextSize = 14
+		nameLabel.TextSize = ResponsiveUtil.scaledTextSize(14, 11)
 		nameLabel.Font = Enum.Font.GothamBold
 		nameLabel.Text = "---"
 		nameLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -238,7 +238,7 @@ function LeaderboardController:_createPopupGui()
 		scoreLabel.Position = UDim2.new(1, -90, 0, 0)
 		scoreLabel.BackgroundTransparency = 1
 		scoreLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
-		scoreLabel.TextSize = 14
+		scoreLabel.TextSize = ResponsiveUtil.scaledTextSize(14, 11)
 		scoreLabel.Font = Enum.Font.GothamBold
 		scoreLabel.Text = "0"
 		scoreLabel.TextXAlignment = Enum.TextXAlignment.Right
@@ -254,7 +254,7 @@ function LeaderboardController:_createPopupGui()
 	myRankLabel.Position = UDim2.new(0, 15, 1, -40)
 	myRankLabel.BackgroundTransparency = 1
 	myRankLabel.TextColor3 = Color3.fromRGB(100, 200, 255)
-	myRankLabel.TextSize = 14
+	myRankLabel.TextSize = ResponsiveUtil.scaledTextSize(14, 11)
 	myRankLabel.Font = Enum.Font.GothamBold
 	myRankLabel.Text = ""
 	myRankLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -384,10 +384,14 @@ function LeaderboardController:OpenPopup()
 		self._popupFrame.Size = UDim2.new(0, targetW, 0, 0)
 		self._popupFrame.Position = UDim2.new(0.5, -targetW / 2, 0.5, 0)
 
-		local tween = TweenService:Create(self._popupFrame, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-			Size = targetSize,
-			Position = ResponsiveUtil.clampedPosition(400, 520, 0.92, 0.90),
-		})
+		local tween = TweenService:Create(
+			self._popupFrame,
+			TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+			{
+				Size = targetSize,
+				Position = ResponsiveUtil.clampedPosition(400, 520, 0.92, 0.90),
+			}
+		)
 		tween:Play()
 	end
 
@@ -407,10 +411,11 @@ function LeaderboardController:ClosePopup()
 	-- 팝업 닫기 애니메이션
 	if self._popupFrame then
 		local currentW = self._popupFrame.Size.X.Offset
-		local tween = TweenService:Create(self._popupFrame, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-			Size = UDim2.new(0, currentW, 0, 0),
-			Position = UDim2.new(0.5, -currentW / 2, 0.5, 0),
-		})
+		local tween =
+			TweenService:Create(self._popupFrame, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+				Size = UDim2.new(0, currentW, 0, 0),
+				Position = UDim2.new(0.5, -currentW / 2, 0.5, 0),
+			})
 		tween:Play()
 		tween.Completed:Connect(function()
 			if self._popupGui then
