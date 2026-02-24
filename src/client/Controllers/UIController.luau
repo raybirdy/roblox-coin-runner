@@ -127,7 +127,7 @@ function UIController:_createUI()
 		heart.Position = UDim2.new(0, 10 + (i - 1) * 30, 0, 0)
 		heart.BackgroundTransparency = 1
 		heart.TextColor3 = Color3.fromRGB(255, 50, 50)
-		heart.TextSize = 20
+		heart.TextSize = ResponsiveUtil.scaledTextSize(20, 14)
 		heart.Font = Enum.Font.GothamBold
 		heart.Text = "❤️"
 		heart.Parent = livesContainer
@@ -213,7 +213,7 @@ function UIController:_createUI()
 	gameOverTitle.Position = UDim2.new(0, 0, 0, 10)
 	gameOverTitle.BackgroundTransparency = 1
 	gameOverTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-	gameOverTitle.TextSize = 32
+	gameOverTitle.TextSize = ResponsiveUtil.scaledTextSize(32, 20)
 	gameOverTitle.Font = Enum.Font.GothamBold
 	gameOverTitle.Text = "GAME OVER"
 	gameOverTitle.Parent = gameOverFrame
@@ -226,7 +226,7 @@ function UIController:_createUI()
 	newRecordLabel.BackgroundColor3 = Color3.fromRGB(255, 215, 0)
 	newRecordLabel.BackgroundTransparency = 0.1
 	newRecordLabel.TextColor3 = Color3.fromRGB(0, 0, 0)
-	newRecordLabel.TextSize = 18
+	newRecordLabel.TextSize = ResponsiveUtil.scaledTextSize(18, 13)
 	newRecordLabel.Font = Enum.Font.GothamBold
 	newRecordLabel.Text = "🎉 NEW RECORD! 🎉"
 	newRecordLabel.Visible = false
@@ -243,7 +243,7 @@ function UIController:_createUI()
 	finalScoreLabel.Position = UDim2.new(0, 0, 0, 85)
 	finalScoreLabel.BackgroundTransparency = 1
 	finalScoreLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-	finalScoreLabel.TextSize = 26
+	finalScoreLabel.TextSize = ResponsiveUtil.scaledTextSize(26, 18)
 	finalScoreLabel.Font = Enum.Font.GothamBold
 	finalScoreLabel.Text = "Score: 0"
 	finalScoreLabel.Parent = gameOverFrame
@@ -262,7 +262,7 @@ function UIController:_createUI()
 	goDistanceLabel.Position = UDim2.new(0, 0, 0, 0)
 	goDistanceLabel.BackgroundTransparency = 1
 	goDistanceLabel.TextColor3 = Color3.fromRGB(100, 200, 255)
-	goDistanceLabel.TextSize = 16
+	goDistanceLabel.TextSize = ResponsiveUtil.scaledTextSize(16, 12)
 	goDistanceLabel.Font = Enum.Font.Gotham
 	goDistanceLabel.Text = "🏃 0m"
 	goDistanceLabel.TextXAlignment = Enum.TextXAlignment.Center
@@ -274,7 +274,7 @@ function UIController:_createUI()
 	earnedCoinsLabel.Position = UDim2.new(0.5, 0, 0, 0)
 	earnedCoinsLabel.BackgroundTransparency = 1
 	earnedCoinsLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
-	earnedCoinsLabel.TextSize = 16
+	earnedCoinsLabel.TextSize = ResponsiveUtil.scaledTextSize(16, 12)
 	earnedCoinsLabel.Font = Enum.Font.Gotham
 	earnedCoinsLabel.Text = "🪙 0"
 	earnedCoinsLabel.TextXAlignment = Enum.TextXAlignment.Center
@@ -287,7 +287,7 @@ function UIController:_createUI()
 	highScoreLabel.Position = UDim2.new(0, 0, 0, 157)
 	highScoreLabel.BackgroundTransparency = 1
 	highScoreLabel.TextColor3 = Color3.fromRGB(255, 200, 0)
-	highScoreLabel.TextSize = 18
+	highScoreLabel.TextSize = ResponsiveUtil.scaledTextSize(18, 13)
 	highScoreLabel.Font = Enum.Font.GothamBold
 	highScoreLabel.Text = "🏆 High Score: 0"
 	highScoreLabel.Parent = gameOverFrame
@@ -299,7 +299,7 @@ function UIController:_createUI()
 	restartButton.Position = UDim2.new(0.03, 0, 1, -62)
 	restartButton.BackgroundColor3 = Color3.fromRGB(0, 180, 0)
 	restartButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-	restartButton.TextSize = 18
+	restartButton.TextSize = ResponsiveUtil.scaledTextSize(18, 13)
 	restartButton.Font = Enum.Font.GothamBold
 	restartButton.Text = "▶ PLAY AGAIN"
 	restartButton.Parent = gameOverFrame
@@ -325,7 +325,7 @@ function UIController:_createUI()
 	lobbyButton.Position = UDim2.new(0.53, 0, 1, -62)
 	lobbyButton.BackgroundColor3 = Color3.fromRGB(100, 100, 120)
 	lobbyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-	lobbyButton.TextSize = 18
+	lobbyButton.TextSize = ResponsiveUtil.scaledTextSize(18, 13)
 	lobbyButton.Font = Enum.Font.GothamBold
 	lobbyButton.Text = "🏠 LOBBY"
 	lobbyButton.Parent = gameOverFrame
@@ -351,9 +351,9 @@ function UIController:_createUI()
 	reviveButton.Position = UDim2.new(0.15, 0, 1, -118)
 	reviveButton.BackgroundColor3 = Color3.fromRGB(255, 180, 0)
 	reviveButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-	reviveButton.TextSize = 22
+	reviveButton.TextSize = ResponsiveUtil.scaledTextSize(22, 16)
 	reviveButton.Font = Enum.Font.GothamBold
-	reviveButton.Text = "💫 REVIVE (FREE)"
+	reviveButton.Text = "💫 REVIVE (5💎)"
 	reviveButton.Visible = false
 	reviveButton.Parent = gameOverFrame
 	self._reviveButton = reviveButton
@@ -390,7 +390,7 @@ function UIController:_createUI()
 	titleLabel.Position = UDim2.new(0, 0, 0, 30)
 	titleLabel.BackgroundTransparency = 1
 	titleLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
-	titleLabel.TextSize = 48
+	titleLabel.TextSize = ResponsiveUtil.scaledTextSize(48, 28)
 	titleLabel.Font = Enum.Font.GothamBold
 	titleLabel.Text = "COIN RUNNER"
 	titleLabel.Parent = startMenuFrame
@@ -402,7 +402,7 @@ function UIController:_createUI()
 	subtitleLabel.Position = UDim2.new(0, 0, 0, 120)
 	subtitleLabel.BackgroundTransparency = 1
 	subtitleLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-	subtitleLabel.TextSize = 20
+	subtitleLabel.TextSize = ResponsiveUtil.scaledTextSize(20, 14)
 	subtitleLabel.Font = Enum.Font.Gotham
 	subtitleLabel.Text = "Collect coins, dodge obstacles!"
 	subtitleLabel.Parent = startMenuFrame
@@ -414,7 +414,7 @@ function UIController:_createUI()
 	playButton.Position = UDim2.new(0.5, -125, 0, 200)
 	playButton.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
 	playButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-	playButton.TextSize = 32
+	playButton.TextSize = ResponsiveUtil.scaledTextSize(32, 20)
 	playButton.Font = Enum.Font.GothamBold
 	playButton.Text = "PLAY"
 	playButton.Parent = startMenuFrame
@@ -436,7 +436,7 @@ function UIController:_createUI()
 	controlsLabel.Position = UDim2.new(0, 0, 0, 290)
 	controlsLabel.BackgroundTransparency = 1
 	controlsLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
-	controlsLabel.TextSize = 16
+	controlsLabel.TextSize = ResponsiveUtil.scaledTextSize(16, 12)
 	controlsLabel.Font = Enum.Font.Gotham
 	controlsLabel.Text = if UserInputService.TouchEnabled
 		then "Controls:\nJUMP: Swipe Up / Button\nSLIDE: Swipe Down / Button"
@@ -552,7 +552,7 @@ function UIController:_createUI()
 	guideLabel.Size = UDim2.new(1, 0, 1, 0)
 	guideLabel.BackgroundTransparency = 1
 	guideLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-	guideLabel.TextSize = 26
+	guideLabel.TextSize = ResponsiveUtil.scaledTextSize(26, 18)
 	guideLabel.Font = Enum.Font.GothamBlack
 	guideLabel.Text = "➤ 포탈로 이동해서 게임 시작! ➤"
 	guideLabel.TextStrokeTransparency = 0
@@ -588,7 +588,7 @@ function UIController:_createUI()
 	hsTitle.Position = UDim2.new(0, 0, 0, 5)
 	hsTitle.BackgroundTransparency = 1
 	hsTitle.TextColor3 = Color3.fromRGB(255, 215, 0)
-	hsTitle.TextSize = 16
+	hsTitle.TextSize = ResponsiveUtil.scaledTextSize(16, 12)
 	hsTitle.Font = Enum.Font.GothamBlack
 	hsTitle.Text = "MY BEST"
 	hsTitle.TextStrokeTransparency = 0.5
@@ -601,7 +601,7 @@ function UIController:_createUI()
 	hsScore.Position = UDim2.new(0, 0, 0, 32)
 	hsScore.BackgroundTransparency = 1
 	hsScore.TextColor3 = Color3.fromRGB(255, 255, 255)
-	hsScore.TextSize = 20
+	hsScore.TextSize = ResponsiveUtil.scaledTextSize(20, 14)
 	hsScore.Font = Enum.Font.GothamBold
 	hsScore.Text = "Score: 0"
 	hsScore.TextStrokeTransparency = 0.3
@@ -614,7 +614,7 @@ function UIController:_createUI()
 	hsCoins.Position = UDim2.new(0, 0, 0, 62)
 	hsCoins.BackgroundTransparency = 1
 	hsCoins.TextColor3 = Color3.fromRGB(255, 215, 0)
-	hsCoins.TextSize = 16
+	hsCoins.TextSize = ResponsiveUtil.scaledTextSize(16, 12)
 	hsCoins.Font = Enum.Font.GothamBold
 	hsCoins.Text = "Coins: 0"
 	hsCoins.TextStrokeTransparency = 0.3
@@ -641,7 +641,7 @@ function UIController:_createMobileControls()
 	jumpButton.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
 	jumpButton.BackgroundTransparency = 0.2
 	jumpButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-	jumpButton.TextSize = 36
+	jumpButton.TextSize = ResponsiveUtil.scaledTextSize(36, 24)
 	jumpButton.Font = Enum.Font.GothamBold
 	jumpButton.Text = "↑\nJUMP"
 	jumpButton.TextYAlignment = Enum.TextYAlignment.Center
@@ -666,7 +666,7 @@ function UIController:_createMobileControls()
 	slideButton.BackgroundColor3 = Color3.fromRGB(255, 150, 0)
 	slideButton.BackgroundTransparency = 0.2
 	slideButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-	slideButton.TextSize = 36
+	slideButton.TextSize = ResponsiveUtil.scaledTextSize(36, 24)
 	slideButton.Font = Enum.Font.GothamBold
 	slideButton.Text = "↓\nSLIDE"
 	slideButton.TextYAlignment = Enum.TextYAlignment.Center
@@ -838,10 +838,10 @@ function UIController:UpdateLives(lives: number)
 			local heart = self._heartLabels[lostHeartIndex]
 
 			-- 하트가 커졌다가 작아지는 애니메이션
-			heart.TextSize = 34
+			heart.TextSize = ResponsiveUtil.scaledTextSize(34, 22)
 			local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Elastic, Enum.EasingDirection.Out)
 			local tween = TweenService:Create(heart, tweenInfo, {
-				TextSize = 22,
+				TextSize = ResponsiveUtil.scaledTextSize(22, 14),
 			})
 			tween:Play()
 		end
@@ -936,7 +936,7 @@ function UIController:ShowGameOver(
 		nearMissLabel.Position = UDim2.new(0, 0, 0, 0)
 		nearMissLabel.BackgroundTransparency = 1
 		nearMissLabel.TextColor3 = Color3.fromRGB(255, 200, 0)
-		nearMissLabel.TextSize = 14
+		nearMissLabel.TextSize = ResponsiveUtil.scaledTextSize(14, 10)
 		nearMissLabel.Font = Enum.Font.Gotham
 		nearMissLabel.Text = `NearMiss {extraData.nearMissCount or 0}`
 		nearMissLabel.TextXAlignment = Enum.TextXAlignment.Center
@@ -948,7 +948,7 @@ function UIController:ShowGameOver(
 		maxComboLabel.Position = UDim2.new(0.33, 0, 0, 0)
 		maxComboLabel.BackgroundTransparency = 1
 		maxComboLabel.TextColor3 = Color3.fromRGB(255, 100, 50)
-		maxComboLabel.TextSize = 14
+		maxComboLabel.TextSize = ResponsiveUtil.scaledTextSize(14, 10)
 		maxComboLabel.Font = Enum.Font.Gotham
 		maxComboLabel.Text = `Combo {extraData.maxCombo or 0}`
 		maxComboLabel.TextXAlignment = Enum.TextXAlignment.Center
@@ -960,7 +960,7 @@ function UIController:ShowGameOver(
 		feverLabel.Position = UDim2.new(0.66, 0, 0, 0)
 		feverLabel.BackgroundTransparency = 1
 		feverLabel.TextColor3 = Color3.fromRGB(255, 50, 255)
-		feverLabel.TextSize = 14
+		feverLabel.TextSize = ResponsiveUtil.scaledTextSize(14, 10)
 		feverLabel.Font = Enum.Font.Gotham
 		feverLabel.Text = `Fever {extraData.feverCount or 0}`
 		feverLabel.TextXAlignment = Enum.TextXAlignment.Center
@@ -974,7 +974,7 @@ function UIController:ShowGameOver(
 			zoneLabel.Position = UDim2.new(0, 10, 0, 218)
 			zoneLabel.BackgroundTransparency = 1
 			zoneLabel.TextColor3 = Color3.fromRGB(150, 200, 255)
-			zoneLabel.TextSize = 14
+			zoneLabel.TextSize = ResponsiveUtil.scaledTextSize(14, 10)
 			zoneLabel.Font = Enum.Font.GothamBold
 			zoneLabel.Text = `{extraData.zoneName}까지 도달!`
 			zoneLabel.Parent = self._gameOverFrame
@@ -988,7 +988,7 @@ function UIController:ShowGameOver(
 			almostLabel.Position = UDim2.new(0, 10, 0, 244)
 			almostLabel.BackgroundTransparency = 1
 			almostLabel.TextColor3 = Color3.fromRGB(255, 220, 100)
-			almostLabel.TextSize = 13
+			almostLabel.TextSize = ResponsiveUtil.scaledTextSize(13, 10)
 			almostLabel.Font = Enum.Font.GothamBold
 			almostLabel.Text = `"{extraData.almostMessage}"`
 			almostLabel.TextWrapped = true
@@ -1172,7 +1172,7 @@ function UIController:ShowLobbyUI()
 					TweenService:Create(
 						label,
 						TweenInfo.new(1, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
-						{ TextSize = 30 }
+						{ TextSize = ResponsiveUtil.scaledTextSize(30, 20) }
 					):Play()
 				end
 				tweenOut.Completed:Wait()
@@ -1199,7 +1199,7 @@ function UIController:ShowLobbyUI()
 					TweenService:Create(
 						label,
 						TweenInfo.new(1, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
-						{ TextSize = 26 }
+						{ TextSize = ResponsiveUtil.scaledTextSize(26, 18) }
 					):Play()
 				end
 				tweenIn.Completed:Wait()
@@ -1222,7 +1222,7 @@ function UIController:HideLobbyUI()
 
 		local label = self._lobbyGuide:FindFirstChild("Label") :: TextLabel?
 		if label then
-			label.TextSize = 26
+			label.TextSize = ResponsiveUtil.scaledTextSize(26, 18)
 		end
 	end
 
@@ -1533,18 +1533,18 @@ function UIController:ShowNewRecordCelebration()
 	celebLabel.BackgroundTransparency = 1
 	celebLabel.Text = "NEW RECORD!"
 	celebLabel.TextColor3 = Color3.fromRGB(255, 220, 50)
-	celebLabel.TextSize = 40
+	celebLabel.TextSize = ResponsiveUtil.scaledTextSize(40, 24)
 	celebLabel.Font = Enum.Font.GothamBold
 	celebLabel.TextStrokeTransparency = 0
 	celebLabel.TextStrokeColor3 = Color3.fromRGB(150, 80, 0)
 	celebLabel.Parent = celebFrame
 
 	-- Scale animation
-	celebLabel.TextSize = 10
+	celebLabel.TextSize = ResponsiveUtil.scaledTextSize(10, 8)
 	local growTween = TweenService:Create(
 		celebLabel,
 		TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
-		{ TextSize = 40 }
+		{ TextSize = ResponsiveUtil.scaledTextSize(40, 24) }
 	)
 	growTween:Play()
 

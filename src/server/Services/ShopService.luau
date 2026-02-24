@@ -266,7 +266,6 @@ function ShopService:GetShopData(player: Player)
 			gems = product.gems,
 			bonus = product.bonus or 0,
 			robux = product.robux,
-			includesPet = product.includesPet or false,
 		})
 	end
 

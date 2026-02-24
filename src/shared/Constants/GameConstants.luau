@@ -158,7 +158,6 @@ GameConstants.POWERUP = {
 -- 부활
 GameConstants.REVIVE = {
 	MAX_REVIVES = 1, -- 1판당 최대 부활 횟수
-	GEM_COST = 0, -- MVP에서는 무료 부활
 	INVINCIBLE_DURATION = 3, -- 부활 후 무적 시간 (초)
 	SPEED_REDUCTION = 0.80, -- 부활 후 속도 80%로 감소
 	SPEED_RECOVERY_TIME = 5, -- 원래 속도로 복귀하는 시간 (초)
@@ -404,7 +403,7 @@ GameConstants.SHOP = {
 			currency = "gems",
 			color = Color3.fromRGB(255, 183, 197),
 			thumbnailId = "rbxassetid://3535936633", -- 고유 썸네일 (분홍)
-			availableUntil = 1743465600, -- 2025-04-01 00:00 UTC (예시)
+			availableUntil = 1751328000, -- 2025-07-01 00:00 UTC -- 2025-04-01 00:00 UTC (예시)
 		},
 		{
 			id = "spring_fairy",
@@ -413,7 +412,7 @@ GameConstants.SHOP = {
 			currency = "pieces", -- 조각 교환 전용
 			color = Color3.fromRGB(144, 238, 144),
 			thumbnailId = "rbxassetid://3535936812", -- 고유 썸네일 (연두)
-			availableUntil = 1743465600,
+			availableUntil = 1751328000, -- 2025-07-01 00:00 UTC
 		},
 	},
 	-- 시작 파워업 (코인)
@@ -440,7 +439,7 @@ GameConstants.MONETIZATION = {
 		{ id = "gems_50", productId = 3540343000, gems = 50, robux = 25, bonus = 0 },
 		{ id = "gems_200", productId = 3540343177, gems = 200, robux = 75, bonus = 50 },
 		{ id = "gems_500", productId = 3540343329, gems = 500, robux = 149, bonus = 150 },
-		{ id = "starter_pack", productId = 3540343511, gems = 100, robux = 49, bonus = 0, includesPet = true },
+		{ id = "starter_pack", productId = 3540343511, gems = 100, robux = 49, bonus = 0 },
 	},
 	-- GamePass (VIP)
 	VIP_GAMEPASS_ID = 1720352633,
