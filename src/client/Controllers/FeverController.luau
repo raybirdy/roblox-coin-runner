@@ -152,7 +152,7 @@ end
 function FeverController:_createSounds()
 	local startSound = Instance.new("Sound")
 	startSound.Name = "FeverStartSound"
-	startSound.SoundId = "rbxassetid://138446295"
+	startSound.SoundId = "rbxassetid://1169755927" -- Coin Collect SFX (bright, public) -- TODO: 전용 피버 사운드로 교체
 	startSound.Volume = 0.9
 	startSound.PlaybackSpeed = 2.0 -- High pitch for excitement
 	startSound.Parent = SoundService
@@ -160,7 +160,7 @@ function FeverController:_createSounds()
 
 	local endSound = Instance.new("Sound")
 	endSound.Name = "FeverEndSound"
-	endSound.SoundId = "rbxassetid://138446295"
+	endSound.SoundId = "rbxassetid://3041190784" -- Light Hit SFX (public domain) -- TODO: 전용 피버종료 사운드로 교체
 	endSound.Volume = 0.6
 	endSound.PlaybackSpeed = 0.5 -- Low pitch for wind-down
 	endSound.Parent = SoundService

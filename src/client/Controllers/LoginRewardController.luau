@@ -111,30 +111,30 @@ function LoginRewardController:_createUI()
 	-- 7일 그리드
 	local gridFrame = Instance.new("Frame")
 	gridFrame.Name = "GridFrame"
-	gridFrame.Size = UDim2.new(1, -ResponsiveUtil.scaledOffset(24), 0, ResponsiveUtil.scaledOffset(240))
-	gridFrame.Position = UDim2.new(0, ResponsiveUtil.scaledOffset(12), 0, ResponsiveUtil.scaledOffset(80))
+	gridFrame.Size = UDim2.new(1, -24, 0, 240)
+	gridFrame.Position = UDim2.new(0, 12, 0, 80)
 	gridFrame.BackgroundTransparency = 1
 	gridFrame.Parent = popup
 
 	self._dayFrames = {}
 	local rewards = GameConstants.LOGIN_REWARDS.REWARDS
+	-- 카드 고정 크기 (팝업 360px 기준, scaledOffset 사용 안 함)
+	local CARD_W = 74
+	local CARD_H = 105
+	local SPACING = 82
+	local ROW_H = 120
+	-- Row 1 (4장): 총 폭 320px, grid inner 336px → 좌우 margin 8px
+	-- Row 2 (3장): 총 폭 238px, grid inner 336px → 좌우 margin 49px
+	local ROW_X_OFFSET = { 8, 49 }
 	for i = 1, 7 do
 		local row = math.ceil(i / 4) - 1
 		local col = (i - 1) % 4
-		local isSecondRow = (row == 1)
-		-- Second row has 3 items, center them
-		local cardW = ResponsiveUtil.scaledOffset(74)
-		local cardH = ResponsiveUtil.scaledOffset(105)
-		local spacing = ResponsiveUtil.scaledOffset(82)
-		local xOffset = col * spacing + ResponsiveUtil.scaledOffset(4)
-		if isSecondRow then
-			xOffset = (col * spacing) + ResponsiveUtil.scaledOffset(45)
-		end
+		local xOffset = col * SPACING + ROW_X_OFFSET[row + 1]
 
 		local dayFrame = Instance.new("Frame")
 		dayFrame.Name = `Day{i}`
-		dayFrame.Size = UDim2.new(0, cardW, 0, cardH)
-		dayFrame.Position = UDim2.new(0, xOffset, 0, row * ResponsiveUtil.scaledOffset(120))
+		dayFrame.Size = UDim2.new(0, CARD_W, 0, CARD_H)
+		dayFrame.Position = UDim2.new(0, xOffset, 0, row * ROW_H)
 		dayFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 70)
 		dayFrame.BorderSizePixel = 0
 		dayFrame.Parent = gridFrame
@@ -196,8 +196,8 @@ function LoginRewardController:_createUI()
 	-- 수령 버튼
 	local claimButton = Instance.new("TextButton")
 	claimButton.Name = "ClaimButton"
-	claimButton.Size = UDim2.new(0.6, 0, 0, ResponsiveUtil.scaledOffset(46))
-	claimButton.Position = UDim2.new(0.2, 0, 1, -ResponsiveUtil.scaledOffset(60))
+	claimButton.Size = UDim2.new(0.6, 0, 0, 46)
+	claimButton.Position = UDim2.new(0.2, 0, 1, -60)
 	claimButton.BackgroundColor3 = Color3.fromRGB(50, 200, 80)
 	claimButton.Text = "Claim!"
 	claimButton.TextColor3 = Color3.fromRGB(255, 255, 255)

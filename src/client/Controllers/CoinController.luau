@@ -83,7 +83,7 @@ end
 function CoinController:_createCoinSound()
 	local sound = Instance.new("Sound")
 	sound.Name = "CoinSound"
-	sound.SoundId = "rbxassetid://138446295" -- 코인 수집 사운드
+	sound.SoundId = "rbxassetid://1169755927" -- Coin Collect SFX (public, free to use)
 	sound.Volume = 0.5
 	sound.Parent = SoundService
 	self._coinSound = sound

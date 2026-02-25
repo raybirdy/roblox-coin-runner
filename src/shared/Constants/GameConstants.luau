@@ -102,6 +102,24 @@ GameConstants.COIN = {
 	DIAMOND_VALUE = 50,
 }
 
+-- 코인 패턴 (난이도별 사용 가능한 배치 패턴 목록)
+GameConstants.COIN_PATTERNS = {
+	EASY = { "line", "arc", "spread" },
+	NORMAL = { "line", "arc", "zigzag", "step_up", "step_down" },
+	HARD = { "zigzag", "step_up", "step_down", "corridor" },
+	BONUS = { "line", "arc", "double_line", "spread" },
+	NPC = { "line", "spread" },
+}
+
+-- 코인 개수 (난이도별, 패턴 완성을 위한 적정 수로 조정)
+GameConstants.COIN_COUNTS = {
+	EASY = { min = 6, max = 8 },
+	NORMAL = { min = 5, max = 7 },
+	HARD = { min = 4, max = 6 },
+	BONUS = { min = 12, max = 18 },
+	NPC = { min = 3, max = 4 },
+}
+
 -- 장애물
 GameConstants.OBSTACLE = {
 	LOW_WALL_HEIGHT = 4, -- 낮은 벽 높이
@@ -395,25 +413,25 @@ GameConstants.SHOP = {
 			color = Color3.fromRGB(20, 20, 30),
 			thumbnailId = "rbxassetid://3535937404",
 		},
-		-- 시즌 한정 스킨 (availableUntil: Unix timestamp, nil이면 상시 판매)
-		{
-			id = "cherry_blossom",
-			name = "벚꽃",
-			price = 150,
-			currency = "gems",
-			color = Color3.fromRGB(255, 183, 197),
-			thumbnailId = "rbxassetid://3535936633", -- 고유 썸네일 (분홍)
-			availableUntil = 1751328000, -- 2025-07-01 00:00 UTC -- 2025-04-01 00:00 UTC (예시)
-		},
-		{
-			id = "spring_fairy",
-			name = "봄 요정",
-			price = 0,
-			currency = "pieces", -- 조각 교환 전용
-			color = Color3.fromRGB(144, 238, 144),
-			thumbnailId = "rbxassetid://3535936812", -- 고유 썸네일 (연두)
-			availableUntil = 1751328000, -- 2025-07-01 00:00 UTC
-		},
+		-- 시즌 한정 스킨 (TODO: 스킨 콘텐츠 준비 후 활성화)
+		-- {
+		-- 	id = "cherry_blossom",
+		-- 	name = "벚꽃",
+		-- 	price = 150,
+		-- 	currency = "gems",
+		-- 	color = Color3.fromRGB(255, 183, 197),
+		-- 	thumbnailId = "rbxassetid://3535936633",
+		-- 	availableUntil = 0, -- 배포 시 실제 날짜로 교체
+		-- },
+		-- {
+		-- 	id = "spring_fairy",
+		-- 	name = "봄 요정",
+		-- 	price = 0,
+		-- 	currency = "pieces",
+		-- 	color = Color3.fromRGB(144, 238, 144),
+		-- 	thumbnailId = "rbxassetid://3535936812",
+		-- 	availableUntil = 0, -- 배포 시 실제 날짜로 교체
+		-- },
 	},
 	-- 시작 파워업 (코인)
 	START_POWERUPS = {

@@ -179,7 +179,7 @@ function ProceduralChunkGenerator._createRamp(chunk: Model, position: Vector3, s
 	ramp.CFrame = CFrame.new(rampStartX + rampLength / 2, (startY + endY) / 2 + 0.5, position.Z)
 		* CFrame.Angles(0, 0, -angle)
 	ramp.Anchored = true
-	ramp.CanCollide = true
+	ramp.CanCollide = false -- CFrame 이동 방식과 충돌 방지: 경사면은 시각 전용
 	ramp.Color = Color3.fromRGB(100, 100, 110)
 	ramp.Material = Enum.Material.Concrete
 	ramp.Parent = chunk
