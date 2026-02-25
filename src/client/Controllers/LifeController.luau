@@ -66,7 +66,7 @@ function LifeController:_createDamageEffects()
 	-- 피격 사운드
 	local sound = Instance.new("Sound")
 	sound.Name = "DamageSound"
-	sound.SoundId = "rbxassetid://138446295" -- 피격 사운드
+	sound.SoundId = "rbxassetid://3041190784" -- Light Hit Sound Effect (public domain)
 	sound.Volume = 0.8
 	sound.PlaybackSpeed = 0.6 -- 낮은 피치로 충격감 강조
 	sound.Parent = SoundService

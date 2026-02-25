@@ -78,7 +78,7 @@ end
 function PowerupController:_createPowerupSound()
 	local sound = Instance.new("Sound")
 	sound.Name = "PowerupSound"
-	sound.SoundId = "rbxassetid://138446295" -- 파워업 사운드
+	sound.SoundId = "rbxassetid://1169755927" -- Coin Collect SFX (bright/positive, public) -- TODO: 전용 파워업 사운드로 교체
 	sound.Volume = 0.7
 	sound.PlaybackSpeed = 1.5 -- 높은 피치로 보상감 강조
 	sound.Parent = SoundService
