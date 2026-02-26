@@ -83,6 +83,7 @@ local LoginRewardController = require(script.Controllers.LoginRewardController)
 local LuckySpinController = require(script.Controllers.LuckySpinController)
 local FeverController = require(script.Controllers.FeverController)
 local ZoneController = require(script.Controllers.ZoneController)
+local CharacterEffectsController = require(script.Controllers.CharacterEffectsController)
 
 -- 컨트롤러 인스턴스 생성
 local inputController = InputController.new()
@@ -90,7 +91,7 @@ local playerController = PlayerController.new(player, character)
 local coinController = CoinController.new()
 local _lifeController = LifeController.new()
 local uiController = UIController.new(player)
-local _powerupController = PowerupController.new()
+local powerupController = PowerupController.new()
 local cameraController = CameraController.new(player, character)
 local npcController = NPCController.new()
 local tutorialController = TutorialController.new()
@@ -104,6 +105,7 @@ local _loginRewardController = LoginRewardController.new(player)
 local _luckySpinController = LuckySpinController.new(player)
 local feverController = FeverController.new()
 local zoneController = ZoneController.new()
+local characterEffectsController = CharacterEffectsController.new(character)
 
 -- Fever mode callbacks (speed boost + camera shake)
 feverController:OnFeverStart(function(speedBoost: number)
@@ -114,6 +116,25 @@ end)
 feverController:OnFeverEnd(function()
 	playerController:SetSpeedMultiplier(1.0)
 end)
+
+-- 코인 수집 캐릭터 플래시
+coinController:OnCoinEffect(function(coinType: string)
+	characterEffectsController:FlashCoin(coinType)
+end)
+
+-- 파워업 캐릭터 글로우 (활성/비활성)
+powerupController:OnPowerupGlowChange(
+	function(powerupType: string)
+		characterEffectsController:SetPowerupGlow(powerupType, true)
+	end,
+	function(powerupType: string)
+		if powerupType == "Shield" then
+			characterEffectsController:FlashShieldBreak()
+		else
+			characterEffectsController:SetPowerupGlow(powerupType, false)
+		end
+	end
+)
 
 -- Diamond coin slowmo + zoom + sound
 local diamondSlowmoActive = false
@@ -214,6 +235,7 @@ player.CharacterAdded:Connect(function(newCharacter: Model)
 	playerController:UpdateCharacter(newCharacter)
 	cameraController:UpdateCharacter(newCharacter)
 	speedEffectController:UpdateCharacter(newCharacter)
+	characterEffectsController:UpdateCharacter(newCharacter)
 	cameraController:SetLobbyMode() -- 카메라도 로비 모드로
 	playerController:SetLobbyMode() -- PlayerController도 로비 모드로
 	print("[Client] Character respawned, controllers updated")
@@ -444,6 +466,7 @@ RemoteEvents.GiantCoinCollected.OnClientEvent:Connect(function(data)
 	uiController:ShowGameFeedback(`+{data.reward}!`, Color3.fromRGB(0, 255, 200))
 	cameraController:Shake(0.6)
 	cameraController:Zoom(-4, 0.5)
+	characterEffectsController:FlashGiantCoin()
 	-- 슬로모 0.5초
 	playerController:SetSpeedMultiplier(0.3)
 	task.delay(0.5, function()

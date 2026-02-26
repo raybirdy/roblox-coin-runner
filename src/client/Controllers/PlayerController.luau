@@ -394,8 +394,8 @@ function PlayerController:_updateSpeed()
 	local elapsedTime = tick() - self.gameStartTime
 	local t = math.min(elapsedTime / GameConstants.PHYSICS.SPEED_RAMP_TIME, 1)
 
-	-- EaseOutQuad: 1 - (1 - t)^2
-	local easedT = 1 - math.pow(1 - t, 2)
+	-- EaseInQuad: t^2 (처음에 느리게, 나중에 빠르게 가속)
+	local easedT = t * t
 
 	local minSpeed = GameConstants.PHYSICS.SPEED_MIN
 	local maxSpeed = GameConstants.PHYSICS.SPEED_MAX

@@ -22,6 +22,8 @@ export type PowerupController = typeof(setmetatable(
 		_powerupContainer: Frame?,
 		_powerupIcons: { [string]: Frame },
 		_powerupSound: Sound?,
+		_onPowerupGlowStart: ((powerupType: string) -> ())?,
+		_onPowerupGlowEnd: ((powerupType: string) -> ())?
 	},
 	PowerupController
 ))
@@ -34,6 +36,8 @@ function PowerupController.new(): PowerupController
 		_powerupContainer = nil,
 		_powerupIcons = {},
 		_powerupSound = nil,
+		_onPowerupGlowStart = nil,
+		_onPowerupGlowEnd = nil,
 	}, PowerupController)
 
 	self:_createPowerupUI()
@@ -209,37 +213,61 @@ function PowerupController:OnPowerupCollected(data: { powerupType: string })
 		print(`[PowerupController] Magnet activated! (Duration: {GameConstants.POWERUP.MAGNET_DURATION}s)`)
 		self._activePowerups["Magnet"] = true
 		self:_showPowerupIcon("Magnet", GameConstants.POWERUP.MAGNET_DURATION)
+		if self._onPowerupGlowStart then
+			self._onPowerupGlowStart("Magnet")
+		end
 
 		task.delay(GameConstants.POWERUP.MAGNET_DURATION, function()
 			self._activePowerups["Magnet"] = false
+			if self._onPowerupGlowEnd then
+				self._onPowerupGlowEnd("Magnet")
+			end
 			print("[PowerupController] Magnet expired")
 		end)
 	elseif powerupType == "Shield" then
 		print(`[PowerupController] Shield activated! (Uses: {GameConstants.POWERUP.SHIELD_USES})`)
 		self._activePowerups["Shield"] = true
 		self:_showPowerupIcon("Shield", 60) -- 쉴드는 사용할 때까지 표시
+		if self._onPowerupGlowStart then
+			self._onPowerupGlowStart("Shield")
+		end
 	elseif powerupType == "Invincible" then
 		print(`[PowerupController] Invincible activated! (Duration: {GameConstants.POWERUP.INVINCIBLE_DURATION}s)`)
 		self._activePowerups["Invincible"] = true
 		self:_showPowerupIcon("Invincible", GameConstants.POWERUP.INVINCIBLE_DURATION)
+		if self._onPowerupGlowStart then
+			self._onPowerupGlowStart("Invincible")
+		end
 
 		task.delay(GameConstants.POWERUP.INVINCIBLE_DURATION, function()
 			self._activePowerups["Invincible"] = false
+			if self._onPowerupGlowEnd then
+				self._onPowerupGlowEnd("Invincible")
+			end
 			print("[PowerupController] Invincible expired")
 		end)
 	elseif powerupType == "DoubleCoin" then
 		print(`[PowerupController] DoubleCoin activated! (Duration: {GameConstants.POWERUP.DOUBLE_COIN_DURATION}s)`)
 		self._activePowerups["DoubleCoin"] = true
 		self:_showPowerupIcon("DoubleCoin", GameConstants.POWERUP.DOUBLE_COIN_DURATION)
+		if self._onPowerupGlowStart then
+			self._onPowerupGlowStart("DoubleCoin")
+		end
 
 		task.delay(GameConstants.POWERUP.DOUBLE_COIN_DURATION, function()
 			self._activePowerups["DoubleCoin"] = false
+			if self._onPowerupGlowEnd then
+				self._onPowerupGlowEnd("DoubleCoin")
+			end
 			print("[PowerupController] DoubleCoin expired")
 		end)
 	elseif powerupType == "ShieldUsed" then
 		print("[PowerupController] Shield blocked an obstacle!")
 		self._activePowerups["Shield"] = false
 		self:_playShieldBreakParticle()
+		if self._onPowerupGlowEnd then
+			self._onPowerupGlowEnd("Shield")
+		end
 
 		-- 쉴드 아이콘 제거
 		if self._powerupIcons["Shield"] then
@@ -347,6 +375,15 @@ function PowerupController:_playShieldBreakParticle()
 	task.delay(1, function()
 		attachment:Destroy()
 	end)
+end
+
+-- 파워업 글로우 시작/종료 콜백 설정
+function PowerupController:OnPowerupGlowChange(
+	onStart: (powerupType: string) -> (),
+	onEnd: (powerupType: string) -> ()
+)
+	self._onPowerupGlowStart = onStart
+	self._onPowerupGlowEnd = onEnd
 end
 
 -- 파워업 활성 여부 확인
