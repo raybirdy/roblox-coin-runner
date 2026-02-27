@@ -34,6 +34,7 @@ export type CoinController = typeof(setmetatable(
 		_isGameActive: boolean,
 		_localCollectedCoins: { [Model]: boolean },
 		_onDiamondCollected: (() -> ())?,
+		_onCoinEffect: ((coinType: string) -> ())?
 	},
 	CoinController
 ))
@@ -48,6 +49,7 @@ function CoinController.new(): CoinController
 		_isGameActive = false,
 		_localCollectedCoins = {},
 		_onDiamondCollected = nil,
+		_onCoinEffect = nil,
 	}, CoinController)
 
 	self:_setupEventHandlers()
@@ -233,6 +235,11 @@ function CoinController:_setupLocalCollectionCheck()
 			-- 파티클 효과 (플레이어 위치에서)
 			self:_playCoinParticle(coinType :: string, false)
 
+			-- 캐릭터 하이라이트 플래시 콜백
+			if self._onCoinEffect then
+				self._onCoinEffect(coinType :: string)
+			end
+
 			-- 다이아몬드 코인 특수 콜백
 			if coinType == "Diamond" and self._onDiamondCollected then
 				self._onDiamondCollected()
@@ -341,6 +348,11 @@ end
 -- 다이아몬드 코인 수집 콜백 설정
 function CoinController:OnDiamondCollected(callback: () -> ())
 	self._onDiamondCollected = callback
+end
+
+-- 코인 수집 캐릭터 이펙트 콜백 설정
+function CoinController:OnCoinEffect(callback: (coinType: string) -> ())
+	self._onCoinEffect = callback
 end
 
 -- 현재 총 코인 수 반환

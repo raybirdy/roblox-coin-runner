@@ -22,6 +22,8 @@ export type CameraController = typeof(setmetatable(
 		_shakeDecay: number,
 		_isGameMode: boolean, -- 게임 모드 여부 (true = 사이드뷰, false = 기본 카메라)
 		_cameraDistance: number, -- 적응형 카메라 거리
+		_zoomOffset: number, -- 현재 줌 오프셋 (부드럽게 보간)
+		_targetZoomOffset: number, -- 목표 줌 오프셋
 	},
 	CameraController
 ))
@@ -59,6 +61,8 @@ function CameraController.new(player: Player, character: Model): CameraControlle
 		_shakeDecay = 0.95,
 		_isGameMode = false, -- 시작 시 로비 모드 (기본 카메라)
 		_cameraDistance = calculateAdaptiveDistance(),
+		_zoomOffset = 0,
+		_targetZoomOffset = 0,
 	}, CameraController)
 
 	self:_initialize()
@@ -161,7 +165,7 @@ function CameraController:_calculateCameraPosition(): CFrame
 	local characterPosition = self._humanoidRootPart.Position
 
 	-- 사이드뷰: 카메라를 Z축 양방향(+Z)에 배치, 캐릭터 앞쪽을 더 보여줌
-	local cameraPosition = Vector3.new(characterPosition.X + LOOK_AHEAD, CAMERA_HEIGHT, self._cameraDistance)
+	local cameraPosition = Vector3.new(characterPosition.X + LOOK_AHEAD, CAMERA_HEIGHT, self._cameraDistance + self._zoomOffset)
 		+ self._cameraOffset
 
 	-- 캐릭터 평면(Z=0)을 바라봄
@@ -182,6 +186,11 @@ function CameraController:_updateCamera(deltaTime: number)
 	-- 부드러운 보간 (deltaTime 기반으로 프레임레이트 독립적)
 	local factor = 1 - math.pow(1 - CAMERA_SMOOTHNESS, deltaTime * 60)
 	self._targetCFrame = self._targetCFrame:Lerp(targetCFrame, factor)
+
+	-- 줌 오프셋 부드럽게 보간 (CAMERA_SMOOTHNESS보다 약간 느리게)
+	local ZOOM_LERP = 0.08
+	local zoomFactor = 1 - math.pow(1 - ZOOM_LERP, deltaTime * 60)
+	self._zoomOffset += (self._targetZoomOffset - self._zoomOffset) * zoomFactor
 
 	-- 화면 흔들림 적용
 	local shakeCFrame = CFrame.new()
@@ -205,13 +214,11 @@ function CameraController:Shake(intensity: number)
 	self._shakeIntensity = math.max(self._shakeIntensity, intensity)
 end
 
--- 카메라 줌 (일시적)
+-- 카메라 줌 (일시적, 부드러운 zoom-in → zoom-out)
 function CameraController:Zoom(amount: number, duration: number)
-	local originalDistance = self._cameraDistance
-	self._cameraDistance += amount
-
+	self._targetZoomOffset = amount -- 부드럽게 zoom-in
 	task.delay(duration, function()
-		self._cameraDistance = originalDistance
+		self._targetZoomOffset = 0 -- 부드럽게 zoom-out
 	end)
 end
 
