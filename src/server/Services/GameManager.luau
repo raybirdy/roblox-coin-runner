@@ -571,6 +571,7 @@ function GameManager.EndGame(player: Player)
 	end
 
 	-- 클라이언트에 게임 오버 알림
+	local playerData = PlayerDataService:GetPlayerData(player)
 	RemoteEvents.GameOver:FireClient(player, {
 		finalScore = finalScore,
 		earnedCoins = earnedCoins,
@@ -583,6 +584,7 @@ function GameManager.EndGame(player: Player)
 		feverCount = session.feverCount,
 		zoneName = GameConstants.ZONE_THEMES[session.currentZoneIndex].displayName,
 		almostMessage = GameManager._generateAlmostMessage(session),
+		loginStreak = playerData and playerData.loginStreak or 0,
 	})
 
 	-- 위로 보상 알림 (별도 이벤트)
