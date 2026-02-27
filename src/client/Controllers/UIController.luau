@@ -921,6 +921,36 @@ function UIController:ShowGameOver(
 		existingAlmost:Destroy()
 	end
 
+	-- RetentionHint: 기존 제거 후 재생성
+	local existingHint = self._gameOverFrame:FindFirstChild("RetentionHint")
+	if existingHint then
+		existingHint:Destroy()
+	end
+
+	if not canRevive and extraData and extraData.loginStreak ~= nil then
+		local streak = extraData.loginStreak or 0
+		local nextDay = (streak % 7) + 1
+		local REWARDS = { "50🪙", "100🪙", "5💎", "200🪙", "10💎", "300🪙", "20💎+트레일" }
+		local nextRewardText = REWARDS[nextDay] or "보상"
+
+		local hint = Instance.new("TextLabel")
+		hint.Name = "RetentionHint"
+		hint.Size = UDim2.new(0.9, 0, 0, 36)
+		hint.Position = UDim2.new(0.05, 0, 1, -105)
+		hint.BackgroundColor3 = Color3.fromRGB(40, 60, 40)
+		hint.BackgroundTransparency = 0.2
+		hint.Text = `🎁 내일 다시 오면 {nextRewardText} 보상! (Day {nextDay})`
+		hint.TextColor3 = Color3.fromRGB(180, 255, 180)
+		hint.TextSize = ResponsiveUtil.scaledTextSize(14, 11)
+		hint.Font = Enum.Font.GothamBold
+		hint.TextXAlignment = Enum.TextXAlignment.Center
+		hint.Parent = self._gameOverFrame
+
+		local hintCorner = Instance.new("UICorner")
+		hintCorner.CornerRadius = UDim.new(0, 6)
+		hintCorner.Parent = hint
+	end
+
 	if extraData and not canRevive then
 		-- StatsRow2: NearMiss + MaxCombo + FeverCount
 		local statsRow2 = Instance.new("Frame")
@@ -1036,7 +1066,7 @@ function UIController:ShowGameOver(
 
 	-- Phase B: 추가 통계가 있을 때 프레임 높이 확장
 	local hasExtraStats = extraData and not canRevive
-	local frameHeight = if canRevive then 380 elseif hasExtraStats then 460 else 320
+	local frameHeight = if canRevive then 380 elseif hasExtraStats then 500 else 360
 	local targetSize = ResponsiveUtil.clampedSize(380, frameHeight, 0.88, 0.78)
 	local targetPos = ResponsiveUtil.clampedPosition(380, frameHeight, 0.88, 0.78)
 	local appearTween =
