@@ -29,6 +29,8 @@ export type PowerupService = typeof(setmetatable(
 		_invincibleEndTime: number,
 		_doubleCoinActive: boolean,
 		_doubleCoinEndTime: number,
+		_miniSizeActive: boolean,
+		_miniSizeEndTime: number,
 	},
 	PowerupService
 ))
@@ -47,6 +49,8 @@ function PowerupService.new(player: Player): PowerupService
 		_invincibleEndTime = 0,
 		_doubleCoinActive = false,
 		_doubleCoinEndTime = 0,
+		_miniSizeActive = false,
+		_miniSizeEndTime = 0,
 	}, PowerupService)
 
 	return self
@@ -114,8 +118,14 @@ function PowerupService:_selectPowerupType(): string
 		return "Invincible"
 	end
 
-	-- 2배 코인 20%
-	return "DoubleCoin"
+	-- 2배 코인 18%
+	cumulative += GameConstants.POWERUP.DOUBLE_COIN_RATE
+	if rand < cumulative then
+		return "DoubleCoin"
+	end
+
+	-- 미니 사이즈 12%
+	return "MiniSize"
 end
 
 -- 파워업 생성 (BasePart)
@@ -139,6 +149,8 @@ function PowerupService:_spawnPowerup(position: Vector3, powerupType: string)
 		powerup.BrickColor = BrickColor.new("Bright yellow")
 	elseif powerupType == "DoubleCoin" then
 		powerup.BrickColor = BrickColor.new("Deep orange")
+	elseif powerupType == "MiniSize" then
+		powerup.BrickColor = BrickColor.new("Bright violet")
 	end
 
 	powerup:SetAttribute("PowerupType", powerupType)
@@ -196,6 +208,10 @@ function PowerupService:ActivatePowerup(powerupType: string)
 		self._doubleCoinActive = true
 		self._doubleCoinEndTime = tick() + GameConstants.POWERUP.DOUBLE_COIN_DURATION
 		print(`[PowerupService] DoubleCoin activated for {GameConstants.POWERUP.DOUBLE_COIN_DURATION}s`)
+	elseif powerupType == "MiniSize" then
+		self._miniSizeActive = true
+		self._miniSizeEndTime = tick() + GameConstants.POWERUP.MINI_SIZE_DURATION
+		print(`[PowerupService] MiniSize activated for {GameConstants.POWERUP.MINI_SIZE_DURATION}s`)
 	end
 end
 
@@ -260,6 +276,19 @@ function PowerupService:IsDoubleCoinActive(): boolean
 		if tick() >= self._doubleCoinEndTime then
 			self._doubleCoinActive = false
 			print("[PowerupService] DoubleCoin expired")
+			return false
+		end
+		return true
+	end
+	return false
+end
+
+-- 미니 사이즈 활성 여부 체크
+function PowerupService:IsMiniSizeActive(): boolean
+	if self._miniSizeActive then
+		if tick() >= self._miniSizeEndTime then
+			self._miniSizeActive = false
+			print("[PowerupService] MiniSize expired")
 			return false
 		end
 		return true

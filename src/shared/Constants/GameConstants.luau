@@ -8,6 +8,7 @@ local GameConstants = {}
 GameConstants.PLAYER = {
 	SIZE = Vector3.new(4, 5, 4), -- 캐릭터 크기 (폭×높이×깊이)
 	SLIDE_SIZE = Vector3.new(4, 2.5, 4), -- 슬라이드 시 히트박스
+	MINI_SIZE = Vector3.new(2, 2.5, 2), -- 미니 사이즈 파워업 시 히트박스
 	Z_POSITION = 0, -- Z축 고정 위치 (2D 평면 유지)
 }
 
@@ -129,6 +130,12 @@ GameConstants.OBSTACLE = {
 	MIN_SPACING = 12, -- 장애물 간 최소 간격 (studs) - 최고 속도 기준
 	NEAR_MISS_X_RANGE = 4, -- 니어미스 X거리 범위 (studs)
 	NEAR_MISS_Y_MARGIN = 3, -- 니어미스 Y방향 여유 범위 (studs)
+	-- 움직이는 벽 (Hard 전용, 상하 왕복)
+	MOVING_WALL_HEIGHT = 5, -- 벽 높이 (studs)
+	MOVING_WALL_WIDTH = 3, -- 벽 두께 (studs)
+	MOVING_WALL_Y_MIN = 0, -- 최저 위치 (ground level)
+	MOVING_WALL_Y_MAX = 8, -- 최고 위치 (studs)
+	MOVING_WALL_CYCLE_TIME = 2, -- 상하 왕복 주기 (초)
 }
 
 -- 라이프 시스템
@@ -156,21 +163,23 @@ GameConstants.SCORE = {
 	COMBO_TIMEOUT = 2, -- 콤보 리셋 시간 (초)
 }
 
--- 파워업 (자석, 쉴드, 무적, 2배코인)
+-- 파워업 (자석, 쉴드, 무적, 2배코인, 미니사이즈)
 GameConstants.POWERUP = {
 	MAGNET_DURATION = 5, -- 자석 지속 시간 (초)
 	MAGNET_RADIUS = 15, -- 자석 흡수 반경 (studs)
 	SHIELD_USES = 1, -- 쉴드 사용 횟수
 	INVINCIBLE_DURATION = 5, -- 무적 지속 시간 (초)
 	DOUBLE_COIN_DURATION = 8, -- 2배 코인 지속 시간 (초)
+	MINI_SIZE_DURATION = 5, -- 미니 사이즈 지속 시간 (초)
 	MIN_SPAWN_TIME = 20, -- 첫 파워업 등장 시간 (초)
 	MIN_INTERVAL = 15, -- 파워업 간 최소 간격 (초)
 
 	-- 출현 확률 (합계 1.0)
-	MAGNET_RATE = 0.35,
-	SHIELD_RATE = 0.25,
-	INVINCIBLE_RATE = 0.20,
-	DOUBLE_COIN_RATE = 0.20,
+	MAGNET_RATE = 0.30,
+	SHIELD_RATE = 0.22,
+	INVINCIBLE_RATE = 0.18,
+	DOUBLE_COIN_RATE = 0.18,
+	MINI_SIZE_RATE = 0.12,
 }
 
 -- 부활

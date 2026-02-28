@@ -82,7 +82,7 @@ end
 function PowerupController:_createPowerupSound()
 	local sound = Instance.new("Sound")
 	sound.Name = "PowerupSound"
-	sound.SoundId = "rbxassetid://1169755927" -- Coin Collect SFX (bright/positive, public) -- TODO: 전용 파워업 사운드로 교체
+	sound.SoundId = "rbxassetid://9120386948" -- Power Up SFX (distinct from coin collect)
 	sound.Volume = 0.7
 	sound.PlaybackSpeed = 1.5 -- 높은 피치로 보상감 강조
 	sound.Parent = SoundService
@@ -101,6 +101,7 @@ function PowerupController:_showPowerupIcon(powerupType: string, duration: numbe
 		Shield = { emoji = "🛡️", color = Color3.fromRGB(50, 200, 50), name = "쉴드" },
 		Invincible = { emoji = "⭐", color = Color3.fromRGB(255, 215, 0), name = "무적" },
 		DoubleCoin = { emoji = "💰", color = Color3.fromRGB(255, 165, 0), name = "2배" },
+		MiniSize = { emoji = "🔮", color = Color3.fromRGB(180, 50, 255), name = "미니" },
 	}
 
 	local config = iconData[powerupType]
@@ -261,6 +262,23 @@ function PowerupController:OnPowerupCollected(data: { powerupType: string })
 			end
 			print("[PowerupController] DoubleCoin expired")
 		end)
+	elseif powerupType == "MiniSize" then
+		print(`[PowerupController] MiniSize activated! (Duration: {GameConstants.POWERUP.MINI_SIZE_DURATION}s)`)
+		self._activePowerups["MiniSize"] = true
+		self:_showPowerupIcon("MiniSize", GameConstants.POWERUP.MINI_SIZE_DURATION)
+		self:_scaleCharacter(0.55) -- 캐릭터 축소 (서버 히트박스와 시각적 일치)
+		if self._onPowerupGlowStart then
+			self._onPowerupGlowStart("MiniSize")
+		end
+
+		task.delay(GameConstants.POWERUP.MINI_SIZE_DURATION, function()
+			self._activePowerups["MiniSize"] = false
+			self:_scaleCharacter(1.0) -- 원래 크기로 복원
+			if self._onPowerupGlowEnd then
+				self._onPowerupGlowEnd("MiniSize")
+			end
+			print("[PowerupController] MiniSize expired")
+		end)
 	elseif powerupType == "ShieldUsed" then
 		print("[PowerupController] Shield blocked an obstacle!")
 		self._activePowerups["Shield"] = false
@@ -273,6 +291,29 @@ function PowerupController:OnPowerupCollected(data: { powerupType: string })
 		if self._powerupIcons["Shield"] then
 			self._powerupIcons["Shield"]:Destroy()
 			self._powerupIcons["Shield"] = nil
+		end
+	end
+end
+
+-- 캐릭터 스케일 조정 (MiniSize 파워업용)
+function PowerupController:_scaleCharacter(scaleFactor: number)
+	local player = Players.LocalPlayer
+	local character = player.Character
+	if not character then
+		return
+	end
+
+	local humanoid = character:FindFirstChildOfClass("Humanoid") :: Humanoid?
+	if not humanoid then
+		return
+	end
+
+	-- Humanoid BodyScale 값 트윈으로 부드럽게 변경
+	local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+	for _, scaleName in { "BodyWidthScale", "BodyHeightScale", "BodyDepthScale", "HeadScale" } do
+		local scaleValue = humanoid:FindFirstChild(scaleName) :: NumberValue?
+		if scaleValue then
+			TweenService:Create(scaleValue, tweenInfo, { Value = scaleFactor }):Play()
 		end
 	end
 end
@@ -296,6 +337,7 @@ function PowerupController:_playPowerupParticle(powerupType: string)
 		Shield = Color3.fromRGB(50, 200, 50),
 		Invincible = Color3.fromRGB(255, 215, 0),
 		DoubleCoin = Color3.fromRGB(255, 165, 0),
+		MiniSize = Color3.fromRGB(180, 50, 255),
 	}
 	local color = colorData[powerupType] or Color3.fromRGB(255, 255, 255)
 
