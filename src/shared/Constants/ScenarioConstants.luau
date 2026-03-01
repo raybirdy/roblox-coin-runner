@@ -4,6 +4,68 @@
 
 local ScenarioConstants = {}
 
+-- ==================== 캐릭터 프로필 ====================
+
+ScenarioConstants.CHARACTER_PROFILES = {
+	owl      = { id = "owl",       name = "부엉이 박사",         emoji = "🦉", role = "mentor",  bgColor = Color3.fromRGB(40, 80, 180),   textColor = Color3.fromRGB(200, 220, 255) },
+	coin_king = { id = "coin_king", name = "코인 킹",             emoji = "🦊", role = "villain", bgColor = Color3.fromRGB(180, 30, 30),   textColor = Color3.fromRGB(255, 200, 200) },
+	player   = { id = "player",    name = "너",                   emoji = "🏃", role = "hero",    bgColor = Color3.fromRGB(40, 160, 80),   textColor = Color3.fromRGB(200, 255, 200) },
+	chichi   = { id = "chichi",    name = "다람쥐 치치",           emoji = "🐿️", role = "ally",    bgColor = Color3.fromRGB(60, 140, 60),   textColor = Color3.fromRGB(220, 255, 220) },
+	cyberbot = { id = "cyberbot",  name = "사이버봇",             emoji = "🤖", role = "ally",    bgColor = Color3.fromRGB(60, 100, 180),  textColor = Color3.fromRGB(200, 220, 255) },
+	hamam    = { id = "hamam",     name = "사막 상인 하맘",       emoji = "🐪", role = "ally",    bgColor = Color3.fromRGB(160, 110, 40),  textColor = Color3.fromRGB(255, 240, 200) },
+	luna     = { id = "luna",      name = "눈의 정령 루나",       emoji = "❄️", role = "ally",    bgColor = Color3.fromRGB(60, 100, 160),  textColor = Color3.fromRGB(200, 230, 255) },
+	marina   = { id = "marina",    name = "바다 요정 마리나",     emoji = "🐠", role = "ally",    bgColor = Color3.fromRGB(20, 80, 160),   textColor = Color3.fromRGB(180, 220, 255) },
+	bulmu    = { id = "bulmu",     name = "화산 수호자 불무",     emoji = "🌋", role = "ally",    bgColor = Color3.fromRGB(140, 40, 10),   textColor = Color3.fromRGB(255, 200, 180) },
+	areum    = { id = "areum",     name = "구름 왕자 아름",       emoji = "☁️", role = "ally",    bgColor = Color3.fromRGB(100, 80, 160),  textColor = Color3.fromRGB(220, 210, 255) },
+	alexander = { id = "alexander", name = "고대 수호자 알렉산더", emoji = "🏛️", role = "ally",    bgColor = Color3.fromRGB(100, 80, 40),   textColor = Color3.fromRGB(240, 220, 180) },
+	omega    = { id = "omega",     name = "우주 AI 오메가",       emoji = "🛸", role = "ally",    bgColor = Color3.fromRGB(20, 20, 80),    textColor = Color3.fromRGB(180, 200, 255) },
+}
+
+-- ==================== 챕터 테마 ====================
+
+ScenarioConstants.CHAPTER_THEMES = {
+	ch1  = { bgColor = Color3.fromRGB(20, 60, 20),   accentColor = Color3.fromRGB(80, 180, 80)   },
+	ch2  = { bgColor = Color3.fromRGB(30, 40, 80),   accentColor = Color3.fromRGB(120, 160, 255) },
+	ch3  = { bgColor = Color3.fromRGB(100, 70, 20),  accentColor = Color3.fromRGB(220, 170, 60)  },
+	ch4  = { bgColor = Color3.fromRGB(40, 60, 100),  accentColor = Color3.fromRGB(160, 210, 255) },
+	ch5  = { bgColor = Color3.fromRGB(10, 40, 80),   accentColor = Color3.fromRGB(60, 180, 240)  },
+	ch6  = { bgColor = Color3.fromRGB(80, 20, 5),    accentColor = Color3.fromRGB(240, 80, 30)   },
+	ch7  = { bgColor = Color3.fromRGB(60, 55, 100),  accentColor = Color3.fromRGB(180, 170, 255) },
+	ch8  = { bgColor = Color3.fromRGB(60, 50, 30),   accentColor = Color3.fromRGB(210, 185, 120) },
+	ch9  = { bgColor = Color3.fromRGB(8, 8, 25),     accentColor = Color3.fromRGB(80, 130, 255)  },
+	ch10 = { bgColor = Color3.fromRGB(50, 5, 5),     accentColor = Color3.fromRGB(255, 40, 40)   },
+}
+
+-- ==================== 보스 런 상수 ====================
+
+ScenarioConstants.BOSS_RUN = {
+	TIME_LIMIT       = 90,
+	SPEED_MULTIPLIER = 1.3,
+	LIVES            = 3,
+	TARGET_SCORES = {
+		ch1 = 500,  ch2 = 800,   ch3 = 1200, ch4 = 1800, ch5 = 2500,
+		ch6 = 3500, ch7 = 4500,  ch8 = 6000, ch9 = 8000, ch10 = 12000,
+	},
+	BOSS_NAMES = {
+		ch1  = "숲의 도둑",          ch2  = "도시의 파괴자",       ch3  = "사막의 도적",
+		ch4  = "설원의 얼음마녀",    ch5  = "해저의 대형 오징어",  ch6  = "화산의 용",
+		ch7  = "폭풍 정령",          ch8  = "유적의 석상 병사",    ch9  = "우주 해적선",
+		ch10 = "코인 킹",
+	},
+	CLEAR_REWARDS = {
+		ch1  = { coins = 100,  gems = 3   },
+		ch2  = { coins = 150,  gems = 5   },
+		ch3  = { coins = 200,  gems = 7   },
+		ch4  = { coins = 300,  gems = 10  },
+		ch5  = { coins = 400,  gems = 12  },
+		ch6  = { coins = 500,  gems = 15  },
+		ch7  = { coins = 600,  gems = 20  },
+		ch8  = { coins = 800,  gems = 25  },
+		ch9  = { coins = 1000, gems = 30  },
+		ch10 = { coins = 2000, gems = 100 },
+	},
+}
+
 -- ==================== 스킬 정의 ====================
 
 ScenarioConstants.SKILLS = {
@@ -172,7 +234,8 @@ ScenarioConstants.CHAPTERS = {
 		num = 1,
 		name = "숲의 시작",
 		theme = "🌲",
-		description = "코인 도둑이 숲의 코인을 훔쳐갔어! 모험을 시작하자!",
+		description = "코인 킹이 숲의 코인을 훔쳐갔어! 다람쥐 치치와 함께 되찾자!",
+		allyId = "chichi",
 		questIds = { "c1_play", "c1_coin", "c1_score", "c1_nmiss" },
 		unlockConditions = { minScore = 0, requiredCompletedChapters = {} },
 		skill = nil,
@@ -184,7 +247,8 @@ ScenarioConstants.CHAPTERS = {
 		num = 2,
 		name = "도시의 도전",
 		theme = "🏙️",
-		description = "도시에 숨겨진 코인을 찾아라! 새로운 스킬을 얻을 수 있어!",
+		description = "도시에도 코인 킹의 그림자가! 사이버봇과 함께 2단 점프로 도약하자!",
+		allyId = "cyberbot",
 		questIds = { "c2_play", "c2_coin", "c2_score", "c2_combo", "c2_dist" },
 		unlockConditions = { minScore = 500, requiredCompletedChapters = { "ch1" } },
 		skill = "double_jump",
@@ -196,7 +260,8 @@ ScenarioConstants.CHAPTERS = {
 		num = 3,
 		name = "사막 탐험",
 		theme = "🏜️",
-		description = "끝없는 사막을 건너라! 자석 범위가 넓어져!",
+		description = "사막 상인 하맘의 코인이 위험해! 대쉬로 빠르게 되찾자!",
+		allyId = "hamam",
 		questIds = { "c3_play", "c3_score", "c3_coin", "c3_nmiss", "c3_surv", "c3_dist" },
 		unlockConditions = { minScore = 1000, requiredCompletedChapters = { "ch1", "ch2" } },
 		skill = nil,
@@ -208,7 +273,8 @@ ScenarioConstants.CHAPTERS = {
 		num = 4,
 		name = "설원의 시련",
 		theme = "❄️",
-		description = "눈보라 속을 헤쳐나가자! 대쉬 스킬을 얻어!",
+		description = "설원의 정령 루나를 도와 코인 킹의 얼음 부하를 물리쳐!",
+		allyId = "luna",
 		questIds = { "c4_play", "c4_score", "c4_coin", "c4_nohit", "c4_combo", "c4_pwup", "c4_dist" },
 		unlockConditions = { minScore = 2000, requiredCompletedChapters = { "ch1", "ch2", "ch3" } },
 		skill = "dash",
@@ -220,7 +286,8 @@ ScenarioConstants.CHAPTERS = {
 		num = 5,
 		name = "해저 세계",
 		theme = "🌊",
-		description = "바다 속에도 코인이 있어! 코인 가치가 올라가!",
+		description = "바다 요정 마리나와 함께 해저의 코인을 지켜라!",
+		allyId = "marina",
 		questIds = { "c5_score", "c5_play", "c5_coin", "c5_nmiss", "c5_surv", "c5_nohit" },
 		unlockConditions = { minScore = 3500, requiredCompletedChapters = { "ch1", "ch2", "ch3", "ch4" } },
 		skill = nil,
@@ -232,7 +299,8 @@ ScenarioConstants.CHAPTERS = {
 		num = 6,
 		name = "화산 지대",
 		theme = "🌋",
-		description = "불꽃 속을 달려라! 쉴드가 자동으로 재생돼!",
+		description = "화산 수호자 불무와 코인 킹의 용을 무찔러라!",
+		allyId = "bulmu",
 		questIds = { "c6_score", "c6_play", "c6_coin", "c6_combo", "c6_nmiss", "c6_dist", "c6_pwup" },
 		unlockConditions = { minScore = 5000, requiredCompletedChapters = { "ch1", "ch2", "ch3", "ch4", "ch5" } },
 		skill = "shield_regen",
@@ -244,7 +312,8 @@ ScenarioConstants.CHAPTERS = {
 		num = 7,
 		name = "구름 왕국",
 		theme = "☁️",
-		description = "하늘 위 왕국에 코인이 가득해! 라이프가 하나 더 생겨!",
+		description = "구름 왕자 아름과 하늘의 코인을 되찾아라!",
+		allyId = "areum",
 		questIds = { "c7_score", "c7_play", "c7_coin", "c7_nohit", "c7_surv", "c7_combo", "c7_dist" },
 		unlockConditions = { minScore = 7000, requiredCompletedChapters = { "ch1", "ch2", "ch3", "ch4", "ch5", "ch6" } },
 		skill = nil,
@@ -256,7 +325,8 @@ ScenarioConstants.CHAPTERS = {
 		num = 8,
 		name = "고대 유적",
 		theme = "🏛️",
-		description = "고대의 비밀을 밝혀라! 자석 폭발 스킬을 얻어!",
+		description = "고대 수호자 알렉산더와 유적의 비밀을 밝혀라!",
+		allyId = "alexander",
 		questIds = { "c8_score", "c8_play", "c8_coin", "c8_nmiss", "c8_combo", "c8_nohit", "c8_pwup", "c8_dist" },
 		unlockConditions = { minScore = 9000, requiredCompletedChapters = { "ch1", "ch2", "ch3", "ch4", "ch5", "ch6", "ch7" } },
 		skill = "magnet_burst",
@@ -268,7 +338,8 @@ ScenarioConstants.CHAPTERS = {
 		num = 9,
 		name = "우주 여행",
 		theme = "🚀",
-		description = "우주로 날아가자! 피버가 더 빠르게 차오른다!",
+		description = "우주 AI 오메가와 함께 코인 킹의 우주 해적선을 막아라!",
+		allyId = "omega",
 		questIds = { "c9_score", "c9_play", "c9_coin", "c9_surv", "c9_nmiss", "c9_combo", "c9_dist", "c9_nohit" },
 		unlockConditions = { minScore = 12000, requiredCompletedChapters = { "ch1", "ch2", "ch3", "ch4", "ch5", "ch6", "ch7", "ch8" } },
 		skill = nil,
@@ -280,7 +351,8 @@ ScenarioConstants.CHAPTERS = {
 		num = 10,
 		name = "전설의 정점",
 		theme = "👑",
-		description = "마침내 전설이 될 시간! 최강 스킬과 모든 스탯 보너스!",
+		description = "드디어 코인 킹 본인과 최후의 대결! 모든 세계를 구하자!",
+		allyId = "owl",
 		questIds = { "c10_score", "c10_play", "c10_coin", "c10_dist", "c10_nohit", "c10_combo", "c10_nmiss", "c10_pwup" },
 		unlockConditions = {
 			minScore = 15000,
@@ -303,106 +375,249 @@ end
 ScenarioConstants.CUTSCENES = {
 	ch1 = {
 		opening = {
-			{ speaker = "🦉 부엉이 박사", text = "아이고! 코인 도둑이 나타났어!" },
-			{ speaker = "🦉 부엉이 박사", text = "숲의 코인을 모두 훔쳐갔다고!" },
-			{ speaker = "🏃 너", text = "내가 꼭 되찾아올게요!" },
+			{ characterId = "owl",    text = "큰일이야! 코인 킹이 숲의 코인을 전부 훔쳐갔어!" },
+			{ characterId = "chichi", text = "안녕! 나는 다람쥐 치치야. 이 숲을 구해줄 수 있어?" },
+			{ characterId = "player", text = "맡겨봐! 코인을 반드시 되찾아 줄게!" },
+			{ characterId = "owl",    text = "조심해, 코인 킹이 부하를 보냈을 거야." },
 		},
 		clear = {
-			{ speaker = "🏃 너", text = "숲의 코인을 모두 모았어!" },
-			{ speaker = "🦉 부엉이 박사", text = "대단해! 다음은 도시야!" },
+			{ characterId = "player", text = "숲의 퀘스트를 모두 완료했어!" },
+			{ characterId = "chichi", text = "고마워! 근데 아직 보스 부하가 남아있어..." },
+			{ characterId = "owl",    text = "코인 킹의 부하를 물리쳐야 완전히 자유로워져!" },
+		},
+		bossIntro = {
+			{ characterId = "coin_king", text = "크크크... 이 숲은 이제 내 거다!", effect = "shake" },
+			{ characterId = "player",    text = "코인 킹의 부하! 여기서 끝내주겠어!" },
+		},
+		bossWin = {
+			{ characterId = "player", text = "해냈다! 숲이 자유로워졌어!", effect = "particle" },
+			{ characterId = "chichi", text = "정말 고마워! 도시에도 코인 킹의 부하가 있대!" },
+			{ characterId = "owl",    text = "잘했어! 다음은 도시로 출발하자." },
+		},
+		bossLose = {
+			{ characterId = "coin_king", text = "하하! 아직 멀었어, 꼬마!", effect = "shake" },
+			{ characterId = "owl",       text = "괜찮아! 다시 도전해 보자!" },
 		},
 	},
 	ch2 = {
 		opening = {
-			{ speaker = "🦉 부엉이 박사", text = "도시에도 코인 도둑이 갔어!" },
-			{ speaker = "🏃 너", text = "이번엔 2단 점프로 도약하자!" },
+			{ characterId = "owl",      text = "도시에도 코인 킹의 부하가 나타났어!" },
+			{ characterId = "cyberbot", text = "저는 사이버봇이에요! 도시 코인을 지켜야 해요!" },
+			{ characterId = "player",   text = "같이 싸우자! 2단 점프도 생겼으니 무적이야!" },
 		},
 		clear = {
-			{ speaker = "🏃 너", text = "도시 코인 탈환 완료!" },
-			{ speaker = "🦉 부엉이 박사", text = "점점 강해지고 있어! 사막으로 가자!" },
+			{ characterId = "cyberbot", text = "퀘스트 클리어! 하지만 보스가 남아있어요..." },
+			{ characterId = "player",   text = "상관없어! 바로 물리쳐 주겠어!" },
+		},
+		bossIntro = {
+			{ characterId = "coin_king", text = "도시의 코인도 모두 내 것이다!", effect = "shake" },
+			{ characterId = "player",    text = "절대 허락 못 해!" },
+		},
+		bossWin = {
+			{ characterId = "player",   text = "도시 해방!", effect = "particle" },
+			{ characterId = "cyberbot", text = "감사합니다! 사막에도 코인 킹의 소식이 들려요." },
+			{ characterId = "owl",      text = "예상대로야. 사막으로 가자!" },
+		},
+		bossLose = {
+			{ characterId = "coin_king", text = "크크! 도시는 내 거야!", effect = "shake" },
+			{ characterId = "cyberbot",  text = "포기하지 마세요! 다시 도전!" },
 		},
 	},
 	ch3 = {
 		opening = {
-			{ speaker = "🏜️ 사막 정령", text = "이 사막은 내가 지킨다!" },
-			{ speaker = "🏃 너", text = "비켜! 코인을 찾아야 해!" },
+			{ characterId = "owl",    text = "사막의 코인도 모두 사라지고 있어!" },
+			{ characterId = "hamam",  text = "나는 하맘이야. 이 사막을 코인 킹에게 뺏길 순 없어!" },
+			{ characterId = "player", text = "걱정 마! 대쉬도 얻었으니 빠르게 처리할게!" },
 		},
 		clear = {
-			{ speaker = "🏃 너", text = "사막도 내 것이야!" },
-			{ speaker = "🦉 부엉이 박사", text = "자석 범위가 넓어졌어! 설원이 기다려!" },
+			{ characterId = "hamam",  text = "퀘스트 완료! 보스만 남았어." },
+			{ characterId = "player", text = "바로 가자!" },
+		},
+		bossIntro = {
+			{ characterId = "coin_king", text = "사막의 모든 보물은 내 거다!", effect = "shake" },
+			{ characterId = "player",    text = "두고 보자!" },
+		},
+		bossWin = {
+			{ characterId = "player", text = "사막 해방 완료!", effect = "particle" },
+			{ characterId = "hamam",  text = "고마워! 설원에서도 이상한 소식이 들려." },
+			{ characterId = "owl",    text = "서둘러야겠어. 코인 킹의 계획이 빨라지고 있어." },
+		},
+		bossLose = {
+			{ characterId = "coin_king", text = "사막은 내 거야, 꼬마!", effect = "shake" },
+			{ characterId = "hamam",     text = "힘내! 다시 도전해봐!" },
 		},
 	},
 	ch4 = {
 		opening = {
-			{ speaker = "❄️ 눈의 요정", text = "여기서 멈추면 얼어버릴 텐데..." },
-			{ speaker = "🏃 너", text = "대쉬로 뚫고 나가겠어!" },
+			{ characterId = "owl",    text = "설원에도 코인 킹의 얼음 부하가 나타났대!" },
+			{ characterId = "luna",   text = "저는 루나예요. 이 눈 속을 함께 달려줄래요?" },
+			{ characterId = "player", text = "물론이죠! 설원도 해방시켜 드릴게요!" },
 		},
 		clear = {
-			{ speaker = "🏃 너", text = "눈보라도 날 막을 수 없어!" },
-			{ speaker = "🦉 부엉이 박사", text = "점프력도 올라갔어! 바다로 가자!" },
+			{ characterId = "luna",   text = "퀘스트 완료! 하지만 보스가 더 강해요..." },
+			{ characterId = "player", text = "걱정 마세요. 제가 해낼게요!" },
+		},
+		bossIntro = {
+			{ characterId = "coin_king", text = "설원의 코인은 영원히 내 것!", effect = "shake" },
+			{ characterId = "player",    text = "절대 안 돼!" },
+		},
+		bossWin = {
+			{ characterId = "player", text = "설원 해방!", effect = "particle" },
+			{ characterId = "luna",   text = "감사해요! 해저에도 코인 킹의 그림자가 드리워요..." },
+			{ characterId = "owl",    text = "코인 킹이 점점 대담해지고 있어. 서두르자." },
+		},
+		bossLose = {
+			{ characterId = "coin_king", text = "설원은 내 왕국이야!", effect = "shake" },
+			{ characterId = "luna",      text = "포기하지 마요! 다시 일어서요!" },
 		},
 	},
 	ch5 = {
 		opening = {
-			{ speaker = "🐟 물고기", text = "이 바다에 코인이 있긴 한데..." },
-			{ speaker = "🏃 너", text = "헤엄쳐서 찾아볼게!" },
+			{ characterId = "owl",    text = "해저 세계까지 코인 킹의 손이 뻗쳤어!" },
+			{ characterId = "marina", text = "안녕! 나는 마리나야. 바닷속 코인을 지켜줄 수 있어?" },
+			{ characterId = "player", text = "바다도 해방시켜 줄게! 같이 싸우자!" },
 		},
 		clear = {
-			{ speaker = "🏃 너", text = "바다 코인도 내 거야!" },
-			{ speaker = "🦉 부엉이 박사", text = "코인 가치가 올라갔어! 화산이 남았어!" },
+			{ characterId = "marina", text = "퀘스트 완료! 이제 보스를 물리쳐야 해." },
+			{ characterId = "player", text = "알았어, 바로 가자!" },
+		},
+		bossIntro = {
+			{ characterId = "coin_king", text = "바닷속 코인도 내 것이다!", effect = "shake" },
+			{ characterId = "player",    text = "그건 못 줘!" },
+		},
+		bossWin = {
+			{ characterId = "player", text = "바다 해방!", effect = "particle" },
+			{ characterId = "marina", text = "고마워! 화산 지대가 위험해 보여..." },
+			{ characterId = "owl",    text = "코인 킹의 계획 중반이야. 절반만 더 가자!" },
+		},
+		bossLose = {
+			{ characterId = "coin_king", text = "바다는 나의 것!", effect = "shake" },
+			{ characterId = "marina",    text = "괜찮아! 한 번 더 도전해봐!" },
 		},
 	},
 	ch6 = {
 		opening = {
-			{ speaker = "🌋 화산 정령", text = "펄펄 끓는 용암 속에 코인이 있다!" },
-			{ speaker = "🏃 너", text = "쉴드가 있으면 괜찮아!" },
+			{ characterId = "owl",    text = "화산 지대에 코인 킹의 용 부하가 나타났어!" },
+			{ characterId = "bulmu",  text = "나는 화산의 수호자 불무야! 함께 싸워줘!" },
+			{ characterId = "player", text = "쉴드 재생도 생겼어! 이제 더 오래 버틸 수 있어!" },
 		},
 		clear = {
-			{ speaker = "🏃 너", text = "화산도 통과했어!" },
-			{ speaker = "🦉 부엉이 박사", text = "쉴드가 자동 재생돼! 구름 위로 가자!" },
+			{ characterId = "bulmu",  text = "퀘스트 완료! 하지만 보스가 엄청 강해..." },
+			{ characterId = "player", text = "상관없어! 내가 막을게!" },
+		},
+		bossIntro = {
+			{ characterId = "coin_king", text = "화산의 열기도, 코인도 모두 내 거야!", effect = "shake" },
+			{ characterId = "player",    text = "두고 봐라!" },
+		},
+		bossWin = {
+			{ characterId = "player", text = "화산 해방!", effect = "particle" },
+			{ characterId = "bulmu",  text = "대단해! 구름 왕국도 코인 킹에게 위협받고 있어." },
+			{ characterId = "owl",    text = "이제 4개 세계만 남았어. 포기하지 말자!" },
+		},
+		bossLose = {
+			{ characterId = "coin_king", text = "화산도 내 왕국이야!", effect = "shake" },
+			{ characterId = "bulmu",     text = "힘내! 불처럼 다시 타올라!" },
 		},
 	},
 	ch7 = {
 		opening = {
-			{ speaker = "👸 구름 여왕", text = "하늘 왕국에 오신 걸 환영해!" },
-			{ speaker = "🏃 너", text = "코인 도둑이 여기도 왔나요?" },
-			{ speaker = "👸 구름 여왕", text = "맞아! 함께 찾아보자!" },
+			{ characterId = "owl",    text = "구름 왕국에도 코인 킹의 폭풍 부하가 나타났대!" },
+			{ characterId = "areum",  text = "나는 구름 왕자 아름이야! 하늘을 지켜줘!" },
+			{ characterId = "player", text = "하늘도 지킬게! 최대 라이프가 늘었으니 거뜬해!" },
 		},
 		clear = {
-			{ speaker = "🏃 너", text = "구름 위의 코인도 모았어!" },
-			{ speaker = "👸 구름 여왕", text = "라이프가 하나 더 생겼어! 용감한 러너!" },
+			{ characterId = "areum",  text = "퀘스트 완료! 폭풍 정령 보스가 남아있어." },
+			{ characterId = "player", text = "바로 해치워 줄게!" },
+		},
+		bossIntro = {
+			{ characterId = "coin_king", text = "하늘의 코인도 내 것이다!", effect = "shake" },
+			{ characterId = "player",    text = "네 야망은 여기서 끝이야!" },
+		},
+		bossWin = {
+			{ characterId = "player", text = "구름 왕국 해방!", effect = "particle" },
+			{ characterId = "areum",  text = "정말 고마워! 이제 고대 유적이 위험해." },
+			{ characterId = "owl",    text = "코인 킹의 어둠의 기계... 거의 완성 단계야. 서둘러야 해!" },
+		},
+		bossLose = {
+			{ characterId = "coin_king", text = "하늘은 내 왕좌야!", effect = "shake" },
+			{ characterId = "areum",     text = "포기하지 마! 구름처럼 가볍게 다시 도전해!" },
 		},
 	},
 	ch8 = {
 		opening = {
-			{ speaker = "👴 유적 수호자", text = "고대 유적에 전설의 코인이 잠들어 있다." },
-			{ speaker = "🏃 너", text = "자석 폭발로 한번에 모을 수 있어!" },
+			{ characterId = "owl",       text = "고대 유적에 코인 킹의 석상 병사들이 깨어났어!" },
+			{ characterId = "alexander", text = "나는 알렉산더. 이 유적은 수천 년의 역사야. 지켜줘!" },
+			{ characterId = "player",    text = "자석 폭발도 생겼어! 코인도 싹 쓸어담겠어!" },
 		},
 		clear = {
-			{ speaker = "🏃 너", text = "고대의 보물을 되찾았어!" },
-			{ speaker = "👴 유적 수호자", text = "자석 폭발 스킬을 받아라! 우주로 가거라." },
+			{ characterId = "alexander", text = "퀘스트 완료! 석상 보스가 마지막 남았어." },
+			{ characterId = "player",    text = "이번에야말로 끝내줄게!" },
+		},
+		bossIntro = {
+			{ characterId = "coin_king", text = "고대의 코인도 내 컬렉션에 추가되겠군!", effect = "shake" },
+			{ characterId = "player",    text = "오늘은 절대 안 돼!" },
+		},
+		bossWin = {
+			{ characterId = "player",    text = "유적 해방!", effect = "particle" },
+			{ characterId = "alexander", text = "감사하네! 우주까지 코인 킹의 손이 닿았다고 들었어." },
+			{ characterId = "owl",       text = "이제 2개만 남았어. 코인 킹을 막을 수 있어!" },
+		},
+		bossLose = {
+			{ characterId = "coin_king", text = "역사도 내 손 안에 있어!", effect = "shake" },
+			{ characterId = "alexander", text = "힘내게! 역사는 용기 있는 자의 것이야!" },
 		},
 	},
 	ch9 = {
 		opening = {
-			{ speaker = "🤖 우주 로봇", text = "위험! 우주에 코인 도둑 신호 감지!" },
-			{ speaker = "🏃 너", text = "피버로 날아서 가겠어!" },
+			{ characterId = "owl",    text = "드디어 우주까지! 코인 킹의 우주 해적선이 나타났어!" },
+			{ characterId = "omega",  text = "나는 우주 AI 오메가. 코인 킹이 은하계 코인을 노리고 있어!" },
+			{ characterId = "player", text = "피버 부스트도 생겼어! 이제 최강이야!" },
 		},
 		clear = {
-			{ speaker = "🏃 너", text = "우주 코인까지 모았다!" },
-			{ speaker = "🤖 우주 로봇", text = "피버 게이지 업그레이드! 이제 마지막이야!" },
+			{ characterId = "omega",  text = "퀘스트 완료! 우주 해적선과 최후 결전이야." },
+			{ characterId = "player", text = "이제 진짜 끝내자!" },
+		},
+		bossIntro = {
+			{ characterId = "coin_king", text = "우주의 코인도 내 어둠의 기계 연료가 될 거야!", effect = "shake" },
+			{ characterId = "player",    text = "그 기계, 절대 완성 못 시켜!" },
+		},
+		bossWin = {
+			{ characterId = "player", text = "우주 해방!", effect = "particle" },
+			{ characterId = "omega",  text = "오직 코인 킹 본인만 남았어. 드디어 최후의 결전이야!" },
+			{ characterId = "owl",    text = "마지막이야! 너라면 반드시 이길 수 있어!" },
+		},
+		bossLose = {
+			{ characterId = "coin_king", text = "우주도 내 제국이야!", effect = "shake" },
+			{ characterId = "omega",     text = "분석 결과: 재도전 확률 100%! 포기 금지!" },
 		},
 	},
 	ch10 = {
 		opening = {
-			{ speaker = "👿 코인 도둑", text = "어디서 온 꼬마야! 여기까지 왔어?!" },
-			{ speaker = "🏃 너", text = "코인을 모두 돌려줘!" },
-			{ speaker = "👿 코인 도둑", text = "절대 안 돼! 막아봐라!" },
+			{ characterId = "owl",       text = "드디어 코인 킹의 성에 도달했어! 이게 마지막이야!" },
+			{ characterId = "coin_king", text = "흥! 이 꼬마가 여기까지 오다니... 대단하군.", effect = "shake" },
+			{ characterId = "player",    text = "모든 세계의 코인을 돌려놔! 이제 끝이야!" },
+			{ characterId = "owl",       text = "조심해! 코인 킹 본인은 지금까지 부하들과 차원이 달라!" },
 		},
 		clear = {
-			{ speaker = "🏃 너", text = "해냈다! 모든 코인을 되찾았어!" },
-			{ speaker = "🦉 부엉이 박사", text = "네가 진정한 전설의 러너야!" },
-			{ speaker = "👑 왕관", text = "전설의 러너 칭호를 수여합니다!" },
+			{ characterId = "player",    text = "드디어 모든 퀘스트 완료! 이제 코인 킹과 최후의 대결!" },
+			{ characterId = "coin_king", text = "재미있군... 직접 상대해 주지!", effect = "shake" },
+			{ characterId = "owl",       text = "지금까지 얻은 모든 스킬을 써! 이길 수 있어!" },
+		},
+		bossIntro = {
+			{ characterId = "coin_king", text = "모든 세계의 코인을 가진 내가 최강이다!", effect = "shake" },
+			{ characterId = "coin_king", text = "어둠의 기계가 완성되면 모든 세계가 내 것이 될 거야!", effect = "shake" },
+			{ characterId = "player",    text = "절대 허락 못 해! 지금까지 만난 모든 친구들을 위해 싸울 거야!" },
+		},
+		bossWin = {
+			{ characterId = "player",    text = "해냈다! 코인 킹을 무찔렀어!", effect = "particle" },
+			{ characterId = "coin_king", text = "...이럴 수가. 내가 졌다고?", effect = "shake" },
+			{ characterId = "owl",       text = "모든 세계의 코인이 돌아오고 있어! 네가 진정한 전설이야!" },
+			{ characterId = "player",    text = "치치, 사이버봇, 하맘, 루나, 마리나, 불무, 아름, 알렉산더, 오메가... 모두의 도움이 있었어!", effect = "particle" },
+		},
+		bossLose = {
+			{ characterId = "coin_king", text = "하하하! 내가 이겼다! 어둠의 기계가 완성된다!", effect = "shake" },
+			{ characterId = "owl",       text = "괜찮아! 우리는 아직 포기하지 않아. 다시 도전하자!" },
+			{ characterId = "player",    text = "반드시 이겨낼 거야!" },
 		},
 	},
 }
