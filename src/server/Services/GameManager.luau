@@ -91,6 +91,9 @@ type GameSession = {
 	survivalMultiplierTier: number,
 	-- Hit recovery rush
 	hitRushEndTime: number,
+	-- Super Fever
+	lastFeverEndTime: number,
+	isSuperFever: boolean,
 	-- Async Battle
 	asyncBattleTarget: { targetName: string, targetScore: number }?,
 }
@@ -252,6 +255,8 @@ RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { 
 		survivalStartTime = tick(),
 		survivalMultiplierTier = 0,
 		hitRushEndTime = 0,
+		lastFeverEndTime = 0,
+		isSuperFever = false,
 	}
 
 	activeSessions[player] = session
@@ -465,6 +470,8 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 		survivalStartTime = tick(),
 		survivalMultiplierTier = 0,
 		hitRushEndTime = 0,
+		lastFeverEndTime = 0,
+		isSuperFever = false,
 	}
 
 	activeSessions[player] = session
@@ -813,16 +820,20 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 		-- 시나리오: 파워업 수집 횟수 추적
 		session.powerupsCollected += #collectedPowerups
 
-		-- 코인 수집 체크 (자석 효과 적용, 피버 시 초강력 자석)
+		-- 코인 수집 체크 (자석 효과 적용, 피버/슈퍼피버 시 초강력 자석)
 		local magnetRadius = powerupService:GetMagnetRadius() + session.scenarioStatBonuses.magnetRadius
-		if session.isFever then
+		if session.isSuperFever then
+			magnetRadius = math.max(magnetRadius, GameConstants.SUPER_FEVER.MAGNET_RADIUS)
+		elseif session.isFever then
 			magnetRadius = math.max(magnetRadius, GameConstants.FEVER.MAGNET_RADIUS)
 		end
 		local collectedCoins = coinService:CheckCoinCollection(hrp.Position, magnetRadius)
 		local coinMultiplier = powerupService:GetCoinMultiplier()
 			* MonetizationService:GetCoinMultiplier(player)
 			* (1 + session.scenarioStatBonuses.coinValue)
-		if session.isFever then
+		if session.isSuperFever then
+			coinMultiplier *= GameConstants.SUPER_FEVER.COIN_MULTIPLIER
+		elseif session.isFever then
 			coinMultiplier *= GameConstants.FEVER.COIN_MULTIPLIER
 		end
 		local hitRushActive = tick() < session.hitRushEndTime
@@ -891,13 +902,28 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 				and now > session.feverCooldownEnd
 			then
 				session.isFever = true
-				session.feverEndTime = now + GameConstants.FEVER.DURATION
 				session.feverCount += 1 -- Phase B: 피버 횟수 추적
-				RemoteEvents.FeverStart:FireClient(player, {
-					duration = GameConstants.FEVER.DURATION,
-					speedBoost = GameConstants.FEVER.SPEED_BOOST,
-				})
-				print(`[GameManager] FEVER MODE activated for {player.Name}!`)
+
+				-- 슈퍼 피버 체인 체크: 직전 피버 종료로부터 CHAIN_WINDOW 이내 재발동
+				local isChain = session.lastFeverEndTime > 0
+					and (now - session.lastFeverEndTime) < GameConstants.SUPER_FEVER.CHAIN_WINDOW
+				if isChain then
+					session.isSuperFever = true
+					session.feverEndTime = now + GameConstants.SUPER_FEVER.DURATION
+					RemoteEvents.SuperFeverStart:FireClient(player, {
+						duration = GameConstants.SUPER_FEVER.DURATION,
+						speedBoost = GameConstants.SUPER_FEVER.SPEED_BOOST,
+					})
+					print(`[GameManager] SUPER FEVER activated for {player.Name}!`)
+				else
+					session.isSuperFever = false
+					session.feverEndTime = now + GameConstants.FEVER.DURATION
+					RemoteEvents.FeverStart:FireClient(player, {
+						duration = GameConstants.FEVER.DURATION,
+						speedBoost = GameConstants.FEVER.SPEED_BOOST,
+					})
+					print(`[GameManager] FEVER MODE activated for {player.Name}!`)
+				end
 			end
 
 			-- 피버 게이지 업데이트
@@ -931,6 +957,8 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 		-- 피버 모드 종료 체크
 		if session.isFever and tick() >= session.feverEndTime then
 			session.isFever = false
+			session.lastFeverEndTime = tick()
+			session.isSuperFever = false
 			session.feverCooldownEnd = tick() + GameConstants.FEVER.COOLDOWN
 			session.comboCount = 0 -- 피버 종료 시 콤보 리셋
 			RemoteEvents.FeverEnd:FireClient(player)

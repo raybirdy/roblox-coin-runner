@@ -17,6 +17,7 @@ export type FeverController = typeof(setmetatable(
 	{} :: {
 		_connections: { RBXScriptConnection },
 		_isFever: boolean,
+		_isSuperFever: boolean,
 		_gaugeGui: ScreenGui?,
 		_gaugeFrame: Frame?,
 		_gaugeFill: Frame?,
@@ -39,6 +40,7 @@ function FeverController.new(): FeverController
 	local self = setmetatable({
 		_connections = {},
 		_isFever = false,
+		_isSuperFever = false,
 		_gaugeGui = nil,
 		_gaugeFrame = nil,
 		_gaugeFill = nil,
@@ -183,6 +185,11 @@ function FeverController:_setupEventHandlers()
 		self:_updateGauge(data)
 	end)
 	table.insert(self._connections, gaugeConn)
+
+	local superFeverConn = RemoteEvents.SuperFeverStart.OnClientEvent:Connect(function(data)
+		self:_onSuperFeverStarted(data)
+	end)
+	table.insert(self._connections, superFeverConn)
 end
 
 -- Fever started
@@ -235,6 +242,7 @@ end
 -- Fever ended
 function FeverController:_onFeverEnded()
 	self._isFever = false
+	self._isSuperFever = false
 
 	-- Play end sound
 	if self._feverEndSound then
@@ -532,6 +540,121 @@ function FeverController:Destroy()
 	if self._feverEndSound then
 		self._feverEndSound:Destroy()
 	end
+end
+
+-- Super Fever started (fever chain within CHAIN_WINDOW)
+function FeverController:_onSuperFeverStarted(data: { duration: number, speedBoost: number })
+	self._isFever = true
+	self._isSuperFever = true
+
+	-- Play fever sound (reuse)
+	if self._feverSound then
+		self._feverSound.PlaybackSpeed = 1.6 -- Higher pitch for super
+		self._feverSound:Play()
+	end
+
+	-- Purple overlay
+	if self._feverFrame then
+		self._feverFrame.BackgroundColor3 = Color3.fromRGB(140, 0, 200)
+		self._feverFrame.BackgroundTransparency = 0.5
+		TweenService:Create(
+			self._feverFrame,
+			TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+			{ BackgroundTransparency = 0.75 }
+		):Play()
+	end
+
+	-- Character glow purple
+	self:_startCharacterEffects()
+
+	-- Stop rainbow cycle, use fixed purple
+	self:_stopColorCycle()
+	if self._characterGlow then
+		self._characterGlow.Color = Color3.fromRGB(200, 100, 255)
+		self._characterGlow.Brightness = 2.5
+	end
+
+	-- Gauge shows "SUPER!" text in purple
+	if self._gaugeLabel then
+		self._gaugeLabel.Text = "SUPER!"
+		self._gaugeLabel.TextColor3 = Color3.fromRGB(200, 100, 255)
+	end
+	if self._gaugeFill then
+		self._gaugeFill.Size = UDim2.new(1, -4, 1, -4)
+		self._gaugeFill.BackgroundColor3 = Color3.fromRGB(140, 0, 200)
+	end
+
+	-- Speed boost callback
+	if self._onFeverStart then
+		self._onFeverStart(data.speedBoost)
+	end
+
+	-- Big announcement
+	self:_showSuperFeverAnnouncement()
+
+	print(`[FeverController] SUPER FEVER! Duration: {data.duration}s`)
+end
+
+-- Super Fever announcement (bigger, purple)
+function FeverController:_showSuperFeverAnnouncement()
+	local player = Players.LocalPlayer
+	local playerGui = player:WaitForChild("PlayerGui")
+	local screenGui = playerGui:FindFirstChild("GameUI") :: ScreenGui?
+	if not screenGui then
+		return
+	end
+
+	local label = Instance.new("TextLabel")
+	label.Name = "SuperFeverAnnouncement"
+	label.Size = UDim2.new(1, 0, 0, 80)
+	label.Position = UDim2.new(0, 0, 0.25, 0)
+	label.BackgroundTransparency = 1
+	label.TextColor3 = Color3.fromRGB(220, 130, 255)
+	label.TextSize = ResponsiveUtil.scaledTextSize(10, 8)
+	label.Font = Enum.Font.GothamBlack
+	label.Text = "🌟 SUPER FEVER!! 🌟"
+	label.TextStrokeTransparency = 0
+	label.TextStrokeColor3 = Color3.fromRGB(80, 0, 140)
+	label.ZIndex = 51
+	label.Parent = screenGui
+
+	-- Scale up
+	TweenService:Create(
+		label,
+		TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+		{ TextSize = ResponsiveUtil.scaledTextSize(64, 44) }
+	):Play()
+
+	-- Pulse color twice
+	task.spawn(function()
+		for _ = 1, 2 do
+			task.wait(0.5)
+			if not label or not label.Parent then
+				break
+			end
+			TweenService:Create(label, TweenInfo.new(0.2), { TextColor3 = Color3.fromRGB(255, 255, 255) }):Play()
+			task.wait(0.2)
+			if not label or not label.Parent then
+				break
+			end
+			TweenService:Create(label, TweenInfo.new(0.2), { TextColor3 = Color3.fromRGB(220, 130, 255) }):Play()
+		end
+	end)
+
+	-- Fade out after 2s
+	task.delay(2, function()
+		if label and label.Parent then
+			local fadeTween = TweenService:Create(
+				label,
+				TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
+				{ TextTransparency = 1, TextStrokeTransparency = 1 }
+			)
+			fadeTween:Play()
+			fadeTween.Completed:Connect(function()
+				label:Destroy()
+			end)
+		end
+	end)
 end
 
 return FeverController
