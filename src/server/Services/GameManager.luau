@@ -22,6 +22,7 @@ local LeaderboardService = require(script.Parent.LeaderboardService)
 local MonetizationService = require(script.Parent.MonetizationService)
 local ProgressionService = require(script.Parent.ProgressionService)
 local ScenarioService = require(script.Parent.ScenarioService)
+local BossRunService = require(script.Parent.BossRunService)
 local AsyncBattleService = require(script.Parent.AsyncBattleService)
 local RealtimeBattleService = require(script.Parent.RealtimeBattleService)
 local RateLimiter = require(ReplicatedStorage.Shared.Utils.RateLimiter)
@@ -699,6 +700,7 @@ Players.PlayerRemoving:Connect(function(player: Player)
 	if activeSessions[player] then
 		GameManager.EndGame(player)
 	end
+	BossRunService:OnPlayerRemoving(player)
 	shopDebounce[player] = nil
 	portalDebounce[player] = nil
 	consolationTracker[player] = nil
@@ -977,6 +979,11 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 				session.lives -= 1
 				obstacleService:OnObstacleHit()
 
+				-- 보스 런 활성 시 보스 런 라이프도 감소
+				if BossRunService:IsBossRunActive(player) then
+					BossRunService:OnHit(player)
+				end
+
 				-- magnet_burst 스킬: 피격 시 주변 30 studs 코인 흡수
 				if session.unlockedSkillsSet["magnet_burst"] then
 					local burstCoins = session.coinService:BurstCollectCoins(hrp.Position, 30)
@@ -1134,7 +1141,15 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 				coins = session.coins,
 			})
 		end
+
+		-- 보스 런 활성 세션 점수 동기화
+		if BossRunService:IsBossRunActive(player) then
+			BossRunService:AddScore(player, session.score)
+		end
 	end
+
+	-- 보스 런 타이머/보스점수 업데이트
+	BossRunService:Update(deltaTime)
 end)
 
 -- Phase B: "거의 다 왔어!" 메시지 생성

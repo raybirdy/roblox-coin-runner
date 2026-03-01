@@ -56,6 +56,7 @@ type PlayerData = {
 	completedChapters: { string }?, -- 완료한 챕터 ID 목록 e.g. { "ch1", "ch2" }
 	unlockedSkills: { string }?, -- 해금된 스킬 ID 목록 e.g. { "double_jump" }
 	hasSeenScenarioIntro: boolean?, -- 시나리오 인트로 팝업을 본 적 있는지
+	bossRunCompleted: { [string]: boolean }?, -- 보스 런 클리어 챕터 { [chapterId]: true }
 }
 
 local DEFAULT_DATA: PlayerData = {
@@ -93,6 +94,7 @@ local DEFAULT_DATA: PlayerData = {
 	completedChapters = {},
 	unlockedSkills = {},
 	hasSeenScenarioIntro = false,
+	bossRunCompleted = {},
 }
 
 -- 메모리 캐시 (활성 플레이어)
