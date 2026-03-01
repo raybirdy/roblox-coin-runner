@@ -84,6 +84,8 @@ local LuckySpinController = require(script.Controllers.LuckySpinController)
 local FeverController = require(script.Controllers.FeverController)
 local ZoneController = require(script.Controllers.ZoneController)
 local CharacterEffectsController = require(script.Controllers.CharacterEffectsController)
+local ScenarioController = require(script.Controllers.ScenarioController)
+local CutsceneController = require(script.Controllers.CutsceneController)
 
 -- 컨트롤러 인스턴스 생성
 local inputController = InputController.new()
@@ -106,6 +108,8 @@ local _luckySpinController = LuckySpinController.new(player)
 local feverController = FeverController.new()
 local zoneController = ZoneController.new()
 local characterEffectsController = CharacterEffectsController.new(character)
+local scenarioController = ScenarioController.new(player)
+local _cutsceneController = CutsceneController.new()
 
 -- Fever mode callbacks (speed boost + camera shake)
 feverController:OnFeverStart(function(speedBoost: number)
@@ -202,6 +206,7 @@ RemoteEvents.ReturnToLobby.OnClientEvent:Connect(function()
 
 	-- 진행도 UI 표시
 	progressionController:ShowInLobby()
+	scenarioController:ShowInLobby()
 end)
 
 -- 포탈 진입 안내 (서버에서 포탈 감지 시)
@@ -278,6 +283,7 @@ RemoteEvents.GameStart.OnClientEvent:Connect(function(data)
 	uiController:HideLobbyUI()
 	leaderboardController:Hide()
 	progressionController:HideForGame()
+	scenarioController:HideForGame()
 
 	-- 2. 컨트롤 전환: 기본 이동 비활성화
 	disableDefaultControls()
@@ -519,5 +525,5 @@ end)
 
 print("[Client] Coin Runner Client Ready")
 print(
-	"[Client] Controllers initialized: Input, Player, Coin, Life, UI, Powerup, Camera, NPC, Tutorial, Music, Shop, SpeedEffect, Leaderboard, Progression"
+	"[Client] Controllers initialized: Input, Player, Coin, Life, UI, Powerup, Camera, NPC, Tutorial, Music, Shop, SpeedEffect, Leaderboard, Progression, Scenario, Cutscene"
 )
