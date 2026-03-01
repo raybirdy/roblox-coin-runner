@@ -3,6 +3,7 @@
 -- 장애물 생성 및 충돌 처리
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
 local GameConstants = require(ReplicatedStorage.Shared.Constants.GameConstants)
 
 local ObstacleService = {}
@@ -108,15 +109,17 @@ function ObstacleService:_selectObstacleType(difficulty: string): string
 			return "Gap"
 		end
 	elseif difficulty == "Hard" then
-		-- Hard는 모든 타입 (DoubleWall 포함)
-		if rand < 0.25 then
+		-- Hard는 모든 타입 (DoubleWall + MovingWall 포함)
+		if rand < 0.22 then
 			return "LowWall"
-		elseif rand < 0.45 then
+		elseif rand < 0.40 then
 			return "Tunnel"
-		elseif rand < 0.60 then
+		elseif rand < 0.54 then
 			return "SpikeTrap"
-		elseif rand < 0.80 then
+		elseif rand < 0.72 then
 			return "DoubleWall"
+		elseif rand < 0.84 then
+			return "MovingWall"
 		else
 			return "Gap"
 		end
@@ -209,6 +212,53 @@ function ObstacleService:_spawnObstacle(position: Vector3, obstacleType: string)
 			edge.Anchored = true
 			edge.Parent = workspace
 		end
+	elseif obstacleType == "MovingWall" then
+		-- 움직이는 벽 (Hard 전용, 타이밍 점프/통과로 회피)
+		local wallHeight = GameConstants.OBSTACLE.MOVING_WALL_HEIGHT
+		local wallWidth = GameConstants.OBSTACLE.MOVING_WALL_WIDTH
+		local startHigh = math.random() > 0.5
+
+		obstacle = Instance.new("Part")
+		obstacle.Name = "Obstacle_MovingWall"
+		obstacle.Size = Vector3.new(wallWidth, wallHeight, 10)
+		obstacle.Color = Color3.fromRGB(220, 50, 200) -- 마젠타 (움직이는 벽 = 마젠타)
+		obstacle.Material = Enum.Material.Neon
+		obstacle.Transparency = 0.1
+
+		-- 시작 위치 (랜덤 위상)
+		local yBottom = position.Y + wallHeight / 2
+		local yTop = position.Y + GameConstants.OBSTACLE.MOVING_WALL_Y_MAX + wallHeight / 2
+		obstacle.Position = if startHigh
+			then position + Vector3.new(0, GameConstants.OBSTACLE.MOVING_WALL_Y_MAX + wallHeight / 2, 0)
+			else position + Vector3.new(0, wallHeight / 2, 0)
+
+		obstacle.Anchored = true
+		obstacle.CanCollide = false
+		obstacle.Material = Enum.Material.Neon
+		obstacle:SetAttribute("ObstacleType", obstacleType)
+		obstacle.Parent = workspace
+
+		-- 상하 왕복 트윈 시작 (자동 클라이언트 복제)
+		task.defer(function()
+			if obstacle and obstacle.Parent then
+				local halfCycle = GameConstants.OBSTACLE.MOVING_WALL_CYCLE_TIME / 2
+				local targetY = if startHigh then yBottom else yTop
+				local tweenInfo = TweenInfo.new(halfCycle, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
+				TweenService:Create(obstacle, tweenInfo, {
+					Position = Vector3.new(obstacle.Position.X, targetY, obstacle.Position.Z),
+				}):Play()
+			end
+		end)
+
+		-- 장애물 데이터 저장 후 return (아래 공통 코드 건너뜀)
+		local obstacleData: ObstacleData = {
+			part = obstacle,
+			obstacleType = obstacleType,
+			spawnTime = tick(),
+		}
+		table.insert(self._activeObstacles, obstacleData)
+		print(`[ObstacleService] Spawned MovingWall at {position} (startHigh: {startHigh})`)
+		return
 	else
 		obstacle = Instance.new("Part")
 		obstacle.Size = Vector3.new(2, 4, 8)
@@ -232,7 +282,7 @@ function ObstacleService:_spawnObstacle(position: Vector3, obstacleType: string)
 end
 
 -- 충돌 체크 (GameManager에서 호출)
-function ObstacleService:CheckObstacleCollision(playerPosition: Vector3, isSliding: boolean): boolean
+function ObstacleService:CheckObstacleCollision(playerPosition: Vector3, isSliding: boolean, isMini: boolean?): boolean
 	-- 무적 상태 확인
 	if self._isInvincible then
 		local elapsed = tick() - self._lastHitTime
@@ -258,29 +308,31 @@ function ObstacleService:CheckObstacleCollision(playerPosition: Vector3, isSlidi
 		local xDistance = math.abs(obstaclePart.Position.X - playerPosition.X)
 
 		-- Collision range: half obstacle width + player body margin
-		local PLAYER_MARGIN = 2
+		-- Mini size reduces player margin (smaller hitbox)
+		local PLAYER_MARGIN = if isMini then 1 else 2
 		local collisionRadius = obstaclePart.Size.X / 2 + PLAYER_MARGIN
 
 		if xDistance < collisionRadius then
 			-- 장애물 타입별 회피 조건 확인
 			if obstacleType == "LowWall" then
 				-- LowWall: 점프 중이면 회피 성공
-				-- 현재 간단하게 Y 좌표로 판단 (향후 개선)
 				if playerPosition.Y > GameConstants.OBSTACLE.LOW_WALL_HEIGHT then
-					-- 점프로 회피 성공
 					print(`[ObstacleService] {self._player.Name} jumped over LowWall!`)
 					continue
 				else
-					-- 충돌 (mark to prevent re-hit after state change)
 					self._collidedObstacles[obstaclePart] = true
 					return true
 				end
 			elseif obstacleType == "Tunnel" then
-				-- Tunnel: 슬라이드 중이고 높이가 낮으면 회피 성공
+				-- Tunnel: 슬라이드 중이거나 미니 사이즈이면 통과 가능
 				local tunnelHeight = GameConstants.OBSTACLE.TUNNEL_HEIGHT
 				local playerHeight = playerPosition.Y
 
-				if isSliding and playerHeight < tunnelHeight then
+				if isMini and playerHeight < tunnelHeight + 1 then
+					-- 미니 사이즈: 슬라이드 없이 터널 통과
+					print(`[ObstacleService] {self._player.Name} walked through Tunnel (MiniSize)!`)
+					continue
+				elseif isSliding and playerHeight < tunnelHeight then
 					-- 슬라이드로 통과 성공
 					print(`[ObstacleService] {self._player.Name} slid through Tunnel! (Y: {playerHeight})`)
 					continue
@@ -300,7 +352,6 @@ function ObstacleService:CheckObstacleCollision(playerPosition: Vector3, isSlidi
 					print(`[ObstacleService] {self._player.Name} jumped over SpikeTrap!`)
 					continue
 				else
-					-- 충돌
 					self._collidedObstacles[obstaclePart] = true
 					return true
 				end
@@ -308,6 +359,23 @@ function ObstacleService:CheckObstacleCollision(playerPosition: Vector3, isSlidi
 				-- DoubleWall: 점프로 회피 (연속 점프 필요)
 				if playerPosition.Y > GameConstants.OBSTACLE.LOW_WALL_HEIGHT then
 					print(`[ObstacleService] {self._player.Name} jumped over DoubleWall!`)
+					continue
+				else
+					self._collidedObstacles[obstaclePart] = true
+					return true
+				end
+			elseif obstacleType == "MovingWall" then
+				-- MovingWall: 벽 위로 점프하거나 아래로 통과
+				local wallBottom = obstaclePart.Position.Y - obstaclePart.Size.Y / 2
+				local wallTop = obstaclePart.Position.Y + obstaclePart.Size.Y / 2
+
+				if playerPosition.Y > wallTop then
+					-- 벽 위로 점프 성공
+					print(`[ObstacleService] {self._player.Name} jumped over MovingWall!`)
+					continue
+				elseif playerPosition.Y < wallBottom - 0.5 then
+					-- 벽이 높아서 아래로 통과
+					print(`[ObstacleService] {self._player.Name} passed under MovingWall!`)
 					continue
 				else
 					-- 충돌
@@ -320,7 +388,6 @@ function ObstacleService:CheckObstacleCollision(playerPosition: Vector3, isSlidi
 					print(`[ObstacleService] {self._player.Name} jumped over Gap!`)
 					continue
 				else
-					-- 낙사
 					self._collidedObstacles[obstaclePart] = true
 					return true
 				end
@@ -349,7 +416,8 @@ end
 function ObstacleService:CheckNearMiss(
 	playerPosition: Vector3,
 	isSliding: boolean,
-	nearMissedSet: { [any]: boolean }
+	nearMissedSet: { [any]: boolean },
+	_isMini: boolean?
 ): { BasePart }
 	local nearMisses = {}
 	local NEAR_MISS_X_RANGE = GameConstants.OBSTACLE.NEAR_MISS_X_RANGE
@@ -398,6 +466,15 @@ function ObstacleService:CheckNearMiss(
 		elseif obstacleType == "Gap" then
 			-- Jumped over gap, barely cleared
 			if playerPosition.Y > 2 and playerPosition.Y < 2 + NEAR_MISS_Y_MARGIN then
+				isNearMiss = true
+			end
+		elseif obstacleType == "MovingWall" then
+			-- MovingWall: barely jumped over or passed under
+			local wallTop = obstaclePart.Position.Y + obstaclePart.Size.Y / 2
+			local wallBottom = obstaclePart.Position.Y - obstaclePart.Size.Y / 2
+			if playerPosition.Y > wallTop and playerPosition.Y < wallTop + NEAR_MISS_Y_MARGIN then
+				isNearMiss = true
+			elseif playerPosition.Y < wallBottom and playerPosition.Y > wallBottom - NEAR_MISS_Y_MARGIN then
 				isNearMiss = true
 			end
 		end

@@ -843,7 +843,8 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 
 		-- 장애물 충돌 체크
 		local isSliding = hrp:GetAttribute("IsSliding") or false
-		local hitObstacle = obstacleService:CheckObstacleCollision(hrp.Position, isSliding)
+		local isMini = powerupService:IsMiniSizeActive()
+		local hitObstacle = obstacleService:CheckObstacleCollision(hrp.Position, isSliding, isMini)
 
 		if hitObstacle and session.lives > 0 then
 			-- 피버 모드 무적 체크
@@ -924,7 +925,7 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 		end
 
 		-- 니어미스 감지 (장애물 근접 회피 보너스) + 체인 시스템
-		local nearMisses = obstacleService:CheckNearMiss(hrp.Position, isSliding, session.nearMissedObstacles)
+		local nearMisses = obstacleService:CheckNearMiss(hrp.Position, isSliding, session.nearMissedObstacles, isMini)
 		for _, obstaclePart in nearMisses do
 			session.nearMissedObstacles[obstaclePart] = true
 			session.consecutiveHits = 0 -- 회피 성공 시 연속 피격 리셋

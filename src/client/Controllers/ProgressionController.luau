@@ -5,6 +5,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 
+local GameConstants = require(ReplicatedStorage.Shared.Constants.GameConstants)
 local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)
 local ResponsiveUtil = require(ReplicatedStorage.Shared.Utils.ResponsiveUtil)
 
@@ -23,6 +24,14 @@ export type ProgressionController = typeof(setmetatable(
 		_missionGui: ScreenGui?,
 		_missionFrame: Frame?,
 		_missionSlots: { Frame },
+		_achievementSlots: { Frame },
+		_achievementContainer: ScrollingFrame?,
+		_missionContainer: Frame?,
+		_currentTab: string,
+		_tabMissions: TextButton?,
+		_tabAchievements: TextButton?,
+		_titleLabel: TextLabel?,
+		_frameStroke: UIStroke?,
 		_isMissionOpen: boolean,
 		_notificationQueue: { any },
 		_isShowingNotification: boolean,
@@ -42,6 +51,14 @@ function ProgressionController.new(player: Player): ProgressionController
 		_missionGui = nil,
 		_missionFrame = nil,
 		_missionSlots = {},
+		_achievementSlots = {},
+		_achievementContainer = nil,
+		_missionContainer = nil,
+		_currentTab = "missions",
+		_tabMissions = nil,
+		_tabAchievements = nil,
+		_titleLabel = nil,
+		_frameStroke = nil,
 		_isMissionOpen = false,
 		_notificationQueue = {},
 		_isShowingNotification = false,
@@ -189,11 +206,11 @@ function ProgressionController:_createMissionPopup()
 		self:CloseMissions()
 	end)
 
-	-- 팝업 프레임
+	-- 팝업 프레임 (높이 360으로 확대: 탭 바 + 콘텐츠)
 	local missionFrame = Instance.new("Frame")
 	missionFrame.Name = "MissionFrame"
-	missionFrame.Size = ResponsiveUtil.clampedSize(350, 300, 0.88, 0.75)
-	missionFrame.Position = ResponsiveUtil.clampedPosition(350, 300, 0.88, 0.75)
+	missionFrame.Size = ResponsiveUtil.clampedSize(360, 360, 0.90, 0.85)
+	missionFrame.Position = ResponsiveUtil.clampedPosition(360, 360, 0.90, 0.85)
 	missionFrame.BackgroundColor3 = Color3.fromRGB(25, 30, 45)
 	missionFrame.BorderSizePixel = 0
 	missionFrame.Parent = missionGui
@@ -207,6 +224,7 @@ function ProgressionController:_createMissionPopup()
 	frameStroke.Color = Color3.fromRGB(100, 200, 100)
 	frameStroke.Thickness = 2
 	frameStroke.Parent = missionFrame
+	self._frameStroke = frameStroke
 
 	-- 타이틀
 	local titleLabel = Instance.new("TextLabel")
@@ -220,6 +238,7 @@ function ProgressionController:_createMissionPopup()
 	titleLabel.Text = "DAILY MISSIONS"
 	titleLabel.TextXAlignment = Enum.TextXAlignment.Left
 	titleLabel.Parent = missionFrame
+	self._titleLabel = titleLabel
 
 	-- 닫기 버튼
 	local closeBtn = Instance.new("TextButton")
@@ -241,15 +260,84 @@ function ProgressionController:_createMissionPopup()
 		self:CloseMissions()
 	end)
 
+	-- 탭 바 (Y=50, 높이=34)
+	local tabBar = Instance.new("Frame")
+	tabBar.Name = "TabBar"
+	tabBar.Size = UDim2.new(1, -20, 0, 32)
+	tabBar.Position = UDim2.new(0, 10, 0, 50)
+	tabBar.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
+	tabBar.BorderSizePixel = 0
+	tabBar.Parent = missionFrame
+
+	local tabBarCorner = Instance.new("UICorner")
+	tabBarCorner.CornerRadius = UDim.new(0, 6)
+	tabBarCorner.Parent = tabBar
+
+	-- 미션 탭 버튼
+	local tabMissions = Instance.new("TextButton")
+	tabMissions.Name = "TabMissions"
+	tabMissions.Size = UDim2.new(0.5, 0, 1, 0)
+	tabMissions.Position = UDim2.new(0, 0, 0, 0)
+	tabMissions.BackgroundColor3 = Color3.fromRGB(50, 120, 50)
+	tabMissions.TextColor3 = Color3.fromRGB(255, 255, 255)
+	tabMissions.TextSize = ResponsiveUtil.scaledTextSize(13, 11)
+	tabMissions.Font = Enum.Font.GothamBold
+	tabMissions.Text = "MISSIONS"
+	tabMissions.AutoButtonColor = false
+	tabMissions.Parent = tabBar
+
+	local tabMissionsCorner = Instance.new("UICorner")
+	tabMissionsCorner.CornerRadius = UDim.new(0, 6)
+	tabMissionsCorner.Parent = tabMissions
+
+	self._tabMissions = tabMissions
+
+	-- 업적 탭 버튼
+	local tabAchievements = Instance.new("TextButton")
+	tabAchievements.Name = "TabAchievements"
+	tabAchievements.Size = UDim2.new(0.5, 0, 1, 0)
+	tabAchievements.Position = UDim2.new(0.5, 0, 0, 0)
+	tabAchievements.BackgroundColor3 = Color3.fromRGB(35, 35, 55)
+	tabAchievements.TextColor3 = Color3.fromRGB(180, 180, 200)
+	tabAchievements.TextSize = ResponsiveUtil.scaledTextSize(13, 11)
+	tabAchievements.Font = Enum.Font.GothamBold
+	tabAchievements.Text = "ACHIEVEMENTS"
+	tabAchievements.AutoButtonColor = false
+	tabAchievements.Parent = tabBar
+
+	local tabAchievementsCorner = Instance.new("UICorner")
+	tabAchievementsCorner.CornerRadius = UDim.new(0, 6)
+	tabAchievementsCorner.Parent = tabAchievements
+
+	self._tabAchievements = tabAchievements
+
+	-- 탭 클릭 핸들러
+	tabMissions.MouseButton1Click:Connect(function()
+		self:_switchTab("missions")
+	end)
+	tabAchievements.MouseButton1Click:Connect(function()
+		self:_switchTab("achievements")
+	end)
+
+	-- 미션 컨테이너 (탭 아래)
+	local missionContainer = Instance.new("Frame")
+	missionContainer.Name = "MissionContainer"
+	missionContainer.Size = UDim2.new(1, 0, 1, -90)
+	missionContainer.Position = UDim2.new(0, 0, 0, 90)
+	missionContainer.BackgroundTransparency = 1
+	missionContainer.Visible = true
+	missionContainer.Parent = missionFrame
+	self._missionContainer = missionContainer
+
 	-- 미션 슬롯 3개
 	for i = 1, 3 do
 		local slot = Instance.new("Frame")
 		slot.Name = `Mission{i}`
 		slot.Size = UDim2.new(1, -30, 0, 70)
-		slot.Position = UDim2.new(0, 15, 0, 50 + (i - 1) * 78)
+		slot.Position = UDim2.new(0, 15, 0, (i - 1) * 78)
 		slot.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
 		slot.BorderSizePixel = 0
-		slot.Parent = missionFrame
+		slot.Parent = missionContainer
 
 		local slotCorner = Instance.new("UICorner")
 		slotCorner.CornerRadius = UDim.new(0, 8)
@@ -329,6 +417,161 @@ function ProgressionController:_createMissionPopup()
 
 		self._missionSlots[i] = slot
 	end
+
+	-- 업적 ScrollingFrame (탭 아래, 기본 숨김)
+	local achievementContainer = Instance.new("ScrollingFrame")
+	achievementContainer.Name = "AchievementContainer"
+	achievementContainer.Size = UDim2.new(1, 0, 1, -90)
+	achievementContainer.Position = UDim2.new(0, 0, 0, 90)
+	achievementContainer.BackgroundTransparency = 1
+	achievementContainer.ScrollBarThickness = 4
+	achievementContainer.ScrollBarImageColor3 = Color3.fromRGB(100, 200, 100)
+	achievementContainer.CanvasSize = UDim2.new(0, 0, 0, 0) -- 동적으로 설정
+	achievementContainer.Visible = false
+	achievementContainer.Parent = missionFrame
+	self._achievementContainer = achievementContainer
+
+	-- 업적 슬롯 생성 (GameConstants 기반)
+	local achievements = GameConstants.ACHIEVEMENTS.LIST
+	local slotHeight = 62
+	local slotGap = 6
+	local totalH = #achievements * (slotHeight + slotGap)
+	achievementContainer.CanvasSize = UDim2.new(0, 0, 0, totalH + 10)
+
+	for i, ach in achievements do
+		local slot = Instance.new("Frame")
+		slot.Name = `Achievement_{ach.id}`
+		slot.Size = UDim2.new(1, -20, 0, slotHeight)
+		slot.Position = UDim2.new(0, 10, 0, (i - 1) * (slotHeight + slotGap))
+		slot.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
+		slot.BorderSizePixel = 0
+		slot.Parent = achievementContainer
+
+		local slotCorner = Instance.new("UICorner")
+		slotCorner.CornerRadius = UDim.new(0, 8)
+		slotCorner.Parent = slot
+
+		-- 업적 이름
+		local nameLabel = Instance.new("TextLabel")
+		nameLabel.Name = "AchName"
+		nameLabel.Size = UDim2.new(0.72, 0, 0, 20)
+		nameLabel.Position = UDim2.new(0, 10, 0, 5)
+		nameLabel.BackgroundTransparency = 1
+		nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+		nameLabel.TextSize = ResponsiveUtil.scaledTextSize(14, 12)
+		nameLabel.Font = Enum.Font.GothamBold
+		nameLabel.Text = ach.name
+		nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+		nameLabel.Parent = slot
+
+		-- 젬 보상
+		local rewardLabel = Instance.new("TextLabel")
+		rewardLabel.Name = "RewardLabel"
+		rewardLabel.Size = UDim2.new(0.28, -10, 0, 20)
+		rewardLabel.Position = UDim2.new(0.72, 0, 0, 5)
+		rewardLabel.BackgroundTransparency = 1
+		rewardLabel.TextColor3 = Color3.fromRGB(180, 230, 255)
+		rewardLabel.TextSize = ResponsiveUtil.scaledTextSize(12, 10)
+		rewardLabel.Font = Enum.Font.GothamBold
+		rewardLabel.Text = `+{ach.rewardGems} 💎`
+		rewardLabel.TextXAlignment = Enum.TextXAlignment.Right
+		rewardLabel.Parent = slot
+
+		-- 설명
+		local descLabel = Instance.new("TextLabel")
+		descLabel.Name = "AchDesc"
+		descLabel.Size = UDim2.new(1, -20, 0, 16)
+		descLabel.Position = UDim2.new(0, 10, 0, 24)
+		descLabel.BackgroundTransparency = 1
+		descLabel.TextColor3 = Color3.fromRGB(160, 160, 180)
+		descLabel.TextSize = ResponsiveUtil.scaledTextSize(12, 10)
+		descLabel.Font = Enum.Font.Gotham
+		descLabel.Text = ach.desc
+		descLabel.TextXAlignment = Enum.TextXAlignment.Left
+		descLabel.Parent = slot
+
+		-- 진행도 바
+		local progressBg = Instance.new("Frame")
+		progressBg.Name = "ProgressBg"
+		progressBg.Size = UDim2.new(1, -20, 0, 8)
+		progressBg.Position = UDim2.new(0, 10, 0, 44)
+		progressBg.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+		progressBg.Parent = slot
+
+		local progressBgCorner = Instance.new("UICorner")
+		progressBgCorner.CornerRadius = UDim.new(0, 4)
+		progressBgCorner.Parent = progressBg
+
+		local progressFill = Instance.new("Frame")
+		progressFill.Name = "ProgressFill"
+		progressFill.Size = UDim2.new(0, 0, 1, 0)
+		progressFill.BackgroundColor3 = Color3.fromRGB(80, 160, 255)
+		progressFill.Parent = progressBg
+
+		local progressFillCorner = Instance.new("UICorner")
+		progressFillCorner.CornerRadius = UDim.new(0, 4)
+		progressFillCorner.Parent = progressFill
+
+		-- 진행도 텍스트
+		local progressText = Instance.new("TextLabel")
+		progressText.Name = "ProgressText"
+		progressText.Size = UDim2.new(1, 0, 1, 0)
+		progressText.BackgroundTransparency = 1
+		progressText.TextColor3 = Color3.fromRGB(255, 255, 255)
+		progressText.TextSize = ResponsiveUtil.scaledTextSize(10, 9)
+		progressText.Font = Enum.Font.GothamBold
+		progressText.Text = `0/{ach.target}`
+		progressText.Parent = progressBg
+
+		self._achievementSlots[i] = slot
+	end
+end
+
+-- ==================== 탭 전환 ====================
+
+function ProgressionController:_switchTab(tabName: string)
+	self._currentTab = tabName
+
+	local isMissions = tabName == "missions"
+
+	-- 컨테이너 가시성 전환
+	if self._missionContainer then
+		self._missionContainer.Visible = isMissions
+	end
+	if self._achievementContainer then
+		self._achievementContainer.Visible = not isMissions
+	end
+
+	-- 탭 버튼 색상 업데이트
+	if self._tabMissions then
+		self._tabMissions.BackgroundColor3 = if isMissions
+			then Color3.fromRGB(50, 120, 50)
+			else Color3.fromRGB(35, 35, 55)
+		self._tabMissions.TextColor3 = if isMissions
+			then Color3.fromRGB(255, 255, 255)
+			else Color3.fromRGB(180, 180, 200)
+	end
+	if self._tabAchievements then
+		self._tabAchievements.BackgroundColor3 = if not isMissions
+			then Color3.fromRGB(60, 80, 180)
+			else Color3.fromRGB(35, 35, 55)
+		self._tabAchievements.TextColor3 = if not isMissions
+			then Color3.fromRGB(255, 255, 255)
+			else Color3.fromRGB(180, 180, 200)
+	end
+
+	-- 타이틀 및 테두리 색 업데이트
+	if self._titleLabel then
+		self._titleLabel.Text = if isMissions then "DAILY MISSIONS" else "ACHIEVEMENTS"
+		self._titleLabel.TextColor3 = if isMissions
+			then Color3.fromRGB(100, 255, 100)
+			else Color3.fromRGB(100, 180, 255)
+	end
+	if self._frameStroke then
+		self._frameStroke.Color = if isMissions
+			then Color3.fromRGB(100, 200, 100)
+			else Color3.fromRGB(100, 150, 255)
+	end
 end
 
 -- ==================== 이벤트 핸들러 ====================
@@ -358,10 +601,13 @@ function ProgressionController:_setupEventHandlers()
 	end)
 	table.insert(self._connections, achConn)
 
-	-- 전체 진행도 데이터
+	-- 전체 진행도 데이터 (미션 + 업적 동시 업데이트)
 	local progConn = RemoteEvents.ProgressionDataResponse.OnClientEvent:Connect(function(data)
 		self:_updateLevelDisplay(data.level, data.xp, data.xpToNext)
 		self:_updateMissionSlots(data.missions)
+		if data.achievements then
+			self:_updateAchievementSlots(data.achievements)
+		end
 	end)
 	table.insert(self._connections, progConn)
 
@@ -446,6 +692,13 @@ function ProgressionController:_updateMissionSlots(missions: { any })
 					end
 				end
 			end
+
+			-- 완료된 미션 슬롯 배경 변경
+			if mission.completed then
+				slot.BackgroundColor3 = Color3.fromRGB(30, 28, 10)
+			else
+				slot.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
+			end
 		else
 			if nameLabel then
 				nameLabel.Text = "---"
@@ -456,6 +709,65 @@ function ProgressionController:_updateMissionSlots(missions: { any })
 			if rewardLabel then
 				rewardLabel.Text = ""
 			end
+		end
+	end
+end
+
+function ProgressionController:_updateAchievementSlots(achievements: { any })
+	-- Build lookup table by achievement id for O(1) access
+	local achMap: { [string]: any } = {}
+	for _, ach in achievements do
+		achMap[ach.id] = ach
+	end
+
+	for i, slot in self._achievementSlots do
+		local achDef = GameConstants.ACHIEVEMENTS.LIST[i]
+		if not achDef then
+			continue
+		end
+
+		local serverData = achMap[achDef.id]
+		local current = if serverData then serverData.current or 0 else 0
+		local completed = if serverData then serverData.completed == true else false
+
+		local progressBg = slot:FindFirstChild("ProgressBg") :: Frame?
+		if progressBg then
+			local progressFill = progressBg:FindFirstChild("ProgressFill") :: Frame?
+			local progressText = progressBg:FindFirstChild("ProgressText") :: TextLabel?
+
+			local ratio = math.clamp(current / achDef.target, 0, 1)
+
+			if progressFill then
+				TweenService:Create(progressFill, TweenInfo.new(0.4), {
+					Size = UDim2.new(ratio, 0, 1, 0),
+				}):Play()
+
+				progressFill.BackgroundColor3 = if completed
+					then Color3.fromRGB(255, 200, 50)
+					else Color3.fromRGB(80, 160, 255)
+			end
+
+			if progressText then
+				if completed then
+					progressText.Text = "CLEAR!"
+				else
+					progressText.Text = `{current}/{achDef.target}`
+				end
+			end
+		end
+
+		-- 완료된 업적: 배경 골드 처리
+		if completed then
+			TweenService:Create(slot, TweenInfo.new(0.3), {
+				BackgroundColor3 = Color3.fromRGB(35, 28, 5),
+			}):Play()
+
+			local nameLabel = slot:FindFirstChild("AchName") :: TextLabel?
+			if nameLabel then
+				nameLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
+			end
+		else
+			slot.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
 		end
 	end
 end
@@ -576,16 +888,19 @@ function ProgressionController:OpenMissions()
 		self._missionGui.Enabled = true
 	end
 
+	-- 현재 탭 상태 적용
+	self:_switchTab(self._currentTab)
+
 	-- 팝업 애니메이션
 	if self._missionFrame then
-		local targetSize = ResponsiveUtil.clampedSize(350, 300, 0.88, 0.75)
+		local targetSize = ResponsiveUtil.clampedSize(360, 360, 0.90, 0.85)
 		local targetW = targetSize.X.Offset
 		self._missionFrame.Size = UDim2.new(0, targetW, 0, 0)
 		self._missionFrame.Position = UDim2.new(0.5, -targetW / 2, 0.5, 0)
 
 		TweenService:Create(self._missionFrame, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
 			Size = targetSize,
-			Position = ResponsiveUtil.clampedPosition(350, 300, 0.88, 0.75),
+			Position = ResponsiveUtil.clampedPosition(360, 360, 0.90, 0.85),
 		}):Play()
 	end
 

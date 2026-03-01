@@ -163,10 +163,18 @@ function ProgressionService:UpdateMissionProgress(player: Player, missionType: s
 
 	for _, mission in missions do
 		if mission.id == missionType and not mission.completed then
-			mission.progress = math.min(mission.progress + amount, mission.target)
-			changed = true
+			-- combo_reach uses "high water mark" (single streak, not cumulative)
+			if missionType == "combo_reach" then
+				if amount > mission.progress then
+					mission.progress = math.min(amount, mission.target)
+					changed = true
+				end
+			else
+				mission.progress = math.min(mission.progress + amount, mission.target)
+				changed = true
+			end
 
-			if mission.progress >= mission.target then
+			if mission.progress >= mission.target and not mission.completed then
 				mission.completed = true
 				self:_onMissionCompleted(player, mission)
 			end
