@@ -51,6 +51,10 @@ type PlayerData = {
 	lastSpinDate: string?, -- 마지막 스핀 날짜
 	-- Phase 2: Season Skin Pieces
 	skinPieces: { [string]: number }?, -- { ["cherry_blossom"] = 3, ["spring_fairy"] = 7 }
+	-- 시나리오 시스템
+	scenarioQuestProgress: { [string]: number }?, -- { [questId]: progress }
+	completedChapters: { string }?, -- 완료한 챕터 ID 목록 e.g. { "ch1", "ch2" }
+	unlockedSkills: { string }?, -- 해금된 스킬 ID 목록 e.g. { "double_jump" }
 }
 
 local DEFAULT_DATA: PlayerData = {
@@ -83,6 +87,10 @@ local DEFAULT_DATA: PlayerData = {
 	lastSpinDate = nil,
 	-- Phase 2: Season Skin Pieces
 	skinPieces = {},
+	-- 시나리오 시스템
+	scenarioQuestProgress = {},
+	completedChapters = {},
+	unlockedSkills = {},
 }
 
 -- 메모리 캐시 (활성 플레이어)

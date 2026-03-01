@@ -295,4 +295,30 @@ RemoteEvents.GiantCoinCollected = getOrCreateRemoteEvent("GiantCoinCollected")
 -- 서버 → 클라이언트: 거인 코인 수집 알림
 -- 파라미터: { reward: number }
 
+-- ==================== 시나리오 시스템 ====================
+
+-- 시나리오 데이터 요청
+RemoteEvents.ScenarioDataRequest = getOrCreateRemoteEvent("ScenarioDataRequest")
+-- 클라이언트 → 서버: 전체 시나리오 데이터 요청
+
+-- 시나리오 데이터 응답
+RemoteEvents.ScenarioDataResponse = getOrCreateRemoteEvent("ScenarioDataResponse")
+-- 서버 → 클라이언트: 챕터/퀘스트/스킬/스탯보너스 전체 데이터 전송
+-- 파라미터: { chapters, completedChapters, unlockedSkills, statBonuses }
+
+-- 퀘스트 진행도 실시간 업데이트
+RemoteEvents.QuestProgressUpdate = getOrCreateRemoteEvent("QuestProgressUpdate")
+-- 서버 → 클라이언트: 퀘스트 진행도 변경 알림
+-- 파라미터: { questProgress: { [questId]: number }, completedChapters, unlockedSkills }
+
+-- 퀘스트 완료 알림
+RemoteEvents.QuestCompleted = getOrCreateRemoteEvent("QuestCompleted")
+-- 서버 → 클라이언트: 퀘스트 완료 알림 (토스트 알림용)
+-- 파라미터: { questId: string, questName: string }
+
+-- 챕터 해금 알림
+RemoteEvents.ChapterUnlocked = getOrCreateRemoteEvent("ChapterUnlocked")
+-- 서버 → 클라이언트: 챕터 완료/해금 알림 (컷씬 포함)
+-- 파라미터: { chapterId, chapterName, chapterTheme, skillUnlocked?, statBonus?, cutscene?, chapterReward?, isOpening? }
+
 return RemoteEvents
