@@ -41,6 +41,12 @@ export type ScenarioController = typeof(setmetatable(
 		_chapterCards: { [string]: Frame },
 		-- 최신 서버 데이터
 		_scenarioData: any?,
+		-- 게임 중 퀘스트 힌트 HUD
+		_questHudGui: ScreenGui?,
+		_questHudItems: { { nameLabel: TextLabel, progressFill: Frame, progressText: TextLabel, frame: Frame } },
+		_isGameActive: boolean,
+		-- 잠금 챕터 점수 시각화용 캐시
+		_playerHighScore: number,
 	},
 	ScenarioController
 ))
@@ -66,6 +72,10 @@ function ScenarioController.new(player: Player): ScenarioController
 		_questProgressTexts = {},
 		_chapterCards = {},
 		_scenarioData = nil,
+		_questHudGui = nil,
+		_questHudItems = {},
+		_isGameActive = false,
+		_playerHighScore = 0,
 	}, ScenarioController)
 
 	self:_createGui()
@@ -288,6 +298,184 @@ function ScenarioController:_createGui()
 
 	-- 챕터 상세 오버레이 (챕터 카드 클릭 시)
 	self:_buildDetailOverlay(frame)
+
+	-- 게임 중 퀘스트 힌트 HUD
+	self:_createQuestHud()
+end
+
+-- ==================== 게임 중 퀘스트 힌트 HUD ====================
+
+function ScenarioController:_createQuestHud()
+	local playerGui = self._player:WaitForChild("PlayerGui")
+
+	local hudGui = Instance.new("ScreenGui")
+	hudGui.Name = "QuestHudGui"
+	hudGui.ResetOnSpawn = false
+	hudGui.DisplayOrder = 15
+	hudGui.Enabled = false
+	hudGui.Parent = playerGui
+	self._questHudGui = hudGui
+
+	local panel = Instance.new("Frame")
+	panel.Name = "QuestHudPanel"
+	panel.Size = UDim2.new(0, 205, 0, 88)
+	panel.Position = UDim2.new(0, 8, 0, 160)
+	panel.BackgroundColor3 = Color3.fromRGB(10, 12, 22)
+	panel.BackgroundTransparency = 0.2
+	panel.BorderSizePixel = 0
+	panel.Parent = hudGui
+
+	local panelCorner = Instance.new("UICorner")
+	panelCorner.CornerRadius = UDim.new(0, 10)
+	panelCorner.Parent = panel
+
+	local panelStroke = Instance.new("UIStroke")
+	panelStroke.Color = Color3.fromRGB(80, 120, 255)
+	panelStroke.Thickness = 1
+	panelStroke.Parent = panel
+
+	local titleLabel = Instance.new("TextLabel")
+	titleLabel.Size = UDim2.new(1, -8, 0, 18)
+	titleLabel.Position = UDim2.new(0, 8, 0, 4)
+	titleLabel.BackgroundTransparency = 1
+	titleLabel.TextColor3 = Color3.fromRGB(140, 170, 255)
+	titleLabel.TextSize = 11
+	titleLabel.Font = Enum.Font.GothamBold
+	titleLabel.Text = "🎯 현재 퀘스트"
+	titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+	titleLabel.Parent = panel
+
+	self._questHudItems = {}
+	for i = 1, 2 do
+		local itemFrame = Instance.new("Frame")
+		itemFrame.Name = `QuestHudItem{i}`
+		itemFrame.Size = UDim2.new(1, -12, 0, 28)
+		itemFrame.Position = UDim2.new(0, 6, 0, 24 + (i - 1) * 31)
+		itemFrame.BackgroundColor3 = Color3.fromRGB(20, 25, 48)
+		itemFrame.BackgroundTransparency = 0.2
+		itemFrame.BorderSizePixel = 0
+		itemFrame.Parent = panel
+
+		local itemCorner = Instance.new("UICorner")
+		itemCorner.CornerRadius = UDim.new(0, 6)
+		itemCorner.Parent = itemFrame
+
+		local nameLabel = Instance.new("TextLabel")
+		nameLabel.Name = "NameLabel"
+		nameLabel.Size = UDim2.new(1, -58, 0, 14)
+		nameLabel.Position = UDim2.new(0, 6, 0, 2)
+		nameLabel.BackgroundTransparency = 1
+		nameLabel.TextColor3 = Color3.fromRGB(210, 215, 235)
+		nameLabel.TextSize = 10
+		nameLabel.Font = Enum.Font.GothamBold
+		nameLabel.Text = ""
+		nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+		nameLabel.TextTruncate = Enum.TextTruncate.AtEnd
+		nameLabel.Parent = itemFrame
+
+		local progressText = Instance.new("TextLabel")
+		progressText.Name = "ProgressText"
+		progressText.Size = UDim2.new(0, 52, 0, 14)
+		progressText.Position = UDim2.new(1, -54, 0, 2)
+		progressText.BackgroundTransparency = 1
+		progressText.TextColor3 = Color3.fromRGB(160, 190, 255)
+		progressText.TextSize = 10
+		progressText.Font = Enum.Font.Gotham
+		progressText.Text = ""
+		progressText.TextXAlignment = Enum.TextXAlignment.Right
+		progressText.Parent = itemFrame
+
+		local progBg = Instance.new("Frame")
+		progBg.Name = "ProgBg"
+		progBg.Size = UDim2.new(1, -12, 0, 6)
+		progBg.Position = UDim2.new(0, 6, 1, -8)
+		progBg.BackgroundColor3 = Color3.fromRGB(30, 35, 60)
+		progBg.Parent = itemFrame
+
+		local progBgCorner = Instance.new("UICorner")
+		progBgCorner.CornerRadius = UDim.new(0, 3)
+		progBgCorner.Parent = progBg
+
+		local progFill = Instance.new("Frame")
+		progFill.Name = "ProgFill"
+		progFill.Size = UDim2.new(0, 0, 1, 0)
+		progFill.BackgroundColor3 = Color3.fromRGB(100, 160, 255)
+		progFill.Parent = progBg
+
+		local progFillCorner = Instance.new("UICorner")
+		progFillCorner.CornerRadius = UDim.new(0, 3)
+		progFillCorner.Parent = progFill
+
+		table.insert(self._questHudItems, {
+			frame = itemFrame,
+			nameLabel = nameLabel,
+			progressText = progressText,
+			progressFill = progFill,
+		})
+	end
+end
+
+function ScenarioController:_updateQuestHud()
+	local hudGui = self._questHudGui
+	if not hudGui or not self._isGameActive or not self._scenarioData then
+		if hudGui then
+			hudGui.Enabled = false
+		end
+		return
+	end
+
+	-- 현재 진행 중인 챕터 찾기 (해금됨 + 미완료, 가장 낮은 챕터 번호)
+	local activeChapter: any? = nil
+	local activeChapterNum = math.huge
+	local chapters = self._scenarioData.chapters :: { any }
+	for _, ch in chapters do
+		if ch.isUnlocked and not ch.isCompleted then
+			local chDef = ScenarioConstants.CHAPTER_MAP[ch.id]
+			local num = chDef and chDef.num or 99
+			if num < activeChapterNum then
+				activeChapterNum = num
+				activeChapter = ch
+			end
+		end
+	end
+
+	if not activeChapter then
+		hudGui.Enabled = false
+		return
+	end
+
+	-- 미완료 퀘스트 중 진행도 높은 순으로 최대 2개 선택
+	local inProgress: { { questData: any, progress: number, target: number } } = {}
+	for _, q in activeChapter.quests do
+		local questDef = ScenarioConstants.QUESTS[q.id]
+		if questDef and not q.completed then
+			table.insert(inProgress, {
+				questData = questDef,
+				progress = q.progress or 0,
+				target = questDef.target,
+			})
+		end
+	end
+
+	table.sort(inProgress, function(a, b)
+		return (a.progress / a.target) > (b.progress / b.target)
+	end)
+
+	hudGui.Enabled = #inProgress > 0
+	for i, item in self._questHudItems do
+		if inProgress[i] then
+			local q = inProgress[i]
+			item.frame.Visible = true
+			item.nameLabel.Text = q.questData.name
+			item.progressText.Text = `{q.progress}/{q.target}`
+			local ratio = math.clamp(q.progress / q.target, 0, 1)
+			TweenService:Create(item.progressFill, TweenInfo.new(0.4), {
+				Size = UDim2.new(ratio, 0, 1, 0),
+			}):Play()
+		else
+			item.frame.Visible = false
+		end
+	end
 end
 
 -- ==================== 챕터 카드 빌드 ====================
@@ -867,10 +1055,18 @@ function ScenarioController:_updateWithData(data: any)
 		-- 퀘스트 카운트
 		local questCount = card:FindFirstChild("QuestCount") :: TextLabel?
 		if questCount then
-			questCount.Text = `{doneCount}/{totalCount}`
-			questCount.TextColor3 = if isCompleted
-				then Color3.fromRGB(100, 220, 80)
-				else Color3.fromRGB(150, 160, 200)
+			if not isUnlocked then
+				-- 잠금 챕터: 해금 요구 점수 대비 현재 최고점수 표시
+				local chapterDef = ScenarioConstants.CHAPTER_MAP[chapter.id]
+				local minScore = chapterDef and chapterDef.unlockConditions and chapterDef.unlockConditions.minScore or 0
+				questCount.Text = `🏆{self._playerHighScore}/{minScore}`
+				questCount.TextColor3 = Color3.fromRGB(200, 160, 80)
+			else
+				questCount.Text = `{doneCount}/{totalCount}`
+				questCount.TextColor3 = if isCompleted
+					then Color3.fromRGB(100, 220, 80)
+					else Color3.fromRGB(150, 160, 200)
+			end
 		end
 
 		-- 진행 바
@@ -878,14 +1074,22 @@ function ScenarioController:_updateWithData(data: any)
 		if progressBg then
 			local fill = progressBg:FindFirstChild("ProgressFill") :: Frame?
 			if fill then
-				local ratio = if totalCount > 0 then math.clamp(doneCount / totalCount, 0, 1) else 0
+				local ratio: number
+				if not isUnlocked then
+					-- 잠금 챕터: 점수 진행도 표시
+					local chapterDef = ScenarioConstants.CHAPTER_MAP[chapter.id]
+					local minScore = chapterDef and chapterDef.unlockConditions and chapterDef.unlockConditions.minScore or 0
+					ratio = if minScore > 0 then math.clamp(self._playerHighScore / minScore, 0, 1) else 0
+				else
+					ratio = if totalCount > 0 then math.clamp(doneCount / totalCount, 0, 1) else 0
+				end
 				TweenService:Create(fill, TweenInfo.new(0.5), {
 					Size = UDim2.new(ratio, 0, 1, 0),
 				}):Play()
 				fill.BackgroundColor3 = if isCompleted
 					then Color3.fromRGB(100, 200, 80)
 					elseif isUnlocked then Color3.fromRGB(80, 130, 255)
-					else Color3.fromRGB(50, 55, 80)
+					else Color3.fromRGB(200, 160, 60) -- 황금색: 점수 진행도
 			end
 		end
 
@@ -950,15 +1154,19 @@ function ScenarioController:_updateWithData(data: any)
 	if self._currentDetailChapterId then
 		self:_populateQuestDetail(self._currentDetailChapterId)
 	end
+
+	-- 게임 중이면 퀘스트 HUD 갱신
+	if self._isGameActive then
+		self:_updateQuestHud()
+	end
 end
 
 -- QuestProgressUpdate 이벤트로 퀘스트 진행바 실시간 갱신
-function ScenarioController:_onQuestProgressUpdate(progressData: any)
-	if not self._isOpen then
-		return
+function ScenarioController:_onQuestProgressUpdate(_progressData: any)
+	if self._isOpen or self._isGameActive then
+		-- 데이터 다시 요청하여 전체 갱신 (HUD 포함)
+		RemoteEvents.ScenarioDataRequest:FireServer()
 	end
-	-- 데이터 다시 요청하여 전체 갱신
-	RemoteEvents.ScenarioDataRequest:FireServer()
 end
 
 -- ==================== 팝업 열기/닫기 ====================
@@ -1021,12 +1229,20 @@ function ScenarioController:HideForGame()
 	if self._isOpen then
 		self:ClosePanel()
 	end
+	-- 게임 중 퀘스트 HUD 활성화
+	self._isGameActive = true
+	self:_updateQuestHud()
 end
 
 -- 로비에서 표시
 function ScenarioController:ShowInLobby()
 	if self._lobbyButton then
 		self._lobbyButton.Visible = true
+	end
+	-- 퀘스트 HUD 비활성화
+	self._isGameActive = false
+	if self._questHudGui then
+		self._questHudGui.Enabled = false
 	end
 end
 
@@ -1050,6 +1266,17 @@ function ScenarioController:_setupEventHandlers()
 		self:_showQuestCompleteToast(data.questName)
 	end)
 	table.insert(self._connections, questDoneConn)
+
+	-- 플레이어 데이터 로드 → 최고점수 캐시 (잠금 챕터 점수 시각화용)
+	local playerDataConn = RemoteEvents.PlayerDataLoaded.OnClientEvent:Connect(function(data)
+		if data and data.highScore then
+			self._playerHighScore = data.highScore
+			if self._scenarioData then
+				self:_updateWithData(self._scenarioData)
+			end
+		end
+	end)
+	table.insert(self._connections, playerDataConn)
 end
 
 -- 퀘스트 완료 토스트 (화면 상단)
