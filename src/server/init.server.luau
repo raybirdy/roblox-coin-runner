@@ -30,6 +30,7 @@ local LoginRewardService = require(ServerScriptService.Server.Services.LoginRewa
 local _LuckySpinService = require(ServerScriptService.Server.Services.LuckySpinService)
 local _ScenarioService = require(ServerScriptService.Server.Services.ScenarioService)
 local WeeklyRankingService = require(ServerScriptService.Server.Services.WeeklyRankingService)
+local AsyncBattleService = require(ServerScriptService.Server.Services.AsyncBattleService)
 
 print("[Server] Game Constants Loaded")
 print("[Server] Remote Events Initialized")
@@ -49,6 +50,10 @@ print("[Server] ScenarioService Loaded")
 -- WeeklyRankingService RemoteEvent 연결
 WeeklyRankingService:SetupRemoteEvents()
 print("[Server] WeeklyRankingService Loaded")
+
+-- AsyncBattleService RemoteEvent 연결
+AsyncBattleService:SetupRemoteEvents()
+print("[Server] AsyncBattleService Loaded")
 
 -- 플레이어 참가 처리
 game.Players.PlayerAdded:Connect(function(player: Player)
