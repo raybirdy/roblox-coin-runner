@@ -47,6 +47,9 @@ export type ScenarioController = typeof(setmetatable(
 		_isGameActive: boolean,
 		-- 잠금 챕터 점수 시각화용 캐시
 		_playerHighScore: number,
+		-- 시나리오 인트로 팝업
+		_newBadge: Frame?,
+		_introShown: boolean,
 	},
 	ScenarioController
 ))
@@ -76,6 +79,8 @@ function ScenarioController.new(player: Player): ScenarioController
 		_questHudItems = {},
 		_isGameActive = false,
 		_playerHighScore = 0,
+		_newBadge = nil,
+		_introShown = false,
 	}, ScenarioController)
 
 	self:_createGui()
@@ -122,6 +127,30 @@ function ScenarioController:_createGui()
 	lobbyBtnStroke.Color = Color3.fromRGB(100, 140, 255)
 	lobbyBtnStroke.Thickness = 2
 	lobbyBtnStroke.Parent = lobbyBtn
+
+	-- NEW 뱃지 (인트로 미확인 시 표시)
+	local newBadge = Instance.new("Frame")
+	newBadge.Name = "NewBadge"
+	newBadge.Size = UDim2.new(0, 22, 0, 16)
+	newBadge.Position = UDim2.new(1, -8, 0, -6)
+	newBadge.BackgroundColor3 = Color3.fromRGB(220, 50, 50)
+	newBadge.BorderSizePixel = 0
+	newBadge.Visible = false -- PlayerDataLoaded 후 결정
+	newBadge.Parent = lobbyBtn
+	self._newBadge = newBadge
+
+	local newBadgeCorner = Instance.new("UICorner")
+	newBadgeCorner.CornerRadius = UDim.new(0, 8)
+	newBadgeCorner.Parent = newBadge
+
+	local newBadgeLabel = Instance.new("TextLabel")
+	newBadgeLabel.Size = UDim2.new(1, 0, 1, 0)
+	newBadgeLabel.BackgroundTransparency = 1
+	newBadgeLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	newBadgeLabel.TextSize = 9
+	newBadgeLabel.Font = Enum.Font.GothamBlack
+	newBadgeLabel.Text = "NEW"
+	newBadgeLabel.Parent = newBadge
 
 	lobbyBtn.MouseButton1Click:Connect(function()
 		if self._isOpen then
@@ -1267,12 +1296,30 @@ function ScenarioController:_setupEventHandlers()
 	end)
 	table.insert(self._connections, questDoneConn)
 
-	-- 플레이어 데이터 로드 → 최고점수 캐시 (잠금 챕터 점수 시각화용)
+	-- 플레이어 데이터 로드 → 최고점수 캐시 + 인트로 팝업 체크
 	local playerDataConn = RemoteEvents.PlayerDataLoaded.OnClientEvent:Connect(function(data)
-		if data and data.highScore then
+		if not data then
+			return
+		end
+		if data.highScore then
 			self._playerHighScore = data.highScore
 			if self._scenarioData then
 				self:_updateWithData(self._scenarioData)
+			end
+		end
+		-- 시나리오 인트로 미확인이면 팝업 예약 (1회)
+		if not data.hasSeenScenarioIntro and not self._introShown then
+			self._introShown = true
+			if self._newBadge then
+				self._newBadge.Visible = true
+			end
+			task.delay(2.5, function()
+				self:_showIntroPopup()
+			end)
+		else
+			-- 이미 봤으면 뱃지 숨김
+			if self._newBadge then
+				self._newBadge.Visible = false
 			end
 		end
 	end)
@@ -1325,6 +1372,241 @@ function ScenarioController:_showQuestCompleteToast(questName: string)
 		task.delay(0.3, function()
 			toast:Destroy()
 		end)
+	end)
+end
+
+-- ==================== 시나리오 인트로 팝업 ====================
+
+function ScenarioController:_showIntroPopup()
+	local playerGui = self._player:WaitForChild("PlayerGui")
+
+	-- 이미 떠 있으면 중복 방지
+	if playerGui:FindFirstChild("ScenarioIntroGui") then
+		return
+	end
+
+	local introGui = Instance.new("ScreenGui")
+	introGui.Name = "ScenarioIntroGui"
+	introGui.ResetOnSpawn = false
+	introGui.DisplayOrder = 25
+	introGui.Parent = playerGui
+
+	-- 반투명 배경
+	local dimBg = Instance.new("Frame")
+	dimBg.Size = UDim2.new(1, 0, 1, 0)
+	dimBg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	dimBg.BackgroundTransparency = 0.45
+	dimBg.BorderSizePixel = 0
+	dimBg.Parent = introGui
+
+	-- 카드
+	local card = Instance.new("Frame")
+	card.Name = "IntroCard"
+	card.Size = UDim2.new(0, 340, 0, 400)
+	card.Position = UDim2.new(0.5, -170, 0.5, -200)
+	card.BackgroundColor3 = Color3.fromRGB(14, 18, 36)
+	card.BorderSizePixel = 0
+	card.Parent = introGui
+
+	local cardCorner = Instance.new("UICorner")
+	cardCorner.CornerRadius = UDim.new(0, 16)
+	cardCorner.Parent = card
+
+	local cardStroke = Instance.new("UIStroke")
+	cardStroke.Color = Color3.fromRGB(80, 130, 255)
+	cardStroke.Thickness = 2
+	cardStroke.Parent = card
+
+	-- 상단 타이틀 배너
+	local titleBg = Instance.new("Frame")
+	titleBg.Size = UDim2.new(1, 0, 0, 56)
+	titleBg.BackgroundColor3 = Color3.fromRGB(30, 50, 140)
+	titleBg.BorderSizePixel = 0
+	titleBg.Parent = card
+
+	local titleBgCorner = Instance.new("UICorner")
+	titleBgCorner.CornerRadius = UDim.new(0, 16)
+	titleBgCorner.Parent = titleBg
+
+	-- 아래쪽 모서리를 직각으로
+	local titleBgFix = Instance.new("Frame")
+	titleBgFix.Size = UDim2.new(1, 0, 0.5, 0)
+	titleBgFix.Position = UDim2.new(0, 0, 0.5, 0)
+	titleBgFix.BackgroundColor3 = Color3.fromRGB(30, 50, 140)
+	titleBgFix.BorderSizePixel = 0
+	titleBgFix.Parent = titleBg
+
+	local titleLabel = Instance.new("TextLabel")
+	titleLabel.Size = UDim2.new(1, -16, 1, 0)
+	titleLabel.Position = UDim2.new(0, 12, 0, 0)
+	titleLabel.BackgroundTransparency = 1
+	titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	titleLabel.TextSize = 18
+	titleLabel.Font = Enum.Font.GothamBlack
+	titleLabel.Text = "🌟 시나리오 시스템 오픈!"
+	titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+	titleLabel.Parent = titleBg
+
+	-- 설명 텍스트
+	local descLabel = Instance.new("TextLabel")
+	descLabel.Size = UDim2.new(1, -24, 0, 46)
+	descLabel.Position = UDim2.new(0, 12, 0, 66)
+	descLabel.BackgroundTransparency = 1
+	descLabel.TextColor3 = Color3.fromRGB(200, 210, 235)
+	descLabel.TextSize = 13
+	descLabel.Font = Enum.Font.Gotham
+	descLabel.Text = "게임을 플레이하면서 퀘스트를 완료하고\n챕터를 클리어해 강력한 스킬을 얻어보세요!"
+	descLabel.TextWrapped = true
+	descLabel.TextXAlignment = Enum.TextXAlignment.Left
+	descLabel.Parent = card
+
+	-- 구분선
+	local divider = Instance.new("Frame")
+	divider.Size = UDim2.new(1, -24, 0, 1)
+	divider.Position = UDim2.new(0, 12, 0, 118)
+	divider.BackgroundColor3 = Color3.fromRGB(40, 55, 100)
+	divider.BorderSizePixel = 0
+	divider.Parent = card
+
+	-- 스킬 미리보기 타이틀
+	local skillTitle = Instance.new("TextLabel")
+	skillTitle.Size = UDim2.new(1, -24, 0, 20)
+	skillTitle.Position = UDim2.new(0, 12, 0, 126)
+	skillTitle.BackgroundTransparency = 1
+	skillTitle.TextColor3 = Color3.fromRGB(140, 170, 255)
+	skillTitle.TextSize = 12
+	skillTitle.Font = Enum.Font.GothamBold
+	skillTitle.Text = "챕터 클리어 보상 스킬"
+	skillTitle.TextXAlignment = Enum.TextXAlignment.Left
+	skillTitle.Parent = card
+
+	-- 스킬 목록 (5개)
+	local skillItems = {
+		{ icon = "⬆️", name = "2단 점프", ch = "CH2" },
+		{ icon = "💨", name = "대쉬", ch = "CH4" },
+		{ icon = "🛡️", name = "쉴드 재생", ch = "CH6" },
+		{ icon = "🧲", name = "자석 폭발", ch = "CH8" },
+		{ icon = "🔥", name = "피버 부스트", ch = "CH10" },
+	}
+
+	for i, item in skillItems do
+		local row = Instance.new("Frame")
+		row.Size = UDim2.new(1, -24, 0, 28)
+		row.Position = UDim2.new(0, 12, 0, 148 + (i - 1) * 32)
+		row.BackgroundColor3 = Color3.fromRGB(20, 26, 50)
+		row.BorderSizePixel = 0
+		row.Parent = card
+
+		local rowCorner = Instance.new("UICorner")
+		rowCorner.CornerRadius = UDim.new(0, 6)
+		rowCorner.Parent = row
+
+		local rowIcon = Instance.new("TextLabel")
+		rowIcon.Size = UDim2.new(0, 28, 1, 0)
+		rowIcon.BackgroundTransparency = 1
+		rowIcon.TextColor3 = Color3.fromRGB(255, 255, 255)
+		rowIcon.TextSize = 14
+		rowIcon.Font = Enum.Font.GothamBold
+		rowIcon.Text = item.icon
+		rowIcon.Parent = row
+
+		local rowName = Instance.new("TextLabel")
+		rowName.Size = UDim2.new(1, -80, 1, 0)
+		rowName.Position = UDim2.new(0, 28, 0, 0)
+		rowName.BackgroundTransparency = 1
+		rowName.TextColor3 = Color3.fromRGB(210, 215, 235)
+		rowName.TextSize = 13
+		rowName.Font = Enum.Font.GothamBold
+		rowName.Text = item.name
+		rowName.TextXAlignment = Enum.TextXAlignment.Left
+		rowName.Parent = row
+
+		local rowCh = Instance.new("TextLabel")
+		rowCh.Size = UDim2.new(0, 50, 1, 0)
+		rowCh.Position = UDim2.new(1, -52, 0, 0)
+		rowCh.BackgroundTransparency = 1
+		rowCh.TextColor3 = Color3.fromRGB(100, 140, 220)
+		rowCh.TextSize = 11
+		rowCh.Font = Enum.Font.Gotham
+		rowCh.Text = item.ch .. " 해금"
+		rowCh.TextXAlignment = Enum.TextXAlignment.Right
+		rowCh.Parent = row
+	end
+
+	-- 하단 힌트
+	local hintLabel = Instance.new("TextLabel")
+	hintLabel.Size = UDim2.new(1, -24, 0, 18)
+	hintLabel.Position = UDim2.new(0, 12, 0, 314)
+	hintLabel.BackgroundTransparency = 1
+	hintLabel.TextColor3 = Color3.fromRGB(130, 140, 170)
+	hintLabel.TextSize = 11
+	hintLabel.Font = Enum.Font.Gotham
+	hintLabel.Text = "📖 로비 버튼에서 진행 현황을 확인하세요"
+	hintLabel.TextXAlignment = Enum.TextXAlignment.Center
+	hintLabel.Parent = card
+
+	-- 버튼 영역
+	local openBtn = Instance.new("TextButton")
+	openBtn.Size = UDim2.new(0.55, -6, 0, 36)
+	openBtn.Position = UDim2.new(0, 12, 1, -48)
+	openBtn.BackgroundColor3 = Color3.fromRGB(60, 100, 220)
+	openBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	openBtn.TextSize = 14
+	openBtn.Font = Enum.Font.GothamBold
+	openBtn.Text = "📖 지금 시작하기!"
+	openBtn.Parent = card
+
+	local openBtnCorner = Instance.new("UICorner")
+	openBtnCorner.CornerRadius = UDim.new(0, 8)
+	openBtnCorner.Parent = openBtn
+
+	local laterBtn = Instance.new("TextButton")
+	laterBtn.Size = UDim2.new(0.45, -6, 0, 36)
+	laterBtn.Position = UDim2.new(0.55, 0, 1, -48)
+	laterBtn.BackgroundColor3 = Color3.fromRGB(35, 40, 65)
+	laterBtn.TextColor3 = Color3.fromRGB(160, 165, 190)
+	laterBtn.TextSize = 13
+	laterBtn.Font = Enum.Font.Gotham
+	laterBtn.Text = "나중에"
+	laterBtn.Parent = card
+
+	local laterBtnCorner = Instance.new("UICorner")
+	laterBtnCorner.CornerRadius = UDim.new(0, 8)
+	laterBtnCorner.Parent = laterBtn
+
+	-- 등장 애니메이션
+	card.Position = UDim2.new(0.5, -170, 0.5, -180)
+	card.BackgroundTransparency = 1
+	TweenService:Create(card, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+		Position = UDim2.new(0.5, -170, 0.5, -200),
+		BackgroundTransparency = 0,
+	}):Play()
+
+	local function closeIntro(openPanel: boolean)
+		-- 서버에 확인 표시
+		RemoteEvents.ScenarioIntroSeen:FireServer()
+		-- NEW 뱃지 제거
+		if self._newBadge then
+			self._newBadge.Visible = false
+		end
+		-- 카드 닫기 애니메이션
+		TweenService:Create(card, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+			Position = UDim2.new(0.5, -170, 0.5, -170),
+			BackgroundTransparency = 1,
+		}):Play()
+		task.delay(0.25, function()
+			introGui:Destroy()
+			if openPanel then
+				self:OpenPanel()
+			end
+		end)
+	end
+
+	openBtn.MouseButton1Click:Connect(function()
+		closeIntro(true)
+	end)
+	laterBtn.MouseButton1Click:Connect(function()
+		closeIntro(false)
 	end)
 end
 
