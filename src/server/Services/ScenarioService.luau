@@ -394,6 +394,11 @@ function ScenarioService:SetupRemoteEvents()
 	RemoteEvents.ScenarioDataRequest.OnServerEvent:Connect(function(player: Player)
 		self:OnScenarioDataRequest(player)
 	end)
+
+	RemoteEvents.ScenarioIntroSeen.OnServerEvent:Connect(function(player: Player)
+		PlayerDataService:MarkScenarioIntroSeen(player)
+	end)
+
 	print("[ScenarioService] Remote events connected")
 end
 

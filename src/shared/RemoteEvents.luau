@@ -321,6 +321,10 @@ RemoteEvents.ChapterUnlocked = getOrCreateRemoteEvent("ChapterUnlocked")
 -- 서버 → 클라이언트: 챕터 완료/해금 알림 (컷씬 포함)
 -- 파라미터: { chapterId, chapterName, chapterTheme, skillUnlocked?, statBonus?, cutscene?, chapterReward?, isOpening? }
 
+-- 시나리오 인트로 확인 (클라이언트 → 서버)
+RemoteEvents.ScenarioIntroSeen = getOrCreateRemoteEvent("ScenarioIntroSeen")
+-- 파라미터: 없음. 인트로 팝업을 닫을 때 1회 전송
+
 -- ==================== 주간 랭킹 ====================
 
 -- 주간 랭크 업데이트 (서버 → 클라이언트)

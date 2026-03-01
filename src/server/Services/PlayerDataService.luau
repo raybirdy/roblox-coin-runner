@@ -55,6 +55,7 @@ type PlayerData = {
 	scenarioQuestProgress: { [string]: number }?, -- { [questId]: progress }
 	completedChapters: { string }?, -- 완료한 챕터 ID 목록 e.g. { "ch1", "ch2" }
 	unlockedSkills: { string }?, -- 해금된 스킬 ID 목록 e.g. { "double_jump" }
+	hasSeenScenarioIntro: boolean?, -- 시나리오 인트로 팝업을 본 적 있는지
 }
 
 local DEFAULT_DATA: PlayerData = {
@@ -91,6 +92,7 @@ local DEFAULT_DATA: PlayerData = {
 	scenarioQuestProgress = {},
 	completedChapters = {},
 	unlockedSkills = {},
+	hasSeenScenarioIntro = false,
 }
 
 -- 메모리 캐시 (활성 플레이어)
@@ -312,6 +314,14 @@ function PlayerDataService:GetGems(player: Player): number
 	end
 
 	return playerData.gems
+end
+
+-- 시나리오 인트로 확인 표시
+function PlayerDataService:MarkScenarioIntroSeen(player: Player)
+	local playerData = playerDataCache[player]
+	if playerData then
+		playerData.hasSeenScenarioIntro = true
+	end
 end
 
 -- VIP 상태 설정
