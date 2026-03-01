@@ -59,6 +59,10 @@ export type PlayerController = typeof(setmetatable(
 		-- 슬라이드 세션 카운터 (stale task.delay 방지)
 		_slideSessionId: number,
 
+		-- 스킬
+		_skillDoubleJump: boolean,
+		_lastDashTime: number,
+
 		-- 디버그
 		_lastJumpTime: number,
 	},
@@ -96,6 +100,8 @@ function PlayerController.new(player: Player, character: Model): PlayerControlle
 		_gameConnection = nil,
 
 		_slideSessionId = 0,
+		_skillDoubleJump = false,
+		_lastDashTime = 0,
 		_lastJumpTime = 0,
 	}, PlayerController)
 
@@ -210,6 +216,39 @@ function PlayerController:StopGame()
 	end
 
 	print(`[PlayerController] Game stopped for {self.player.Name}`)
+end
+
+-- 2단 점프 스킬 활성화/비활성화
+function PlayerController:SetDoubleJump(enabled: boolean)
+	self._skillDoubleJump = enabled
+	print(`[PlayerController] Double jump skill: {enabled}`)
+end
+
+-- 대쉬 스킬: 앞으로 순간 가속 (클라이언트 로컬 적용)
+function PlayerController:Dash()
+	if self.state == "Idle" then
+		return
+	end
+	local now = tick()
+	local DASH_COOLDOWN = 8
+	if now - self._lastDashTime < DASH_COOLDOWN then
+		return
+	end
+	self._lastDashTime = now
+
+	-- X축 순간 가속 (현재 속도의 3배, 0.3초간)
+	local dashSpeed = self.currentSpeed * 3
+	local originalMultiplier = self.speedMultiplier
+	self.speedMultiplier = dashSpeed / math.max(self.currentSpeed, 1)
+
+	-- 0.3초 후 원래 속도 복원
+	task.delay(0.3, function()
+		if self.state ~= "Idle" then
+			self.speedMultiplier = originalMultiplier
+		end
+	end)
+
+	print(`[PlayerController] Dash activated! Speed: {dashSpeed}`)
 end
 
 -- 로비 모드 설정 (자유 회전 허용)
@@ -523,7 +562,7 @@ function PlayerController:Jump()
 	-- 1단 점프 (바닥에 있을 때)
 	if self.isGrounded then
 		self:_performJump(GameConstants.PHYSICS.JUMP_HEIGHT_FIRST)
-		self.canDoubleJump = true
+		self.canDoubleJump = self._skillDoubleJump -- 2단 점프 스킬 보유 시만 허용
 		self._lastJumpTime = now
 		print(`[PlayerController] First jump - Y: {self.humanoidRootPart.Position.Y}`)
 		return

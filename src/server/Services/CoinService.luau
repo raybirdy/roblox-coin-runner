@@ -531,6 +531,26 @@ function CoinService:CheckCoinCollection(playerPosition: Vector3, magnetRadius: 
 	return collectedCoins
 end
 
+-- 자석 폭발: 반경 내 모든 코인 즉시 수집 (magnet_burst 스킬용)
+function CoinService:BurstCollectCoins(playerPosition: Vector3, radius: number): { CoinData }
+	local collectedCoins = {}
+	for i = #self._activeCoins, 1, -1 do
+		local coinData = self._activeCoins[i]
+		local distance = (coinData.part.Position - playerPosition).Magnitude
+		if distance < radius then
+			table.insert(collectedCoins, coinData)
+			local coinModel = coinData.part.Parent
+			if coinModel and coinModel:IsA("Model") then
+				coinModel:Destroy()
+			else
+				coinData.part:Destroy()
+			end
+			table.remove(self._activeCoins, i)
+		end
+	end
+	return collectedCoins
+end
+
 -- 청크 삭제 시 관련 코인 정리
 function CoinService:CleanupCoinsInChunk(chunkPosition: Vector3, chunkSize: Vector3)
 	for i = #self._activeCoins, 1, -1 do
