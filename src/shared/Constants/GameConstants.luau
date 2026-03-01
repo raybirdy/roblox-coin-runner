@@ -988,4 +988,31 @@ GameConstants.EVENT_CHUNKS = {
 	COOLDOWN = 30, -- 이벤트 간 최소 간격 (초)
 }
 
+-- ==================== 재미 요소 강화 ====================
+
+-- 생존 배율 시스템 (무피격 지속 시 거리 점수 배율 증가)
+GameConstants.SURVIVAL_MULTIPLIER = {
+	-- 무피격 지속 시간별 배율 단계 (오름차순)
+	TIERS = {
+		{ minTime = 30,  multiplier = 1.5, label = "🔥 x1.5!" },
+		{ minTime = 60,  multiplier = 2.0, label = "⚡ x2.0!" },
+		{ minTime = 120, multiplier = 3.0, label = "💎 x3.0!" },
+	},
+}
+
+-- 피격 후 코인 러시 (피격 직후 무적 구간 코인 5배)
+GameConstants.HIT_RECOVERY = {
+	RUSH_DURATION = 3,    -- 지속 시간 (초, 무적 시간과 동일)
+	COIN_MULTIPLIER = 5,  -- 코인 배율
+}
+
+-- 슈퍼 피버 (피버 2연속 시 강화 피버)
+GameConstants.SUPER_FEVER = {
+	CHAIN_WINDOW = 15,   -- 피버 종료 후 이 시간 내 재발동 시 슈퍼 피버 (초)
+	DURATION = 8,        -- 지속 시간 (초)
+	COIN_MULTIPLIER = 5, -- 코인 배율
+	SPEED_BOOST = 1.8,   -- 속도 배율
+	MAGNET_RADIUS = 40,  -- 자석 반경 (studs)
+}
+
 return GameConstants

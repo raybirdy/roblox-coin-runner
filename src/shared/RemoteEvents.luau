@@ -396,4 +396,18 @@ RemoteEvents.BattleOpponentScore = getOrCreateRemoteEvent("BattleOpponentScore")
 RemoteEvents.BattleResult = getOrCreateRemoteEvent("BattleResult")
 -- 파라미터: { won: boolean, myScore: number, opponentScore: number, opponentName: string, reward: number? }
 
+-- ==================== 재미 요소 강화 ====================
+
+-- 생존 배율 업데이트 (서버 → 클라이언트)
+RemoteEvents.SurvivalMultiplierUpdate = getOrCreateRemoteEvent("SurvivalMultiplierUpdate")
+-- 파라미터: { tier: number, multiplier: number, label: string? }
+
+-- 피격 코인 러시 (서버 → 클라이언트)
+RemoteEvents.HitRushStart = getOrCreateRemoteEvent("HitRushStart")
+-- 파라미터: { duration: number }
+
+-- 슈퍼 피버 시작 (서버 → 클라이언트)
+RemoteEvents.SuperFeverStart = getOrCreateRemoteEvent("SuperFeverStart")
+-- 파라미터: { duration: number, speedBoost: number }
+
 return RemoteEvents
