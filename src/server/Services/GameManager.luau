@@ -86,6 +86,11 @@ type GameSession = {
 	unlockedSkillsSet: { [string]: boolean },
 	lastShieldRegenTime: number,
 	feverThreshold: number,
+	-- Survival multiplier
+	survivalStartTime: number,
+	survivalMultiplierTier: number,
+	-- Hit recovery rush
+	hitRushEndTime: number,
 	-- Async Battle
 	asyncBattleTarget: { targetName: string, targetScore: number }?,
 }
@@ -244,6 +249,9 @@ RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { 
 		unlockedSkillsSet = unlockedSkillsSet,
 		lastShieldRegenTime = tick(),
 		feverThreshold = feverThreshold,
+		survivalStartTime = tick(),
+		survivalMultiplierTier = 0,
+		hitRushEndTime = 0,
 	}
 
 	activeSessions[player] = session
@@ -454,6 +462,9 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 		lastShieldRegenTime = tick(),
 		feverThreshold = feverThreshold2,
 		asyncBattleTarget = battleTarget2,
+		survivalStartTime = tick(),
+		survivalMultiplierTier = 0,
+		hitRushEndTime = 0,
 	}
 
 	activeSessions[player] = session
@@ -814,9 +825,11 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 		if session.isFever then
 			coinMultiplier *= GameConstants.FEVER.COIN_MULTIPLIER
 		end
+		local hitRushActive = tick() < session.hitRushEndTime
+		local hitRushMult = if hitRushActive then GameConstants.HIT_RECOVERY.COIN_MULTIPLIER else 1
 		for _, coinData in collectedCoins do
-			-- 2배 코인 적용 (파워업 + VIP 배율)
-			local actualValue = coinData.value * coinMultiplier
+			-- 2배 코인 적용 (파워업 + VIP 배율 + 히트 러시)
+			local actualValue = coinData.value * coinMultiplier * hitRushMult
 
 			-- 세션 데이터 업데이트
 			session.coins += actualValue
@@ -1001,6 +1014,15 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 					end
 				end
 
+				-- 생존 배율 리셋 + 히트 러시 시작
+				session.survivalStartTime = tick()
+				if session.survivalMultiplierTier > 0 then
+					session.survivalMultiplierTier = 0
+					RemoteEvents.SurvivalMultiplierUpdate:FireClient(player, { tier = 0, multiplier = 1.0 })
+				end
+				session.hitRushEndTime = tick() + GameConstants.HIT_RECOVERY.RUSH_DURATION
+				RemoteEvents.HitRushStart:FireClient(player, { duration = GameConstants.HIT_RECOVERY.RUSH_DURATION })
+
 				-- 퍼펙트 런 리셋 (피격 시 현재 거리 기록)
 				local hitX = hrp.Position.X - session.startPosition.X
 				session.lastHitDistance = math.max(0, math.floor(hitX))
@@ -1111,9 +1133,31 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 			end
 		end
 
+		-- 생존 배율 티어 업데이트
+		local cleanTime = tick() - session.survivalStartTime
+		local newTier = 0
+		for i = #GameConstants.SURVIVAL_MULTIPLIER.TIERS, 1, -1 do
+			if cleanTime >= GameConstants.SURVIVAL_MULTIPLIER.TIERS[i].minTime then
+				newTier = i
+				break
+			end
+		end
+		if newTier ~= session.survivalMultiplierTier then
+			session.survivalMultiplierTier = newTier
+			local tierData = GameConstants.SURVIVAL_MULTIPLIER.TIERS[newTier]
+			RemoteEvents.SurvivalMultiplierUpdate:FireClient(player, {
+				tier = newTier,
+				multiplier = if tierData then tierData.multiplier else 1.0,
+				label = if tierData then tierData.label else nil,
+			})
+		end
+		local survivalMult = if session.survivalMultiplierTier > 0
+			then GameConstants.SURVIVAL_MULTIPLIER.TIERS[session.survivalMultiplierTier].multiplier
+			else 1.0
+
 		-- 점수 업데이트 (이동 거리 기반)
 		local distanceTraveled = hrp.Position.X - session.startPosition.X
-		local distanceScore = math.max(0, math.floor(distanceTraveled * GameConstants.SCORE.DISTANCE_MULTIPLIER))
+		local distanceScore = math.max(0, math.floor(distanceTraveled * GameConstants.SCORE.DISTANCE_MULTIPLIER * survivalMult))
 
 		-- 퍼펙트 런 마일스톤 체크
 		local noHitDistance = math.floor(distanceTraveled) - session.lastHitDistance

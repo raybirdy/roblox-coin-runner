@@ -37,6 +37,7 @@ export type UIController = typeof(setmetatable(
 		_lobbyGuide: Frame?, -- 로비 안내 텍스트
 		_highScoreDisplay: Frame?, -- 로비 최고 점수 표시
 		_lobbyGuideAnimation: boolean?, -- 로비 안내 펄스 애니메이션 활성 여부
+		_multiplierBadge: Frame?, -- 생존 배율 뱃지
 		_connections: { RBXScriptConnection },
 		_onJumpCallback: (() -> ())?,
 		_onSlideCallback: (() -> ())?,
@@ -69,6 +70,7 @@ function UIController.new(player: Player): UIController
 		_lobbyGuide = nil,
 		_highScoreDisplay = nil,
 		_lobbyGuideAnimation = false,
+		_multiplierBadge = nil,
 		_connections = {},
 		_onJumpCallback = nil,
 		_onSlideCallback = nil,
@@ -792,6 +794,18 @@ function UIController:_setupEventHandlers()
 		self:ShowNewRecordCelebration()
 	end)
 	table.insert(self._connections, newRecordConn)
+
+	-- 생존 배율 업데이트
+	local survivalMultConn = RemoteEvents.SurvivalMultiplierUpdate.OnClientEvent:Connect(function(data)
+		self:UpdateSurvivalMultiplierBadge(data)
+	end)
+	table.insert(self._connections, survivalMultConn)
+
+	-- 히트 러시 시작
+	local hitRushConn = RemoteEvents.HitRushStart.OnClientEvent:Connect(function(data)
+		self:ShowHitRushToast(data.duration)
+	end)
+	table.insert(self._connections, hitRushConn)
 
 	print("[UIController] Event handlers set up")
 end
@@ -1609,6 +1623,152 @@ function UIController:ShowNewRecordCelebration()
 			if celebFrame and celebFrame.Parent then
 				celebFrame:Destroy()
 			end
+		end
+	end)
+end
+
+-- 생존 배율 뱃지 업데이트
+function UIController:UpdateSurvivalMultiplierBadge(data: { tier: number, multiplier: number, label: string? })
+	if not self._screenGui then
+		return
+	end
+
+	-- 기존 뱃지 제거
+	if self._multiplierBadge then
+		self._multiplierBadge:Destroy()
+		self._multiplierBadge = nil
+	end
+
+	-- tier 0 = 배율 없음 → 뱃지 숨김
+	if data.tier == 0 then
+		return
+	end
+
+	-- 배율 뱃지 생성 (HUD 우측 상단)
+	local badge = Instance.new("Frame")
+	badge.Name = "SurvivalMultiplierBadge"
+	badge.Size = UDim2.new(0, 90, 0, 32)
+	badge.Position = UDim2.new(1, -100, 0, 80)
+	badge.BackgroundColor3 = if data.tier >= 3
+		then Color3.fromRGB(80, 0, 160) -- 3단계: 보라
+		elseif data.tier == 2
+		then Color3.fromRGB(20, 80, 200) -- 2단계: 파랑
+		else Color3.fromRGB(200, 80, 20) -- 1단계: 주황
+	badge.BackgroundTransparency = 0.15
+	badge.BorderSizePixel = 0
+	badge.ZIndex = 5
+	badge.Parent = self._screenGui
+	self._multiplierBadge = badge
+
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, 6)
+	corner.Parent = badge
+
+	local label = Instance.new("TextLabel")
+	label.Name = "Label"
+	label.Size = UDim2.new(1, 0, 1, 0)
+	label.BackgroundTransparency = 1
+	label.Text = data.label or `x{data.multiplier}`
+	label.TextColor3 = Color3.fromRGB(255, 255, 255)
+	label.TextSize = ResponsiveUtil.scaledTextSize(15, 12)
+	label.Font = Enum.Font.GothamBold
+	label.ZIndex = 6
+	label.Parent = badge
+
+	-- 출현 애니메이션
+	badge.Size = UDim2.new(0, 0, 0, 32)
+	TweenService:Create(badge, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+		Size = UDim2.new(0, 90, 0, 32),
+	}):Play()
+
+	-- 마일스톤 토스트 (배율 상승 시)
+	local toastText = if data.tier >= 3
+		then "💎 생존 배율 MAX! x3.0"
+		elseif data.tier == 2
+		then "⚡ 생존 배율 업! x2.0"
+		else "🔥 생존 배율 시작! x1.5"
+	self:_showSurvivalToast(toastText)
+end
+
+-- 생존 배율 토스트 (간소)
+function UIController:_showSurvivalToast(text: string)
+	if not self._screenGui then
+		return
+	end
+	local toast = Instance.new("TextLabel")
+	toast.Name = "SurvivalToast"
+	toast.Size = UDim2.new(0, 260, 0, 30)
+	toast.Position = UDim2.new(0.5, -130, 0.75, 0)
+	toast.BackgroundTransparency = 1
+	toast.Text = text
+	toast.TextColor3 = Color3.fromRGB(255, 220, 60)
+	toast.TextSize = ResponsiveUtil.scaledTextSize(16, 13)
+	toast.Font = Enum.Font.GothamBold
+	toast.TextStrokeTransparency = 0.4
+	toast.ZIndex = 8
+	toast.Parent = self._screenGui
+
+	TweenService:Create(toast, TweenInfo.new(0.2), { Position = UDim2.new(0.5, -130, 0.72, 0) }):Play()
+	task.delay(1.5, function()
+		if toast and toast.Parent then
+			TweenService:Create(toast, TweenInfo.new(0.4), { TextTransparency = 1, TextStrokeTransparency = 1 }):Play()
+			task.delay(0.4, function()
+				if toast and toast.Parent then
+					toast:Destroy()
+				end
+			end)
+		end
+	end)
+end
+
+-- 히트 러시 토스트
+function UIController:ShowHitRushToast(duration: number)
+	if not self._screenGui then
+		return
+	end
+	local toast = Instance.new("Frame")
+	toast.Name = "HitRushToast"
+	toast.Size = UDim2.new(0, 220, 0, 40)
+	toast.Position = UDim2.new(0.5, -110, 0.65, 0)
+	toast.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+	toast.BackgroundTransparency = 0.2
+	toast.BorderSizePixel = 0
+	toast.ZIndex = 8
+	toast.Parent = self._screenGui
+
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, 8)
+	corner.Parent = toast
+
+	local label = Instance.new("TextLabel")
+	label.Size = UDim2.new(1, 0, 1, 0)
+	label.BackgroundTransparency = 1
+	label.Text = `💰 코인 러시! x{GameConstants.HIT_RECOVERY.COIN_MULTIPLIER}`
+	label.TextColor3 = Color3.fromRGB(255, 255, 200)
+	label.TextSize = ResponsiveUtil.scaledTextSize(16, 13)
+	label.Font = Enum.Font.GothamBold
+	label.ZIndex = 9
+	label.Parent = toast
+
+	-- 슬라이드 인
+	toast.Position = UDim2.new(0.5, -110, 0.7, 0)
+	TweenService:Create(toast, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+		Position = UDim2.new(0.5, -110, 0.65, 0),
+	}):Play()
+
+	task.delay(duration - 0.4, function()
+		if toast and toast.Parent then
+			TweenService:Create(toast, TweenInfo.new(0.4), { BackgroundTransparency = 1 }):Play()
+			TweenService:Create(
+				label,
+				TweenInfo.new(0.4),
+				{ TextTransparency = 1, TextStrokeTransparency = 1 }
+			):Play()
+			task.delay(0.4, function()
+				if toast and toast.Parent then
+					toast:Destroy()
+				end
+			end)
 		end
 	end)
 end
