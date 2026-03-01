@@ -29,6 +29,7 @@ local ProgressionService = require(ServerScriptService.Server.Services.Progressi
 local LoginRewardService = require(ServerScriptService.Server.Services.LoginRewardService)
 local _LuckySpinService = require(ServerScriptService.Server.Services.LuckySpinService)
 local _ScenarioService = require(ServerScriptService.Server.Services.ScenarioService)
+local BossRunService = require(ServerScriptService.Server.Services.BossRunService)
 local WeeklyRankingService = require(ServerScriptService.Server.Services.WeeklyRankingService)
 local AsyncBattleService = require(ServerScriptService.Server.Services.AsyncBattleService)
 local RealtimeBattleService = require(ServerScriptService.Server.Services.RealtimeBattleService)
@@ -47,6 +48,10 @@ print("[Server] LuckySpinService Loaded")
 -- ScenarioService RemoteEvent 연결
 _ScenarioService:SetupRemoteEvents()
 print("[Server] ScenarioService Loaded")
+
+-- BossRunService RemoteEvent 연결
+BossRunService:SetupRemoteEvents()
+print("[Server] BossRunService Loaded")
 
 -- WeeklyRankingService RemoteEvent 연결
 WeeklyRankingService:SetupRemoteEvents()

@@ -7,6 +7,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ScenarioConstants = require(ReplicatedStorage.Shared.Constants.ScenarioConstants)
 local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)
 local PlayerDataService = require(script.Parent.PlayerDataService)
+local BossRunService = require(script.Parent.BossRunService)
 
 local ScenarioService = {}
 
@@ -172,55 +173,116 @@ function ScenarioService:_checkChapterCompletion(player: Player, playerData: any
 		end
 
 		if allDone then
-			-- 챕터 완료 처리
-			table.insert(completedChapters, chapter.id)
-			completedSet[chapter.id] = true
-			print(`[ScenarioService] {player.Name} completed chapter: {chapter.id}`)
+			-- 보스 런 클리어 여부 확인
+			local bossRunCompleted = playerData.bossRunCompleted :: { [string]: boolean }?
+			local bossCleared = bossRunCompleted and bossRunCompleted[chapter.id]
 
-			-- 스킬 해금
-			if chapter.skill then
-				local unlockedSkills = playerData.unlockedSkills :: { string }
-				local alreadyHas = false
-				for _, skillId in unlockedSkills do
-					if skillId == chapter.skill then
-						alreadyHas = true
-						break
-					end
-				end
-				if not alreadyHas then
-					table.insert(unlockedSkills, chapter.skill)
-					print(`[ScenarioService] {player.Name} unlocked skill: {chapter.skill}`)
-				end
-			end
-
-			-- 챕터 클리어 보상 (젬, XP)
-			self:_grantChapterReward(player, chapter, playerData)
-
-			-- 챕터 해금 알림 (컷씬 포함)
-			RemoteEvents.ChapterUnlocked:FireClient(player, {
-				chapterId = chapter.id,
-				chapterName = chapter.name,
-				chapterTheme = chapter.theme,
-				skillUnlocked = chapter.skill,
-				statBonus = chapter.statBonus,
-				cutscene = ScenarioConstants.CUTSCENES[chapter.id] and ScenarioConstants.CUTSCENES[chapter.id].clear,
-				chapterReward = chapter.chapterReward,
-			})
-
-			-- 다음 챕터 해금 알림 (있을 경우)
-			local nextChapter = ScenarioConstants.CHAPTERS[chapter.num + 1]
-			if nextChapter and self:_isChapterUnlocked(nextChapter, completedSet, playerData.highScore) then
+			if bossCleared then
+				-- 보스 런 이미 완료 → 챕터 완료 처리
+				self:_completeChapter(player, chapter, playerData, completedChapters, completedSet)
+			else
+				-- 보스 런 아직 미완료 → clear 컷씬 보여주고 보스 런 준비 알림
 				RemoteEvents.ChapterUnlocked:FireClient(player, {
-					chapterId = nextChapter.id,
-					chapterName = nextChapter.name,
-					chapterTheme = nextChapter.theme,
-					skillUnlocked = nil,
-					statBonus = nil,
-					cutscene = ScenarioConstants.CUTSCENES[nextChapter.id] and ScenarioConstants.CUTSCENES[nextChapter.id].opening,
-					chapterReward = nil,
-					isOpening = true,
+					chapterId = chapter.id,
+					chapterName = chapter.name,
+					chapterTheme = chapter.theme,
+					cutscene = ScenarioConstants.CUTSCENES[chapter.id]
+						and ScenarioConstants.CUTSCENES[chapter.id].clear,
+					bossRunReady = true,
 				})
+				-- 보스 런 시작
+				task.delay(0.5, function()
+					BossRunService:StartBossRun(player, chapter.id)
+				end)
 			end
+		end
+	end
+end
+
+-- 챕터 완료 처리 (보스 런 클리어 후 or 보스 런 없는 챕터)
+function ScenarioService:_completeChapter(
+	player: Player,
+	chapter: typeof(ScenarioConstants.CHAPTERS[1]),
+	playerData: any,
+	completedChapters: { string },
+	completedSet: { [string]: boolean }
+)
+	table.insert(completedChapters, chapter.id)
+	completedSet[chapter.id] = true
+	print(`[ScenarioService] {player.Name} completed chapter: {chapter.id}`)
+
+	-- 스킬 해금
+	if chapter.skill then
+		local unlockedSkills = playerData.unlockedSkills :: { string }
+		local alreadyHas = false
+		for _, skillId in unlockedSkills do
+			if skillId == chapter.skill then
+				alreadyHas = true
+				break
+			end
+		end
+		if not alreadyHas then
+			table.insert(unlockedSkills, chapter.skill)
+			print(`[ScenarioService] {player.Name} unlocked skill: {chapter.skill}`)
+		end
+	end
+
+	-- 챕터 클리어 보상 (젬, XP)
+	self:_grantChapterReward(player, chapter, playerData)
+
+	-- 챕터 해금 알림 (컷씬 포함)
+	RemoteEvents.ChapterUnlocked:FireClient(player, {
+		chapterId = chapter.id,
+		chapterName = chapter.name,
+		chapterTheme = chapter.theme,
+		skillUnlocked = chapter.skill,
+		statBonus = chapter.statBonus,
+		cutscene = ScenarioConstants.CUTSCENES[chapter.id] and ScenarioConstants.CUTSCENES[chapter.id].clear,
+		chapterReward = chapter.chapterReward,
+	})
+
+	-- 다음 챕터 해금 알림 (있을 경우)
+	local nextChapter = ScenarioConstants.CHAPTERS[chapter.num + 1]
+	if nextChapter and self:_isChapterUnlocked(nextChapter, completedSet, playerData.highScore) then
+		RemoteEvents.ChapterUnlocked:FireClient(player, {
+			chapterId = nextChapter.id,
+			chapterName = nextChapter.name,
+			chapterTheme = nextChapter.theme,
+			skillUnlocked = nil,
+			statBonus = nil,
+			cutscene = ScenarioConstants.CUTSCENES[nextChapter.id] and ScenarioConstants.CUTSCENES[nextChapter.id].opening,
+			chapterReward = nil,
+			isOpening = true,
+		})
+	end
+
+	-- 클라이언트에 최신 데이터 전송
+	self:_fireScenarioUpdate(player, playerData)
+end
+
+-- 보스 런 클리어 후 챕터 완료 트리거 (BossRunService에서 호출)
+function ScenarioService:TriggerChapterCompletion(player: Player, chapterId: string)
+	local playerData = PlayerDataService:GetPlayerData(player)
+	if not playerData then
+		return
+	end
+
+	local completedChapters = playerData.completedChapters :: { string }
+	local completedSet: { [string]: boolean } = {}
+	for _, chId in completedChapters do
+		completedSet[chId] = true
+	end
+
+	-- 이미 완료된 챕터면 스킵
+	if completedSet[chapterId] then
+		return
+	end
+
+	-- 챕터 찾기
+	for _, chapter in ScenarioConstants.CHAPTERS do
+		if chapter.id == chapterId then
+			self:_completeChapter(player, chapter, playerData, completedChapters, completedSet)
+			break
 		end
 	end
 end

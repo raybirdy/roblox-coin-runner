@@ -325,6 +325,27 @@ RemoteEvents.ChapterUnlocked = getOrCreateRemoteEvent("ChapterUnlocked")
 RemoteEvents.ScenarioIntroSeen = getOrCreateRemoteEvent("ScenarioIntroSeen")
 -- 파라미터: 없음. 인트로 팝업을 닫을 때 1회 전송
 
+-- ==================== 보스 런 ====================
+
+-- 보스 런 시작 (서버 → 클라이언트)
+RemoteEvents.BossRunStart = getOrCreateRemoteEvent("BossRunStart")
+-- 파라미터: { chapterId, bossName, targetScore, timeLimit, speedMultiplier, lives, cutscene? }
+
+-- 보스 런 점수 업데이트 (서버 → 클라이언트)
+RemoteEvents.BossRunScoreUpdate = getOrCreateRemoteEvent("BossRunScoreUpdate")
+-- 파라미터: { playerScore, bossScore, timeRemaining }
+
+-- 보스 런 결과 (서버 → 클라이언트)
+RemoteEvents.BossRunResult = getOrCreateRemoteEvent("BossRunResult")
+-- 파라미터: { success, playerScore, targetScore, chapterId, rewards?, cutscene? }
+
+-- 보스 런 재도전 요청 (클라이언트 → 서버)
+RemoteEvents.BossRunRetry = getOrCreateRemoteEvent("BossRunRetry")
+-- 파라미터: { chapterId }
+
+-- 보스 런 포기 (클라이언트 → 서버)
+RemoteEvents.BossRunGiveUp = getOrCreateRemoteEvent("BossRunGiveUp")
+
 -- ==================== 주간 랭킹 ====================
 
 -- 주간 랭크 업데이트 (서버 → 클라이언트)
