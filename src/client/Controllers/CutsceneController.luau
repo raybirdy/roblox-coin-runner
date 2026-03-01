@@ -1,11 +1,14 @@
 --!strict
 -- CutsceneController
 -- 챕터 해금 시 컷씬(대화창) 표시 및 타이핑 애니메이션 처리
+-- PR #2: 초상화 시스템, 역할별 색상, shake/flash/particle 이펙트 추가
 
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 
-local RemoteEvents = require(game:GetService("ReplicatedStorage").Shared.RemoteEvents)
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)
+local ScenarioConstants = require(ReplicatedStorage.Shared.Constants.ScenarioConstants)
 
 local CutsceneController = {}
 CutsceneController.__index = CutsceneController
@@ -44,6 +47,14 @@ local SKILL_TUTORIAL = {
 	},
 }
 
+-- 역할별 테두리/강조 색상
+local ROLE_COLORS = {
+	hero    = Color3.fromRGB(100, 220, 100),
+	villain = Color3.fromRGB(220, 50, 50),
+	ally    = Color3.fromRGB(100, 180, 255),
+	mentor  = Color3.fromRGB(150, 120, 255),
+}
+
 export type CutsceneController = typeof(setmetatable(
 	{} :: {
 		_player: Player,
@@ -56,12 +67,18 @@ export type CutsceneController = typeof(setmetatable(
 		_skipBtn: TextButton?,
 		_isPlaying: boolean,
 		_currentLineIndex: number,
-		_currentLines: { { speaker: string, text: string } },
-		_cutsceneQueue: { { lines: { { speaker: string, text: string } }, title: string? } },
+		_currentLines: { { speaker: string?, text: string, characterId: string?, effect: string? } },
+		_cutsceneQueue: { { lines: { { speaker: string?, text: string, characterId: string?, effect: string? } }, title: string? } },
 		_typingThread: thread?,
 		-- 스킬 튜토리얼
 		_pendingSkillTutorial: string?,
 		_shownSkillTutorials: { [string]: boolean },
+		-- 초상화 시스템 (신규)
+		_portraitFrame: Frame?,
+		_portraitEmoji: TextLabel?,
+		_speakerBg: Frame?,
+		_topBorder: Frame?,
+		_currentChapterId: string?,
 	},
 	CutsceneController
 ))
@@ -83,6 +100,11 @@ function CutsceneController.new(): CutsceneController
 		_typingThread = nil,
 		_pendingSkillTutorial = nil,
 		_shownSkillTutorials = {},
+		_portraitFrame = nil,
+		_portraitEmoji = nil,
+		_speakerBg = nil,
+		_topBorder = nil,
+		_currentChapterId = nil,
 	}, CutsceneController)
 
 	self:_createGui()
@@ -99,7 +121,7 @@ function CutsceneController:_createGui()
 	local gui = Instance.new("ScreenGui")
 	gui.Name = "CutsceneGui"
 	gui.ResetOnSpawn = false
-	gui.DisplayOrder = 20 -- 최상위 레이어
+	gui.DisplayOrder = 20
 	gui.Enabled = false
 	gui.Parent = playerGui
 	self._gui = gui
@@ -115,22 +137,54 @@ function CutsceneController:_createGui()
 	panel.Parent = gui
 	self._panel = panel
 
-	-- 상단 테두리 라인
+	-- 상단 테두리 라인 (역할별 동적 색상)
 	local topBorder = Instance.new("Frame")
+	topBorder.Name = "TopBorder"
 	topBorder.Size = UDim2.new(1, 0, 0, 3)
 	topBorder.Position = UDim2.new(0, 0, 0, 0)
 	topBorder.BackgroundColor3 = Color3.fromRGB(100, 180, 255)
 	topBorder.BorderSizePixel = 0
 	topBorder.Parent = panel
+	self._topBorder = topBorder
 
-	-- 화자 이름 레이블
+	-- 캐릭터 초상화 원형 프레임 (패널 좌측 상단, 패널 위로 돌출)
+	local portraitFrame = Instance.new("Frame")
+	portraitFrame.Name = "PortraitFrame"
+	portraitFrame.Size = UDim2.new(0, 60, 0, 60)
+	portraitFrame.Position = UDim2.new(0, 12, 0, -36)
+	portraitFrame.BackgroundColor3 = Color3.fromRGB(40, 80, 160)
+	portraitFrame.BorderSizePixel = 0
+	portraitFrame.Parent = panel
+	self._portraitFrame = portraitFrame
+
+	local portraitCorner = Instance.new("UICorner")
+	portraitCorner.CornerRadius = UDim.new(1, 0)
+	portraitCorner.Parent = portraitFrame
+
+	local portraitStroke = Instance.new("UIStroke")
+	portraitStroke.Color = Color3.fromRGB(100, 180, 255)
+	portraitStroke.Thickness = 3
+	portraitStroke.Parent = portraitFrame
+
+	local portraitEmoji = Instance.new("TextLabel")
+	portraitEmoji.Name = "PortraitEmoji"
+	portraitEmoji.Size = UDim2.new(1, 0, 1, 0)
+	portraitEmoji.BackgroundTransparency = 1
+	portraitEmoji.Text = "🦉"
+	portraitEmoji.TextSize = 28
+	portraitEmoji.Font = Enum.Font.GothamBold
+	portraitEmoji.Parent = portraitFrame
+	self._portraitEmoji = portraitEmoji
+
+	-- 화자 이름 배경 (초상화 오른쪽으로 이동)
 	local speakerBg = Instance.new("Frame")
 	speakerBg.Name = "SpeakerBg"
 	speakerBg.Size = UDim2.new(0, 180, 0, 28)
-	speakerBg.Position = UDim2.new(0, 16, 0, -14)
+	speakerBg.Position = UDim2.new(0, 80, 0, -14)
 	speakerBg.BackgroundColor3 = Color3.fromRGB(40, 80, 160)
 	speakerBg.BorderSizePixel = 0
 	speakerBg.Parent = panel
+	self._speakerBg = speakerBg
 
 	local speakerBgCorner = Instance.new("UICorner")
 	speakerBgCorner.CornerRadius = UDim.new(0, 6)
@@ -142,18 +196,18 @@ function CutsceneController:_createGui()
 	speakerLabel.Position = UDim2.new(0, 8, 0, 0)
 	speakerLabel.BackgroundTransparency = 1
 	speakerLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-	speakerLabel.TextSize = 14
+	speakerLabel.TextSize = 13
 	speakerLabel.Font = Enum.Font.GothamBold
 	speakerLabel.Text = ""
 	speakerLabel.TextXAlignment = Enum.TextXAlignment.Left
 	speakerLabel.Parent = speakerBg
 	self._speakerLabel = speakerLabel
 
-	-- 대화 텍스트
+	-- 대화 텍스트 (초상화 오른쪽 공간)
 	local dialogueLabel = Instance.new("TextLabel")
 	dialogueLabel.Name = "DialogueLabel"
-	dialogueLabel.Size = UDim2.new(1, -100, 1, -20)
-	dialogueLabel.Position = UDim2.new(0, 16, 0, 24)
+	dialogueLabel.Size = UDim2.new(1, -160, 1, -20)
+	dialogueLabel.Position = UDim2.new(0, 80, 0, 24)
 	dialogueLabel.BackgroundTransparency = 1
 	dialogueLabel.TextColor3 = Color3.fromRGB(230, 230, 240)
 	dialogueLabel.TextSize = 16
@@ -212,15 +266,13 @@ end
 -- ==================== 이벤트 핸들러 ====================
 
 function CutsceneController:_setupEventHandlers()
-	-- 챕터 해금/완료 이벤트 → 컷씬 큐에 추가
 	local conn = RemoteEvents.ChapterUnlocked.OnClientEvent:Connect(function(data)
 		if data.cutscene and #data.cutscene > 0 then
 			local title = if data.isOpening
 				then data.chapterTheme .. " " .. data.chapterName
 				else data.chapterTheme .. " " .. data.chapterName .. " 완료!"
-			self:QueueCutscene(data.cutscene, title)
+			self:QueueCutscene(data.cutscene, title, data.chapterId)
 		end
-		-- 스킬 해금 시 컷씬 이후에 튜토리얼 표시 예약
 		if data.skillUnlocked and not self._shownSkillTutorials[data.skillUnlocked] then
 			self._pendingSkillTutorial = data.skillUnlocked
 		end
@@ -230,11 +282,13 @@ end
 
 -- ==================== 컷씬 재생 ====================
 
--- 컷씬 큐에 추가 (여러 컷씬이 연속 발생 시 순서대로 재생)
+-- 컷씬 큐에 추가 (chapterId: 테마 색상 참조용)
 function CutsceneController:QueueCutscene(
-	lines: { { speaker: string, text: string } },
-	title: string?
+	lines: { { speaker: string?, text: string, characterId: string?, effect: string? } },
+	title: string?,
+	chapterId: string?
 )
+	self._currentChapterId = chapterId
 	table.insert(self._cutsceneQueue, { lines = lines, title = title })
 	if not self._isPlaying then
 		self:_playNext()
@@ -244,7 +298,6 @@ end
 function CutsceneController:_playNext()
 	if #self._cutsceneQueue == 0 then
 		self:_hide()
-		-- 컷씬이 모두 끝난 후 스킬 튜토리얼 표시
 		local pendingSkill = self._pendingSkillTutorial
 		if pendingSkill and not self._shownSkillTutorials[pendingSkill] then
 			self._pendingSkillTutorial = nil
@@ -269,7 +322,6 @@ function CutsceneController:_advanceLine()
 	self._currentLineIndex += 1
 
 	if self._currentLineIndex > #self._currentLines then
-		-- 컷씬 종료 → 다음 컷씬 또는 숨기기
 		task.delay(0.3, function()
 			self._isPlaying = false
 			self:_playNext()
@@ -278,19 +330,46 @@ function CutsceneController:_advanceLine()
 	end
 
 	local line = self._currentLines[self._currentLineIndex]
-	if self._speakerLabel then
-		self._speakerLabel.Text = line.speaker
+
+	-- characterId 기반 초상화/색상 업데이트
+	local characterId = line.characterId
+	local profile = if characterId then ScenarioConstants.CHARACTER_PROFILES[characterId] else nil
+
+	if profile then
+		self:_updatePortrait(profile)
+		if self._speakerLabel then
+			self._speakerLabel.Text = profile.emoji .. " " .. profile.name
+		end
+		if self._speakerBg then
+			TweenService:Create(self._speakerBg, TweenInfo.new(0.2), {
+				BackgroundColor3 = profile.bgColor,
+			}):Play()
+		end
+		self:_updateBorderColor(profile.role)
+	elseif line.speaker then
+		-- 하위호환: speaker 문자열 그대로 표시
+		if self._speakerLabel then
+			self._speakerLabel.Text = line.speaker
+		end
 	end
+
+	-- 이펙트 처리
+	local effect = line.effect
+	if effect == "shake" then
+		self:_shakePanel()
+	elseif effect == "flash" then
+		self:_flashPanel()
+	elseif effect == "particle" then
+		self:_showVictoryParticle()
+	end
+
 	if self._dialogueLabel then
 		self._dialogueLabel.Text = ""
 	end
-
-	-- 타이핑 애니메이션
 	self:_typeText(line.text)
 end
 
 function CutsceneController:_typeText(text: string)
-	-- 이전 타이핑 스레드 취소
 	if self._typingThread and coroutine.status(self._typingThread) == "suspended" then
 		task.cancel(self._typingThread)
 	end
@@ -304,17 +383,15 @@ function CutsceneController:_typeText(text: string)
 		local chars = string.len(text)
 		for i = 1, chars do
 			label.Text = string.sub(text, 1, i)
-			task.wait(0.03) -- 타이핑 속도: 30ms per char
+			task.wait(0.03)
 		end
 		self._typingThread = nil
 	end)
 end
 
--- 현재 라인 즉시 완성 or 전체 스킵
 function CutsceneController:_onNextPressed()
-	-- 타이핑 중이면 즉시 완성
 	if self._typingThread then
-		if self._typingThread and coroutine.status(self._typingThread) ~= "dead" then
+		if coroutine.status(self._typingThread) ~= "dead" then
 			task.cancel(self._typingThread)
 			self._typingThread = nil
 		end
@@ -324,7 +401,6 @@ function CutsceneController:_onNextPressed()
 		end
 		return
 	end
-	-- 다음 라인으로
 	self:_advanceLine()
 end
 
@@ -336,13 +412,143 @@ function CutsceneController:_skipAll()
 	self._cutsceneQueue = {}
 	self._isPlaying = false
 	self:_hide()
-	-- 건너뛰기 시에도 스킬 튜토리얼은 표시
 	local pendingSkill = self._pendingSkillTutorial
 	if pendingSkill and not self._shownSkillTutorials[pendingSkill] then
 		self._pendingSkillTutorial = nil
 		self._shownSkillTutorials[pendingSkill] = true
 		task.delay(0.6, function()
 			self:_showSkillTutorial(pendingSkill)
+		end)
+	end
+end
+
+-- ==================== 초상화 업데이트 ====================
+
+function CutsceneController:_updatePortrait(profile: { id: string, name: string, emoji: string, role: string, bgColor: Color3, textColor: Color3 })
+	local portraitFrame = self._portraitFrame
+	local portraitEmoji = self._portraitEmoji
+	if not portraitFrame or not portraitEmoji then
+		return
+	end
+
+	-- 배경색 트윈
+	TweenService:Create(portraitFrame, TweenInfo.new(0.2), {
+		BackgroundColor3 = profile.bgColor,
+	}):Play()
+
+	-- 이모지 변경 + 팝 애니메이션
+	portraitEmoji.Text = profile.emoji
+	portraitFrame.Size = UDim2.new(0, 50, 0, 50)
+	TweenService:Create(portraitFrame, TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+		Size = UDim2.new(0, 60, 0, 60),
+	}):Play()
+
+	-- 테두리 색상 (역할별)
+	local stroke = portraitFrame:FindFirstChildOfClass("UIStroke")
+	if stroke then
+		stroke.Color = ROLE_COLORS[profile.role] or Color3.fromRGB(200, 200, 200)
+	end
+end
+
+function CutsceneController:_updateBorderColor(role: string)
+	local topBorder = self._topBorder
+	if not topBorder then
+		return
+	end
+	local color = ROLE_COLORS[role] or Color3.fromRGB(100, 180, 255)
+	TweenService:Create(topBorder, TweenInfo.new(0.2), {
+		BackgroundColor3 = color,
+	}):Play()
+end
+
+-- ==================== 이펙트 ====================
+
+-- 보스 등장 시 패널 좌우 흔들림
+function CutsceneController:_shakePanel()
+	local panel = self._panel
+	if not panel then
+		return
+	end
+
+	local originalPos = UDim2.new(0, 0, 0.72, 0)
+	if self._topBorder then
+		self._topBorder.BackgroundColor3 = Color3.fromRGB(255, 30, 30)
+	end
+
+	task.spawn(function()
+		for i = 1, 3 do
+			local offsetX = if i % 2 == 1 then 6 else -6
+			TweenService:Create(panel, TweenInfo.new(0.06), {
+				Position = UDim2.new(0, offsetX, 0.72, 0),
+			}):Play()
+			task.wait(0.06)
+		end
+		TweenService:Create(panel, TweenInfo.new(0.06), {
+			Position = originalPos,
+		}):Play()
+	end)
+end
+
+-- 빨간 플래시 이펙트
+function CutsceneController:_flashPanel()
+	local panel = self._panel
+	if not panel then
+		return
+	end
+
+	local flashFrame = Instance.new("Frame")
+	flashFrame.Size = UDim2.new(1, 0, 1, 0)
+	flashFrame.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+	flashFrame.BackgroundTransparency = 0.5
+	flashFrame.ZIndex = 10
+	flashFrame.BorderSizePixel = 0
+	flashFrame.Parent = panel
+
+	TweenService:Create(flashFrame, TweenInfo.new(0.4), {
+		BackgroundTransparency = 1,
+	}):Play()
+
+	task.delay(0.5, function()
+		if flashFrame.Parent then
+			flashFrame:Destroy()
+		end
+	end)
+end
+
+-- 승리 황금 파티클 이펙트
+function CutsceneController:_showVictoryParticle()
+	local gui = self._gui
+	if not gui then
+		return
+	end
+
+	for _ = 1, 8 do
+		local particle = Instance.new("Frame")
+		particle.Size = UDim2.new(0, math.random(8, 16), 0, math.random(8, 16))
+		particle.Position = UDim2.new(0.5, 0, 0.75, 0)
+		particle.BackgroundColor3 = Color3.fromRGB(255, math.random(180, 230), math.random(0, 80))
+		particle.Rotation = math.random(0, 360)
+		particle.ZIndex = 15
+		particle.BorderSizePixel = 0
+		particle.Parent = gui
+
+		local cornerR = Instance.new("UICorner")
+		cornerR.CornerRadius = UDim.new(0, 4)
+		cornerR.Parent = particle
+
+		local targetX = 0.5 + (math.random() - 0.5) * 1.2
+		local targetY = 0.3 + math.random() * 0.5
+
+		TweenService:Create(particle, TweenInfo.new(1.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+			Position = UDim2.new(targetX, 0, targetY, 0),
+			BackgroundTransparency = 1,
+			Rotation = math.random(180, 720),
+		}):Play()
+
+		task.delay(1.3, function()
+			if particle.Parent then
+				particle:Destroy()
+			end
 		end)
 	end
 end
@@ -357,7 +563,7 @@ function CutsceneController:_show()
 	end
 
 	gui.Enabled = true
-	panel.Position = UDim2.new(0, 0, 1, 0) -- 화면 아래서 슬라이드 업
+	panel.Position = UDim2.new(0, 0, 1, 0)
 	TweenService:Create(panel, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
 		Position = UDim2.new(0, 0, 0.72, 0),
 	}):Play()
@@ -395,7 +601,6 @@ function CutsceneController:_showSkillTutorial(skillId: string)
 	tutGui.DisplayOrder = 22
 	tutGui.Parent = playerGui
 
-	-- 배경 (탭해서 닫기 가능)
 	local dimBg = Instance.new("TextButton")
 	dimBg.Size = UDim2.new(1, 0, 1, 0)
 	dimBg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
@@ -404,7 +609,6 @@ function CutsceneController:_showSkillTutorial(skillId: string)
 	dimBg.AutoButtonColor = false
 	dimBg.Parent = tutGui
 
-	-- 카드
 	local card = Instance.new("Frame")
 	card.Name = "SkillCard"
 	card.Size = UDim2.new(0, 300, 0, 196)
@@ -422,7 +626,6 @@ function CutsceneController:_showSkillTutorial(skillId: string)
 	cardStroke.Thickness = 2
 	cardStroke.Parent = card
 
-	-- 새 스킬 뱃지
 	local badge = Instance.new("Frame")
 	badge.Size = UDim2.new(0, 130, 0, 24)
 	badge.Position = UDim2.new(0.5, -65, 0, -12)
@@ -443,7 +646,6 @@ function CutsceneController:_showSkillTutorial(skillId: string)
 	badgeLabel.Text = "🌟 새 스킬 획득!"
 	badgeLabel.Parent = badge
 
-	-- 아이콘
 	local iconBg = Instance.new("Frame")
 	iconBg.Size = UDim2.new(0, 64, 0, 64)
 	iconBg.Position = UDim2.new(0.5, -32, 0, 18)
@@ -469,7 +671,6 @@ function CutsceneController:_showSkillTutorial(skillId: string)
 	iconLabel.Text = info.icon
 	iconLabel.Parent = iconBg
 
-	-- 스킬 이름
 	local nameLabel = Instance.new("TextLabel")
 	nameLabel.Size = UDim2.new(1, -20, 0, 24)
 	nameLabel.Position = UDim2.new(0, 10, 0, 88)
@@ -480,7 +681,6 @@ function CutsceneController:_showSkillTutorial(skillId: string)
 	nameLabel.Text = info.name
 	nameLabel.Parent = card
 
-	-- 사용법
 	local howtoLabel = Instance.new("TextLabel")
 	howtoLabel.Size = UDim2.new(1, -24, 0, 34)
 	howtoLabel.Position = UDim2.new(0, 12, 0, 116)
@@ -493,7 +693,6 @@ function CutsceneController:_showSkillTutorial(skillId: string)
 	howtoLabel.TextXAlignment = Enum.TextXAlignment.Center
 	howtoLabel.Parent = card
 
-	-- 팁
 	local tipLabel = Instance.new("TextLabel")
 	tipLabel.Size = UDim2.new(1, -24, 0, 22)
 	tipLabel.Position = UDim2.new(0, 12, 0, 150)
@@ -504,7 +703,6 @@ function CutsceneController:_showSkillTutorial(skillId: string)
 	tipLabel.Text = info.tip
 	tipLabel.Parent = card
 
-	-- 확인 버튼 (카운트다운 포함)
 	local dismissBtn = Instance.new("TextButton")
 	dismissBtn.Size = UDim2.new(1, -24, 0, 32)
 	dismissBtn.Position = UDim2.new(0, 12, 1, -40)
@@ -520,7 +718,7 @@ function CutsceneController:_showSkillTutorial(skillId: string)
 	dismissCorner.Parent = dismissBtn
 
 	-- 등장 애니메이션
-	card.Position = UDim2.new(0.5, -150, 0.5, -98 + 40)
+	card.Position = UDim2.new(0.5, -150, 0.5, -58)
 	card.BackgroundTransparency = 1
 	TweenService:Create(card, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
 		Position = UDim2.new(0.5, -150, 0.5, -98),
@@ -529,18 +727,19 @@ function CutsceneController:_showSkillTutorial(skillId: string)
 
 	local function closeTutorial()
 		TweenService:Create(card, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-			Position = UDim2.new(0.5, -150, 0.5, -98 + 30),
+			Position = UDim2.new(0.5, -150, 0.5, -68),
 			BackgroundTransparency = 1,
 		}):Play()
 		task.delay(0.25, function()
-			tutGui:Destroy()
+			if tutGui.Parent then
+				tutGui:Destroy()
+			end
 		end)
 	end
 
 	dimBg.MouseButton1Click:Connect(closeTutorial)
 	dismissBtn.MouseButton1Click:Connect(closeTutorial)
 
-	-- 6초 카운트다운 후 자동 닫기
 	task.spawn(function()
 		for i = 5, 1, -1 do
 			task.wait(1)
