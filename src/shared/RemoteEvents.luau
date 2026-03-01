@@ -321,4 +321,18 @@ RemoteEvents.ChapterUnlocked = getOrCreateRemoteEvent("ChapterUnlocked")
 -- 서버 → 클라이언트: 챕터 완료/해금 알림 (컷씬 포함)
 -- 파라미터: { chapterId, chapterName, chapterTheme, skillUnlocked?, statBonus?, cutscene?, chapterReward?, isOpening? }
 
+-- ==================== 스킬 시스템 ====================
+
+-- 스킬 발동 요청 (클라이언트 → 서버)
+RemoteEvents.SkillActivate = getOrCreateRemoteEvent("SkillActivate")
+-- 파라미터: { skillId: string }
+
+-- 스킬 발동 확인 (서버 → 클라이언트)
+RemoteEvents.SkillActivated = getOrCreateRemoteEvent("SkillActivated")
+-- 파라미터: { skillId: string, value: number? }
+
+-- 쉴드 자동 재생 알림 (서버 → 클라이언트)
+RemoteEvents.ShieldRegenerated = getOrCreateRemoteEvent("ShieldRegenerated")
+-- 파라미터: (없음)
+
 return RemoteEvents

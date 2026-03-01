@@ -79,6 +79,10 @@ type GameSession = {
 	-- Scenario
 	powerupsCollected: number,
 	scenarioStatBonuses: ScenarioStatBonuses,
+	-- Skills
+	unlockedSkillsSet: { [string]: boolean },
+	lastShieldRegenTime: number,
+	feverThreshold: number,
 }
 
 local activeSessions: { [Player]: GameSession } = {}
@@ -175,8 +179,16 @@ RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { 
 		end
 	end
 
-	-- 시나리오 스탯 보너스 가져오기
+	-- 시나리오 스탯 보너스 + 스킬 가져오기
 	local statBonuses = ScenarioService:GetStatBonuses(player)
+	local unlockedSkills = ScenarioService:GetUnlockedSkills(player)
+	local unlockedSkillsSet: { [string]: boolean } = {}
+	for _, skillId in unlockedSkills do
+		unlockedSkillsSet[skillId] = true
+	end
+	local feverThreshold = if unlockedSkillsSet["fever_boost"]
+		then math.floor(GameConstants.FEVER.COMBO_THRESHOLD / 1.3)
+		else GameConstants.FEVER.COMBO_THRESHOLD
 
 	local session: GameSession = {
 		player = player,
@@ -215,6 +227,9 @@ RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { 
 		feverCount = 0,
 		powerupsCollected = 0,
 		scenarioStatBonuses = statBonuses,
+		unlockedSkillsSet = unlockedSkillsSet,
+		lastShieldRegenTime = tick(),
+		feverThreshold = feverThreshold,
 	}
 
 	activeSessions[player] = session
@@ -260,6 +275,7 @@ RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { 
 		startPosition = startPosition,
 		startPowerups = validPowerups,
 		scenarioStatBonuses = statBonuses,
+		unlockedSkills = unlockedSkills,
 	})
 
 	print(`[GameManager] Game started for {player.Name} via portal`)
@@ -369,8 +385,16 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 		end
 	end
 
-	-- 시나리오 스탯 보너스 가져오기
+	-- 시나리오 스탯 보너스 + 스킬 가져오기
 	local statBonuses = ScenarioService:GetStatBonuses(player)
+	local unlockedSkills = ScenarioService:GetUnlockedSkills(player)
+	local unlockedSkillsSet2: { [string]: boolean } = {}
+	for _, skillId in unlockedSkills do
+		unlockedSkillsSet2[skillId] = true
+	end
+	local feverThreshold2 = if unlockedSkillsSet2["fever_boost"]
+		then math.floor(GameConstants.FEVER.COMBO_THRESHOLD / 1.3)
+		else GameConstants.FEVER.COMBO_THRESHOLD
 
 	local session: GameSession = {
 		player = player,
@@ -408,6 +432,9 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 		feverCount = 0,
 		powerupsCollected = 0,
 		scenarioStatBonuses = statBonuses,
+		unlockedSkillsSet = unlockedSkillsSet2,
+		lastShieldRegenTime = tick(),
+		feverThreshold = feverThreshold2,
 	}
 
 	activeSessions[player] = session
@@ -441,6 +468,7 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 		startTutorial = needsTutorial,
 		startPosition = startPosition,
 		scenarioStatBonuses = statBonuses,
+		unlockedSkills = unlockedSkills,
 	})
 
 	print(`[GameManager] Game started for {player.Name}`)
@@ -816,10 +844,10 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 			-- Phase B: 최대 콤보 추적
 			session.maxCombo = math.max(session.maxCombo, session.comboCount)
 
-			-- 피버 모드 발동 체크
+			-- 피버 모드 발동 체크 (fever_boost 스킬: 낮은 임계값)
 			if
 				not session.isFever
-				and session.comboCount >= GameConstants.FEVER.COMBO_THRESHOLD
+				and session.comboCount >= session.feverThreshold
 				and now > session.feverCooldownEnd
 			then
 				session.isFever = true
@@ -835,7 +863,7 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 			-- 피버 게이지 업데이트
 			RemoteEvents.FeverGaugeUpdate:FireClient(player, {
 				combo = session.comboCount,
-				threshold = GameConstants.FEVER.COMBO_THRESHOLD,
+				threshold = session.feverThreshold,
 				onCooldown = now < session.feverCooldownEnd,
 			})
 
@@ -854,7 +882,7 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 				RemoteEvents.ComboUpdate:FireClient(player, { combo = 0 })
 				RemoteEvents.FeverGaugeUpdate:FireClient(player, {
 					combo = 0,
-					threshold = GameConstants.FEVER.COMBO_THRESHOLD,
+					threshold = session.feverThreshold,
 					onCooldown = tick() < session.feverCooldownEnd,
 				})
 			end
@@ -868,10 +896,21 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 			RemoteEvents.FeverEnd:FireClient(player)
 			RemoteEvents.FeverGaugeUpdate:FireClient(player, {
 				combo = 0,
-				threshold = GameConstants.FEVER.COMBO_THRESHOLD,
+				threshold = session.feverThreshold,
 				onCooldown = true,
 			})
 			print(`[GameManager] FEVER MODE ended for {player.Name}`)
+		end
+
+		-- shield_regen 스킬: 60초마다 쉴드 자동 재생
+		if session.unlockedSkillsSet["shield_regen"] then
+			local now2 = tick()
+			if now2 - session.lastShieldRegenTime >= 60 and not powerupService:HasShield() then
+				session.lastShieldRegenTime = now2
+				powerupService:ActivatePowerup("Shield")
+				RemoteEvents.ShieldRegenerated:FireClient(player)
+				print(`[GameManager] Shield regenerated for {player.Name} (skill)`)
+			end
 		end
 
 		-- 낙하 감지 (Y < -10 이면 낙사)
@@ -912,6 +951,23 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 				-- 라이프 감소
 				session.lives -= 1
 				obstacleService:OnObstacleHit()
+
+				-- magnet_burst 스킬: 피격 시 주변 30 studs 코인 흡수
+				if session.unlockedSkillsSet["magnet_burst"] then
+					local burstCoins = session.coinService:BurstCollectCoins(hrp.Position, 30)
+					local burstTotal = 0
+					for _, burstCoinData in burstCoins do
+						burstTotal += burstCoinData.value
+					end
+					if burstTotal > 0 then
+						session.coins += burstTotal
+						RemoteEvents.SkillActivated:FireClient(player, {
+							skillId = "magnet_burst",
+							value = math.floor(burstTotal),
+						})
+						print(`[GameManager] Magnet burst: +{burstTotal} coins for {player.Name}`)
+					end
+				end
 
 				-- 퍼펙트 런 리셋 (피격 시 현재 거리 기록)
 				local hitX = hrp.Position.X - session.startPosition.X

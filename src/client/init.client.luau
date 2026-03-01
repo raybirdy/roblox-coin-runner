@@ -86,6 +86,7 @@ local ZoneController = require(script.Controllers.ZoneController)
 local CharacterEffectsController = require(script.Controllers.CharacterEffectsController)
 local ScenarioController = require(script.Controllers.ScenarioController)
 local CutsceneController = require(script.Controllers.CutsceneController)
+local SkillController = require(script.Controllers.SkillController)
 
 -- 컨트롤러 인스턴스 생성
 local inputController = InputController.new()
@@ -110,6 +111,7 @@ local zoneController = ZoneController.new()
 local characterEffectsController = CharacterEffectsController.new(character)
 local scenarioController = ScenarioController.new(player)
 local _cutsceneController = CutsceneController.new()
+local skillController = SkillController.new(player, playerController)
 
 -- Fever mode callbacks (speed boost + camera shake)
 feverController:OnFeverStart(function(speedBoost: number)
@@ -322,6 +324,7 @@ RemoteEvents.GameStart.OnClientEvent:Connect(function(data)
 		inputController:SetGameActive(true)
 		coinController:SetGameActive(true)
 		feverController:ShowGauge()
+		skillController:SetGameActive(true)
 
 		-- 속도 연출 효과 시작
 		if charNow then
@@ -358,6 +361,9 @@ RemoteEvents.GameOver.OnClientEvent:Connect(function(data)
 	-- 피버 게이지 숨기기
 	feverController:HideGauge()
 
+	-- 스킬 비활성화
+	skillController:SetGameActive(false)
+
 	-- 부활 가능한 경우 게임 일시정지만 (완전 종료 아님)
 	if data.canRevive then
 		print("[Client] Game paused - revive available")
@@ -386,6 +392,7 @@ RemoteEvents.Revive.OnClientEvent:Connect(function(data)
 		playerController:StartGame()
 		inputController:SetGameActive(true)
 		coinController:SetGameActive(true)
+		skillController:SetGameActive(true)
 
 		-- 부활 후 속도 감소 및 점진적 회복
 		local reduction = GameConstants.REVIVE.SPEED_REDUCTION
