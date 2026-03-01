@@ -89,6 +89,7 @@ local CutsceneController = require(script.Controllers.CutsceneController)
 local SkillController = require(script.Controllers.SkillController)
 local RankingController = require(script.Controllers.RankingController)
 local AsyncBattleController = require(script.Controllers.AsyncBattleController)
+local RealtimeBattleController = require(script.Controllers.RealtimeBattleController)
 
 -- 컨트롤러 인스턴스 생성
 local inputController = InputController.new()
@@ -116,6 +117,7 @@ local _cutsceneController = CutsceneController.new()
 local skillController = SkillController.new(player, playerController)
 local rankingController = RankingController.new(player)
 local asyncBattleController = AsyncBattleController.new(player)
+local realtimeBattleController = RealtimeBattleController.new(player)
 
 -- Fever mode callbacks (speed boost + camera shake)
 feverController:OnFeverStart(function(speedBoost: number)
@@ -177,6 +179,7 @@ playerController:SetLobbyMode()
 -- 리더보드 표시 (로비에서)
 leaderboardController:Show()
 rankingController:ShowInLobby()
+realtimeBattleController:ShowInLobby()
 
 -- 플레이어 데이터 캐시
 local cachedPlayerData: any? = nil
@@ -215,6 +218,7 @@ RemoteEvents.ReturnToLobby.OnClientEvent:Connect(function()
 	progressionController:ShowInLobby()
 	scenarioController:ShowInLobby()
 	rankingController:ShowInLobby()
+	realtimeBattleController:ShowInLobby()
 end)
 
 -- 포탈 진입 안내 (서버에서 포탈 감지 시)
@@ -299,6 +303,7 @@ RemoteEvents.GameStart.OnClientEvent:Connect(function(data)
 	progressionController:HideForGame()
 	scenarioController:HideForGame()
 	rankingController:HideForGame()
+	realtimeBattleController:HideForGame()
 
 	-- 2. 컨트롤 전환: 기본 이동 비활성화
 	disableDefaultControls()
@@ -344,6 +349,9 @@ RemoteEvents.GameStart.OnClientEvent:Connect(function(data)
 			asyncBattleController:StartBattle(data.asyncBattle)
 		end
 
+		-- 실시간 배틀 HUD (매칭된 경우)
+		realtimeBattleController:SetGameActive(true)
+
 		-- 속도 연출 효과 시작
 		if charNow then
 			speedEffectController:StartGame(charNow)
@@ -384,6 +392,9 @@ RemoteEvents.GameOver.OnClientEvent:Connect(function(data)
 
 	-- 비동기 배틀 HUD 숨기기
 	asyncBattleController:EndBattle()
+
+	-- 실시간 배틀 HUD 숨기기
+	realtimeBattleController:SetGameActive(false)
 
 	-- 부활 가능한 경우 게임 일시정지만 (완전 종료 아님)
 	if data.canRevive then
