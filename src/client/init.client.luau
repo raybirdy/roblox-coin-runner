@@ -87,6 +87,7 @@ local CharacterEffectsController = require(script.Controllers.CharacterEffectsCo
 local ScenarioController = require(script.Controllers.ScenarioController)
 local CutsceneController = require(script.Controllers.CutsceneController)
 local SkillController = require(script.Controllers.SkillController)
+local RankingController = require(script.Controllers.RankingController)
 
 -- 컨트롤러 인스턴스 생성
 local inputController = InputController.new()
@@ -112,6 +113,7 @@ local characterEffectsController = CharacterEffectsController.new(character)
 local scenarioController = ScenarioController.new(player)
 local _cutsceneController = CutsceneController.new()
 local skillController = SkillController.new(player, playerController)
+local rankingController = RankingController.new(player)
 
 -- Fever mode callbacks (speed boost + camera shake)
 feverController:OnFeverStart(function(speedBoost: number)
@@ -172,6 +174,7 @@ playerController:SetLobbyMode()
 
 -- 리더보드 표시 (로비에서)
 leaderboardController:Show()
+rankingController:ShowInLobby()
 
 -- 플레이어 데이터 캐시
 local cachedPlayerData: any? = nil
@@ -209,6 +212,7 @@ RemoteEvents.ReturnToLobby.OnClientEvent:Connect(function()
 	-- 진행도 UI 표시
 	progressionController:ShowInLobby()
 	scenarioController:ShowInLobby()
+	rankingController:ShowInLobby()
 end)
 
 -- 포탈 진입 안내 (서버에서 포탈 감지 시)
@@ -286,6 +290,7 @@ RemoteEvents.GameStart.OnClientEvent:Connect(function(data)
 	leaderboardController:Hide()
 	progressionController:HideForGame()
 	scenarioController:HideForGame()
+	rankingController:HideForGame()
 
 	-- 2. 컨트롤 전환: 기본 이동 비활성화
 	disableDefaultControls()

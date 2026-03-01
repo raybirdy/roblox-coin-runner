@@ -321,6 +321,12 @@ RemoteEvents.ChapterUnlocked = getOrCreateRemoteEvent("ChapterUnlocked")
 -- 서버 → 클라이언트: 챕터 완료/해금 알림 (컷씬 포함)
 -- 파라미터: { chapterId, chapterName, chapterTheme, skillUnlocked?, statBonus?, cutscene?, chapterReward?, isOpening? }
 
+-- ==================== 주간 랭킹 ====================
+
+-- 주간 랭크 업데이트 (서버 → 클라이언트)
+RemoteEvents.WeeklyRankUpdate = getOrCreateRemoteEvent("WeeklyRankUpdate")
+-- 파라미터: { weeklyRank: number?, topPlayers: {{rank,name,score}}, rewardTiers: {{maxRank,gems}} }
+
 -- ==================== 스킬 시스템 ====================
 
 -- 스킬 발동 요청 (클라이언트 → 서버)
