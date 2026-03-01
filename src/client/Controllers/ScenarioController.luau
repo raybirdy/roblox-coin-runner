@@ -1417,6 +1417,19 @@ function ScenarioController:_setupEventHandlers()
 		end
 	end)
 	table.insert(self._connections, playerDataConn)
+
+	-- 챕터 완료 보상 팝업
+	local chapterConn = RemoteEvents.ChapterUnlocked.OnClientEvent:Connect(function(data)
+		if not data.isOpening and not data.bossRunReady then
+			if data.chapterReward or data.skillUnlocked or data.statBonus then
+				local cutsceneLen = if data.cutscene then #data.cutscene else 0
+				task.delay(cutsceneLen * 3 + 5, function()
+					self:_showChapterRewardPopup(data)
+				end)
+			end
+		end
+	end)
+	table.insert(self._connections, chapterConn)
 end
 
 -- 퀘스트 완료 토스트 (화면 상단)
@@ -1700,6 +1713,189 @@ function ScenarioController:_showIntroPopup()
 	end)
 	laterBtn.MouseButton1Click:Connect(function()
 		closeIntro(false)
+	end)
+end
+
+-- ==================== 챕터 보상 팝업 ====================
+
+-- 챕터 완료 보상 팝업 (젬, 스킬 해금, 스탯 보너스)
+function ScenarioController:_showChapterRewardPopup(data: any)
+	local playerGui = self._player:WaitForChild("PlayerGui")
+
+	local rewardGui = Instance.new("ScreenGui")
+	rewardGui.Name = "ChapterRewardPopup"
+	rewardGui.ResetOnSpawn = false
+	rewardGui.DisplayOrder = 24
+	rewardGui.Parent = playerGui
+
+	-- 딤 배경 (닫기 가능)
+	local dimBg = Instance.new("TextButton")
+	dimBg.Name = "DimBg"
+	dimBg.Size = UDim2.new(1, 0, 1, 0)
+	dimBg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	dimBg.BackgroundTransparency = 0.5
+	dimBg.Text = ""
+	dimBg.AutoButtonColor = false
+	dimBg.BorderSizePixel = 0
+	dimBg.Parent = rewardGui
+
+	-- 보상 카드
+	local card = Instance.new("Frame")
+	card.Name = "RewardCard"
+	card.Size = UDim2.new(0, 280, 0, 220)
+	card.Position = UDim2.new(0.5, -140, 0.5, -110)
+	card.BackgroundColor3 = Color3.fromRGB(18, 22, 45)
+	card.BorderSizePixel = 0
+	card.Parent = rewardGui
+
+	local cardCorner = Instance.new("UICorner")
+	cardCorner.CornerRadius = UDim.new(0, 14)
+	cardCorner.Parent = card
+
+	local cardStroke = Instance.new("UIStroke")
+	cardStroke.Color = Color3.fromRGB(255, 200, 50)
+	cardStroke.Thickness = 2
+	cardStroke.Parent = card
+
+	-- 타이틀
+	local titleLabel = Instance.new("TextLabel")
+	titleLabel.Size = UDim2.new(1, 0, 0, 32)
+	titleLabel.Position = UDim2.new(0, 0, 0, 10)
+	titleLabel.BackgroundTransparency = 1
+	titleLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
+	titleLabel.TextSize = 18
+	titleLabel.Font = Enum.Font.GothamBlack
+	titleLabel.Text = "🎉 챕터 보상!"
+	titleLabel.Parent = card
+
+	local yPos = 50
+
+	-- 젬 보상 행
+	if data.chapterReward and data.chapterReward.gems and data.chapterReward.gems > 0 then
+		local gemRow = Instance.new("Frame")
+		gemRow.Size = UDim2.new(1, -30, 0, 40)
+		gemRow.Position = UDim2.new(0, 15, 0, yPos)
+		gemRow.BackgroundColor3 = Color3.fromRGB(30, 25, 60)
+		gemRow.BorderSizePixel = 0
+		gemRow.Parent = card
+
+		local gemCorner = Instance.new("UICorner")
+		gemCorner.CornerRadius = UDim.new(0, 8)
+		gemCorner.Parent = gemRow
+
+		local gemLabel = Instance.new("TextLabel")
+		gemLabel.Size = UDim2.new(1, 0, 1, 0)
+		gemLabel.BackgroundTransparency = 1
+		gemLabel.TextColor3 = Color3.fromRGB(150, 200, 255)
+		gemLabel.TextSize = 16
+		gemLabel.Font = Enum.Font.GothamBold
+		gemLabel.Text = `💎 +{data.chapterReward.gems} 젬`
+		gemLabel.Parent = gemRow
+
+		yPos += 48
+	end
+
+	-- 스킬 해금 행
+	if data.skillUnlocked then
+		local skillInfo = ScenarioConstants.SKILLS[data.skillUnlocked]
+		if skillInfo then
+			local skillRow = Instance.new("Frame")
+			skillRow.Size = UDim2.new(1, -30, 0, 40)
+			skillRow.Position = UDim2.new(0, 15, 0, yPos)
+			skillRow.BackgroundColor3 = Color3.fromRGB(30, 20, 50)
+			skillRow.BorderSizePixel = 0
+			skillRow.Parent = card
+
+			local skillCorner = Instance.new("UICorner")
+			skillCorner.CornerRadius = UDim.new(0, 8)
+			skillCorner.Parent = skillRow
+
+			local skillLabel = Instance.new("TextLabel")
+			skillLabel.Size = UDim2.new(1, 0, 1, 0)
+			skillLabel.BackgroundTransparency = 1
+			skillLabel.TextColor3 = Color3.fromRGB(200, 150, 255)
+			skillLabel.TextSize = 16
+			skillLabel.Font = Enum.Font.GothamBold
+			skillLabel.Text = `{skillInfo.icon} 새 스킬: {skillInfo.name}`
+			skillLabel.Parent = skillRow
+
+			yPos += 48
+		end
+	end
+
+	-- 스탯 보너스 행들
+	if data.statBonus then
+		local statNames: { [string]: string } = {
+			speed = "속도",
+			jump = "점프",
+			coinValue = "코인 가치",
+			magnetRadius = "자석 범위",
+			maxLives = "최대 라이프",
+			feverGauge = "피버 충전",
+		}
+		for statName, value in data.statBonus do
+			if typeof(value) == "number" and value > 0 then
+				local displayName = statNames[statName] or statName
+				local displayValue = if statName == "maxLives"
+					then `+{value}`
+					else `+{math.floor(value * 100)}%`
+
+				local statRow = Instance.new("TextLabel")
+				statRow.Size = UDim2.new(1, -30, 0, 22)
+				statRow.Position = UDim2.new(0, 15, 0, yPos)
+				statRow.BackgroundTransparency = 1
+				statRow.TextColor3 = Color3.fromRGB(180, 220, 180)
+				statRow.TextSize = 13
+				statRow.Font = Enum.Font.Gotham
+				statRow.Text = `📈 {displayName} {displayValue}`
+				statRow.TextXAlignment = Enum.TextXAlignment.Left
+				statRow.Parent = card
+
+				yPos += 26
+			end
+		end
+	end
+
+	-- 카드 높이를 내용에 맞게 조정
+	local cardHeight = math.max(220, yPos + 50)
+	card.Size = UDim2.new(0, 280, 0, cardHeight)
+	card.Position = UDim2.new(0.5, -140, 0.5, -cardHeight / 2)
+
+	-- 확인 버튼
+	local okBtn = Instance.new("TextButton")
+	okBtn.Size = UDim2.new(1, -30, 0, 36)
+	okBtn.Position = UDim2.new(0, 15, 1, -46)
+	okBtn.BackgroundColor3 = Color3.fromRGB(60, 120, 200)
+	okBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	okBtn.TextSize = 14
+	okBtn.Font = Enum.Font.GothamBold
+	okBtn.Text = "확인!"
+	okBtn.Parent = card
+
+	local okCorner = Instance.new("UICorner")
+	okCorner.CornerRadius = UDim.new(0, 8)
+	okCorner.Parent = okBtn
+
+	-- 등장 애니메이션
+	card.BackgroundTransparency = 1
+	card.Position = UDim2.new(0.5, -140, 0.5, -cardHeight / 2 + 40)
+	TweenService:Create(card, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+		Position = UDim2.new(0.5, -140, 0.5, -cardHeight / 2),
+		BackgroundTransparency = 0,
+	}):Play()
+
+	local function closePopup()
+		if rewardGui.Parent then
+			rewardGui:Destroy()
+		end
+	end
+
+	dimBg.MouseButton1Click:Connect(closePopup)
+	okBtn.MouseButton1Click:Connect(closePopup)
+
+	-- 8초 후 자동 닫기
+	task.delay(8, function()
+		closePopup()
 	end)
 end
 

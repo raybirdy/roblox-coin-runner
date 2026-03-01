@@ -353,9 +353,9 @@ function WorldMapController:_setupEventHandlers()
 	end)
 	table.insert(self._connections, conn1)
 
-	-- 챕터 완료 시 해방 애니메이션
+	-- 챕터 완료 시 해방 애니메이션 (보스 런 준비 알림은 제외)
 	local conn2 = RemoteEvents.ChapterUnlocked.OnClientEvent:Connect(function(data)
-		if data.chapterId and not data.isOpening then
+		if data.chapterId and not data.isOpening and not data.bossRunReady then
 			self:PlayLiberationAnimation(data.chapterId)
 		end
 	end)
