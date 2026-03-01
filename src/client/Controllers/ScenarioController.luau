@@ -26,9 +26,13 @@ export type ScenarioController = typeof(setmetatable(
 		-- 탭
 		_currentTab: string,
 		_tabChapters: TextButton?,
+		_tabWorldMap: TextButton?,
 		_tabSkills: TextButton?,
 		_chapterScrollFrame: ScrollingFrame?,
+		_worldMapFrame: Frame?,
 		_skillFrame: Frame?,
+		-- 월드맵 컨트롤러 참조
+		_worldMapController: any?,
 		-- 챕터 상세 오버레이
 		_detailFrame: Frame?,
 		_detailTitleLabel: TextLabel?,
@@ -64,9 +68,12 @@ function ScenarioController.new(player: Player): ScenarioController
 		_isOpen = false,
 		_currentTab = "chapters",
 		_tabChapters = nil,
+		_tabWorldMap = nil,
 		_tabSkills = nil,
 		_chapterScrollFrame = nil,
+		_worldMapFrame = nil,
 		_skillFrame = nil,
+		_worldMapController = nil,
 		_detailFrame = nil,
 		_detailTitleLabel = nil,
 		_detailScrollFrame = nil,
@@ -250,11 +257,11 @@ function ScenarioController:_createGui()
 
 	local tabChapters = Instance.new("TextButton")
 	tabChapters.Name = "TabChapters"
-	tabChapters.Size = UDim2.new(0.5, 0, 1, 0)
+	tabChapters.Size = UDim2.new(0.34, 0, 1, 0)
 	tabChapters.Position = UDim2.new(0, 0, 0, 0)
 	tabChapters.BackgroundColor3 = Color3.fromRGB(60, 80, 180)
 	tabChapters.TextColor3 = Color3.fromRGB(255, 255, 255)
-	tabChapters.TextSize = ResponsiveUtil.scaledTextSize(13, 11)
+	tabChapters.TextSize = ResponsiveUtil.scaledTextSize(12, 10)
 	tabChapters.Font = Enum.Font.GothamBold
 	tabChapters.Text = "챕터"
 	tabChapters.Parent = tabBar
@@ -264,13 +271,29 @@ function ScenarioController:_createGui()
 	tabChaptersCorner.CornerRadius = UDim.new(0, 8)
 	tabChaptersCorner.Parent = tabChapters
 
+	local tabWorldMap = Instance.new("TextButton")
+	tabWorldMap.Name = "TabWorldMap"
+	tabWorldMap.Size = UDim2.new(0.33, 0, 1, 0)
+	tabWorldMap.Position = UDim2.new(0.34, 0, 0, 0)
+	tabWorldMap.BackgroundColor3 = Color3.fromRGB(35, 35, 55)
+	tabWorldMap.TextColor3 = Color3.fromRGB(180, 180, 200)
+	tabWorldMap.TextSize = ResponsiveUtil.scaledTextSize(12, 10)
+	tabWorldMap.Font = Enum.Font.GothamBold
+	tabWorldMap.Text = "🗺️ 맵"
+	tabWorldMap.Parent = tabBar
+	self._tabWorldMap = tabWorldMap
+
+	local tabWorldMapCorner = Instance.new("UICorner")
+	tabWorldMapCorner.CornerRadius = UDim.new(0, 8)
+	tabWorldMapCorner.Parent = tabWorldMap
+
 	local tabSkills = Instance.new("TextButton")
 	tabSkills.Name = "TabSkills"
-	tabSkills.Size = UDim2.new(0.5, 0, 1, 0)
-	tabSkills.Position = UDim2.new(0.5, 0, 0, 0)
+	tabSkills.Size = UDim2.new(0.33, 0, 1, 0)
+	tabSkills.Position = UDim2.new(0.67, 0, 0, 0)
 	tabSkills.BackgroundColor3 = Color3.fromRGB(35, 35, 55)
 	tabSkills.TextColor3 = Color3.fromRGB(180, 180, 200)
-	tabSkills.TextSize = ResponsiveUtil.scaledTextSize(13, 11)
+	tabSkills.TextSize = ResponsiveUtil.scaledTextSize(12, 10)
 	tabSkills.Font = Enum.Font.GothamBold
 	tabSkills.Text = "스킬"
 	tabSkills.Parent = tabBar
@@ -282,6 +305,9 @@ function ScenarioController:_createGui()
 
 	tabChapters.MouseButton1Click:Connect(function()
 		self:_switchTab("chapters")
+	end)
+	tabWorldMap.MouseButton1Click:Connect(function()
+		self:_switchTab("worldmap")
 	end)
 	tabSkills.MouseButton1Click:Connect(function()
 		self:_switchTab("skills")
@@ -324,6 +350,55 @@ function ScenarioController:_createGui()
 	self._skillFrame = skillFrame
 
 	self:_buildSkillCards(skillFrame)
+
+	-- 월드맵 탭 컨텐츠 프레임
+	local worldMapFrame = Instance.new("Frame")
+	worldMapFrame.Name = "WorldMapTabFrame"
+	worldMapFrame.Size = UDim2.new(1, -10, 1, -92)
+	worldMapFrame.Position = UDim2.new(0, 5, 0, 88)
+	worldMapFrame.BackgroundTransparency = 1
+	worldMapFrame.Visible = false
+	worldMapFrame.Parent = frame
+	self._worldMapFrame = worldMapFrame
+
+	-- 전체 보기 버튼 (중앙)
+	local openMapBtn = Instance.new("TextButton")
+	openMapBtn.Name = "OpenMapBtn"
+	openMapBtn.Size = UDim2.new(0, 200, 0, 56)
+	openMapBtn.Position = UDim2.new(0.5, -100, 0.5, -80)
+	openMapBtn.BackgroundColor3 = Color3.fromRGB(40, 100, 50)
+	openMapBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	openMapBtn.TextSize = 20
+	openMapBtn.Font = Enum.Font.GothamBold
+	openMapBtn.Text = "🗺️ 전체 보기"
+	openMapBtn.Parent = worldMapFrame
+
+	local openMapBtnCorner = Instance.new("UICorner")
+	openMapBtnCorner.CornerRadius = UDim.new(0, 12)
+	openMapBtnCorner.Parent = openMapBtn
+
+	local openMapBtnStroke = Instance.new("UIStroke")
+	openMapBtnStroke.Color = Color3.fromRGB(80, 200, 100)
+	openMapBtnStroke.Thickness = 2
+	openMapBtnStroke.Parent = openMapBtn
+
+	local mapHintLabel = Instance.new("TextLabel")
+	mapHintLabel.Size = UDim2.new(1, -20, 0, 40)
+	mapHintLabel.Position = UDim2.new(0, 10, 0.5, -20)
+	mapHintLabel.BackgroundTransparency = 1
+	mapHintLabel.TextColor3 = Color3.fromRGB(140, 160, 200)
+	mapHintLabel.TextSize = 13
+	mapHintLabel.Font = Enum.Font.Gotham
+	mapHintLabel.Text = "10개 챕터 진행 상황을\n지도에서 한눈에 확인하세요!"
+	mapHintLabel.TextWrapped = true
+	mapHintLabel.Parent = worldMapFrame
+
+	openMapBtn.MouseButton1Click:Connect(function()
+		self:ClosePanel()
+		if self._worldMapController then
+			self._worldMapController:Open()
+		end
+	end)
 
 	-- 챕터 상세 오버레이 (챕터 카드 클릭 시)
 	self:_buildDetailOverlay(frame)
@@ -1003,31 +1078,45 @@ end
 
 function ScenarioController:_switchTab(tabName: string)
 	self._currentTab = tabName
+
 	local isChapters = tabName == "chapters"
+	local isWorldMap = tabName == "worldmap"
+	local isSkills = tabName == "skills"
 
 	if self._chapterScrollFrame then
 		self._chapterScrollFrame.Visible = isChapters
 	end
+	if self._worldMapFrame then
+		self._worldMapFrame.Visible = isWorldMap
+	end
 	if self._skillFrame then
-		self._skillFrame.Visible = not isChapters
+		self._skillFrame.Visible = isSkills
+	end
+
+	local function tabColor(active: boolean, activeColor: Color3)
+		return if active then activeColor else Color3.fromRGB(35, 35, 55)
+	end
+	local function textColor(active: boolean)
+		return if active then Color3.fromRGB(255, 255, 255) else Color3.fromRGB(180, 180, 200)
 	end
 
 	if self._tabChapters then
-		self._tabChapters.BackgroundColor3 = if isChapters
-			then Color3.fromRGB(60, 80, 180)
-			else Color3.fromRGB(35, 35, 55)
-		self._tabChapters.TextColor3 = if isChapters
-			then Color3.fromRGB(255, 255, 255)
-			else Color3.fromRGB(180, 180, 200)
+		self._tabChapters.BackgroundColor3 = tabColor(isChapters, Color3.fromRGB(60, 80, 180))
+		self._tabChapters.TextColor3 = textColor(isChapters)
+	end
+	if self._tabWorldMap then
+		self._tabWorldMap.BackgroundColor3 = tabColor(isWorldMap, Color3.fromRGB(40, 100, 50))
+		self._tabWorldMap.TextColor3 = textColor(isWorldMap)
 	end
 	if self._tabSkills then
-		self._tabSkills.BackgroundColor3 = if not isChapters
-			then Color3.fromRGB(100, 50, 180)
-			else Color3.fromRGB(35, 35, 55)
-		self._tabSkills.TextColor3 = if not isChapters
-			then Color3.fromRGB(255, 255, 255)
-			else Color3.fromRGB(180, 180, 200)
+		self._tabSkills.BackgroundColor3 = tabColor(isSkills, Color3.fromRGB(100, 50, 180))
+		self._tabSkills.TextColor3 = textColor(isSkills)
 	end
+end
+
+-- WorldMapController 참조 설정 (init.client.luau에서 호출)
+function ScenarioController:SetWorldMapController(wmc: any)
+	self._worldMapController = wmc
 end
 
 -- ==================== 데이터로 UI 업데이트 ====================
@@ -1281,6 +1370,10 @@ function ScenarioController:_setupEventHandlers()
 	-- 전체 시나리오 데이터 수신
 	local dataConn = RemoteEvents.ScenarioDataResponse.OnClientEvent:Connect(function(data)
 		self:_updateWithData(data)
+		-- 월드맵 컨트롤러에도 데이터 전달
+		if self._worldMapController then
+			self._worldMapController:UpdateFromScenarioData(data)
+		end
 	end)
 	table.insert(self._connections, dataConn)
 
