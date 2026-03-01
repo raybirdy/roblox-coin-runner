@@ -341,4 +341,14 @@ RemoteEvents.SkillActivated = getOrCreateRemoteEvent("SkillActivated")
 RemoteEvents.ShieldRegenerated = getOrCreateRemoteEvent("ShieldRegenerated")
 -- 파라미터: (없음)
 
+-- ==================== 비동기 배틀 ====================
+
+-- 도전 요청 (클라이언트 → 서버)
+RemoteEvents.AsyncBattleChallenge = getOrCreateRemoteEvent("AsyncBattleChallenge")
+-- 파라미터: { targetName: string, targetScore: number }
+
+-- 배틀 결과 (서버 → 클라이언트)
+RemoteEvents.AsyncBattleResult = getOrCreateRemoteEvent("AsyncBattleResult")
+-- 파라미터: { won: boolean, myScore: number, targetScore: number, targetName: string, reward: number? }
+
 return RemoteEvents

@@ -8,6 +8,8 @@ local TweenService = game:GetService("TweenService")
 local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)
 local ResponsiveUtil = require(ReplicatedStorage.Shared.Utils.ResponsiveUtil)
 
+type ChallengeCallback = (targetName: string, targetScore: number) -> ()
+
 local LeaderboardController = {}
 LeaderboardController.__index = LeaderboardController
 
@@ -22,8 +24,10 @@ export type LeaderboardController = typeof(setmetatable(
 		_contentFrame: Frame?,
 		_tabButtons: { [string]: TextButton },
 		_rankLabels: { [number]: { name: TextLabel, score: TextLabel } },
+		_challengeBtns: { [number]: TextButton },
 		_playerRankLabel: TextLabel?,
 		_isPopupOpen: boolean,
+		_onChallengeCallback: ChallengeCallback?,
 	},
 	LeaderboardController
 ))
@@ -39,8 +43,10 @@ function LeaderboardController.new(player: Player): LeaderboardController
 		_contentFrame = nil,
 		_tabButtons = {},
 		_rankLabels = {},
+		_challengeBtns = {},
 		_playerRankLabel = nil,
 		_isPopupOpen = false,
+		_onChallengeCallback = nil,
 	}, LeaderboardController)
 
 	self:_createPopupGui()
@@ -220,7 +226,7 @@ function LeaderboardController:_createPopupGui()
 		-- 이름
 		local nameLabel = Instance.new("TextLabel")
 		nameLabel.Name = "PlayerName"
-		nameLabel.Size = UDim2.new(0, 200, 1, 0)
+		nameLabel.Size = UDim2.new(0, 155, 1, 0)
 		nameLabel.Position = UDim2.new(0, 45, 0, 0)
 		nameLabel.BackgroundTransparency = 1
 		nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -234,8 +240,8 @@ function LeaderboardController:_createPopupGui()
 		-- 점수
 		local scoreLabel = Instance.new("TextLabel")
 		scoreLabel.Name = "Score"
-		scoreLabel.Size = UDim2.new(0, 80, 1, 0)
-		scoreLabel.Position = UDim2.new(1, -90, 0, 0)
+		scoreLabel.Size = UDim2.new(0, 76, 1, 0)
+		scoreLabel.Position = UDim2.new(1, -126, 0, 0)
 		scoreLabel.BackgroundTransparency = 1
 		scoreLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
 		scoreLabel.TextSize = ResponsiveUtil.scaledTextSize(14, 11)
@@ -244,7 +250,38 @@ function LeaderboardController:_createPopupGui()
 		scoreLabel.TextXAlignment = Enum.TextXAlignment.Right
 		scoreLabel.Parent = rankFrame
 
+		-- 도전 버튼 (내 자신 제외)
+		local challengeBtn = Instance.new("TextButton")
+		challengeBtn.Name = "ChallengeBtn"
+		challengeBtn.Size = UDim2.new(0, 44, 0, 22)
+		challengeBtn.Position = UDim2.new(1, -48, 0.5, -11)
+		challengeBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+		challengeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+		challengeBtn.TextSize = 10
+		challengeBtn.Font = Enum.Font.GothamBold
+		challengeBtn.Text = "⚔️도전"
+		challengeBtn.Visible = false
+		challengeBtn.Parent = rankFrame
+
+		local challengeBtnCorner = Instance.new("UICorner")
+		challengeBtnCorner.CornerRadius = UDim.new(0, 5)
+		challengeBtnCorner.Parent = challengeBtn
+
+		challengeBtn.MouseButton1Click:Connect(function()
+			local name = nameLabel.Text
+			local score = tonumber(scoreLabel.Text) or 0
+			if name == "---" or score <= 0 then
+				return
+			end
+			-- 콜백 호출 (init.client.luau에서 연결됨)
+			if self._onChallengeCallback then
+				self._onChallengeCallback(name, score)
+			end
+			self:ClosePopup()
+		end)
+
 		self._rankLabels[i] = { name = nameLabel, score = scoreLabel }
+		self._challengeBtns[i] = challengeBtn
 	end
 
 	-- 내 순위 라벨 (하단)
@@ -346,13 +383,22 @@ function LeaderboardController:_updatePopupContent(
 			continue
 		end
 
+		local challengeBtn = self._challengeBtns[i]
+
 		if leaderboard[i] then
 			local entry = leaderboard[i]
 			labels.name.Text = entry.name
 			labels.score.Text = tostring(entry.score)
+			-- 내 자신이 아닌 경우에만 도전 버튼 표시
+			if challengeBtn then
+				challengeBtn.Visible = entry.name ~= self._player.Name and entry.score > 0
+			end
 		else
 			labels.name.Text = "---"
 			labels.score.Text = "0"
+			if challengeBtn then
+				challengeBtn.Visible = false
+			end
 		end
 	end
 
@@ -444,6 +490,11 @@ end
 -- 현재 탭 가져오기
 function LeaderboardController:GetCurrentTab(): string
 	return self._currentTab
+end
+
+-- 도전 콜백 설정 (init.client.luau에서 AsyncBattleController와 연결)
+function LeaderboardController:SetChallengeCallback(callback: ChallengeCallback)
+	self._onChallengeCallback = callback
 end
 
 -- 내 순위 가져오기

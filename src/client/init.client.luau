@@ -88,6 +88,7 @@ local ScenarioController = require(script.Controllers.ScenarioController)
 local CutsceneController = require(script.Controllers.CutsceneController)
 local SkillController = require(script.Controllers.SkillController)
 local RankingController = require(script.Controllers.RankingController)
+local AsyncBattleController = require(script.Controllers.AsyncBattleController)
 
 -- 컨트롤러 인스턴스 생성
 local inputController = InputController.new()
@@ -114,6 +115,7 @@ local scenarioController = ScenarioController.new(player)
 local _cutsceneController = CutsceneController.new()
 local skillController = SkillController.new(player, playerController)
 local rankingController = RankingController.new(player)
+local asyncBattleController = AsyncBattleController.new(player)
 
 -- Fever mode callbacks (speed boost + camera shake)
 feverController:OnFeverStart(function(speedBoost: number)
@@ -234,6 +236,12 @@ RemoteEvents.ShopOpen.OnClientEvent:Connect(function()
 	end
 end)
 
+-- 비동기 배틀 도전 콜백 연결 (리더보드 도전 버튼 → 서버)
+leaderboardController:SetChallengeCallback(function(targetName: string, targetScore: number)
+	RemoteEvents.AsyncBattleChallenge:FireServer({ targetName = targetName, targetScore = targetScore })
+	uiController:ShowGameFeedback(`⚔️ {targetName}에게 도전!`, Color3.fromRGB(255, 100, 100))
+end)
+
 -- 튜토리얼 컨트롤러에 NPCController 연결
 tutorialController:SetNPCController(npcController)
 
@@ -331,6 +339,11 @@ RemoteEvents.GameStart.OnClientEvent:Connect(function(data)
 		feverController:ShowGauge()
 		skillController:SetGameActive(true)
 
+		-- 비동기 배틀 HUD (도전 모드인 경우)
+		if data.asyncBattle then
+			asyncBattleController:StartBattle(data.asyncBattle)
+		end
+
 		-- 속도 연출 효과 시작
 		if charNow then
 			speedEffectController:StartGame(charNow)
@@ -368,6 +381,9 @@ RemoteEvents.GameOver.OnClientEvent:Connect(function(data)
 
 	-- 스킬 비활성화
 	skillController:SetGameActive(false)
+
+	-- 비동기 배틀 HUD 숨기기
+	asyncBattleController:EndBattle()
 
 	-- 부활 가능한 경우 게임 일시정지만 (완전 종료 아님)
 	if data.canRevive then

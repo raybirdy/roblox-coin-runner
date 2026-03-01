@@ -22,6 +22,7 @@ local LeaderboardService = require(script.Parent.LeaderboardService)
 local MonetizationService = require(script.Parent.MonetizationService)
 local ProgressionService = require(script.Parent.ProgressionService)
 local ScenarioService = require(script.Parent.ScenarioService)
+local AsyncBattleService = require(script.Parent.AsyncBattleService)
 local RateLimiter = require(ReplicatedStorage.Shared.Utils.RateLimiter)
 
 local GameManager = {}
@@ -83,6 +84,8 @@ type GameSession = {
 	unlockedSkillsSet: { [string]: boolean },
 	lastShieldRegenTime: number,
 	feverThreshold: number,
+	-- Async Battle
+	asyncBattleTarget: { targetName: string, targetScore: number }?,
 }
 
 local activeSessions: { [Player]: GameSession } = {}
@@ -396,6 +399,10 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 		then math.floor(GameConstants.FEVER.COMBO_THRESHOLD / 1.3)
 		else GameConstants.FEVER.COMBO_THRESHOLD
 
+	-- 비동기 배틀 타겟 가져오기 (있는 경우)
+	local battleTarget2 = AsyncBattleService:GetBattleTarget(player)
+	AsyncBattleService:ClearBattleTarget(player)
+
 	local session: GameSession = {
 		player = player,
 		chunkService = chunkService,
@@ -435,6 +442,7 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 		unlockedSkillsSet = unlockedSkillsSet2,
 		lastShieldRegenTime = tick(),
 		feverThreshold = feverThreshold2,
+		asyncBattleTarget = battleTarget2,
 	}
 
 	activeSessions[player] = session
@@ -469,6 +477,7 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 		startPosition = startPosition,
 		scenarioStatBonuses = statBonuses,
 		unlockedSkills = unlockedSkills,
+		asyncBattle = session.asyncBattleTarget,
 	})
 
 	print(`[GameManager] Game started for {player.Name}`)
@@ -578,6 +587,9 @@ function GameManager.EndGame(player: Player)
 
 	-- 진행도 업데이트 (레벨, 미션, 업적)
 	ProgressionService:OnGameEnd(player, finalScore, earnedCoins, distance)
+
+	-- 비동기 배틀 결과 처리
+	AsyncBattleService:ProcessGameEnd(player, finalScore, session.asyncBattleTarget)
 
 	-- 시나리오 퀘스트 진행도 업데이트
 	local sessionDuration = math.floor(tick() - session.startTime)
