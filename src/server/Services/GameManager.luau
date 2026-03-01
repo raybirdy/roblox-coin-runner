@@ -21,9 +21,19 @@ local BackgroundService = require(script.Parent.BackgroundService)
 local LeaderboardService = require(script.Parent.LeaderboardService)
 local MonetizationService = require(script.Parent.MonetizationService)
 local ProgressionService = require(script.Parent.ProgressionService)
+local ScenarioService = require(script.Parent.ScenarioService)
 local RateLimiter = require(ReplicatedStorage.Shared.Utils.RateLimiter)
 
 local GameManager = {}
+
+type ScenarioStatBonuses = {
+	speed: number,
+	jump: number,
+	coinValue: number,
+	magnetRadius: number,
+	maxLives: number,
+	feverGauge: number,
+}
 
 -- 플레이어별 게임 세션 데이터
 type GameSession = {
@@ -66,6 +76,9 @@ type GameSession = {
 	nearMissCount: number,
 	maxCombo: number,
 	feverCount: number,
+	-- Scenario
+	powerupsCollected: number,
+	scenarioStatBonuses: ScenarioStatBonuses,
 }
 
 local activeSessions: { [Player]: GameSession } = {}
@@ -162,6 +175,9 @@ RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { 
 		end
 	end
 
+	-- 시나리오 스탯 보너스 가져오기
+	local statBonuses = ScenarioService:GetStatBonuses(player)
+
 	local session: GameSession = {
 		player = player,
 		chunkService = chunkService,
@@ -176,7 +192,7 @@ RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { 
 		startPosition = startPosition,
 		score = 0,
 		coins = 0,
-		lives = GameConstants.LIFE.STARTING_LIVES,
+		lives = GameConstants.LIFE.STARTING_LIVES + statBonuses.maxLives,
 		reviveCount = 0,
 		startPowerups = validPowerups,
 		comboCount = 0,
@@ -197,6 +213,8 @@ RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { 
 		nearMissCount = 0,
 		maxCombo = 0,
 		feverCount = 0,
+		powerupsCollected = 0,
+		scenarioStatBonuses = statBonuses,
 	}
 
 	activeSessions[player] = session
@@ -241,6 +259,7 @@ RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { 
 		startTutorial = needsTutorial,
 		startPosition = startPosition,
 		startPowerups = validPowerups,
+		scenarioStatBonuses = statBonuses,
 	})
 
 	print(`[GameManager] Game started for {player.Name} via portal`)
@@ -350,6 +369,9 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 		end
 	end
 
+	-- 시나리오 스탯 보너스 가져오기
+	local statBonuses = ScenarioService:GetStatBonuses(player)
+
 	local session: GameSession = {
 		player = player,
 		chunkService = chunkService,
@@ -364,7 +386,7 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 		startPosition = startPosition,
 		score = 0,
 		coins = 0,
-		lives = GameConstants.LIFE.STARTING_LIVES,
+		lives = GameConstants.LIFE.STARTING_LIVES + statBonuses.maxLives,
 		reviveCount = 0,
 		comboCount = 0,
 		lastCoinTime = 0,
@@ -384,6 +406,8 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 		nearMissCount = 0,
 		maxCombo = 0,
 		feverCount = 0,
+		powerupsCollected = 0,
+		scenarioStatBonuses = statBonuses,
 	}
 
 	activeSessions[player] = session
@@ -416,6 +440,7 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 		lives = session.lives,
 		startTutorial = needsTutorial,
 		startPosition = startPosition,
+		scenarioStatBonuses = statBonuses,
 	})
 
 	print(`[GameManager] Game started for {player.Name}`)
@@ -525,6 +550,21 @@ function GameManager.EndGame(player: Player)
 
 	-- 진행도 업데이트 (레벨, 미션, 업적)
 	ProgressionService:OnGameEnd(player, finalScore, earnedCoins, distance)
+
+	-- 시나리오 퀘스트 진행도 업데이트
+	local sessionDuration = math.floor(tick() - session.startTime)
+	local wasNoHit = session.lastHitDistance == 0 and finalScore > 0
+	ScenarioService:UpdateQuestProgress(player, "play_games", 1)
+	ScenarioService:UpdateQuestProgress(player, "score_reach", finalScore)
+	ScenarioService:UpdateQuestProgress(player, "collect_coins", math.floor(session.coins))
+	ScenarioService:UpdateQuestProgress(player, "near_miss", session.nearMissCount)
+	ScenarioService:UpdateQuestProgress(player, "combo_ch", session.maxCombo)
+	ScenarioService:UpdateQuestProgress(player, "distance_ch", distance)
+	ScenarioService:UpdateQuestProgress(player, "survive_ch", sessionDuration)
+	ScenarioService:UpdateQuestProgress(player, "powerup_ch", session.powerupsCollected)
+	if wasNoHit then
+		ScenarioService:UpdateQuestProgress(player, "no_hit_run_ch", 1)
+	end
 
 	-- 청크, 코인, 장애물, 파워업, NPC 정리
 	if session.chunkService then
@@ -704,14 +744,18 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 
 			print(`[GameManager] Player {player.Name} collected {powerupData.powerupType} powerup`)
 		end
+		-- 시나리오: 파워업 수집 횟수 추적
+		session.powerupsCollected += #collectedPowerups
 
 		-- 코인 수집 체크 (자석 효과 적용, 피버 시 초강력 자석)
-		local magnetRadius = powerupService:GetMagnetRadius()
+		local magnetRadius = powerupService:GetMagnetRadius() + session.scenarioStatBonuses.magnetRadius
 		if session.isFever then
 			magnetRadius = math.max(magnetRadius, GameConstants.FEVER.MAGNET_RADIUS)
 		end
 		local collectedCoins = coinService:CheckCoinCollection(hrp.Position, magnetRadius)
-		local coinMultiplier = powerupService:GetCoinMultiplier() * MonetizationService:GetCoinMultiplier(player)
+		local coinMultiplier = powerupService:GetCoinMultiplier()
+			* MonetizationService:GetCoinMultiplier(player)
+			* (1 + session.scenarioStatBonuses.coinValue)
 		if session.isFever then
 			coinMultiplier *= GameConstants.FEVER.COIN_MULTIPLIER
 		end
