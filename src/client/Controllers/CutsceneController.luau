@@ -273,6 +273,18 @@ function CutsceneController:_setupEventHandlers()
 				else data.chapterTheme .. " " .. data.chapterName .. " 완료!"
 			self:QueueCutscene(data.cutscene, title, data.chapterId)
 		end
+
+		-- 챕터 완료 시 축하 연출 (컷씬 종료 후)
+		if not data.isOpening and not data.bossRunReady then
+			local chapter = ScenarioConstants.CHAPTER_MAP[data.chapterId]
+			if chapter then
+				local cutsceneLen = if data.cutscene then #data.cutscene else 0
+				task.delay(cutsceneLen * 3 + 1, function()
+					self:ShowChapterClearCelebration(chapter.num, chapter.name)
+				end)
+			end
+		end
+
 		if data.skillUnlocked and not self._shownSkillTutorials[data.skillUnlocked] then
 			self._pendingSkillTutorial = data.skillUnlocked
 		end
@@ -752,6 +764,153 @@ function CutsceneController:_showSkillTutorial(skillId: string)
 		if tutGui.Parent then
 			closeTutorial()
 		end
+	end)
+end
+
+-- ==================== 챕터 클리어 축하 ====================
+
+-- 전체화면 챕터 클리어 축하 이펙트
+function CutsceneController:ShowChapterClearCelebration(chapterNum: number, chapterName: string)
+	local playerGui = self._player:WaitForChild("PlayerGui")
+
+	local celebGui = Instance.new("ScreenGui")
+	celebGui.Name = "ChapterClearCelebration"
+	celebGui.ResetOnSpawn = false
+	celebGui.DisplayOrder = 25
+	celebGui.Parent = playerGui
+
+	-- 1. 배경 딤 (서서히)
+	local dimBg = Instance.new("Frame")
+	dimBg.Name = "DimBg"
+	dimBg.Size = UDim2.new(1, 0, 1, 0)
+	dimBg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	dimBg.BackgroundTransparency = 1
+	dimBg.BorderSizePixel = 0
+	dimBg.Parent = celebGui
+
+	TweenService:Create(dimBg, TweenInfo.new(0.5), {
+		BackgroundTransparency = 0.6,
+	}):Play()
+
+	-- 2. 챕터 번호 대형 텍스트
+	local chapterLabel = Instance.new("TextLabel")
+	chapterLabel.Name = "ChapterLabel"
+	chapterLabel.Size = UDim2.new(0, 300, 0, 80)
+	chapterLabel.Position = UDim2.new(0.5, -150, 0.35, -40)
+	chapterLabel.BackgroundTransparency = 1
+	chapterLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
+	chapterLabel.TextSize = 48
+	chapterLabel.Font = Enum.Font.GothamBlack
+	chapterLabel.Text = `CHAPTER {chapterNum}`
+	chapterLabel.TextStrokeTransparency = 0.5
+	chapterLabel.TextStrokeColor3 = Color3.fromRGB(200, 150, 0)
+	chapterLabel.TextTransparency = 1
+	chapterLabel.Parent = celebGui
+
+	local uiScale = Instance.new("UIScale")
+	uiScale.Scale = 0.3
+	uiScale.Parent = chapterLabel
+
+	TweenService:Create(uiScale, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+		Scale = 1.0,
+	}):Play()
+	TweenService:Create(chapterLabel, TweenInfo.new(0.3), {
+		TextTransparency = 0,
+	}):Play()
+
+	-- 3. "CLEAR!" 텍스트
+	local clearLabel = Instance.new("TextLabel")
+	clearLabel.Name = "ClearLabel"
+	clearLabel.Size = UDim2.new(0, 200, 0, 50)
+	clearLabel.Position = UDim2.new(0.5, -100, 0.45, 0)
+	clearLabel.BackgroundTransparency = 1
+	clearLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	clearLabel.TextSize = 36
+	clearLabel.Font = Enum.Font.GothamBlack
+	clearLabel.Text = "CLEAR!"
+	clearLabel.TextTransparency = 1
+	clearLabel.Parent = celebGui
+
+	task.delay(0.3, function()
+		TweenService:Create(clearLabel, TweenInfo.new(0.3), {
+			TextTransparency = 0,
+		}):Play()
+	end)
+
+	-- 4. 챕터 이름
+	local nameLabel = Instance.new("TextLabel")
+	nameLabel.Name = "NameLabel"
+	nameLabel.Size = UDim2.new(0, 300, 0, 30)
+	nameLabel.Position = UDim2.new(0.5, -150, 0.52, 0)
+	nameLabel.BackgroundTransparency = 1
+	nameLabel.TextColor3 = Color3.fromRGB(200, 220, 255)
+	nameLabel.TextSize = 18
+	nameLabel.Font = Enum.Font.GothamBold
+	nameLabel.Text = chapterName
+	nameLabel.TextTransparency = 1
+	nameLabel.Parent = celebGui
+
+	task.delay(0.5, function()
+		TweenService:Create(nameLabel, TweenInfo.new(0.3), {
+			TextTransparency = 0,
+		}):Play()
+	end)
+
+	-- 5. 황금 파티클 (화면 위에서 아래로 낙하)
+	task.delay(0.2, function()
+		for i = 1, 25 do
+			task.delay(i * 0.03, function()
+				if not celebGui.Parent then
+					return
+				end
+				local p = Instance.new("Frame")
+				p.Size = UDim2.new(0, math.random(6, 14), 0, math.random(6, 14))
+				local startX = math.random()
+				p.Position = UDim2.new(startX, 0, -0.05, 0)
+				p.BackgroundColor3 = Color3.fromRGB(255, math.random(180, 240), math.random(0, 100))
+				p.Rotation = math.random(0, 360)
+				p.ZIndex = 5
+				p.BorderSizePixel = 0
+				p.Parent = celebGui
+
+				local pCorner = Instance.new("UICorner")
+				pCorner.CornerRadius = UDim.new(0, 3)
+				pCorner.Parent = p
+
+				TweenService:Create(p, TweenInfo.new(
+					1.5 + math.random() * 1.0,
+					Enum.EasingStyle.Quad,
+					Enum.EasingDirection.In
+				), {
+					Position = UDim2.new(startX + (math.random() - 0.5) * 0.3, 0, 1.1, 0),
+					Rotation = math.random(360, 1080),
+					BackgroundTransparency = 0.5,
+				}):Play()
+
+				task.delay(2.5, function()
+					if p.Parent then
+						p:Destroy()
+					end
+				end)
+			end)
+		end
+	end)
+
+	-- 6. 3.5초 후 자동 닫기
+	task.delay(3.5, function()
+		if not celebGui.Parent then
+			return
+		end
+		TweenService:Create(dimBg, TweenInfo.new(0.5), { BackgroundTransparency = 1 }):Play()
+		TweenService:Create(chapterLabel, TweenInfo.new(0.3), { TextTransparency = 1 }):Play()
+		TweenService:Create(clearLabel, TweenInfo.new(0.3), { TextTransparency = 1 }):Play()
+		TweenService:Create(nameLabel, TweenInfo.new(0.3), { TextTransparency = 1 }):Play()
+
+		task.delay(0.6, function()
+			if celebGui.Parent then
+				celebGui:Destroy()
+			end
+		end)
 	end)
 end
 
