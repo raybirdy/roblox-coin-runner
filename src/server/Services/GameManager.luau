@@ -23,6 +23,7 @@ local MonetizationService = require(script.Parent.MonetizationService)
 local ProgressionService = require(script.Parent.ProgressionService)
 local ScenarioService = require(script.Parent.ScenarioService)
 local AsyncBattleService = require(script.Parent.AsyncBattleService)
+local RealtimeBattleService = require(script.Parent.RealtimeBattleService)
 local RateLimiter = require(ReplicatedStorage.Shared.Utils.RateLimiter)
 
 local GameManager = {}
@@ -89,6 +90,15 @@ type GameSession = {
 }
 
 local activeSessions: { [Player]: GameSession } = {}
+
+-- 현재 점수 조회 (RealtimeBattleService에서 사용)
+function GameManager.GetCurrentScore(player: Player): number?
+	local session = activeSessions[player]
+	return session and session.score or nil
+end
+
+-- RealtimeBattleService에 점수 조회 함수 등록
+RealtimeBattleService:SetScoreGetter(GameManager.GetCurrentScore)
 
 -- 위로 보상 추적 (플레이어별 연속 빠른 게임오버 횟수)
 local consolationTracker: { [Player]: number } = {}
@@ -590,6 +600,9 @@ function GameManager.EndGame(player: Player)
 
 	-- 비동기 배틀 결과 처리
 	AsyncBattleService:ProcessGameEnd(player, finalScore, session.asyncBattleTarget)
+
+	-- 실시간 배틀 결과 처리
+	RealtimeBattleService:OnGameEnd(player, finalScore)
 
 	-- 시나리오 퀘스트 진행도 업데이트
 	local sessionDuration = math.floor(tick() - session.startTime)

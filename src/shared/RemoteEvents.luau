@@ -351,4 +351,24 @@ RemoteEvents.AsyncBattleChallenge = getOrCreateRemoteEvent("AsyncBattleChallenge
 RemoteEvents.AsyncBattleResult = getOrCreateRemoteEvent("AsyncBattleResult")
 -- 파라미터: { won: boolean, myScore: number, targetScore: number, targetName: string, reward: number? }
 
+-- ==================== 실시간 배틀 ====================
+
+-- 배틀 매칭 대기 (클라이언트 → 서버)
+RemoteEvents.BattleQueueEnter = getOrCreateRemoteEvent("BattleQueueEnter")
+
+-- 배틀 대기 취소 (클라이언트 → 서버)
+RemoteEvents.BattleQueueLeave = getOrCreateRemoteEvent("BattleQueueLeave")
+
+-- 매칭 완료 (서버 → 클라이언트)
+RemoteEvents.BattleMatchFound = getOrCreateRemoteEvent("BattleMatchFound")
+-- 파라미터: { opponentName: string, isBot: boolean }
+
+-- 상대방 현재 점수 (서버 → 클라이언트, 2.5초마다)
+RemoteEvents.BattleOpponentScore = getOrCreateRemoteEvent("BattleOpponentScore")
+-- 파라미터: { score: number, opponentName: string }
+
+-- 배틀 결과 (서버 → 클라이언트)
+RemoteEvents.BattleResult = getOrCreateRemoteEvent("BattleResult")
+-- 파라미터: { won: boolean, myScore: number, opponentScore: number, opponentName: string, reward: number? }
+
 return RemoteEvents
