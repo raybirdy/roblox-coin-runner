@@ -26,6 +26,8 @@ export type ProgressionController = typeof(setmetatable(
 		_missionSlots: { Frame },
 		_achievementSlots: { Frame },
 		_achievementContainer: ScrollingFrame?,
+		_achievementProgressLabel: TextLabel?,
+		_achievementProgressFill: Frame?,
 		_missionContainer: Frame?,
 		_currentTab: string,
 		_tabMissions: TextButton?,
@@ -53,6 +55,8 @@ function ProgressionController.new(player: Player): ProgressionController
 		_missionSlots = {},
 		_achievementSlots = {},
 		_achievementContainer = nil,
+		_achievementProgressLabel = nil,
+		_achievementProgressFill = nil,
 		_missionContainer = nil,
 		_currentTab = "missions",
 		_tabMissions = nil,
@@ -235,7 +239,7 @@ function ProgressionController:_createMissionPopup()
 	titleLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
 	titleLabel.TextSize = ResponsiveUtil.scaledTextSize(20, 14)
 	titleLabel.Font = Enum.Font.GothamBlack
-	titleLabel.Text = "DAILY MISSIONS"
+	titleLabel.Text = "오늘의 미션"
 	titleLabel.TextXAlignment = Enum.TextXAlignment.Left
 	titleLabel.Parent = missionFrame
 	self._titleLabel = titleLabel
@@ -282,7 +286,7 @@ function ProgressionController:_createMissionPopup()
 	tabMissions.TextColor3 = Color3.fromRGB(255, 255, 255)
 	tabMissions.TextSize = ResponsiveUtil.scaledTextSize(13, 11)
 	tabMissions.Font = Enum.Font.GothamBold
-	tabMissions.Text = "MISSIONS"
+	tabMissions.Text = "오늘의 미션"
 	tabMissions.AutoButtonColor = false
 	tabMissions.Parent = tabBar
 
@@ -301,7 +305,7 @@ function ProgressionController:_createMissionPopup()
 	tabAchievements.TextColor3 = Color3.fromRGB(180, 180, 200)
 	tabAchievements.TextSize = ResponsiveUtil.scaledTextSize(13, 11)
 	tabAchievements.Font = Enum.Font.GothamBold
-	tabAchievements.Text = "ACHIEVEMENTS"
+	tabAchievements.Text = "업적"
 	tabAchievements.AutoButtonColor = false
 	tabAchievements.Parent = tabBar
 
@@ -425,37 +429,113 @@ function ProgressionController:_createMissionPopup()
 	achievementContainer.Position = UDim2.new(0, 0, 0, 90)
 	achievementContainer.BackgroundTransparency = 1
 	achievementContainer.ScrollBarThickness = 4
-	achievementContainer.ScrollBarImageColor3 = Color3.fromRGB(100, 200, 100)
-	achievementContainer.CanvasSize = UDim2.new(0, 0, 0, 0) -- 동적으로 설정
+	achievementContainer.ScrollBarImageColor3 = Color3.fromRGB(100, 180, 255)
+	achievementContainer.CanvasSize = UDim2.new(0, 0, 0, 0)
 	achievementContainer.Visible = false
 	achievementContainer.Parent = missionFrame
 	self._achievementContainer = achievementContainer
 
+	-- 업적 진행 헤더
+	local achHeaderFrame = Instance.new("Frame")
+	achHeaderFrame.Name = "AchievementHeader"
+	achHeaderFrame.Size = UDim2.new(1, -20, 0, 30)
+	achHeaderFrame.Position = UDim2.new(0, 10, 0, 4)
+	achHeaderFrame.BackgroundColor3 = Color3.fromRGB(28, 28, 48)
+	achHeaderFrame.BorderSizePixel = 0
+	achHeaderFrame.Parent = achievementContainer
+
+	local achHeaderCorner = Instance.new("UICorner")
+	achHeaderCorner.CornerRadius = UDim.new(0, 6)
+	achHeaderCorner.Parent = achHeaderFrame
+
+	local achProgressLabel = Instance.new("TextLabel")
+	achProgressLabel.Name = "AchProgressLabel"
+	achProgressLabel.Size = UDim2.new(0.55, 0, 1, 0)
+	achProgressLabel.Position = UDim2.new(0, 10, 0, 0)
+	achProgressLabel.BackgroundTransparency = 1
+	achProgressLabel.TextColor3 = Color3.fromRGB(180, 200, 255)
+	achProgressLabel.TextSize = ResponsiveUtil.scaledTextSize(12, 11)
+	achProgressLabel.Font = Enum.Font.GothamBold
+	achProgressLabel.Text = "0 / 0 달성"
+	achProgressLabel.TextXAlignment = Enum.TextXAlignment.Left
+	achProgressLabel.Parent = achHeaderFrame
+	self._achievementProgressLabel = achProgressLabel
+
+	local achProgressBarBg = Instance.new("Frame")
+	achProgressBarBg.Name = "AchProgressBarBg"
+	achProgressBarBg.Size = UDim2.new(0.42, 0, 0, 8)
+	achProgressBarBg.Position = UDim2.new(0.55, 0, 0.5, -4)
+	achProgressBarBg.BackgroundColor3 = Color3.fromRGB(40, 40, 70)
+	achProgressBarBg.BorderSizePixel = 0
+	achProgressBarBg.Parent = achHeaderFrame
+
+	local achProgressBarCorner = Instance.new("UICorner")
+	achProgressBarCorner.CornerRadius = UDim.new(0, 4)
+	achProgressBarCorner.Parent = achProgressBarBg
+
+	local achProgressBarFill = Instance.new("Frame")
+	achProgressBarFill.Name = "AchProgressFill"
+	achProgressBarFill.Size = UDim2.new(0, 0, 1, 0)
+	achProgressBarFill.BackgroundColor3 = Color3.fromRGB(100, 180, 255)
+	achProgressBarFill.BorderSizePixel = 0
+	achProgressBarFill.Parent = achProgressBarBg
+	self._achievementProgressFill = achProgressBarFill
+
+	local achProgressFillCorner = Instance.new("UICorner")
+	achProgressFillCorner.CornerRadius = UDim.new(0, 4)
+	achProgressFillCorner.Parent = achProgressBarFill
+
+	-- 카테고리 색상 맵
+	local categoryColors: { [string]: Color3 } = {
+		games_played   = Color3.fromRGB(100, 200, 100),
+		high_score     = Color3.fromRGB(255, 215,   0),
+		total_coins    = Color3.fromRGB(255, 160,  50),
+		total_distance = Color3.fromRGB(80,  180, 255),
+		level          = Color3.fromRGB(160,  80, 255),
+	}
+
 	-- 업적 슬롯 생성 (GameConstants 기반)
 	local achievements = GameConstants.ACHIEVEMENTS.LIST
-	local slotHeight = 62
+	local slotHeight = 76
 	local slotGap = 6
-	local totalH = #achievements * (slotHeight + slotGap)
+	local headerH = 38 -- 헤더 30px + 패딩 8px
+	local totalH = headerH + #achievements * (slotHeight + slotGap)
 	achievementContainer.CanvasSize = UDim2.new(0, 0, 0, totalH + 10)
 
 	for i, ach in achievements do
+		local catColor = categoryColors[ach.condition] or Color3.fromRGB(150, 150, 170)
+
 		local slot = Instance.new("Frame")
 		slot.Name = `Achievement_{ach.id}`
 		slot.Size = UDim2.new(1, -20, 0, slotHeight)
-		slot.Position = UDim2.new(0, 10, 0, (i - 1) * (slotHeight + slotGap))
+		slot.Position = UDim2.new(0, 10, 0, headerH + (i - 1) * (slotHeight + slotGap))
 		slot.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
 		slot.BorderSizePixel = 0
+		slot.ClipsDescendants = true
 		slot.Parent = achievementContainer
 
 		local slotCorner = Instance.new("UICorner")
 		slotCorner.CornerRadius = UDim.new(0, 8)
 		slotCorner.Parent = slot
 
+		-- 카테고리 색상 바 (좌측 4px)
+		local catBar = Instance.new("Frame")
+		catBar.Name = "CategoryBar"
+		catBar.Size = UDim2.new(0, 4, 1, 0)
+		catBar.Position = UDim2.new(0, 0, 0, 0)
+		catBar.BackgroundColor3 = catColor
+		catBar.BorderSizePixel = 0
+		catBar.Parent = slot
+
+		local catBarCorner = Instance.new("UICorner")
+		catBarCorner.CornerRadius = UDim.new(0, 4)
+		catBarCorner.Parent = catBar
+
 		-- 업적 이름
 		local nameLabel = Instance.new("TextLabel")
 		nameLabel.Name = "AchName"
 		nameLabel.Size = UDim2.new(0.72, 0, 0, 20)
-		nameLabel.Position = UDim2.new(0, 10, 0, 5)
+		nameLabel.Position = UDim2.new(0, 12, 0, 5)
 		nameLabel.BackgroundTransparency = 1
 		nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 		nameLabel.TextSize = ResponsiveUtil.scaledTextSize(14, 12)
@@ -481,7 +561,7 @@ function ProgressionController:_createMissionPopup()
 		local descLabel = Instance.new("TextLabel")
 		descLabel.Name = "AchDesc"
 		descLabel.Size = UDim2.new(1, -20, 0, 16)
-		descLabel.Position = UDim2.new(0, 10, 0, 24)
+		descLabel.Position = UDim2.new(0, 12, 0, 24)
 		descLabel.BackgroundTransparency = 1
 		descLabel.TextColor3 = Color3.fromRGB(160, 160, 180)
 		descLabel.TextSize = ResponsiveUtil.scaledTextSize(12, 10)
@@ -496,6 +576,7 @@ function ProgressionController:_createMissionPopup()
 		progressBg.Size = UDim2.new(1, -20, 0, 8)
 		progressBg.Position = UDim2.new(0, 10, 0, 44)
 		progressBg.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+		progressBg.BorderSizePixel = 0
 		progressBg.Parent = slot
 
 		local progressBgCorner = Instance.new("UICorner")
@@ -506,6 +587,7 @@ function ProgressionController:_createMissionPopup()
 		progressFill.Name = "ProgressFill"
 		progressFill.Size = UDim2.new(0, 0, 1, 0)
 		progressFill.BackgroundColor3 = Color3.fromRGB(80, 160, 255)
+		progressFill.BorderSizePixel = 0
 		progressFill.Parent = progressBg
 
 		local progressFillCorner = Instance.new("UICorner")
@@ -522,6 +604,19 @@ function ProgressionController:_createMissionPopup()
 		progressText.Font = Enum.Font.GothamBold
 		progressText.Text = `0/{ach.target}`
 		progressText.Parent = progressBg
+
+		-- 힌트 레이블 (슬롯 하단: "거의 다! X개 남음" 등)
+		local hintLabel = Instance.new("TextLabel")
+		hintLabel.Name = "HintLabel"
+		hintLabel.Size = UDim2.new(1, -20, 0, 14)
+		hintLabel.Position = UDim2.new(0, 12, 0, 57)
+		hintLabel.BackgroundTransparency = 1
+		hintLabel.TextColor3 = Color3.fromRGB(130, 140, 170)
+		hintLabel.TextSize = ResponsiveUtil.scaledTextSize(11, 10)
+		hintLabel.Font = Enum.Font.Gotham
+		hintLabel.Text = ""
+		hintLabel.TextXAlignment = Enum.TextXAlignment.Left
+		hintLabel.Parent = slot
 
 		self._achievementSlots[i] = slot
 	end
@@ -562,7 +657,7 @@ function ProgressionController:_switchTab(tabName: string)
 
 	-- 타이틀 및 테두리 색 업데이트
 	if self._titleLabel then
-		self._titleLabel.Text = if isMissions then "DAILY MISSIONS" else "ACHIEVEMENTS"
+		self._titleLabel.Text = if isMissions then "오늘의 미션" else "업적"
 		self._titleLabel.TextColor3 = if isMissions
 			then Color3.fromRGB(100, 255, 100)
 			else Color3.fromRGB(100, 180, 255)
@@ -686,7 +781,7 @@ function ProgressionController:_updateMissionSlots(missions: { any })
 
 				if progressText then
 					if mission.completed then
-						progressText.Text = "CLEAR!"
+						progressText.Text = "완료!"
 					else
 						progressText.Text = `{progress}/{target}`
 					end
@@ -713,15 +808,68 @@ function ProgressionController:_updateMissionSlots(missions: { any })
 	end
 end
 
+-- 조건별 단위 접미사
+local function _getUnitSuffix(condition: string): string
+	if condition == "games_played" then
+		return "판"
+	elseif condition == "high_score" then
+		return "점"
+	elseif condition == "total_coins" then
+		return "개"
+	elseif condition == "total_distance" then
+		return "m"
+	elseif condition == "level" then
+		return "레벨"
+	end
+	return ""
+end
+
 function ProgressionController:_updateAchievementSlots(achievements: { any })
-	-- Build lookup table by achievement id for O(1) access
 	local achMap: { [string]: any } = {}
 	for _, ach in achievements do
 		achMap[ach.id] = ach
 	end
 
+	local achList = GameConstants.ACHIEVEMENTS.LIST
+	local totalCount = #achList
+	local completedCount = 0
+	local nearestIdx = -1
+	local nearestRatio = -1
+
+	-- 1패스: 완료 수 집계 + 가장 가까운 미달성 슬롯 탐색
+	for i, _ in self._achievementSlots do
+		local achDef = achList[i]
+		if not achDef then
+			continue
+		end
+		local serverData = achMap[achDef.id]
+		local current = if serverData then serverData.current or 0 else 0
+		local completed = if serverData then serverData.completed == true else false
+		if completed then
+			completedCount += 1
+		else
+			local ratio = math.clamp(current / achDef.target, 0, 1)
+			if ratio > nearestRatio then
+				nearestRatio = ratio
+				nearestIdx = i
+			end
+		end
+	end
+
+	-- 진행 헤더 업데이트
+	if self._achievementProgressLabel then
+		self._achievementProgressLabel.Text = `{completedCount} / {totalCount} 달성`
+	end
+	if self._achievementProgressFill then
+		local headerRatio = if totalCount > 0 then completedCount / totalCount else 0
+		TweenService:Create(self._achievementProgressFill, TweenInfo.new(0.4), {
+			Size = UDim2.new(headerRatio, 0, 1, 0),
+		}):Play()
+	end
+
+	-- 2패스: 각 슬롯 업데이트
 	for i, slot in self._achievementSlots do
-		local achDef = GameConstants.ACHIEVEMENTS.LIST[i]
+		local achDef = achList[i]
 		if not achDef then
 			continue
 		end
@@ -729,43 +877,92 @@ function ProgressionController:_updateAchievementSlots(achievements: { any })
 		local serverData = achMap[achDef.id]
 		local current = if serverData then serverData.current or 0 else 0
 		local completed = if serverData then serverData.completed == true else false
+		local ratio = math.clamp(current / achDef.target, 0, 1)
 
+		-- 가장 가까운 슬롯에 pulse UIStroke 추가/제거
+		local existingStroke = slot:FindFirstChildOfClass("UIStroke")
+		if i == nearestIdx and not completed then
+			if not existingStroke then
+				local stroke = Instance.new("UIStroke")
+				stroke.Name = "NearestStroke"
+				stroke.Color = Color3.fromRGB(255, 215, 0)
+				stroke.Thickness = 1.5
+				stroke.Parent = slot
+				task.spawn(function()
+					while stroke and stroke.Parent do
+						TweenService:Create(stroke, TweenInfo.new(0.9, Enum.EasingStyle.Sine), {
+							Transparency = 0.7,
+						}):Play()
+						task.wait(1.0)
+						if stroke and stroke.Parent then
+							TweenService:Create(stroke, TweenInfo.new(0.9, Enum.EasingStyle.Sine), {
+								Transparency = 0,
+							}):Play()
+							task.wait(1.0)
+						end
+					end
+				end)
+			end
+		else
+			if existingStroke then
+				existingStroke:Destroy()
+			end
+		end
+
+		-- 진행도 바 업데이트
 		local progressBg = slot:FindFirstChild("ProgressBg") :: Frame?
 		if progressBg then
 			local progressFill = progressBg:FindFirstChild("ProgressFill") :: Frame?
 			local progressText = progressBg:FindFirstChild("ProgressText") :: TextLabel?
 
-			local ratio = math.clamp(current / achDef.target, 0, 1)
-
 			if progressFill then
 				TweenService:Create(progressFill, TweenInfo.new(0.4), {
 					Size = UDim2.new(ratio, 0, 1, 0),
 				}):Play()
-
 				progressFill.BackgroundColor3 = if completed
 					then Color3.fromRGB(255, 200, 50)
 					else Color3.fromRGB(80, 160, 255)
 			end
-
 			if progressText then
 				if completed then
-					progressText.Text = "CLEAR!"
+					progressText.Text = "완료!"
 				else
 					progressText.Text = `{current}/{achDef.target}`
 				end
 			end
 		end
 
-		-- 완료된 업적: 배경 골드 처리
+		-- 힌트 레이블 업데이트
+		local hintLabel = slot:FindFirstChild("HintLabel") :: TextLabel?
+		if hintLabel then
+			if completed then
+				hintLabel.Text = ""
+			else
+				local remaining = achDef.target - current
+				local unit = _getUnitSuffix(achDef.condition)
+				if remaining <= 0 then
+					hintLabel.Text = ""
+				elseif ratio >= 0.5 then
+					hintLabel.Text = `거의 다 왔어! {remaining}{unit} 남음`
+					hintLabel.TextColor3 = Color3.fromRGB(255, 210, 80)
+				else
+					hintLabel.Text = `{remaining}{unit} 남음`
+					hintLabel.TextColor3 = Color3.fromRGB(130, 140, 170)
+				end
+			end
+		end
+
+		-- 슬롯 배경 색상
 		if completed then
 			TweenService:Create(slot, TweenInfo.new(0.3), {
 				BackgroundColor3 = Color3.fromRGB(35, 28, 5),
 			}):Play()
-
 			local nameLabel = slot:FindFirstChild("AchName") :: TextLabel?
 			if nameLabel then
 				nameLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
 			end
+		elseif i == nearestIdx then
+			slot.BackgroundColor3 = Color3.fromRGB(25, 25, 42)
 		else
 			slot.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
 		end
@@ -776,16 +973,16 @@ end
 
 function ProgressionController:_showLevelUpNotification(level: number, rewards: { coins: number, gems: number? })
 	self:_queueNotification({
-		title = `LEVEL UP! Lv.{level}`,
-		desc = if rewards.gems then `+{rewards.coins} coins, +{rewards.gems} gems!` else `+{rewards.coins} coins!`,
+		title = `레벨업! Lv.{level}`,
+		desc = if rewards.gems then `+{rewards.coins} 코인, +{rewards.gems} 💎` else `+{rewards.coins} 코인!`,
 		color = Color3.fromRGB(100, 200, 255),
 	})
 end
 
 function ProgressionController:_showAchievementNotification(data: { name: string, desc: string, rewardGems: number })
 	self:_queueNotification({
-		title = `ACHIEVEMENT: {data.name}`,
-		desc = `{data.desc} (+{data.rewardGems} gems)`,
+		title = `업적 달성! {data.name}`,
+		desc = `{data.desc} (+{data.rewardGems} 💎)`,
 		color = Color3.fromRGB(255, 200, 50),
 	})
 end
