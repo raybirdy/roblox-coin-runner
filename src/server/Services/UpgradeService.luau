@@ -15,6 +15,8 @@ export type UpgradeBonuses = {
 	easyStartTime: number, -- safe zone seconds (default 30s if no upgrade)
 	feverExtend: number, -- extra seconds added to fever duration
 	luckyCoinsBonus: number, -- fraction e.g. 0.05 = +5% silver chance
+	comboBufferSeconds: number, -- extra seconds added to COMBO_TIMEOUT
+	startBoostSeconds: number, -- speed boost duration at game start (seconds)
 }
 
 -- Get upgrade definition by id
@@ -71,6 +73,8 @@ function UpgradeService:GetUpgradeBonuses(player: Player, PlayerDataService: any
 		easyStartTime = 30, -- default safe zone seconds
 		feverExtend = 0,
 		luckyCoinsBonus = 0,
+		comboBufferSeconds = 0,
+		startBoostSeconds = 0,
 	}
 
 	for _, def in GameConstants.UPGRADES.LIST do
@@ -87,6 +91,10 @@ function UpgradeService:GetUpgradeBonuses(player: Player, PlayerDataService: any
 				bonuses.feverExtend = value
 			elseif def.id == "lucky_coins" then
 				bonuses.luckyCoinsBonus = value / 100
+			elseif def.id == "combo_buffer" then
+				bonuses.comboBufferSeconds = value
+			elseif def.id == "start_boost" then
+				bonuses.startBoostSeconds = value
 			end
 		end
 	end

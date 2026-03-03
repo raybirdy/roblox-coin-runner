@@ -378,6 +378,18 @@ RemoteEvents.GameStart.OnClientEvent:Connect(function(data)
 			tutorialController:Start(data.startPosition)
 			uiController:ShowTutorialBanner()
 		end
+
+		-- start_boost 업그레이드: 게임 시작 시 일시적 속도 부스트
+		local boostSeconds = data.startBoostSeconds or 0
+		if boostSeconds > 0 then
+			playerController:SetSpeedMultiplier(1.25)
+			uiController:ShowGameFeedback("⚡ 스타트 대시!", Color3.fromRGB(255, 220, 50))
+			task.delay(boostSeconds, function()
+				if playerController:IsPlaying() and not feverController:IsFever() then
+					playerController:SetSpeedMultiplier(1.0)
+				end
+			end)
+		end
 	end)
 end)
 
