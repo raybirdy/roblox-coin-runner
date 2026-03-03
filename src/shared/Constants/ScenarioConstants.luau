@@ -381,8 +381,8 @@ ScenarioConstants.CUTSCENES = {
 			{ characterId = "owl",    text = "조심해. 코인 킹이 부하를 이미 풀었을 거야." },
 		},
 		clear = {
-			{ characterId = "player", text = "숲의 퀘스트 완료!" },
-			{ characterId = "chichi", text = "우와, 도토리처럼 날래게 해줬네! 근데 보스 부하가 아직 남아..." },
+			{ characterId = "chichi", text = "도토리 열 개 값어치 해줬어! 근데 보스 부하가 아직 숲에 있어..." },
+			{ characterId = "player", text = "숲의 퀘스트 완료! 이제 보스 차례야!" },
 			{ characterId = "owl",    text = "부하를 물리쳐야 숲이 완전히 자유로워져!" },
 		},
 		bossIntro = {
@@ -406,7 +406,7 @@ ScenarioConstants.CUTSCENES = {
 			{ characterId = "player",   text = "완벽해! 같이 싸우자!" },
 		},
 		clear = {
-			{ characterId = "cyberbot", text = "퀘스트 달성률 100%. 보스 처치만 남았습니다." },
+			{ characterId = "cyberbot", text = "퀘스트 달성률 100%. 보스 잔존 위협 수준 — 최고. 즉시 대응 필요합니다!" },
 			{ characterId = "player",   text = "계산 끝났으면 바로 가자!" },
 		},
 		bossIntro = {
@@ -430,8 +430,8 @@ ScenarioConstants.CUTSCENES = {
 			{ characterId = "player", text = "걱정 마세요! 제가 되찾아 드릴게요!" },
 		},
 		clear = {
-			{ characterId = "hamam",  text = "오호라, 퀘스트 완료! 이제 보스만 남았소. 거래 마무리 시간이오~" },
-			{ characterId = "player", text = "바로 가자!" },
+			{ characterId = "hamam",  text = "오호라, 퀘스트 완료! 마지막 거래 상대가 보스 하나 남았소. 흠흠~" },
+			{ characterId = "player", text = "최고의 마무리를 보여줄게!" },
 		},
 		bossIntro = {
 			{ characterId = "coin_king", text = "사막의 모든 보물은 내 거다!", effect = "shake" },
@@ -454,8 +454,8 @@ ScenarioConstants.CUTSCENES = {
 			{ characterId = "player", text = "물론이죠! 설원도 해방시켜 드릴게요!" },
 		},
 		clear = {
-			{ characterId = "luna",   text = "퀘스트 완료. 하지만 보스가 더 강해요... 조심해요." },
-			{ characterId = "player", text = "걱정 마세요. 제가 해낼게요!" },
+			{ characterId = "luna",   text = "퀘스트 완료. 설원이 조금씩 따뜻해지고 있어요... 하지만 보스가 남아요." },
+			{ characterId = "player", text = "걱정 마세요. 봄처럼 녹여버릴게요!" },
 		},
 		bossIntro = {
 			{ characterId = "coin_king", text = "설원의 코인은 영원히 내 것!", effect = "shake" },
@@ -478,8 +478,8 @@ ScenarioConstants.CUTSCENES = {
 			{ characterId = "player", text = "바다도 해방시켜 줄게! 같이 싸우자!" },
 		},
 		clear = {
-			{ characterId = "marina", text = "퀘스트 완료! 이제 보스를 물리쳐야 해." },
-			{ characterId = "player", text = "알았어, 바로 가자!" },
+			{ characterId = "marina", text = "퀘스트 완료! 바닷속 친구들이 기뻐하고 있어. 이제 보스만 남았어!" },
+			{ characterId = "player", text = "물결처럼 멈추지 않고 가자!" },
 		},
 		bossIntro = {
 			{ characterId = "coin_king", text = "바닷속 코인도 내 것이다!", effect = "shake" },
@@ -492,7 +492,7 @@ ScenarioConstants.CUTSCENES = {
 		},
 		bossLose = {
 			{ characterId = "coin_king", text = "바다는 나의 것!", effect = "shake" },
-			{ characterId = "marina",    text = "괜찮아! 한 번 더 도전해봐!" },
+			{ characterId = "marina",    text = "괜찮아! 파도도 물러났다가 다시 밀려오잖아. 한 번 더!" },
 		},
 	},
 	ch6 = {
@@ -502,8 +502,8 @@ ScenarioConstants.CUTSCENES = {
 			{ characterId = "player", text = "좋아! 이제 더 오래 버틸 수 있어 — 같이 불태워 보자!" },
 		},
 		clear = {
-			{ characterId = "bulmu",  text = "퀘스트 완료! 하지만 보스가 엄청 강해..." },
-			{ characterId = "player", text = "상관없어! 내가 막을게!" },
+			{ characterId = "bulmu",  text = "퀘스트 완료! 용암도 식히고 퀘스트도 끝냈어. 이제 보스 차례야!" },
+			{ characterId = "player", text = "화산처럼 폭발하자!" },
 		},
 		bossIntro = {
 			{ characterId = "coin_king", text = "화산의 열기도, 코인도 모두 내 거야!", effect = "shake" },
@@ -526,8 +526,8 @@ ScenarioConstants.CUTSCENES = {
 			{ characterId = "player", text = "하늘도 지킬게! 이제 거뜬해!" },
 		},
 		clear = {
-			{ characterId = "areum",  text = "퀘스트 완료! 폭풍 정령 보스가 남아있어." },
-			{ characterId = "player", text = "바로 해치워 줄게!" },
+			{ characterId = "areum",  text = "퀘스트 완료! 구름 위에서 응원할게. 폭풍 보스... 만만치 않아." },
+			{ characterId = "player", text = "폭풍쯤은 뚫고 지나가면 되지!" },
 		},
 		bossIntro = {
 			{ characterId = "coin_king", text = "하늘의 코인도 내 것이다!", effect = "shake" },
@@ -535,12 +535,12 @@ ScenarioConstants.CUTSCENES = {
 		},
 		bossWin = {
 			{ characterId = "player", text = "구름 왕국 해방!", effect = "particle" },
-			{ characterId = "areum",  text = "정말 고마워! 이제 고대 유적이 위험해." },
+			{ characterId = "areum",  text = "정말 고마워! 바람이 네 이름을 온 하늘에 퍼뜨릴 거야. 유적도 위험해!" },
 			{ characterId = "owl",    text = "코인 킹의 어둠의 기계... 거의 완성 단계야. 서둘러야 해!" },
 		},
 		bossLose = {
 			{ characterId = "coin_king", text = "하늘은 내 왕좌야!", effect = "shake" },
-			{ characterId = "areum",     text = "포기하지 마! 구름처럼 가볍게 다시 도전해!" },
+			{ characterId = "areum",     text = "포기하지 마! 구름은 흩어져도 다시 모이잖아. 가볍게 다시 도전해!" },
 		},
 	},
 	ch8 = {
@@ -550,8 +550,8 @@ ScenarioConstants.CUTSCENES = {
 			{ characterId = "player",    text = "맡겨줘! 코인도 싹 쓸어담겠어!" },
 		},
 		clear = {
-			{ characterId = "alexander", text = "퀘스트 완료! 석상 보스가 마지막 남았어." },
-			{ characterId = "player",    text = "이번에야말로 끝내줄게!" },
+			{ characterId = "alexander", text = "퀘스트 완료. 수천 년을 버텨온 석상 보스가 마지막이야. 신중하게 가자네." },
+			{ characterId = "player",    text = "역사에 남겨주지! 이번에야말로 끝내줄게!" },
 		},
 		bossIntro = {
 			{ characterId = "coin_king", text = "고대의 코인도 내 컬렉션에 추가되겠군!", effect = "shake" },
