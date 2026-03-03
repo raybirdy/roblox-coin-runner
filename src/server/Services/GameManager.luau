@@ -27,6 +27,7 @@ local AsyncBattleService = require(script.Parent.AsyncBattleService)
 local RealtimeBattleService = require(script.Parent.RealtimeBattleService)
 local DailyEventService = require(script.Parent.DailyEventService)
 local UpgradeService = require(script.Parent.UpgradeService)
+local ObjectiveService = require(script.Parent.ObjectiveService)
 local RateLimiter = require(ReplicatedStorage.Shared.Utils.RateLimiter)
 
 local GameManager = {}
@@ -315,6 +316,17 @@ RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { 
 		end
 	end
 
+	-- 런 목표 생성 및 클라이언트 전송
+	ObjectiveService:GenerateObjectives(player)
+	local runObjs1 = ObjectiveService:GetObjectives(player)
+	local objPayload1 = {}
+	if runObjs1 then
+		for _, obj in runObjs1 do
+			table.insert(objPayload1, { id = obj.id, desc = obj.desc, target = obj.target })
+		end
+	end
+	RemoteEvents.RunObjectivesGenerated:FireClient(player, { objectives = objPayload1 })
+
 	-- 튜토리얼 필요 여부 확인
 	local needsTutorial = globalTutorialService:NeedsTutorial(player)
 
@@ -528,6 +540,17 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 
 	-- Initial zone setup
 	chunkService:SetCurrentZone(1)
+
+	-- 런 목표 생성 및 클라이언트 전송
+	ObjectiveService:GenerateObjectives(player)
+	local runObjs2 = ObjectiveService:GetObjectives(player)
+	local objPayload2 = {}
+	if runObjs2 then
+		for _, obj in runObjs2 do
+			table.insert(objPayload2, { id = obj.id, desc = obj.desc, target = obj.target })
+		end
+	end
+	RemoteEvents.RunObjectivesGenerated:FireClient(player, { objectives = objPayload2 })
 
 	-- 튜토리얼 필요 여부 확인
 	local needsTutorial = globalTutorialService:NeedsTutorial(player)
@@ -747,6 +770,16 @@ function GameManager.EndGame(player: Player)
 		RemoteEvents.PlayerDataLoaded:FireClient(player, PlayerDataService:GetPlayerData(player))
 	end
 
+	-- 런 목표 완료 보너스
+	local objectiveBonus = ObjectiveService:GetCompletionBonus(player)
+	if objectiveBonus > 0 then
+		PlayerDataService:AddCoins(player, objectiveBonus)
+		PlayerDataService:IncrementRunObjectivesCompleted(player)
+		RemoteEvents.PlayerDataLoaded:FireClient(player, PlayerDataService:GetPlayerData(player))
+		print(`[GameManager] Run objectives bonus: +{objectiveBonus} coins for {player.Name}`)
+	end
+	ObjectiveService:ClearObjectives(player)
+
 	-- 세션 제거
 	activeSessions[player] = nil
 
@@ -760,6 +793,7 @@ Players.PlayerRemoving:Connect(function(player: Player)
 		GameManager.EndGame(player)
 	end
 	DailyEventService:OnPlayerLeave(player)
+	ObjectiveService:ClearObjectives(player)
 	BossRunService:OnPlayerRemoving(player)
 	shopDebounce[player] = nil
 	portalDebounce[player] = nil
@@ -1263,7 +1297,7 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 				coins = session.coins,
 			})
 
-			-- 데일리 이벤트 진행도 업데이트 (0.5초 간격)
+			-- 데일리 이벤트 + 런 목표 진행도 업데이트 (0.5초 간격)
 			local now = tick()
 			if now - session.lastEventProgressTime >= 0.5 then
 				session.lastEventProgressTime = now
@@ -1279,6 +1313,8 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 					end
 					DailyEventService:FireProgressUpdate(player, playerData)
 				end
+				-- 런 목표 진행도 업데이트
+				ObjectiveService:UpdateProgress(player, session, distanceTraveled)
 			end
 		end
 
