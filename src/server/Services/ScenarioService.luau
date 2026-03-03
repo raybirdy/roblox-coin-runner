@@ -459,6 +459,19 @@ function ScenarioService:SetupRemoteEvents()
 
 	RemoteEvents.ScenarioIntroSeen.OnServerEvent:Connect(function(player: Player)
 		PlayerDataService:MarkScenarioIntroSeen(player)
+
+		-- 인트로 팝업 확인 직후 ch1 오프닝 컷씬 발송 (최초 1회)
+		local ch1 = ScenarioConstants.CHAPTERS[1]
+		local ch1Opening = ScenarioConstants.CUTSCENES["ch1"] and ScenarioConstants.CUTSCENES["ch1"].opening
+		if ch1 and ch1Opening then
+			RemoteEvents.ChapterUnlocked:FireClient(player, {
+				chapterId = ch1.id,
+				chapterName = ch1.name,
+				chapterTheme = ch1.theme,
+				cutscene = ch1Opening,
+				isOpening = true,
+			})
+		end
 	end)
 
 	print("[ScenarioService] Remote events connected")
