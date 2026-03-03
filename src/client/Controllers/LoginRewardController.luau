@@ -21,6 +21,7 @@ export type LoginRewardController = typeof(setmetatable(
 		_claimButton: TextButton?,
 		_connections: { RBXScriptConnection },
 		_isOpen: boolean,
+		_pendingShow: boolean, -- 첫 런 완료 후 팝업 표시 대기 플래그
 	},
 	LoginRewardController
 ))
@@ -34,6 +35,7 @@ function LoginRewardController.new(player: Player): LoginRewardController
 		_claimButton = nil,
 		_connections = {},
 		_isOpen = false,
+		_pendingShow = false,
 	}, LoginRewardController)
 
 	self:_createUI()
@@ -373,15 +375,21 @@ function LoginRewardController:_setupEventHandlers()
 			-- 이미 열려 있으면 그리드만 업데이트
 			print(`[LoginRewardController] Claimed reward: {data.reward.amount} {data.reward.type}`)
 		else
-			-- 팝업 표시 (미수령 시에만)
+			-- 팝업 표시 대기 (미수령 시, 첫 런 완료 후 ShowIfPending으로 표시)
 			if not data.alreadyClaimed then
-				task.delay(1, function()
-					self:_showPopup()
-				end)
+				self._pendingShow = true
 			end
 		end
 	end)
 	table.insert(self._connections, conn)
+end
+
+-- 첫 런 완료 후 팝업 표시 (pending 상태일 때만)
+function LoginRewardController:ShowIfPending()
+	if self._pendingShow then
+		self._pendingShow = false
+		self:_showPopup()
+	end
 end
 
 -- 정리

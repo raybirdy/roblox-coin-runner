@@ -5,6 +5,7 @@
 
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local SoundService = game:GetService("SoundService")
 
 local GameConstants = require(ReplicatedStorage.Shared.Constants.GameConstants)
 local AnimationController = require(script.Parent.AnimationController)
@@ -63,6 +64,10 @@ export type PlayerController = typeof(setmetatable(
 		_skillDoubleJump: boolean,
 		_lastDashTime: number,
 
+		-- 사운드
+		_jumpSound: Sound?,
+		_landSound: Sound?,
+
 		-- 디버그
 		_lastJumpTime: number,
 	},
@@ -102,9 +107,12 @@ function PlayerController.new(player: Player, character: Model): PlayerControlle
 		_slideSessionId = 0,
 		_skillDoubleJump = false,
 		_lastDashTime = 0,
+		_jumpSound = nil,
+		_landSound = nil,
 		_lastJumpTime = 0,
 	}, PlayerController)
 
+	self:_createSounds()
 	self:_setupZAxisConstraint()
 	self:_setupPhysics()
 	self:_setupLinearVelocity()
@@ -345,6 +353,25 @@ function PlayerController:UpdateCharacter(newCharacter: Model)
 	print("[PlayerController] Character updated after respawn")
 end
 
+-- 점프/착지 사운드 생성
+function PlayerController:_createSounds()
+	local jumpSound = Instance.new("Sound")
+	jumpSound.Name = "JumpSound"
+	jumpSound.SoundId = "rbxassetid://539919907" -- Jump whoosh SFX
+	jumpSound.Volume = 0.4
+	jumpSound.PlaybackSpeed = 1.2
+	jumpSound.Parent = SoundService
+	self._jumpSound = jumpSound
+
+	local landSound = Instance.new("Sound")
+	landSound.Name = "LandSound"
+	landSound.SoundId = "rbxassetid://2963418461" -- Landing thud SFX
+	landSound.Volume = 0.3
+	landSound.PlaybackSpeed = 1.0
+	landSound.Parent = SoundService
+	self._landSound = landSound
+end
+
 -- Z축 고정 설정 (2D 평면 유지) - AlignPosition 대신 직접 제어
 function PlayerController:_setupZAxisConstraint()
 	-- Attachment 생성 (회전 고정용)
@@ -523,6 +550,11 @@ function PlayerController:_checkGrounded()
 				self._animationController:PlayRun()
 			end
 
+			-- 착지 사운드 재생
+			if self._landSound then
+				self._landSound:Play()
+			end
+
 			-- 착지 먼지 이펙트
 			self:_spawnLandingDust()
 
@@ -603,6 +635,11 @@ function PlayerController:_performJump(jumpHeight: number)
 	-- AssemblyLinearVelocity로 점프 (X 속도 유지, Y 설정)
 	local currentVel = self.humanoidRootPart.AssemblyLinearVelocity
 	self.humanoidRootPart.AssemblyLinearVelocity = Vector3.new(currentVel.X, jumpVelocity, 0)
+
+	-- 점프 사운드 재생
+	if self._jumpSound then
+		self._jumpSound:Play()
+	end
 
 	-- 점프 애니메이션 재생
 	if self._animationController then
@@ -789,6 +826,16 @@ function PlayerController:Destroy()
 	if self._animationController then
 		self._animationController:Destroy()
 		self._animationController = nil
+	end
+
+	-- 사운드 정리
+	if self._jumpSound then
+		self._jumpSound:Destroy()
+		self._jumpSound = nil
+	end
+	if self._landSound then
+		self._landSound:Destroy()
+		self._landSound = nil
 	end
 end
 

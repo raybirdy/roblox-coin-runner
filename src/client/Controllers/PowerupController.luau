@@ -82,7 +82,7 @@ end
 function PowerupController:_createPowerupSound()
 	local sound = Instance.new("Sound")
 	sound.Name = "PowerupSound"
-	sound.SoundId = "rbxassetid://9120386948" -- Power Up SFX (distinct from coin collect)
+	sound.SoundId = "rbxassetid://4590662766" -- Power Up collect SFX (bright chime, distinct from fever SFX)
 	sound.Volume = 0.7
 	sound.PlaybackSpeed = 1.5 -- 높은 피치로 보상감 강조
 	sound.Parent = SoundService

@@ -52,6 +52,16 @@ function ObstacleService:SpawnObstaclesInChunk(chunk: Model, difficulty: string)
 	-- 장애물 배치 (간격 확보)
 	local availableLength = chunkSize.X - 10 -- 양끝 여유 공간
 
+	-- Hard 청크: 최소 반응 간격 보장 (SPEED_MAX * 0.4초 = ~20.8 studs)
+	if difficulty == "Hard" and obstacleCount > 1 then
+		local MIN_OBSTACLE_GAP = GameConstants.PHYSICS.SPEED_MAX * 0.4
+		local segmentLength = availableLength / obstacleCount
+		while obstacleCount > 1 and segmentLength < MIN_OBSTACLE_GAP do
+			obstacleCount = obstacleCount - 1
+			segmentLength = availableLength / obstacleCount
+		end
+	end
+
 	for i = 1, obstacleCount do
 		-- 장애물 위치 계산 (균등 배치 + 약간의 랜덤)
 		local segmentLength = availableLength / obstacleCount

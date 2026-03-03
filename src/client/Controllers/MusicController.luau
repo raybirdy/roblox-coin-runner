@@ -155,6 +155,24 @@ function MusicController:Stop()
 	print("[MusicController] Music stopped")
 end
 
+-- 피버 BGM 속도 변조 (피버 시 1.25배 빠르게, 종료 시 정상으로)
+function MusicController:SetFeverSpeed(isFever: boolean)
+	if not self._bgm or not self._isPlaying then
+		return
+	end
+
+	local TweenService = game:GetService("TweenService")
+	if isFever then
+		TweenService:Create(self._bgm, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+			PlaybackSpeed = 1.25,
+		}):Play()
+	else
+		TweenService:Create(self._bgm, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+			PlaybackSpeed = 1.0,
+		}):Play()
+	end
+end
+
 -- 볼륨 설정
 function MusicController:SetVolume(volume: number)
 	self._volume = math.clamp(volume, 0, 1)

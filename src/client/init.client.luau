@@ -111,7 +111,7 @@ local speedEffectController = SpeedEffectController.new(player)
 local leaderboardController = LeaderboardController.new(player)
 local startPowerupController = StartPowerupController.new(player)
 local progressionController = ProgressionController.new(player)
-local _loginRewardController = LoginRewardController.new(player)
+local loginRewardController = LoginRewardController.new(player)
 local _luckySpinController = LuckySpinController.new(player)
 local feverController = FeverController.new()
 local zoneController = ZoneController.new()
@@ -128,14 +128,16 @@ local realtimeBattleController = RealtimeBattleController.new(player)
 local dailyEventController = DailyEventController.new(player)
 local objectiveHudController = ObjectiveHudController.new()
 
--- Fever mode callbacks (speed boost + camera shake)
+-- Fever mode callbacks (speed boost + camera shake + BGM speed)
 feverController:OnFeverStart(function(speedBoost: number)
 	playerController:SetSpeedMultiplier(speedBoost)
 	cameraController:Shake(0.8) -- strong shake on fever start
+	musicController:SetFeverSpeed(true)
 end)
 
 feverController:OnFeverEnd(function()
 	playerController:SetSpeedMultiplier(1.0)
+	musicController:SetFeverSpeed(false)
 end)
 
 -- 코인 수집 캐릭터 플래시
@@ -449,6 +451,9 @@ RemoteEvents.GameOver.OnClientEvent:Connect(function(data)
 
 		-- 튜토리얼 UI 숨기기
 		uiController:HideTutorialBanner()
+
+		-- 출석 보상 팝업 (첫 런 완료 후 표시)
+		loginRewardController:ShowIfPending()
 	end
 end)
 

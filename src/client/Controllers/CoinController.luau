@@ -225,10 +225,11 @@ function CoinController:_setupLocalCollectionCheck()
 			-- 로컬에서 즉시 이펙트 재생
 			self._localCollectedCoins[coinModel] = true
 
-			-- 사운드 재생 (코인 타입별 피치 차별화)
+			-- 사운드 재생 (코인 타입별 피치 차별화 + ±5% 랜덤 변형)
 			if self._coinSound then
 				local pitchMap = { Bronze = 1.0, Silver = 1.2, Gold = 1.5, Diamond = 2.0 }
-				self._coinSound.PlaybackSpeed = pitchMap[coinType :: string] or 1.0
+				local basePitch = pitchMap[coinType :: string] or 1.0
+				self._coinSound.PlaybackSpeed = basePitch + (math.random() * 0.1 - 0.05)
 				self._coinSound:Play()
 			end
 
