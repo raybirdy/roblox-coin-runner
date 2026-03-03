@@ -168,13 +168,19 @@ function PlayerDataService:SavePlayerData(player: Player): boolean
 		return true
 	end
 
+	-- 저장 시점의 스냅샷 생성 (비동기 처리 중 데이터 변경 방지)
+	local dataSnapshot = self:_copyTable(playerData)
 	local userId = player.UserId
 	local retryCount = GameConstants.DATA.SAVE_RETRY_COUNT
 
 	for attempt = 1, retryCount do
 		local success, err = pcall(function()
-			playerDataStore:UpdateAsync("Player_" .. userId, function()
-				return playerData
+			playerDataStore:UpdateAsync("Player_" .. userId, function(oldData)
+				-- nil 반환 시 DataStore에서 데이터가 삭제되므로 반드시 방어
+				if dataSnapshot == nil then
+					return oldData
+				end
+				return dataSnapshot
 			end)
 		end)
 
@@ -193,18 +199,41 @@ function PlayerDataService:SavePlayerData(player: Player): boolean
 	return false
 end
 
--- 모든 플레이어 데이터 저장 (서버 종료 시)
+-- 모든 플레이어 데이터 저장 (서버 종료 시) — 병렬 처리로 BindToClose 타임아웃 방지
 function PlayerDataService:SaveAllPlayers()
 	print("[PlayerDataService] Saving all player data...")
-	local savedCount = 0
 
+	-- 현재 접속 플레이어 목록 스냅샷
+	local players: { Player } = {}
 	for player, _ in playerDataCache do
-		if self:SavePlayerData(player) then
-			savedCount += 1
-		end
+		table.insert(players, player)
 	end
 
-	print(`[PlayerDataService] Saved {savedCount}/{#playerDataCache} players`)
+	local total = #players
+	if total == 0 then
+		print("[PlayerDataService] No players to save")
+		return
+	end
+
+	-- 병렬 저장: 10명이 있어도 순차(30초) 대신 병렬(3초) 처리
+	local remaining = total
+	local allSaved = Instance.new("BindableEvent")
+
+	for _, player in players do
+		task.spawn(function()
+			self:SavePlayerData(player)
+			remaining -= 1
+			if remaining == 0 then
+				allSaved:Fire()
+			end
+		end)
+	end
+
+	-- 모든 저장이 완료될 때까지 대기
+	allSaved.Event:Wait()
+	allSaved:Destroy()
+
+	print(`[PlayerDataService] Saved all {total} players`)
 end
 
 -- 플레이어 데이터 가져오기 (캐시에서)
@@ -620,11 +649,11 @@ function PlayerDataService:HasProcessedReceipt(player: Player, receiptKey: strin
 	return false
 end
 
--- 영수증 처리 기록 (최근 50개만 유지)
-function PlayerDataService:AddProcessedReceipt(player: Player, receiptKey: string)
+-- 영수증 처리 기록 (최근 50개만 유지) — 저장 성공 여부 반환
+function PlayerDataService:AddProcessedReceipt(player: Player, receiptKey: string): boolean
 	local playerData = playerDataCache[player]
 	if not playerData then
-		return
+		return false
 	end
 
 	if not playerData.processedReceipts then
@@ -638,7 +667,8 @@ function PlayerDataService:AddProcessedReceipt(player: Player, receiptKey: strin
 		table.remove(playerData.processedReceipts, 1)
 	end
 
-	self:SavePlayerData(player)
+	-- 저장 성공 여부를 반환 (호출부에서 PurchaseGranted 반환 조건으로 사용)
+	return self:SavePlayerData(player)
 end
 
 -- 데일리 이벤트 상태 저장
