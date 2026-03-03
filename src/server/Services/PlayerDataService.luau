@@ -57,6 +57,14 @@ type PlayerData = {
 	unlockedSkills: { string }?, -- 해금된 스킬 ID 목록 e.g. { "double_jump" }
 	hasSeenScenarioIntro: boolean?, -- 시나리오 인트로 팝업을 본 적 있는지
 	bossRunCompleted: { [string]: boolean }?, -- 보스 런 클리어 챕터 { [chapterId]: true }
+	-- 데일리 이벤트
+	dailyEventDate: string?, -- "YYYY-MM-DD" 마지막 이벤트 날짜
+	dailyEventCompleted: boolean, -- 오늘 이벤트 완료 여부
+	dailyEventProgress: number, -- 현재 진행도
+	-- 업그레이드 상점
+	upgrades: { [string]: number }, -- { [upgradeId]: level }
+	-- 런 목표
+	runObjectivesCompleted: number, -- 누적 전체 완료 횟수
 }
 
 local DEFAULT_DATA: PlayerData = {
@@ -95,6 +103,14 @@ local DEFAULT_DATA: PlayerData = {
 	unlockedSkills = {},
 	hasSeenScenarioIntro = false,
 	bossRunCompleted = {},
+	-- 데일리 이벤트
+	dailyEventDate = nil,
+	dailyEventCompleted = false,
+	dailyEventProgress = 0,
+	-- 업그레이드 상점
+	upgrades = {},
+	-- 런 목표
+	runObjectivesCompleted = 0,
 }
 
 -- 메모리 캐시 (활성 플레이어)
@@ -623,6 +639,47 @@ function PlayerDataService:AddProcessedReceipt(player: Player, receiptKey: strin
 	self:SavePlayerData(player)
 end
 
+-- 데일리 이벤트 상태 저장
+function PlayerDataService:SetDailyEventData(player: Player, date: string, completed: boolean, progress: number)
+	local playerData = playerDataCache[player]
+	if not playerData then
+		return
+	end
+	playerData.dailyEventDate = date
+	playerData.dailyEventCompleted = completed
+	playerData.dailyEventProgress = progress
+end
+
+-- 업그레이드 레벨 저장
+function PlayerDataService:SetUpgradeLevel(player: Player, upgradeId: string, level: number)
+	local playerData = playerDataCache[player]
+	if not playerData then
+		return
+	end
+	if not playerData.upgrades then
+		playerData.upgrades = {}
+	end
+	playerData.upgrades[upgradeId] = level
+end
+
+-- 업그레이드 레벨 조회
+function PlayerDataService:GetUpgradeLevel(player: Player, upgradeId: string): number
+	local playerData = playerDataCache[player]
+	if not playerData or not playerData.upgrades then
+		return 0
+	end
+	return playerData.upgrades[upgradeId] or 0
+end
+
+-- 런 목표 완료 횟수 증가
+function PlayerDataService:IncrementRunObjectivesCompleted(player: Player)
+	local playerData = playerDataCache[player]
+	if not playerData then
+		return
+	end
+	playerData.runObjectivesCompleted = (playerData.runObjectivesCompleted or 0) + 1
+end
+
 -- 유틸리티: 테이블 깊은 복사 (nested table 참조 공유 방지)
 function PlayerDataService:_copyTable(original: any): any
 	local copy = {}
@@ -649,6 +706,7 @@ VALID_KEYS["processedReceipts"] = true
 VALID_KEYS["lastLoginDate"] = true
 VALID_KEYS["lastSpinDate"] = true
 VALID_KEYS["skinPieces"] = true
+VALID_KEYS["dailyEventDate"] = true
 
 -- 유틸리티: 기본값 병합
 function PlayerDataService:_mergeWithDefaults(data: any): PlayerData

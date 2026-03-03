@@ -25,6 +25,7 @@ local ScenarioService = require(script.Parent.ScenarioService)
 local BossRunService = require(script.Parent.BossRunService)
 local AsyncBattleService = require(script.Parent.AsyncBattleService)
 local RealtimeBattleService = require(script.Parent.RealtimeBattleService)
+local DailyEventService = require(script.Parent.DailyEventService)
 local RateLimiter = require(ReplicatedStorage.Shared.Utils.RateLimiter)
 
 local GameManager = {}
@@ -96,6 +97,9 @@ type GameSession = {
 	isSuperFever: boolean,
 	-- Async Battle
 	asyncBattleTarget: { targetName: string, targetScore: number }?,
+	-- Daily Event
+	coinsCollectedCount: number, -- 수집한 코인 아이템 개수 (value가 아닌 개수)
+	lastEventProgressTime: number, -- 마지막 이벤트 진행도 업데이트 시각
 }
 
 local activeSessions: { [Player]: GameSession } = {}
@@ -257,9 +261,14 @@ RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { 
 		hitRushEndTime = 0,
 		lastFeverEndTime = 0,
 		isSuperFever = false,
+		coinsCollectedCount = 0,
+		lastEventProgressTime = 0,
 	}
 
 	activeSessions[player] = session
+
+	-- 데일리 이벤트 세션 초기화
+	DailyEventService:InitSession(player)
 
 	-- 청크 서비스에 코인/장애물/파워업/NPC/배경 서비스 연결
 	chunkService:SetCoinService(coinService)
@@ -303,6 +312,7 @@ RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { 
 		startPowerups = validPowerups,
 		scenarioStatBonuses = statBonuses,
 		unlockedSkills = unlockedSkills,
+		dailyEventTheme = DailyEventService:GetTodayTheme(),
 	})
 
 	print(`[GameManager] Game started for {player.Name} via portal`)
@@ -472,9 +482,14 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 		hitRushEndTime = 0,
 		lastFeverEndTime = 0,
 		isSuperFever = false,
+		coinsCollectedCount = 0,
+		lastEventProgressTime = 0,
 	}
 
 	activeSessions[player] = session
+
+	-- 데일리 이벤트 세션 초기화
+	DailyEventService:InitSession(player)
 
 	-- 청크 서비스에 코인/장애물/파워업/NPC/배경 서비스 연결
 	chunkService:SetCoinService(coinService)
@@ -507,6 +522,7 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 		scenarioStatBonuses = statBonuses,
 		unlockedSkills = unlockedSkills,
 		asyncBattle = session.asyncBattleTarget,
+		dailyEventTheme = DailyEventService:GetTodayTheme(),
 	})
 
 	print(`[GameManager] Game started for {player.Name}`)
@@ -623,6 +639,12 @@ function GameManager.EndGame(player: Player)
 	-- 실시간 배틀 결과 처리
 	RealtimeBattleService:OnGameEnd(player, finalScore)
 
+	-- 데일리 이벤트 진행도 저장
+	local playerDataForEvent = PlayerDataService:GetPlayerData(player)
+	if playerDataForEvent then
+		DailyEventService:PersistProgress(player, playerDataForEvent, PlayerDataService)
+	end
+
 	-- 시나리오 퀘스트 진행도 업데이트
 	local sessionDuration = math.floor(tick() - session.startTime)
 	local wasNoHit = session.lastHitDistance == 0 and finalScore > 0
@@ -718,6 +740,7 @@ Players.PlayerRemoving:Connect(function(player: Player)
 	if activeSessions[player] then
 		GameManager.EndGame(player)
 	end
+	DailyEventService:OnPlayerLeave(player)
 	BossRunService:OnPlayerRemoving(player)
 	shopDebounce[player] = nil
 	portalDebounce[player] = nil
@@ -856,6 +879,12 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 			print(
 				`[GameManager] Player {player.Name} collected {coinData.type} coin (+{actualValue}){coinMultiplier > 1 and " (x2)" or ""}`
 			)
+		end
+
+		-- 데일리 이벤트: 코인 수집 횟수 추적
+		if #collectedCoins > 0 then
+			session.coinsCollectedCount += #collectedCoins
+			DailyEventService:OnCoinsCollected(player, #collectedCoins)
 		end
 
 		-- Phase B: 거인 코인 수집 체크
@@ -1212,6 +1241,24 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 				distance = math.floor(distanceTraveled),
 				coins = session.coins,
 			})
+
+			-- 데일리 이벤트 진행도 업데이트 (0.5초 간격)
+			local now = tick()
+			if now - session.lastEventProgressTime >= 0.5 then
+				session.lastEventProgressTime = now
+				DailyEventService:OnDistanceUpdate(player, distanceTraveled)
+				DailyEventService:OnScoreUpdate(player, session.score)
+				local playerData = PlayerDataService:GetPlayerData(player)
+				if playerData then
+					-- 목표 달성 체크 + 보상 지급 (최초 1회)
+					local wasGranted = DailyEventService:CheckAndGrantReward(player, playerData, PlayerDataService)
+					if wasGranted then
+						-- 업데이트된 잔액 알림
+						RemoteEvents.PlayerDataLoaded:FireClient(player, PlayerDataService:GetPlayerData(player))
+					end
+					DailyEventService:FireProgressUpdate(player, playerData)
+				end
+			end
 		end
 
 		-- 보스 런 활성 세션 점수 동기화

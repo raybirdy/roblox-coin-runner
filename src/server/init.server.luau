@@ -33,6 +33,7 @@ local BossRunService = require(ServerScriptService.Server.Services.BossRunServic
 local WeeklyRankingService = require(ServerScriptService.Server.Services.WeeklyRankingService)
 local AsyncBattleService = require(ServerScriptService.Server.Services.AsyncBattleService)
 local RealtimeBattleService = require(ServerScriptService.Server.Services.RealtimeBattleService)
+local DailyEventService = require(ServerScriptService.Server.Services.DailyEventService)
 
 print("[Server] Game Constants Loaded")
 print("[Server] Remote Events Initialized")
@@ -64,6 +65,7 @@ print("[Server] AsyncBattleService Loaded")
 -- RealtimeBattleService RemoteEvent 연결
 RealtimeBattleService:SetupRemoteEvents()
 print("[Server] RealtimeBattleService Loaded")
+print("[Server] DailyEventService Loaded")
 
 -- 플레이어 참가 처리
 game.Players.PlayerAdded:Connect(function(player: Player)
@@ -81,6 +83,9 @@ game.Players.PlayerAdded:Connect(function(player: Player)
 
 		-- 클라이언트에 데이터 전송
 		RemoteEvents.PlayerDataLoaded:FireClient(player, playerData)
+
+		-- 데일리 이벤트 데이터 전송
+		DailyEventService:SendEventData(player, playerData)
 		print(`[Server] Sent player data to {player.Name}`)
 	end
 
