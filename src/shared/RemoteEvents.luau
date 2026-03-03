@@ -410,4 +410,39 @@ RemoteEvents.HitRushStart = getOrCreateRemoteEvent("HitRushStart")
 RemoteEvents.SuperFeverStart = getOrCreateRemoteEvent("SuperFeverStart")
 -- 파라미터: { duration: number, speedBoost: number }
 
+-- ==================== 데일리 이벤트 ====================
+
+-- 데일리 이벤트 데이터 (서버 → 클라이언트)
+RemoteEvents.DailyEventData = getOrCreateRemoteEvent("DailyEventData")
+-- 파라미터: { themeId, displayName, coinName, coinColor, goal, goalTarget, goalDesc,
+--            rewardType, rewardAmount, bonusGems, speedModifier, coinValueBonus, progress, completed }
+
+-- 데일리 이벤트 진행도 (서버 → 클라이언트)
+RemoteEvents.DailyEventProgress = getOrCreateRemoteEvent("DailyEventProgress")
+-- 파라미터: { progress: number, goalTarget: number, goalType: string, completed: boolean }
+
+-- ==================== 업그레이드 상점 ====================
+
+-- 업그레이드 구매 요청 (클라이언트 → 서버)
+RemoteEvents.UpgradePurchase = getOrCreateRemoteEvent("UpgradePurchase")
+-- 파라미터: { upgradeId: string }
+
+-- 업그레이드 구매 결과 (서버 → 클라이언트)
+RemoteEvents.UpgradePurchaseResult = getOrCreateRemoteEvent("UpgradePurchaseResult")
+-- 파라미터: { success: boolean, upgradeId: string, newLevel: number, newBalance: number, error: string? }
+
+-- 업그레이드 데이터 (서버 → 클라이언트)
+RemoteEvents.UpgradeData = getOrCreateRemoteEvent("UpgradeData")
+-- 파라미터: { upgrades: { [upgradeId]: level }, coins: number }
+
+-- ==================== 런 목표 ====================
+
+-- 런 목표 생성 (서버 → 클라이언트)
+RemoteEvents.RunObjectivesGenerated = getOrCreateRemoteEvent("RunObjectivesGenerated")
+-- 파라미터: { objectives: { { id, desc, target, progress, completed } } }
+
+-- 런 목표 진행도 (서버 → 클라이언트)
+RemoteEvents.RunObjectiveProgress = getOrCreateRemoteEvent("RunObjectiveProgress")
+-- 파라미터: { objectives: { { id, progress, completed } }, allCompleted: boolean, bonus: number? }
+
 return RemoteEvents

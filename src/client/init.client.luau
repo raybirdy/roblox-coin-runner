@@ -92,6 +92,7 @@ local SkillController = require(script.Controllers.SkillController)
 local RankingController = require(script.Controllers.RankingController)
 local AsyncBattleController = require(script.Controllers.AsyncBattleController)
 local RealtimeBattleController = require(script.Controllers.RealtimeBattleController)
+local DailyEventController = require(script.Controllers.DailyEventController)
 
 -- 컨트롤러 인스턴스 생성
 local inputController = InputController.new()
@@ -123,6 +124,7 @@ local skillController = SkillController.new(player, playerController)
 local rankingController = RankingController.new(player)
 local asyncBattleController = AsyncBattleController.new(player)
 local realtimeBattleController = RealtimeBattleController.new(player)
+local dailyEventController = DailyEventController.new(player)
 
 -- Fever mode callbacks (speed boost + camera shake)
 feverController:OnFeverStart(function(speedBoost: number)
@@ -185,6 +187,7 @@ playerController:SetLobbyMode()
 leaderboardController:Show()
 rankingController:ShowInLobby()
 realtimeBattleController:ShowInLobby()
+dailyEventController:ShowInLobby()
 
 -- 플레이어 데이터 캐시
 local cachedPlayerData: any? = nil
@@ -225,6 +228,7 @@ RemoteEvents.ReturnToLobby.OnClientEvent:Connect(function()
 	worldMapController:ShowInLobby()
 	rankingController:ShowInLobby()
 	realtimeBattleController:ShowInLobby()
+	dailyEventController:ShowInLobby()
 end)
 
 -- 포탈 진입 안내 (서버에서 포탈 감지 시)
@@ -350,6 +354,7 @@ RemoteEvents.GameStart.OnClientEvent:Connect(function(data)
 		coinController:SetGameActive(true)
 		feverController:ShowGauge()
 		skillController:SetGameActive(true)
+		dailyEventController:StartGame()
 
 		-- 비동기 배틀 HUD (도전 모드인 경우)
 		if data.asyncBattle then
@@ -396,6 +401,9 @@ RemoteEvents.GameOver.OnClientEvent:Connect(function(data)
 
 	-- 스킬 비활성화
 	skillController:SetGameActive(false)
+
+	-- 데일리 이벤트 HUD 숨기기
+	dailyEventController:EndGame()
 
 	-- 비동기 배틀 HUD 숨기기
 	asyncBattleController:EndBattle()

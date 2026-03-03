@@ -1015,4 +1015,187 @@ GameConstants.SUPER_FEVER = {
 	MAGNET_RADIUS = 40,  -- 자석 반경 (studs)
 }
 
+-- ==================== 데일리 이벤트 ====================
+
+GameConstants.DAILY_EVENT = {
+	-- os.date("!*t").wday: 1=Sun, 2=Mon, 3=Tue, 4=Wed, 5=Thu, 6=Fri, 7=Sat
+	THEMES = {
+		[1] = { -- Sunday
+			id = "golden",
+			displayName = "황금의 날",
+			coinName = "황금 코인",
+			coinColor = Color3.fromRGB(255, 200, 50),
+			goal = "collect_themed_coins",
+			goalTarget = 25,
+			goalDesc = "황금 코인 25개 수집",
+			rewardType = "coins",
+			rewardAmount = 200,
+			bonusGems = 8,
+			speedModifier = 1.0,
+			coinValueBonus = 1.0, -- 2배 가치
+		},
+		[2] = { -- Monday
+			id = "cherry",
+			displayName = "체리의 날",
+			coinName = "체리 코인",
+			coinColor = Color3.fromRGB(220, 30, 60),
+			goal = "collect_themed_coins",
+			goalTarget = 30,
+			goalDesc = "체리 코인 30개 수집",
+			rewardType = "coins",
+			rewardAmount = 80,
+			bonusGems = 3,
+			speedModifier = 1.0,
+			coinValueBonus = 0,
+		},
+		[3] = { -- Tuesday
+			id = "star",
+			displayName = "별의 날",
+			coinName = "별 코인",
+			coinColor = Color3.fromRGB(255, 215, 80),
+			goal = "collect_themed_coins",
+			goalTarget = 25,
+			goalDesc = "별 코인 25개 수집",
+			rewardType = "coins",
+			rewardAmount = 100,
+			bonusGems = 3,
+			speedModifier = 1.0,
+			coinValueBonus = 0.2,
+		},
+		[4] = { -- Wednesday
+			id = "speed",
+			displayName = "스피드의 날",
+			coinName = "번개 코인",
+			coinColor = Color3.fromRGB(0, 200, 255),
+			goal = "distance_run",
+			goalTarget = 800,
+			goalDesc = "800m 달리기",
+			rewardType = "coins",
+			rewardAmount = 80,
+			bonusGems = 5,
+			speedModifier = 1.15,
+			coinValueBonus = 0,
+		},
+		[5] = { -- Thursday
+			id = "heart",
+			displayName = "하트의 날",
+			coinName = "하트 코인",
+			coinColor = Color3.fromRGB(255, 100, 150),
+			goal = "collect_themed_coins",
+			goalTarget = 35,
+			goalDesc = "하트 코인 35개 수집",
+			rewardType = "coins",
+			rewardAmount = 80,
+			bonusGems = 3,
+			speedModifier = 1.0,
+			coinValueBonus = 0,
+		},
+		[6] = { -- Friday
+			id = "diamond",
+			displayName = "다이아의 날",
+			coinName = "다이아 코인",
+			coinColor = Color3.fromRGB(100, 200, 255),
+			goal = "collect_themed_coins",
+			goalTarget = 20,
+			goalDesc = "다이아 코인 20개 수집",
+			rewardType = "gems",
+			rewardAmount = 5,
+			bonusGems = 5,
+			speedModifier = 1.0,
+			coinValueBonus = 0.5,
+		},
+		[7] = { -- Saturday
+			id = "rainbow",
+			displayName = "무지개의 날",
+			coinName = "무지개 코인",
+			coinColor = Color3.fromRGB(180, 100, 255),
+			goal = "score_reach",
+			goalTarget = 2000,
+			goalDesc = "2000점 달성",
+			rewardType = "coins",
+			rewardAmount = 150,
+			bonusGems = 5,
+			speedModifier = 1.0,
+			coinValueBonus = 0.1,
+		},
+	},
+}
+
+-- ==================== 업그레이드 ====================
+
+GameConstants.UPGRADES = {
+	LIST = {
+		{
+			id = "magnet_range",
+			displayName = "자석 범위",
+			desc = "자석 흡수 범위가 넓어집니다",
+			maxLevel = 5,
+			costs = { 100, 200, 400, 800, 1600 },
+			values = { 2, 4, 6, 8, 10 }, -- 누적 보너스 studs
+		},
+		{
+			id = "coin_value",
+			displayName = "코인 가치",
+			desc = "코인 획득 점수가 올라갑니다",
+			maxLevel = 3,
+			costs = { 200, 500, 1200 },
+			values = { 5, 10, 15 }, -- 누적 % 증가
+		},
+		{
+			id = "easy_start",
+			displayName = "편한 시작",
+			desc = "게임 시작 시 쉬운 구간이 늘어납니다",
+			maxLevel = 2,
+			costs = { 150, 400 },
+			values = { 35, 45 }, -- 안전 구간 초
+		},
+		{
+			id = "fever_extend",
+			displayName = "피버 연장",
+			desc = "피버 지속 시간이 늘어납니다",
+			maxLevel = 3,
+			costs = { 300, 700, 1500 },
+			values = { 0.5, 1.0, 1.5 }, -- 누적 초
+		},
+		{
+			id = "lucky_coins",
+			displayName = "행운 코인",
+			desc = "실버 코인이 더 자주 등장합니다",
+			maxLevel = 3,
+			costs = { 250, 600, 1400 },
+			values = { 5, 10, 15 }, -- 누적 % 확률 증가
+		},
+	},
+}
+
+-- ==================== 런 목표 ====================
+
+GameConstants.RUN_OBJECTIVES = {
+	COUNT = 3,
+	COMPLETION_BONUS_MIN = 15,
+	COMPLETION_BONUS_MAX = 30,
+	POOL = {
+		{ id = "collect_coins_15",  desc = "코인 15개 수집",   condition = "coins_collected",  target = 15,   weight = 20, tier = "easy" },
+		{ id = "collect_coins_30",  desc = "코인 30개 수집",   condition = "coins_collected",  target = 30,   weight = 15, tier = "normal" },
+		{ id = "collect_coins_50",  desc = "코인 50개 수집",   condition = "coins_collected",  target = 50,   weight = 8,  tier = "hard" },
+		{ id = "run_200m",          desc = "200m 달리기",      condition = "distance",          target = 200,  weight = 18, tier = "easy" },
+		{ id = "run_500m",          desc = "500m 달리기",      condition = "distance",          target = 500,  weight = 12, tier = "normal" },
+		{ id = "run_1000m",         desc = "1000m 달리기",     condition = "distance",          target = 1000, weight = 5,  tier = "hard" },
+		{ id = "combo_5",           desc = "5콤보 달성",       condition = "max_combo",         target = 5,    weight = 18, tier = "easy" },
+		{ id = "combo_15",          desc = "15콤보 달성",      condition = "max_combo",         target = 15,   weight = 10, tier = "normal" },
+		{ id = "combo_30",          desc = "30콤보 달성",      condition = "max_combo",         target = 30,   weight = 5,  tier = "hard" },
+		{ id = "fever_1",           desc = "피버 1회 발동",    condition = "fever_count",       target = 1,    weight = 14, tier = "normal" },
+		{ id = "fever_2",           desc = "피버 2회 발동",    condition = "fever_count",       target = 2,    weight = 5,  tier = "hard" },
+		{ id = "nearmiss_3",        desc = "니어미스 3회",     condition = "near_miss_count",   target = 3,    weight = 16, tier = "easy" },
+		{ id = "nearmiss_7",        desc = "니어미스 7회",     condition = "near_miss_count",   target = 7,    weight = 8,  tier = "normal" },
+		{ id = "score_500",         desc = "500점 달성",       condition = "score",             target = 500,  weight = 15, tier = "easy" },
+		{ id = "score_1500",        desc = "1500점 달성",      condition = "score",             target = 1500, weight = 8,  tier = "normal" },
+		{ id = "powerup_2",         desc = "파워업 2개 획득",  condition = "powerups_collected", target = 2,   weight = 14, tier = "easy" },
+		{ id = "survive_30",        desc = "30초 생존",        condition = "survive_time",      target = 30,   weight = 16, tier = "easy" },
+		{ id = "survive_60",        desc = "60초 생존",        condition = "survive_time",      target = 60,   weight = 8,  tier = "normal" },
+		{ id = "nohit_200m",        desc = "200m 무피격",      condition = "no_hit_distance",   target = 200,  weight = 8,  tier = "normal" },
+	},
+	SELECTION = { MIN_EASY = 1, MAX_HARD = 1 },
+}
+
 return GameConstants
