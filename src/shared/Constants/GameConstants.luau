@@ -171,15 +171,15 @@ GameConstants.POWERUP = {
 	INVINCIBLE_DURATION = 5, -- 무적 지속 시간 (초)
 	DOUBLE_COIN_DURATION = 8, -- 2배 코인 지속 시간 (초)
 	MINI_SIZE_DURATION = 5, -- 미니 사이즈 지속 시간 (초)
-	MIN_SPAWN_TIME = 20, -- 첫 파워업 등장 시간 (초)
-	MIN_INTERVAL = 15, -- 파워업 간 최소 간격 (초)
+	MIN_SPAWN_TIME = 12, -- 첫 파워업 등장 시간 (초) - 더 빠르게 (20→12)
+	MIN_INTERVAL = 10, -- 파워업 간 최소 간격 (초) - 더 자주 (15→10)
 
 	-- 출현 확률 (합계 1.0)
-	MAGNET_RATE = 0.30,
+	MAGNET_RATE = 0.35,
 	SHIELD_RATE = 0.22,
 	INVINCIBLE_RATE = 0.18,
-	DOUBLE_COIN_RATE = 0.18,
-	MINI_SIZE_RATE = 0.12,
+	DOUBLE_COIN_RATE = 0.16,
+	MINI_SIZE_RATE = 0.09,
 }
 
 -- 부활
@@ -1194,6 +1194,14 @@ GameConstants.RUN_OBJECTIVES = {
 		{ id = "survive_30",        desc = "30초 생존",        condition = "survive_time",      target = 30,   weight = 16, tier = "easy" },
 		{ id = "survive_60",        desc = "60초 생존",        condition = "survive_time",      target = 60,   weight = 8,  tier = "normal" },
 		{ id = "nohit_200m",        desc = "200m 무피격",      condition = "no_hit_distance",   target = 200,  weight = 8,  tier = "normal" },
+		{ id = "powerup_5",         desc = "파워업 5개 획득",  condition = "powerups_collected", target = 5,   weight = 7,  tier = "normal" },
+		{ id = "survive_90",        desc = "90초 생존",        condition = "survive_time",      target = 90,   weight = 5,  tier = "hard" },
+		{ id = "score_3000",        desc = "3000점 달성",      condition = "score",             target = 3000, weight = 4,  tier = "hard" },
+		{ id = "nearmiss_12",       desc = "니어미스 12회",    condition = "near_miss_count",   target = 12,   weight = 4,  tier = "hard" },
+		{ id = "run_1500m",         desc = "1500m 달리기",     condition = "distance",          target = 1500, weight = 3,  tier = "hard" },
+		{ id = "zone_reach_3",      desc = "3구역 도달",       condition = "zone_reached",      target = 3,    weight = 6,  tier = "normal" },
+		{ id = "zone_reach_4",      desc = "4구역 도달",       condition = "zone_reached",      target = 4,    weight = 4,  tier = "hard" },
+		{ id = "nearmiss_chain_5",  desc = "니어미스 5연속",   condition = "near_miss_chain_max", target = 5,  weight = 4,  tier = "hard" },
 	},
 	SELECTION = { MIN_EASY = 1, MAX_HARD = 1 },
 }

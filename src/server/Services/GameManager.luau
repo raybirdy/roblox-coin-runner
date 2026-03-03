@@ -79,6 +79,7 @@ type GameSession = {
 	-- Near miss chain
 	nearMissChain: number,
 	lastNearMissTime: number,
+	maxNearMissChain: number, -- 이번 런 최대 연속 니어미스
 	-- Perfect run
 	lastHitDistance: number,
 	perfectRunAwarded: { [number]: boolean },
@@ -258,6 +259,7 @@ RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { 
 		feverCooldownEnd = 0,
 		nearMissChain = 0,
 		lastNearMissTime = 0,
+		maxNearMissChain = 0,
 		lastHitDistance = 0,
 		perfectRunAwarded = {},
 		bonusScore = 0,
@@ -493,6 +495,7 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 		feverCooldownEnd = 0,
 		nearMissChain = 0,
 		lastNearMissTime = 0,
+		maxNearMissChain = 0,
 		lastHitDistance = 0,
 		perfectRunAwarded = {},
 		bonusScore = 0,
@@ -1206,6 +1209,7 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 				session.nearMissChain = 1
 			end
 			session.lastNearMissTime = now
+			session.maxNearMissChain = math.max(session.maxNearMissChain, session.nearMissChain)
 
 			-- 체인 등급에 따른 보너스 결정
 			local chainData = GameConstants.NEAR_MISS_CHAIN.GRADES[session.nearMissChain]
