@@ -26,6 +26,7 @@ local BossRunService = require(script.Parent.BossRunService)
 local AsyncBattleService = require(script.Parent.AsyncBattleService)
 local RealtimeBattleService = require(script.Parent.RealtimeBattleService)
 local DailyEventService = require(script.Parent.DailyEventService)
+local UpgradeService = require(script.Parent.UpgradeService)
 local RateLimiter = require(ReplicatedStorage.Shared.Utils.RateLimiter)
 
 local GameManager = {}
@@ -37,6 +38,14 @@ type ScenarioStatBonuses = {
 	magnetRadius: number,
 	maxLives: number,
 	feverGauge: number,
+}
+
+type UpgradeBonuses = {
+	magnetBonus: number,
+	coinValueBonus: number,
+	easyStartTime: number,
+	feverExtend: number,
+	luckyCoinsBonus: number,
 }
 
 -- 플레이어별 게임 세션 데이터
@@ -100,6 +109,8 @@ type GameSession = {
 	-- Daily Event
 	coinsCollectedCount: number, -- 수집한 코인 아이템 개수 (value가 아닌 개수)
 	lastEventProgressTime: number, -- 마지막 이벤트 진행도 업데이트 시각
+	-- Upgrade bonuses
+	upgradeBonuses: UpgradeBonuses,
 }
 
 local activeSessions: { [Player]: GameSession } = {}
@@ -216,6 +227,9 @@ RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { 
 		then math.floor(GameConstants.FEVER.COMBO_THRESHOLD / 1.3)
 		else GameConstants.FEVER.COMBO_THRESHOLD
 
+	-- 업그레이드 보너스 가져오기
+	local upgBonuses1 = UpgradeService:GetUpgradeBonuses(player, PlayerDataService)
+
 	local session: GameSession = {
 		player = player,
 		chunkService = chunkService,
@@ -263,6 +277,7 @@ RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { 
 		isSuperFever = false,
 		coinsCollectedCount = 0,
 		lastEventProgressTime = 0,
+		upgradeBonuses = upgBonuses1,
 	}
 
 	activeSessions[player] = session
@@ -433,6 +448,9 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 		then math.floor(GameConstants.FEVER.COMBO_THRESHOLD / 1.3)
 		else GameConstants.FEVER.COMBO_THRESHOLD
 
+	-- 업그레이드 보너스 가져오기
+	local upgBonuses2 = UpgradeService:GetUpgradeBonuses(player, PlayerDataService)
+
 	-- 비동기 배틀 타겟 가져오기 (있는 경우)
 	local battleTarget2 = AsyncBattleService:GetBattleTarget(player)
 	AsyncBattleService:ClearBattleTarget(player)
@@ -484,6 +502,7 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 		isSuperFever = false,
 		coinsCollectedCount = 0,
 		lastEventProgressTime = 0,
+		upgradeBonuses = upgBonuses2,
 	}
 
 	activeSessions[player] = session
@@ -844,7 +863,7 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 		session.powerupsCollected += #collectedPowerups
 
 		-- 코인 수집 체크 (자석 효과 적용, 피버/슈퍼피버 시 초강력 자석)
-		local magnetRadius = powerupService:GetMagnetRadius() + session.scenarioStatBonuses.magnetRadius
+		local magnetRadius = powerupService:GetMagnetRadius() + session.scenarioStatBonuses.magnetRadius + session.upgradeBonuses.magnetBonus
 		if session.isSuperFever then
 			magnetRadius = math.max(magnetRadius, GameConstants.SUPER_FEVER.MAGNET_RADIUS)
 		elseif session.isFever then
@@ -854,6 +873,7 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 		local coinMultiplier = powerupService:GetCoinMultiplier()
 			* MonetizationService:GetCoinMultiplier(player)
 			* (1 + session.scenarioStatBonuses.coinValue)
+			* (1 + session.upgradeBonuses.coinValueBonus)
 		if session.isSuperFever then
 			coinMultiplier *= GameConstants.SUPER_FEVER.COIN_MULTIPLIER
 		elseif session.isFever then
@@ -946,9 +966,10 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 					print(`[GameManager] SUPER FEVER activated for {player.Name}!`)
 				else
 					session.isSuperFever = false
-					session.feverEndTime = now + GameConstants.FEVER.DURATION
+					local feverDuration = GameConstants.FEVER.DURATION + session.upgradeBonuses.feverExtend
+					session.feverEndTime = now + feverDuration
 					RemoteEvents.FeverStart:FireClient(player, {
-						duration = GameConstants.FEVER.DURATION,
+						duration = feverDuration,
 						speedBoost = GameConstants.FEVER.SPEED_BOOST,
 					})
 					print(`[GameManager] FEVER MODE activated for {player.Name}!`)

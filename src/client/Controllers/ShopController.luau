@@ -136,12 +136,13 @@ function ShopController:_createUI()
 		{ id = "powerups", name = "파워업" },
 		{ id = "revive", name = "부활권" },
 		{ id = "gems", name = "젬" },
+		{ id = "upgrades", name = "업그레이드" },
 	}
 
 	for _, tab in tabs do
 		local tabButton = Instance.new("TextButton")
 		tabButton.Name = tab.id .. "Tab"
-		tabButton.Size = UDim2.new(0, 100, 0, 44)
+		tabButton.Size = UDim2.new(0, 80, 0, 44)
 		tabButton.BackgroundColor3 = Color3.fromRGB(80, 80, 100)
 		tabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 		tabButton.TextSize = ResponsiveUtil.scaledTextSize(18, 13)
@@ -288,6 +289,39 @@ function ShopController:_setupEventHandlers()
 	end)
 	table.insert(self._connections, shopDataConnection)
 
+	-- 업그레이드 데이터
+	local upgradeDataConn = RemoteEvents.UpgradeData.OnClientEvent:Connect(function(data)
+		if self._playerData then
+			self._playerData.upgrades = data.upgrades or {}
+			self._playerData.coins = data.coins
+			self:_updateCurrencyDisplay()
+		end
+		if self._isOpen and self._currentTab == "upgrades" then
+			self:_refreshCurrentTab()
+		end
+	end)
+	table.insert(self._connections, upgradeDataConn)
+
+	-- 업그레이드 구매 결과
+	local upgradeResultConn = RemoteEvents.UpgradePurchaseResult.OnClientEvent:Connect(function(data)
+		if data.success then
+			if self._playerData then
+				if not self._playerData.upgrades then
+					self._playerData.upgrades = {}
+				end
+				self._playerData.upgrades[data.upgradeId] = data.newLevel
+				self._playerData.coins = data.newBalance
+				self:_updateCurrencyDisplay()
+			end
+			if self._isOpen and self._currentTab == "upgrades" then
+				self:_refreshCurrentTab()
+			end
+		else
+			self:_showNotification("구매 실패", data.error or "Unknown error")
+		end
+	end)
+	table.insert(self._connections, upgradeResultConn)
+
 	print("[ShopController] Event handlers set up")
 end
 
@@ -330,12 +364,12 @@ function ShopController:_refreshCurrentTab()
 		end
 	end
 
-	-- 스킨 탭: UIListLayout 사용 (섹션 헤더 + 다양한 크기)
+	-- 스킨/업그레이드 탭: UIListLayout 사용 (섹션 헤더 + 다양한 크기)
 	-- 기타 탭: UIGridLayout 사용
 	local existingGrid = itemContainer:FindFirstChild("UIGridLayout")
 	local existingList = itemContainer:FindFirstChild("UIListLayout")
 
-	if self._currentTab == "skins" then
+	if self._currentTab == "skins" or self._currentTab == "upgrades" then
 		if existingGrid then
 			existingGrid.Parent = nil
 		end
@@ -368,6 +402,8 @@ function ShopController:_refreshCurrentTab()
 		self:_populateReviveTickets(itemContainer)
 	elseif self._currentTab == "gems" then
 		self:_populateGems(itemContainer)
+	elseif self._currentTab == "upgrades" then
+		self:_populateUpgrades(itemContainer)
 	end
 
 	-- 캔버스 크기 업데이트
@@ -962,6 +998,98 @@ function ShopController:_populateGems(container: ScrollingFrame)
 				end
 			)
 		end)
+	end
+end
+
+-- 업그레이드 탭 채우기
+function ShopController:_populateUpgrades(container: ScrollingFrame)
+	local upgrades = (self._playerData and self._playerData.upgrades) or {}
+	local coins = (self._playerData and self._playerData.coins) or 0
+
+	for _, def in GameConstants.UPGRADES.LIST do
+		local currentLevel = upgrades[def.id] or 0
+		local isMaxed = currentLevel >= def.maxLevel
+		local nextCost = if not isMaxed then def.costs[currentLevel + 1] else 0
+		local canAfford = coins >= nextCost
+
+		local card = Instance.new("Frame")
+		card.Name = def.id
+		card.Size = UDim2.new(1, -20, 0, 86)
+		card.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
+		card.Parent = container
+
+		local cardCorner = Instance.new("UICorner")
+		cardCorner.CornerRadius = UDim.new(0, 8)
+		cardCorner.Parent = card
+
+		local cardStroke = Instance.new("UIStroke")
+		cardStroke.Color = if isMaxed then Color3.fromRGB(255, 215, 0) else Color3.fromRGB(80, 80, 120)
+		cardStroke.Thickness = 1
+		cardStroke.Parent = card
+
+		local nameLabel = Instance.new("TextLabel")
+		nameLabel.Size = UDim2.new(0, 180, 0, 26)
+		nameLabel.Position = UDim2.new(0, 12, 0, 8)
+		nameLabel.BackgroundTransparency = 1
+		nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+		nameLabel.TextSize = ResponsiveUtil.scaledTextSize(16, 13)
+		nameLabel.Font = Enum.Font.GothamBold
+		nameLabel.Text = def.displayName
+		nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+		nameLabel.Parent = card
+
+		local descLabel = Instance.new("TextLabel")
+		descLabel.Size = UDim2.new(0, 200, 0, 20)
+		descLabel.Position = UDim2.new(0, 12, 0, 34)
+		descLabel.BackgroundTransparency = 1
+		descLabel.TextColor3 = Color3.fromRGB(170, 170, 200)
+		descLabel.TextSize = ResponsiveUtil.scaledTextSize(13, 11)
+		descLabel.Font = Enum.Font.Gotham
+		descLabel.Text = def.desc
+		descLabel.TextXAlignment = Enum.TextXAlignment.Left
+		descLabel.Parent = card
+
+		local levelText = if isMaxed then "MAX" else `Lv.{currentLevel} / {def.maxLevel}`
+		local levelLabel = Instance.new("TextLabel")
+		levelLabel.Size = UDim2.new(0, 100, 0, 22)
+		levelLabel.Position = UDim2.new(0, 12, 0, 56)
+		levelLabel.BackgroundTransparency = 1
+		levelLabel.TextColor3 = if isMaxed then Color3.fromRGB(255, 215, 0) else Color3.fromRGB(100, 200, 255)
+		levelLabel.TextSize = ResponsiveUtil.scaledTextSize(14, 12)
+		levelLabel.Font = Enum.Font.GothamBold
+		levelLabel.Text = levelText
+		levelLabel.TextXAlignment = Enum.TextXAlignment.Left
+		levelLabel.Parent = card
+
+		local button = Instance.new("TextButton")
+		button.Size = UDim2.new(0, 140, 0, 54)
+		button.Position = UDim2.new(1, -152, 0.5, -27)
+		button.Font = Enum.Font.GothamBold
+		button.TextSize = ResponsiveUtil.scaledTextSize(14, 12)
+		button.Parent = card
+
+		local btnCorner = Instance.new("UICorner")
+		btnCorner.CornerRadius = UDim.new(0, 6)
+		btnCorner.Parent = button
+
+		if isMaxed then
+			button.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+			button.TextColor3 = Color3.fromRGB(200, 200, 200)
+			button.Text = "MAX"
+			button.Active = false
+		elseif canAfford then
+			button.BackgroundColor3 = Color3.fromRGB(0, 180, 0)
+			button.TextColor3 = Color3.fromRGB(255, 255, 255)
+			button.Text = `업그레이드\n{nextCost}코인`
+			button.MouseButton1Click:Connect(function()
+				RemoteEvents.UpgradePurchase:FireServer({ upgradeId = def.id })
+			end)
+		else
+			button.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
+			button.TextColor3 = Color3.fromRGB(150, 150, 150)
+			button.Text = `코인 부족\n({nextCost})`
+			button.Active = false
+		end
 	end
 end
 

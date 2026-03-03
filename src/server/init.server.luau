@@ -34,6 +34,7 @@ local WeeklyRankingService = require(ServerScriptService.Server.Services.WeeklyR
 local AsyncBattleService = require(ServerScriptService.Server.Services.AsyncBattleService)
 local RealtimeBattleService = require(ServerScriptService.Server.Services.RealtimeBattleService)
 local DailyEventService = require(ServerScriptService.Server.Services.DailyEventService)
+local UpgradeService = require(ServerScriptService.Server.Services.UpgradeService)
 
 print("[Server] Game Constants Loaded")
 print("[Server] Remote Events Initialized")
@@ -67,6 +68,10 @@ RealtimeBattleService:SetupRemoteEvents()
 print("[Server] RealtimeBattleService Loaded")
 print("[Server] DailyEventService Loaded")
 
+-- UpgradeService RemoteEvent 연결
+UpgradeService:SetupRemoteEvents(PlayerDataService)
+print("[Server] UpgradeService Loaded")
+
 -- 플레이어 참가 처리
 game.Players.PlayerAdded:Connect(function(player: Player)
 	print(`[Server] Player {player.Name} joined`)
@@ -86,6 +91,9 @@ game.Players.PlayerAdded:Connect(function(player: Player)
 
 		-- 데일리 이벤트 데이터 전송
 		DailyEventService:SendEventData(player, playerData)
+
+		-- 업그레이드 데이터 전송
+		UpgradeService:SendUpgradeData(player, PlayerDataService)
 		print(`[Server] Sent player data to {player.Name}`)
 	end
 
