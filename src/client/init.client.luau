@@ -340,7 +340,10 @@ RemoteEvents.GameStart.OnClientEvent:Connect(function(data)
 		end
 	end
 
-	-- 6. 카운트다운 후 게임 시작
+	-- 6. 카운트다운 시작 전 목표 HUD 미리 표시 (오늘의 목표 인지 향상)
+	objectiveHudController:StartGame()
+
+	-- 7. 카운트다운 후 게임 시작
 	uiController:ShowCountdown(function()
 		-- 고정 해제
 		local charNow = player.Character
@@ -358,7 +361,6 @@ RemoteEvents.GameStart.OnClientEvent:Connect(function(data)
 		feverController:ShowGauge()
 		skillController:SetGameActive(true)
 		dailyEventController:StartGame()
-		objectiveHudController:StartGame()
 
 		-- 비동기 배틀 HUD (도전 모드인 경우)
 		if data.asyncBattle then
