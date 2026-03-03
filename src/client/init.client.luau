@@ -515,6 +515,9 @@ end)
 -- Phase B: Zone 전환 이벤트
 RemoteEvents.ZoneTransition.OnClientEvent:Connect(function(data)
 	zoneController:TransitionToZone(data.zoneIndex, data.displayName)
+	-- 구역 전환 연출: 화면 피드백 + 카메라 흔들림
+	uiController:ShowGameFeedback(`🗺 {data.displayName} 진입!`, Color3.fromRGB(100, 220, 255))
+	cameraController:Shake(0.25)
 end)
 
 -- Phase B: 이벤트 청크 알림
