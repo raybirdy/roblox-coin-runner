@@ -327,7 +327,7 @@ GameConstants.SHOP = {
 		-- 코인 스킨 (누구나 접근 가능)
 		{
 			id = "red_hat",
-			name = "빨간 모자",
+			name = "레드",
 			price = 100,
 			currency = "coins",
 			color = Color3.fromRGB(220, 50, 50),
@@ -335,7 +335,7 @@ GameConstants.SHOP = {
 		},
 		{
 			id = "ninja",
-			name = "닌자",
+			name = "미드나잇",
 			price = 150,
 			currency = "coins",
 			color = Color3.fromRGB(30, 30, 50),
@@ -343,7 +343,7 @@ GameConstants.SHOP = {
 		},
 		{
 			id = "blue_cape",
-			name = "파란 망토",
+			name = "로얄블루",
 			price = 200,
 			currency = "coins",
 			color = Color3.fromRGB(50, 100, 220),
@@ -351,7 +351,7 @@ GameConstants.SHOP = {
 		},
 		{
 			id = "pirate",
-			name = "해적",
+			name = "브라운",
 			price = 300,
 			currency = "coins",
 			color = Color3.fromRGB(100, 60, 30),
@@ -359,7 +359,7 @@ GameConstants.SHOP = {
 		},
 		{
 			id = "robot",
-			name = "로봇",
+			name = "스틸",
 			price = 400,
 			currency = "coins",
 			color = Color3.fromRGB(160, 170, 180),
@@ -392,7 +392,7 @@ GameConstants.SHOP = {
 		},
 		{
 			id = "ice_king",
-			name = "아이스킹",
+			name = "아이스",
 			price = 150,
 			currency = "gems",
 			color = Color3.fromRGB(150, 220, 255),
@@ -400,7 +400,7 @@ GameConstants.SHOP = {
 		},
 		{
 			id = "dragon",
-			name = "드래곤",
+			name = "파이어",
 			price = 200,
 			currency = "gems",
 			color = Color3.fromRGB(200, 50, 0),
@@ -1188,8 +1188,8 @@ GameConstants.UPGRADES = {
 
 GameConstants.RUN_OBJECTIVES = {
 	COUNT = 3,
-	COMPLETION_BONUS_MIN = 15,
-	COMPLETION_BONUS_MAX = 30,
+	COMPLETION_BONUS_MIN = 50,
+	COMPLETION_BONUS_MAX = 80,
 	POOL = {
 		{ id = "collect_coins_15",  desc = "코인 15개 수집",   condition = "coins_collected",  target = 15,   weight = 20, tier = "easy" },
 		{ id = "collect_coins_30",  desc = "코인 30개 수집",   condition = "coins_collected",  target = 30,   weight = 15, tier = "normal" },
