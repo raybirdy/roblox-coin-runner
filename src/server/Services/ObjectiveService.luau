@@ -138,6 +138,10 @@ local function getProgressValue(condition: string, session: any, distanceTravele
 		return math.floor(tick() - session.startTime)
 	elseif condition == "no_hit_distance" then
 		return math.max(0, math.floor(distanceTraveled) - session.lastHitDistance)
+	elseif condition == "zone_reached" then
+		return session.currentZoneIndex
+	elseif condition == "near_miss_chain_max" then
+		return session.maxNearMissChain or 0
 	end
 	return 0
 end
