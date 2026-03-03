@@ -102,17 +102,19 @@ local function processReceipt(
 		return Enum.ProductPurchaseDecision.NotProcessedYet
 	end
 
-	-- 구매 처리
-	local purchaseSuccess = processGemPurchase(player, product)
-
-	if purchaseSuccess then
-		-- 메모리 캐시 + DataStore 영속화
-		processedReceiptsCache[receiptKey] = true
-		PlayerDataService:AddProcessedReceipt(player, receiptKey)
-		return Enum.ProductPurchaseDecision.PurchaseGranted
-	else
+	-- 영수증을 DataStore에 먼저 저장 (중복 지급 방지의 핵심)
+	-- 저장 실패 시 NotProcessedYet → Roblox가 나중에 재시도하므로 안전
+	local receiptSaved = PlayerDataService:AddProcessedReceipt(player, receiptKey)
+	if not receiptSaved then
+		warn(`[MonetizationService] Failed to persist receipt {receiptKey} — will retry later`)
 		return Enum.ProductPurchaseDecision.NotProcessedYet
 	end
+
+	-- DataStore 저장 성공 후 젬 지급
+	processedReceiptsCache[receiptKey] = true
+	processGemPurchase(player, product)
+
+	return Enum.ProductPurchaseDecision.PurchaseGranted
 end
 
 -- VIP GamePass 확인

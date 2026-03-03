@@ -124,14 +124,15 @@ game.Players.PlayerRemoving:Connect(function(player: Player)
 	PlayerDataService:OnPlayerRemoving(player)
 end)
 
--- 서버 종료 시 모든 플레이어 데이터 저장
+-- 서버 종료 시 모든 플레이어 데이터 저장 (병렬, 완료까지 대기)
 game:BindToClose(function()
 	print("[Server] Server shutting down, saving all player data...")
 
-	-- 모든 플레이어 데이터 저장
+	-- SaveAllPlayers는 내부적으로 병렬 저장 후 전체 완료 시까지 대기
+	-- 순차 저장(10명 × 3초 = 30초) → 병렬 저장(max 3초)
 	PlayerDataService:SaveAllPlayers()
 
-	task.wait(3) -- DataStore 저장 완료 대기
+	print("[Server] All player data saved. Shutdown complete.")
 end)
 
 -- 주기적 자동 저장 (서버 크래시/모바일 강제 종료 대비)
