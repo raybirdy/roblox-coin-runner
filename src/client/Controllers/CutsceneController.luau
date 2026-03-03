@@ -79,6 +79,8 @@ export type CutsceneController = typeof(setmetatable(
 		_speakerBg: Frame?,
 		_topBorder: Frame?,
 		_currentChapterId: string?,
+		-- 배경 딤 오버레이
+		_dimOverlay: Frame?,
 	},
 	CutsceneController
 ))
@@ -105,6 +107,7 @@ function CutsceneController.new(): CutsceneController
 		_speakerBg = nil,
 		_topBorder = nil,
 		_currentChapterId = nil,
+		_dimOverlay = nil,
 	}, CutsceneController)
 
 	self:_createGui()
@@ -125,6 +128,17 @@ function CutsceneController:_createGui()
 	gui.Enabled = false
 	gui.Parent = playerGui
 	self._gui = gui
+
+	-- 배경 딤 오버레이 (컷씬 재생 중 배경 어둡게)
+	local dimOverlay = Instance.new("Frame")
+	dimOverlay.Name = "DimOverlay"
+	dimOverlay.Size = UDim2.new(1, 0, 1, 0)
+	dimOverlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	dimOverlay.BackgroundTransparency = 1
+	dimOverlay.BorderSizePixel = 0
+	dimOverlay.ZIndex = 1
+	dimOverlay.Parent = gui
+	self._dimOverlay = dimOverlay
 
 	-- 하단 패널 (화면 하단 28%)
 	local panel = Instance.new("Frame")
@@ -392,10 +406,20 @@ function CutsceneController:_typeText(text: string)
 			return
 		end
 
-		local chars = string.len(text)
-		for i = 1, chars do
+		local bytes = string.len(text)
+		for i = 1, bytes do
 			label.Text = string.sub(text, 1, i)
-			task.wait(0.03)
+			local b = string.byte(text, i)
+			-- 구두점 후 자연스러운 호흡감 (ASCII 범위만 체크)
+			if b == 33 or b == 63 then        -- ! ?
+				task.wait(0.18)
+			elseif b == 44 then               -- ,
+				task.wait(0.08)
+			elseif b == 46 then               -- .
+				task.wait(0.12)
+			else
+				task.wait(0.03)
+			end
 		end
 		self._typingThread = nil
 	end)
@@ -575,6 +599,15 @@ function CutsceneController:_show()
 	end
 
 	gui.Enabled = true
+
+	-- 딤 오버레이 페이드인
+	if self._dimOverlay then
+		self._dimOverlay.BackgroundTransparency = 1
+		TweenService:Create(self._dimOverlay, TweenInfo.new(0.4), {
+			BackgroundTransparency = 0.5,
+		}):Play()
+	end
+
 	panel.Position = UDim2.new(0, 0, 1, 0)
 	TweenService:Create(panel, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
 		Position = UDim2.new(0, 0, 0.72, 0),
@@ -586,6 +619,13 @@ function CutsceneController:_hide()
 	local panel = self._panel
 	if not gui or not panel then
 		return
+	end
+
+	-- 딤 오버레이 페이드아웃
+	if self._dimOverlay then
+		TweenService:Create(self._dimOverlay, TweenInfo.new(0.3), {
+			BackgroundTransparency = 1,
+		}):Play()
 	end
 
 	TweenService:Create(panel, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
