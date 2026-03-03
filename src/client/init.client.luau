@@ -340,7 +340,10 @@ RemoteEvents.GameStart.OnClientEvent:Connect(function(data)
 		end
 	end
 
-	-- 6. 카운트다운 후 게임 시작
+	-- 6. 카운트다운 시작 전 목표 HUD 미리 표시 (오늘의 목표 인지 향상)
+	objectiveHudController:StartGame()
+
+	-- 7. 카운트다운 후 게임 시작
 	uiController:ShowCountdown(function()
 		-- 고정 해제
 		local charNow = player.Character
@@ -358,7 +361,6 @@ RemoteEvents.GameStart.OnClientEvent:Connect(function(data)
 		feverController:ShowGauge()
 		skillController:SetGameActive(true)
 		dailyEventController:StartGame()
-		objectiveHudController:StartGame()
 
 		-- 비동기 배틀 HUD (도전 모드인 경우)
 		if data.asyncBattle then
@@ -377,6 +379,18 @@ RemoteEvents.GameStart.OnClientEvent:Connect(function(data)
 		if data.startTutorial then
 			tutorialController:Start(data.startPosition)
 			uiController:ShowTutorialBanner()
+		end
+
+		-- start_boost 업그레이드: 게임 시작 시 일시적 속도 부스트
+		local boostSeconds = data.startBoostSeconds or 0
+		if boostSeconds > 0 then
+			playerController:SetSpeedMultiplier(1.25)
+			uiController:ShowGameFeedback("⚡ 스타트 대시!", Color3.fromRGB(255, 220, 50))
+			task.delay(boostSeconds, function()
+				if playerController:IsPlaying() and not feverController:IsFever() then
+					playerController:SetSpeedMultiplier(1.0)
+				end
+			end)
 		end
 	end)
 end)
@@ -515,6 +529,9 @@ end)
 -- Phase B: Zone 전환 이벤트
 RemoteEvents.ZoneTransition.OnClientEvent:Connect(function(data)
 	zoneController:TransitionToZone(data.zoneIndex, data.displayName)
+	-- 구역 전환 연출: 화면 피드백 + 카메라 흔들림
+	uiController:ShowGameFeedback(`🗺 {data.displayName} 진입!`, Color3.fromRGB(100, 220, 255))
+	cameraController:Shake(0.25)
 end)
 
 -- Phase B: 이벤트 청크 알림

@@ -95,11 +95,11 @@ function ZoneController:TransitionToZone(zoneIndex: number, displayName: string)
 	if self._zoneLabel then
 		-- Zone 아이콘
 		local icons = {
-			Meadow = "",
-			FlowerPath = "",
-			MushroomWood = "",
-			Sunset = "",
-			Starlight = "",
+			Meadow = "🌿",
+			FlowerPath = "🌸",
+			MushroomWood = "🍄",
+			Sunset = "🌅",
+			Starlight = "⭐",
 		}
 		local icon = icons[theme.name] or ""
 		self._zoneLabel.Text = `{icon} {displayName}`

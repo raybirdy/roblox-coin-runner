@@ -428,7 +428,7 @@ function PlayerController:_update(deltaTime: number)
 	end
 end
 
--- 속도 증가 (EaseOutQuad)
+-- 속도 증가 (EaseInQuad) + 최고속 후 호흡 패턴
 function PlayerController:_updateSpeed()
 	local elapsedTime = tick() - self.gameStartTime
 	local t = math.min(elapsedTime / GameConstants.PHYSICS.SPEED_RAMP_TIME, 1)
@@ -439,7 +439,17 @@ function PlayerController:_updateSpeed()
 	local minSpeed = GameConstants.PHYSICS.SPEED_MIN
 	local maxSpeed = GameConstants.PHYSICS.SPEED_MAX
 
-	self.currentSpeed = minSpeed + (maxSpeed - minSpeed) * easedT
+	if t >= 1 then
+		-- 최고속 도달 후: 60초 주기의 사인파 호흡 패턴 (±4 studs/s)
+		-- 플레이어가 의식하지 못할 정도로 부드럽게 변동 → 긴 세션에서 단조로움 방지
+		local breathTime = elapsedTime - GameConstants.PHYSICS.SPEED_RAMP_TIME
+		local breathAmp = 4 -- 최대 감속 폭 (studs/s)
+		local breathPeriod = 60 -- 주기 (초)
+		local breathOffset = breathAmp * (math.sin(breathTime * math.pi / breathPeriod * 2) - 1) / 2
+		self.currentSpeed = maxSpeed + breathOffset
+	else
+		self.currentSpeed = minSpeed + (maxSpeed - minSpeed) * easedT
+	end
 end
 
 -- 전진 이동 (CFrame으로 X축 직접 이동)

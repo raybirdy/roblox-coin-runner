@@ -342,6 +342,7 @@ RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { 
 		scenarioStatBonuses = statBonuses,
 		unlockedSkills = unlockedSkills,
 		dailyEventTheme = DailyEventService:GetTodayTheme(),
+		startBoostSeconds = upgBonuses1.startBoostSeconds,
 	})
 
 	print(`[GameManager] Game started for {player.Name} via portal`)
@@ -568,6 +569,7 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 		unlockedSkills = unlockedSkills,
 		asyncBattle = session.asyncBattleTarget,
 		dailyEventTheme = DailyEventService:GetTodayTheme(),
+		startBoostSeconds = upgBonuses2.startBoostSeconds,
 	})
 
 	print(`[GameManager] Game started for {player.Name}`)
@@ -1046,8 +1048,9 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 				bonus = comboBonus > 0 and comboBonus or nil,
 			})
 		else
-			-- 콤보 타임아웃 체크
-			if session.comboCount > 0 and tick() - session.lastCoinTime >= GameConstants.SCORE.COMBO_TIMEOUT then
+			-- 콤보 타임아웃 체크 (combo_buffer 업그레이드로 연장 가능)
+			local comboTimeout = GameConstants.SCORE.COMBO_TIMEOUT + session.upgradeBonuses.comboBufferSeconds
+			if session.comboCount > 0 and tick() - session.lastCoinTime >= comboTimeout then
 				session.comboCount = 0
 				RemoteEvents.ComboUpdate:FireClient(player, { combo = 0 })
 				RemoteEvents.FeverGaugeUpdate:FireClient(player, {

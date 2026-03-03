@@ -28,7 +28,7 @@ GameConstants.PHYSICS = {
 	-- 이동 속도 (저연령층 6~12세 기준)
 	SPEED_MIN = 22, -- 최소 속도 (studs/s) - 느리고 편안함
 	SPEED_MAX = 52, -- 최대 속도 (studs/s) - 적당한 속도
-	SPEED_RAMP_TIME = 120, -- 최대 속도 도달 시간 (초) - 2분
+	SPEED_RAMP_TIME = 150, -- 최대 속도 도달 시간 (초) - 2.5분 (더 긴 진행감)
 }
 
 -- 청크 시스템
@@ -1137,9 +1137,9 @@ GameConstants.UPGRADES = {
 			id = "coin_value",
 			displayName = "코인 가치",
 			desc = "코인 획득 점수가 올라갑니다",
-			maxLevel = 3,
-			costs = { 200, 500, 1200 },
-			values = { 5, 10, 15 }, -- 누적 % 증가
+			maxLevel = 5,
+			costs = { 200, 500, 1200, 2500, 5000 },
+			values = { 5, 10, 15, 22, 30 }, -- 누적 % 증가
 		},
 		{
 			id = "easy_start",
@@ -1161,9 +1161,25 @@ GameConstants.UPGRADES = {
 			id = "lucky_coins",
 			displayName = "행운 코인",
 			desc = "실버 코인이 더 자주 등장합니다",
+			maxLevel = 5,
+			costs = { 250, 600, 1400, 3000, 6000 },
+			values = { 5, 10, 15, 22, 30 }, -- 누적 % 확률 증가
+		},
+		{
+			id = "combo_buffer",
+			displayName = "콤보 버퍼",
+			desc = "코인 콤보 유지 시간이 길어집니다",
 			maxLevel = 3,
-			costs = { 250, 600, 1400 },
-			values = { 5, 10, 15 }, -- 누적 % 확률 증가
+			costs = { 400, 1000, 2400 },
+			values = { 1, 2, 3 }, -- COMBO_TIMEOUT에 추가되는 초
+		},
+		{
+			id = "start_boost",
+			displayName = "스타트 대시",
+			desc = "게임 시작 시 일시적으로 빠르게 달립니다",
+			maxLevel = 3,
+			costs = { 180, 450, 1100 },
+			values = { 3, 5, 8 }, -- 부스트 지속 시간 (초)
 		},
 	},
 }
