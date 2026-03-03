@@ -749,6 +749,19 @@ function GameManager.EndGame(player: Player)
 		consolationTracker[player] = 0
 	end
 
+	-- 런 목표 요약 (클라이언트 표시용)
+	local runObjectives = ObjectiveService:GetObjectives(player)
+	local objCompleted = 0
+	local objTotal = 0
+	if runObjectives then
+		objTotal = #runObjectives
+		for _, obj in runObjectives do
+			if obj.completed then
+				objCompleted += 1
+			end
+		end
+	end
+
 	-- 클라이언트에 게임 오버 알림
 	local playerData = PlayerDataService:GetPlayerData(player)
 	RemoteEvents.GameOver:FireClient(player, {
@@ -764,6 +777,10 @@ function GameManager.EndGame(player: Player)
 		zoneName = GameConstants.ZONE_THEMES[session.currentZoneIndex].displayName,
 		almostMessage = GameManager._generateAlmostMessage(session),
 		loginStreak = playerData and playerData.loginStreak or 0,
+		-- 런 목표 요약
+		objectivesCompleted = objCompleted,
+		objectivesTotal = objTotal,
+		objectiveBonus = ObjectiveService:GetCompletionBonus(player),
 	})
 
 	-- 위로 보상 알림 (별도 이벤트)

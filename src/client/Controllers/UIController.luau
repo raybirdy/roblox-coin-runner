@@ -966,11 +966,50 @@ function UIController:ShowGameOver(
 	end
 
 	if extraData and not canRevive then
+		-- 런 목표 달성 요약 배지
+		local objTotal = extraData.objectivesTotal or 0
+		if objTotal > 0 then
+			local objCompleted = extraData.objectivesCompleted or 0
+			local objBonus = extraData.objectiveBonus or 0
+			local allDone = objCompleted >= objTotal
+
+			local objRow = Instance.new("Frame")
+			objRow.Name = "ObjSummaryRow"
+			objRow.Size = UDim2.new(1, -20, 0, 26)
+			objRow.Position = UDim2.new(0, 10, 0, 183)
+			objRow.BackgroundColor3 = if allDone
+				then Color3.fromRGB(30, 90, 30)
+				else Color3.fromRGB(60, 55, 20)
+			objRow.BackgroundTransparency = 0.2
+			objRow.Parent = self._gameOverFrame
+
+			local objCorner = Instance.new("UICorner")
+			objCorner.CornerRadius = UDim.new(0, 6)
+			objCorner.Parent = objRow
+
+			local objText = Instance.new("TextLabel")
+			objText.Size = UDim2.new(1, 0, 1, 0)
+			objText.BackgroundTransparency = 1
+			objText.Font = Enum.Font.GothamBold
+			objText.TextSize = ResponsiveUtil.scaledTextSize(13, 10)
+			objText.TextXAlignment = Enum.TextXAlignment.Center
+			if allDone then
+				objText.TextColor3 = Color3.fromRGB(100, 255, 100)
+				objText.Text = if objBonus > 0
+					then `🎯 목표 전부 달성! (+{objBonus}🪙 보너스)`
+					else `🎯 목표 {objCompleted}/{objTotal} 달성!`
+			else
+				objText.TextColor3 = Color3.fromRGB(255, 220, 100)
+				objText.Text = `🎯 목표 {objCompleted}/{objTotal} 달성`
+			end
+			objText.Parent = objRow
+		end
+
 		-- StatsRow2: NearMiss + MaxCombo + FeverCount
 		local statsRow2 = Instance.new("Frame")
 		statsRow2.Name = "StatsRow2"
 		statsRow2.Size = UDim2.new(1, -20, 0, 24)
-		statsRow2.Position = UDim2.new(0, 10, 0, 190)
+		statsRow2.Position = UDim2.new(0, 10, 0, 213)
 		statsRow2.BackgroundTransparency = 1
 		statsRow2.Parent = self._gameOverFrame
 
@@ -1015,7 +1054,7 @@ function UIController:ShowGameOver(
 			local zoneLabel = Instance.new("TextLabel")
 			zoneLabel.Name = "ZoneReached"
 			zoneLabel.Size = UDim2.new(1, -20, 0, 22)
-			zoneLabel.Position = UDim2.new(0, 10, 0, 218)
+			zoneLabel.Position = UDim2.new(0, 10, 0, 241)
 			zoneLabel.BackgroundTransparency = 1
 			zoneLabel.TextColor3 = Color3.fromRGB(150, 200, 255)
 			zoneLabel.TextSize = ResponsiveUtil.scaledTextSize(14, 10)
@@ -1029,7 +1068,7 @@ function UIController:ShowGameOver(
 			local almostLabel = Instance.new("TextLabel")
 			almostLabel.Name = "AlmostMessage"
 			almostLabel.Size = UDim2.new(1, -20, 0, 28)
-			almostLabel.Position = UDim2.new(0, 10, 0, 244)
+			almostLabel.Position = UDim2.new(0, 10, 0, 267)
 			almostLabel.BackgroundTransparency = 1
 			almostLabel.TextColor3 = Color3.fromRGB(255, 220, 100)
 			almostLabel.TextSize = ResponsiveUtil.scaledTextSize(13, 10)
@@ -1080,7 +1119,7 @@ function UIController:ShowGameOver(
 
 	-- Phase B: 추가 통계가 있을 때 프레임 높이 확장
 	local hasExtraStats = extraData and not canRevive
-	local frameHeight = if canRevive then 380 elseif hasExtraStats then 500 else 360
+	local frameHeight = if canRevive then 380 elseif hasExtraStats then 523 else 360
 	local targetSize = ResponsiveUtil.clampedSize(380, frameHeight, 0.88, 0.78)
 	local targetPos = ResponsiveUtil.clampedPosition(380, frameHeight, 0.88, 0.78)
 	local appearTween =
@@ -1348,6 +1387,10 @@ function UIController:HideGameOver()
 		local almostMsg = self._gameOverFrame:FindFirstChild("AlmostMessage")
 		if almostMsg then
 			almostMsg:Destroy()
+		end
+		local objSummary = self._gameOverFrame:FindFirstChild("ObjSummaryRow")
+		if objSummary then
+			objSummary:Destroy()
 		end
 
 		-- 버튼 위치 초기화
