@@ -54,6 +54,8 @@ export type ScenarioController = typeof(setmetatable(
 		-- 시나리오 인트로 팝업
 		_newBadge: Frame?,
 		_introShown: boolean,
+		-- 복귀 유저 활성 챕터 알림 (1회)
+		_activeChapterNotified: boolean,
 	},
 	ScenarioController
 ))
@@ -88,6 +90,7 @@ function ScenarioController.new(player: Player): ScenarioController
 		_playerHighScore = 0,
 		_newBadge = nil,
 		_introShown = false,
+		_activeChapterNotified = false,
 	}, ScenarioController)
 
 	self:_createGui()
@@ -1301,6 +1304,11 @@ function ScenarioController:OpenPanel()
 	popupGui.Enabled = true
 	self:_switchTab(self._currentTab)
 
+	-- 패널 열면 활성 챕터 뱃지 숨김 (사용자가 확인함)
+	if self._newBadge and self._newBadge.Visible then
+		self._newBadge.Visible = false
+	end
+
 	-- 팝업 애니메이션
 	local targetSize = ResponsiveUtil.clampedSize(370, 440, 0.92, 0.88)
 	local targetW = targetSize.X.Offset
@@ -1374,6 +1382,40 @@ function ScenarioController:_setupEventHandlers()
 		if self._worldMapController then
 			self._worldMapController:UpdateFromScenarioData(data)
 		end
+
+		-- 복귀 유저 활성 챕터 가이던스 (세션당 1회)
+		if not self._activeChapterNotified then
+			self._activeChapterNotified = true
+
+			-- 활성 챕터 탐색: isUnlocked=true, isCompleted=false, 가장 낮은 num
+			local activeChapter = nil
+			local chapters = data.chapters :: { any }
+			for _, ch in chapters do
+				if ch.isUnlocked and not ch.isCompleted then
+					if not activeChapter or ch.num < activeChapter.num then
+						activeChapter = ch
+					end
+				end
+			end
+
+			if activeChapter then
+				-- 활성 챕터가 있으면 뱃지 표시 + 토스트 예약
+				if self._newBadge then
+					self._newBadge.Visible = true
+				end
+				-- 로비 상태에서만 토스트 표시
+				if not self._isGameActive then
+					task.delay(2.5, function()
+						self:_showActiveChapterToast(activeChapter)
+					end)
+				end
+			else
+				-- 모든 챕터 완료 또는 해금 챕터 없음 → 뱃지 숨김
+				if self._newBadge then
+					self._newBadge.Visible = false
+				end
+			end
+		end
 	end)
 	table.insert(self._connections, dataConn)
 
@@ -1410,10 +1452,7 @@ function ScenarioController:_setupEventHandlers()
 				self:_showIntroPopup()
 			end)
 		else
-			-- 이미 봤으면 뱃지 숨김
-			if self._newBadge then
-				self._newBadge.Visible = false
-			end
+			-- 복귀 유저: 뱃지 가시성은 ScenarioDataResponse에서 실제 진행도 기반으로 결정
 		end
 	end)
 	table.insert(self._connections, playerDataConn)
@@ -1478,6 +1517,126 @@ function ScenarioController:_showQuestCompleteToast(questName: string)
 		task.delay(0.3, function()
 			toast:Destroy()
 		end)
+	end)
+end
+
+-- ==================== 복귀 유저 활성 챕터 토스트 ====================
+
+-- 복귀 유저에게 현재 진행 중인 챕터를 안내하는 토스트 (로비 전용)
+function ScenarioController:_showActiveChapterToast(chapter: any)
+	local gui = self._gui
+	if not gui then
+		return
+	end
+
+	-- 중복 방지
+	if gui:FindFirstChild("ActiveChapterToast") then
+		return
+	end
+
+	-- 게임 중에는 표시하지 않음
+	if self._isGameActive then
+		return
+	end
+
+	-- 완료/전체 퀘스트 수 계산
+	local doneCount = 0
+	local totalCount = #chapter.quests
+	for _, q in chapter.quests do
+		if q.completed then
+			doneCount += 1
+		end
+	end
+
+	local toast = Instance.new("TextButton")
+	toast.Name = "ActiveChapterToast"
+	toast.Size = UDim2.new(0, 300, 0, 56)
+	toast.Position = UDim2.new(0.5, -150, 0, -64)
+	toast.BackgroundColor3 = Color3.fromRGB(20, 30, 70)
+	toast.BorderSizePixel = 0
+	toast.Text = ""
+	toast.AutoButtonColor = false
+	toast.ZIndex = 10
+	toast.Parent = gui
+
+	local toastCorner = Instance.new("UICorner")
+	toastCorner.CornerRadius = UDim.new(0, 12)
+	toastCorner.Parent = toast
+
+	local toastStroke = Instance.new("UIStroke")
+	toastStroke.Color = Color3.fromRGB(80, 130, 255)
+	toastStroke.Thickness = 2
+	toastStroke.Parent = toast
+
+	local titleLabel = Instance.new("TextLabel")
+	titleLabel.Size = UDim2.new(1, -16, 0, 26)
+	titleLabel.Position = UDim2.new(0, 10, 0, 4)
+	titleLabel.BackgroundTransparency = 1
+	titleLabel.TextColor3 = Color3.fromRGB(160, 200, 255)
+	titleLabel.TextSize = 13
+	titleLabel.Font = Enum.Font.GothamBold
+	titleLabel.Text = string.format(
+		"%s CH%d. %s 진행 중!",
+		chapter.theme or "📖",
+		chapter.num or 0,
+		chapter.name or ""
+	)
+	titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+	titleLabel.TextTruncate = Enum.TextTruncate.AtEnd
+	titleLabel.ZIndex = 11
+	titleLabel.Parent = toast
+
+	local subtitleLabel = Instance.new("TextLabel")
+	subtitleLabel.Size = UDim2.new(1, -16, 0, 20)
+	subtitleLabel.Position = UDim2.new(0, 10, 0, 30)
+	subtitleLabel.BackgroundTransparency = 1
+	subtitleLabel.TextColor3 = Color3.fromRGB(120, 140, 180)
+	subtitleLabel.TextSize = 11
+	subtitleLabel.Font = Enum.Font.Gotham
+	subtitleLabel.Text = string.format(
+		"퀘스트 %d/%d 완료  ·  탭하여 확인 →",
+		doneCount,
+		totalCount
+	)
+	subtitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+	subtitleLabel.ZIndex = 11
+	subtitleLabel.Parent = toast
+
+	local dismissed = false
+
+	local function dismiss(openPanel: boolean)
+		if dismissed then
+			return
+		end
+		dismissed = true
+		TweenService:Create(toast, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+			Position = UDim2.new(0.5, -150, 0, -64),
+		}):Play()
+		task.delay(0.3, function()
+			if toast and toast.Parent then
+				toast:Destroy()
+			end
+		end)
+		if openPanel then
+			if self._newBadge then
+				self._newBadge.Visible = false
+			end
+			self:OpenPanel()
+		end
+	end
+
+	toast.MouseButton1Click:Connect(function()
+		dismiss(true)
+	end)
+
+	-- 슬라이드 다운 애니메이션
+	TweenService:Create(toast, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+		Position = UDim2.new(0.5, -150, 0, 60),
+	}):Play()
+
+	-- 6초 후 자동 닫힘 (뱃지는 유지 — 사용자가 직접 확인하도록)
+	task.delay(6, function()
+		dismiss(false)
 	end)
 end
 
