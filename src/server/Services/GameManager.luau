@@ -47,6 +47,8 @@ type UpgradeBonuses = {
 	easyStartTime: number,
 	feverExtend: number,
 	luckyCoinsBonus: number,
+	comboBufferSeconds: number,
+	startBoostSeconds: number,
 }
 
 -- 플레이어별 게임 세션 데이터
@@ -974,7 +976,8 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 		-- 콤보 시스템
 		if #collectedCoins > 0 then
 			local now = tick()
-			if now - session.lastCoinTime < GameConstants.SCORE.COMBO_TIMEOUT then
+			local comboTimeout = GameConstants.SCORE.COMBO_TIMEOUT + session.upgradeBonuses.comboBufferSeconds
+			if now - session.lastCoinTime < comboTimeout then
 				session.comboCount += #collectedCoins
 			else
 				session.comboCount = #collectedCoins
