@@ -448,6 +448,27 @@ function ScenarioService:OnScenarioDataRequest(player: Player)
 		unlockedSkills = unlockedSkills,
 		statBonuses = self:GetStatBonuses(player),
 	})
+
+	-- 기존 유저 중 ch1 오프닝을 못 본 경우:
+	-- hasSeenScenarioIntro=true (인트로 팝업을 이미 봤으므로 ScenarioIntroSeen 경로 불가)
+	-- hasSeenCh1Opening=false (아직 ch1 오프닝 컷씬 미시청)
+	-- → 최초 데이터 요청 시 1회 발송 (이후 flag=true로 방지)
+	if playerData.hasSeenScenarioIntro == true and not playerData.hasSeenCh1Opening then
+		playerData.hasSeenCh1Opening = true
+		local ch1 = ScenarioConstants.CHAPTERS[1]
+		local ch1Opening = ScenarioConstants.CUTSCENES["ch1"] and ScenarioConstants.CUTSCENES["ch1"].opening
+		if ch1 and ch1Opening then
+			task.delay(3, function()
+				RemoteEvents.ChapterUnlocked:FireClient(player, {
+					chapterId = ch1.id,
+					chapterName = ch1.name,
+					chapterTheme = ch1.theme,
+					cutscene = ch1Opening,
+					isOpening = true,
+				})
+			end)
+		end
+	end
 end
 
 -- ==================== 원격 이벤트 연결 ====================
@@ -460,17 +481,21 @@ function ScenarioService:SetupRemoteEvents()
 	RemoteEvents.ScenarioIntroSeen.OnServerEvent:Connect(function(player: Player)
 		PlayerDataService:MarkScenarioIntroSeen(player)
 
-		-- 인트로 팝업 확인 직후 ch1 오프닝 컷씬 발송 (최초 1회)
-		local ch1 = ScenarioConstants.CHAPTERS[1]
-		local ch1Opening = ScenarioConstants.CUTSCENES["ch1"] and ScenarioConstants.CUTSCENES["ch1"].opening
-		if ch1 and ch1Opening then
-			RemoteEvents.ChapterUnlocked:FireClient(player, {
-				chapterId = ch1.id,
-				chapterName = ch1.name,
-				chapterTheme = ch1.theme,
-				cutscene = ch1Opening,
-				isOpening = true,
-			})
+		-- 인트로 팝업 확인 직후 ch1 오프닝 컷씬 발송 (신규 유저 경로, 최초 1회)
+		local playerData = PlayerDataService:GetPlayerData(player)
+		if playerData and not playerData.hasSeenCh1Opening then
+			playerData.hasSeenCh1Opening = true
+			local ch1 = ScenarioConstants.CHAPTERS[1]
+			local ch1Opening = ScenarioConstants.CUTSCENES["ch1"] and ScenarioConstants.CUTSCENES["ch1"].opening
+			if ch1 and ch1Opening then
+				RemoteEvents.ChapterUnlocked:FireClient(player, {
+					chapterId = ch1.id,
+					chapterName = ch1.name,
+					chapterTheme = ch1.theme,
+					cutscene = ch1Opening,
+					isOpening = true,
+				})
+			end
 		end
 	end)
 
