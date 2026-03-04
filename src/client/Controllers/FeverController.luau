@@ -18,6 +18,8 @@ export type FeverController = typeof(setmetatable(
 		_connections: { RBXScriptConnection },
 		_isFever: boolean,
 		_isSuperFever: boolean,
+		_isMiniFever: boolean,
+		_miniFeverGlow: PointLight?,
 		_gaugeGui: ScreenGui?,
 		_gaugeFrame: Frame?,
 		_gaugeFill: Frame?,
@@ -26,6 +28,7 @@ export type FeverController = typeof(setmetatable(
 		_feverFrame: Frame?,
 		_feverSound: Sound?,
 		_feverEndSound: Sound?,
+		_miniFeverSound: Sound?,
 		_particleAttachment: Attachment?,
 		_particleEmitter: ParticleEmitter?,
 		_characterGlow: PointLight?,
@@ -41,6 +44,8 @@ function FeverController.new(): FeverController
 		_connections = {},
 		_isFever = false,
 		_isSuperFever = false,
+		_isMiniFever = false,
+		_miniFeverGlow = nil,
 		_gaugeGui = nil,
 		_gaugeFrame = nil,
 		_gaugeFill = nil,
@@ -49,6 +54,7 @@ function FeverController.new(): FeverController
 		_feverFrame = nil,
 		_feverSound = nil,
 		_feverEndSound = nil,
+		_miniFeverSound = nil,
 		_particleAttachment = nil,
 		_particleEmitter = nil,
 		_characterGlow = nil,
@@ -167,6 +173,15 @@ function FeverController:_createSounds()
 	endSound.PlaybackSpeed = 0.8 -- Calm, wind-down tone
 	endSound.Parent = SoundService
 	self._feverEndSound = endSound
+
+	-- 미니 피버 사운드 (정식 피버보다 가벼운 차임 효과)
+	local miniFeverSound = Instance.new("Sound")
+	miniFeverSound.Name = "MiniFeverSound"
+	miniFeverSound.SoundId = "rbxassetid://9120386948" -- Power Up SFX (정식 피버와 같은 에셋, 낮은 피치)
+	miniFeverSound.Volume = 0.6
+	miniFeverSound.PlaybackSpeed = 1.0 -- 정식 피버(1.3)보다 낮은 피치
+	miniFeverSound.Parent = SoundService
+	self._miniFeverSound = miniFeverSound
 end
 
 -- Event handlers
@@ -190,6 +205,16 @@ function FeverController:_setupEventHandlers()
 		self:_onSuperFeverStarted(data)
 	end)
 	table.insert(self._connections, superFeverConn)
+
+	local miniFeverStartConn = RemoteEvents.MiniFeverStart.OnClientEvent:Connect(function(data)
+		self:_onMiniFeverStarted(data)
+	end)
+	table.insert(self._connections, miniFeverStartConn)
+
+	local miniFeverEndConn = RemoteEvents.MiniFeverEnd.OnClientEvent:Connect(function()
+		self:_onMiniFeverEnded()
+	end)
+	table.insert(self._connections, miniFeverEndConn)
 end
 
 -- Fever started
@@ -523,6 +548,11 @@ function FeverController:Destroy()
 	self:_stopColorCycle()
 	self:_stopCharacterEffects()
 
+	if self._miniFeverGlow then
+		self._miniFeverGlow:Destroy()
+		self._miniFeverGlow = nil
+	end
+
 	for _, connection in self._connections do
 		connection:Disconnect()
 	end
@@ -539,6 +569,9 @@ function FeverController:Destroy()
 	end
 	if self._feverEndSound then
 		self._feverEndSound:Destroy()
+	end
+	if self._miniFeverSound then
+		self._miniFeverSound:Destroy()
 	end
 end
 
@@ -647,6 +680,123 @@ function FeverController:_showSuperFeverAnnouncement()
 			local fadeTween = TweenService:Create(
 				label,
 				TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
+				{ TextTransparency = 1, TextStrokeTransparency = 1 }
+			)
+			fadeTween:Play()
+			fadeTween.Completed:Connect(function()
+				label:Destroy()
+			end)
+		end
+	end)
+end
+
+-- Mini Fever started (15 combo) - 가벼운 녹색 글로우 + 어나운스
+function FeverController:_onMiniFeverStarted(_data: { duration: number })
+	if self._isFever then
+		return -- 정식 피버 중엔 미니 피버 시각효과 무시
+	end
+	self._isMiniFever = true
+
+	-- 사운드 재생
+	if self._miniFeverSound then
+		self._miniFeverSound:Play()
+	end
+
+	-- 캐릭터에 녹색 글로우 추가
+	local player = Players.LocalPlayer
+	local character = player.Character
+	if character then
+		local hrp = character:FindFirstChild("HumanoidRootPart") :: BasePart?
+		if hrp then
+			local glow = Instance.new("PointLight")
+			glow.Name = "MiniFeverGlow"
+			glow.Color = Color3.fromRGB(80, 255, 120) -- 녹색
+			glow.Brightness = 1.5
+			glow.Range = 15
+			glow.Parent = hrp
+			self._miniFeverGlow = glow
+		end
+	end
+
+	-- 게이지 테두리 색 변경 (녹색)
+	if self._gaugeFrame then
+		local stroke = self._gaugeFrame:FindFirstChildOfClass("UIStroke")
+		if stroke then
+			TweenService:Create(stroke, TweenInfo.new(0.2), { Color = Color3.fromRGB(80, 255, 120) }):Play()
+		end
+	end
+
+	-- 어나운스 텍스트
+	self:_showMiniFeverAnnouncement()
+
+	print("[FeverController] MINI FEVER!")
+end
+
+-- Mini Fever ended
+function FeverController:_onMiniFeverEnded()
+	self._isMiniFever = false
+
+	-- 글로우 제거
+	if self._miniFeverGlow then
+		TweenService:Create(
+			self._miniFeverGlow,
+			TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+			{ Brightness = 0 }
+		):Play()
+		task.delay(0.3, function()
+			if self._miniFeverGlow then
+				self._miniFeverGlow:Destroy()
+				self._miniFeverGlow = nil
+			end
+		end)
+	end
+
+	-- 게이지 테두리 색 원복
+	if self._gaugeFrame and not self._isFever then
+		local stroke = self._gaugeFrame:FindFirstChildOfClass("UIStroke")
+		if stroke then
+			TweenService:Create(stroke, TweenInfo.new(0.3), { Color = Color3.fromRGB(255, 200, 50) }):Play()
+		end
+	end
+
+	print("[FeverController] Mini Fever ended")
+end
+
+-- Mini Fever 어나운스 (FEVER!보다 작게)
+function FeverController:_showMiniFeverAnnouncement()
+	local player = Players.LocalPlayer
+	local playerGui = player:WaitForChild("PlayerGui")
+	local screenGui = playerGui:FindFirstChild("GameUI") :: ScreenGui?
+	if not screenGui then
+		return
+	end
+
+	local label = Instance.new("TextLabel")
+	label.Name = "MiniFeverAnnouncement"
+	label.Size = UDim2.new(1, 0, 0, 50)
+	label.Position = UDim2.new(0, 0, 0.38, 0)
+	label.BackgroundTransparency = 1
+	label.TextColor3 = Color3.fromRGB(80, 255, 120) -- 녹색
+	label.TextSize = ResponsiveUtil.scaledTextSize(8, 6)
+	label.Font = Enum.Font.GothamBold
+	label.Text = "✨ 미니 피버! 2배 코인!"
+	label.TextStrokeTransparency = 0
+	label.TextStrokeColor3 = Color3.fromRGB(0, 80, 30)
+	label.ZIndex = 49
+	label.Parent = screenGui
+
+	-- 살짝 커졌다가 사라짐
+	TweenService:Create(
+		label,
+		TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+		{ TextSize = ResponsiveUtil.scaledTextSize(28, 20) }
+	):Play()
+
+	task.delay(1.2, function()
+		if label and label.Parent then
+			local fadeTween = TweenService:Create(
+				label,
+				TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
 				{ TextTransparency = 1, TextStrokeTransparency = 1 }
 			)
 			fadeTween:Play()

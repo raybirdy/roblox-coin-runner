@@ -114,7 +114,7 @@ GameConstants.COIN_PATTERNS = {
 
 -- 코인 개수 (난이도별, 패턴 완성을 위한 적정 수로 조정)
 GameConstants.COIN_COUNTS = {
-	EASY = { min = 6, max = 8 },
+	EASY = { min = 8, max = 12 }, -- 초반 풍성함: 6~8 → 8~12
 	NORMAL = { min = 5, max = 7 },
 	HARD = { min = 4, max = 6 },
 	BONUS = { min = 12, max = 18 },
@@ -148,9 +148,10 @@ GameConstants.LIFE = {
 
 -- 위로 보상
 GameConstants.CONSOLATION = {
-	THRESHOLD = 3, -- 3회 연속 빠른 게임오버 시 위로 보상
-	REWARD_COINS = 20, -- 보상 코인
+	THRESHOLD = 2, -- 2회 연속 빠른 게임오버 시 위로 보상 (3→2, 더 빠른 위로)
+	REWARD_COINS = 50, -- 보상 코인 (20→50, 더 의미 있는 보상)
 	QUICK_DEATH_SCORE = 100, -- 이 점수 미만이면 "빠른 게임오버"
+	REWARD_SHIELD = true, -- 위로 보상 시 다음 런 시작에 쉴드 파워업 1개 지급
 }
 
 -- 점수 시스템
@@ -160,7 +161,7 @@ GameConstants.SCORE = {
 	COMBO_10_BONUS = 10,
 	COMBO_30_BONUS = 30,
 	COMBO_50_BONUS = 50,
-	COMBO_TIMEOUT = 2, -- 콤보 리셋 시간 (초)
+	COMBO_TIMEOUT = 3, -- 콤보 리셋 시간 (초) - 6~8세 반응속도 고려: 2→3초
 }
 
 -- 파워업 (자석, 쉴드, 무적, 2배코인, 미니사이즈)
@@ -907,13 +908,22 @@ GameConstants.NEAR_RECORD = {
 
 -- 피버 모드
 GameConstants.FEVER = {
-	COMBO_THRESHOLD = 50, -- 피버 발동 콤보 수
+	COMBO_THRESHOLD = 30, -- 피버 발동 콤보 수 (50→30, 타깃 연령 도달 가능하게)
 	DURATION = 5, -- 지속 시간 (초)
 	COIN_MULTIPLIER = 3, -- 코인 가치 배율
 	SPEED_BOOST = 1.5, -- 속도 배율
 	MAGNET_RADIUS = 30, -- 초강력 자석 반경 (studs)
 	COOLDOWN = 10, -- 피버 종료 후 재발동 쿨타임 (초)
 	INVINCIBLE = true, -- 무적 여부
+}
+
+-- 미니 피버 (15 콤보 - 작은 보상으로 어린이도 빠르게 달성 가능)
+GameConstants.MINI_FEVER = {
+	COMBO_THRESHOLD = 15, -- 미니 피버 발동 콤보 수
+	DURATION = 3, -- 지속 시간 (초)
+	COIN_MULTIPLIER = 2, -- 코인 가치 2배
+	MAGNET = true, -- 자석 효과 (기본 반경)
+	MAGNET_RADIUS = 20, -- 자석 반경 (studs) - 일반 자석보다 약간 큼
 }
 
 -- 퍼펙트 런 (무피격 보너스)

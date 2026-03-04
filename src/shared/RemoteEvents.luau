@@ -410,6 +410,13 @@ RemoteEvents.HitRushStart = getOrCreateRemoteEvent("HitRushStart")
 RemoteEvents.SuperFeverStart = getOrCreateRemoteEvent("SuperFeverStart")
 -- 파라미터: { duration: number, speedBoost: number }
 
+-- 미니 피버 시작 (서버 → 클라이언트) - 15콤보 달성 시
+RemoteEvents.MiniFeverStart = getOrCreateRemoteEvent("MiniFeverStart")
+-- 파라미터: { duration: number }
+
+-- 미니 피버 종료 (서버 → 클라이언트)
+RemoteEvents.MiniFeverEnd = getOrCreateRemoteEvent("MiniFeverEnd")
+
 -- ==================== 데일리 이벤트 ====================
 
 -- 데일리 이벤트 데이터 (서버 → 클라이언트)
