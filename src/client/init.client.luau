@@ -95,6 +95,7 @@ local RealtimeBattleController = require(script.Controllers.RealtimeBattleContro
 local DailyEventController = require(script.Controllers.DailyEventController)
 local ObjectiveHudController = require(script.Controllers.ObjectiveHudController)
 local PetController = require(script.Controllers.PetController)
+local CoinKingController = require(script.Controllers.CoinKingController)
 
 -- 컨트롤러 인스턴스 생성
 local inputController = InputController.new()
@@ -129,6 +130,7 @@ local realtimeBattleController = RealtimeBattleController.new(player)
 local dailyEventController = DailyEventController.new(player)
 local objectiveHudController = ObjectiveHudController.new()
 local petController = PetController.new()
+local coinKingController = CoinKingController.new()
 
 -- Fever mode callbacks (speed boost + camera shake + BGM speed)
 feverController:OnFeverStart(function(speedBoost: number)
@@ -227,6 +229,9 @@ RemoteEvents.ReturnToLobby.OnClientEvent:Connect(function()
 
 	-- 리더보드 표시
 	leaderboardController:Show()
+
+	-- 코인 킹 연출 종료
+	coinKingController:EndGame()
 
 	-- 진행도 UI 표시
 	progressionController:ShowInLobby()
@@ -386,6 +391,9 @@ RemoteEvents.GameStart.OnClientEvent:Connect(function(data)
 			uiController:ShowTutorialBanner()
 		end
 
+		-- 코인 킹 추적 연출 시작
+		coinKingController:StartGame()
+
 		-- start_boost 업그레이드: 게임 시작 시 일시적 속도 부스트
 		local boostSeconds = data.startBoostSeconds or 0
 		if boostSeconds > 0 then
@@ -437,6 +445,9 @@ RemoteEvents.GameOver.OnClientEvent:Connect(function(data)
 
 	-- 실시간 배틀 HUD 숨기기
 	realtimeBattleController:SetGameActive(false)
+
+	-- 코인 킹 연출 종료
+	coinKingController:EndGame()
 
 	-- 부활 가능한 경우 게임 일시정지만 (완전 종료 아님)
 	if data.canRevive then
@@ -544,6 +555,33 @@ RemoteEvents.ZoneTransition.OnClientEvent:Connect(function(data)
 	cameraController:Shake(0.2)
 	-- 축하 피드백 (더 큰 텍스트, 구역별 색상)
 	uiController:ShowGameFeedback(`✨ {data.displayName} 도착!`, Color3.fromRGB(255, 220, 80))
+	-- TIER 3: 구역 깊이에 따른 BGM 템포 진화
+	musicController:UpdateZoneMood(data.zoneIndex)
+end)
+
+-- TIER 3: 생존 배율 마일스톤 도달 시 극적 연출 (카메라 줌 + 슬로우모션)
+RemoteEvents.SurvivalMultiplierUpdate.OnClientEvent:Connect(function(data)
+	if data.tier == 0 or not playerController:IsPlaying() then
+		return
+	end
+	-- 티어별 효과 강도 조정
+	local zoomAmount = -3 - (data.tier - 1) * 2 -- tier1: -3, tier2: -5, tier3: -7
+	local slowmoSpeed = math.max(0.3, 0.55 - data.tier * 0.1) -- tier1: 0.45, tier2: 0.35, tier3: 0.25
+	local slowmoDuration = 0.3 + data.tier * 0.1 -- tier1: 0.4, tier2: 0.5, tier3: 0.6
+
+	-- 슬로우모션 + 카메라 줌인
+	if not feverController:IsFever() then
+		playerController:SetSpeedMultiplier(slowmoSpeed)
+		cameraController:Zoom(zoomAmount, 0.2)
+		characterEffectsController:FlashCoin("Gold") -- 황금 글로우 플래시
+
+		task.delay(slowmoDuration, function()
+			if playerController:IsPlaying() and not feverController:IsFever() then
+				playerController:SetSpeedMultiplier(1.0)
+			end
+			cameraController:Zoom(0, 0.4)
+		end)
+	end
 end)
 
 -- 히트 회복 영웅 순간 연출 (피격 후 코인 러시 시작 시)
