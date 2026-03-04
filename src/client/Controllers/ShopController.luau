@@ -133,6 +133,7 @@ function ShopController:_createUI()
 	-- 탭 버튼 생성
 	local tabs = {
 		{ id = "skins", name = "스킨" },
+		{ id = "pets", name = "펫" },
 		{ id = "powerups", name = "파워업" },
 		{ id = "revive", name = "부활권" },
 		{ id = "gems", name = "젬" },
@@ -322,6 +323,39 @@ function ShopController:_setupEventHandlers()
 	end)
 	table.insert(self._connections, upgradeResultConn)
 
+	-- 펫 구매 결과
+	local petResultConn = RemoteEvents.PetPurchaseResult.OnClientEvent:Connect(function(data)
+		if data.success then
+			if self._playerData then
+				if not self._playerData.ownedPets then
+					self._playerData.ownedPets = { "chick" }
+				end
+				table.insert(self._playerData.ownedPets, data.petId)
+				self._playerData.equippedPet = data.petId
+				self._playerData.coins = data.newBalance
+				self:_updateCurrencyDisplay()
+			end
+			if self._isOpen and self._currentTab == "pets" then
+				self:_refreshCurrentTab()
+			end
+		else
+			self:_showNotification("구매 실패", data.error or "Unknown error")
+		end
+	end)
+	table.insert(self._connections, petResultConn)
+
+	-- 펫 데이터 수신 (장착 변경 반영)
+	local petDataConn = RemoteEvents.PetData.OnClientEvent:Connect(function(data)
+		if self._playerData and type(data) == "table" then
+			self._playerData.ownedPets = data.ownedPets
+			self._playerData.equippedPet = data.equippedPet
+		end
+		if self._isOpen and self._currentTab == "pets" then
+			self:_refreshCurrentTab()
+		end
+	end)
+	table.insert(self._connections, petDataConn)
+
 	print("[ShopController] Event handlers set up")
 end
 
@@ -369,7 +403,7 @@ function ShopController:_refreshCurrentTab()
 	local existingGrid = itemContainer:FindFirstChild("UIGridLayout")
 	local existingList = itemContainer:FindFirstChild("UIListLayout")
 
-	if self._currentTab == "skins" or self._currentTab == "upgrades" then
+	if self._currentTab == "skins" or self._currentTab == "upgrades" or self._currentTab == "pets" then
 		if existingGrid then
 			existingGrid.Parent = nil
 		end
@@ -396,6 +430,8 @@ function ShopController:_refreshCurrentTab()
 
 	if self._currentTab == "skins" then
 		self:_populateSkins(itemContainer)
+	elseif self._currentTab == "pets" then
+		self:_populatePets(itemContainer)
 	elseif self._currentTab == "powerups" then
 		self:_populatePowerups(itemContainer)
 	elseif self._currentTab == "revive" then
@@ -1002,6 +1038,129 @@ function ShopController:_populateGems(container: ScrollingFrame)
 end
 
 -- 업그레이드 탭 채우기
+function ShopController:_populatePets(container: ScrollingFrame)
+	local ownedPets: { string } = (self._playerData and self._playerData.ownedPets) or { "chick" }
+	local equippedPet: string = (self._playerData and self._playerData.equippedPet) or "chick"
+	local coins = (self._playerData and self._playerData.coins) or 0
+
+	-- 소유 여부 빠른 조회
+	local owned: { [string]: boolean } = {}
+	for _, id in ownedPets do
+		owned[id] = true
+	end
+
+	for _, pet in GameConstants.PETS.LIST do
+		local isOwned = owned[pet.id] == true
+		local isEquipped = equippedPet == pet.id
+		local canAfford = coins >= pet.price
+
+		local card = Instance.new("Frame")
+		card.Name = pet.id
+		card.Size = UDim2.new(1, -20, 0, 86)
+		card.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
+		card.Parent = container
+
+		local cardCorner = Instance.new("UICorner")
+		cardCorner.CornerRadius = UDim.new(0, 8)
+		cardCorner.Parent = card
+
+		local cardStroke = Instance.new("UIStroke")
+		cardStroke.Color = isEquipped and Color3.fromRGB(255, 215, 0) or Color3.fromRGB(80, 80, 120)
+		cardStroke.Thickness = isEquipped and 2 or 1
+		cardStroke.Parent = card
+
+		-- 이모지 + 이름
+		local emojiLabel = Instance.new("TextLabel")
+		emojiLabel.Size = UDim2.new(0, 50, 0, 50)
+		emojiLabel.Position = UDim2.new(0, 8, 0.5, -25)
+		emojiLabel.BackgroundTransparency = 1
+		emojiLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+		emojiLabel.TextSize = 32
+		emojiLabel.Font = Enum.Font.GothamBold
+		emojiLabel.Text = pet.emoji
+		emojiLabel.Parent = card
+
+		local nameLabel = Instance.new("TextLabel")
+		nameLabel.Size = UDim2.new(0, 120, 0, 26)
+		nameLabel.Position = UDim2.new(0, 62, 0, 8)
+		nameLabel.BackgroundTransparency = 1
+		nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+		nameLabel.TextSize = ResponsiveUtil.scaledTextSize(15, 12)
+		nameLabel.Font = Enum.Font.GothamBold
+		nameLabel.Text = pet.name
+		nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+		nameLabel.Parent = card
+
+		-- 보너스 설명
+		local bonusParts: { string } = {}
+		if pet.coinBonus and pet.coinBonus > 0 then
+			table.insert(bonusParts, `코인 +{math.round(pet.coinBonus * 100)}%`)
+		end
+		if pet.magnetBonus and pet.magnetBonus > 0 then
+			table.insert(bonusParts, `자석 +{pet.magnetBonus}`)
+		end
+		if pet.feverBonus and pet.feverBonus > 0 then
+			table.insert(bonusParts, `피버 +{pet.feverBonus}s`)
+		end
+		local bonusText = #bonusParts > 0 and table.concat(bonusParts, " / ") or "보너스 없음"
+
+		local bonusLabel = Instance.new("TextLabel")
+		bonusLabel.Size = UDim2.new(0, 200, 0, 20)
+		bonusLabel.Position = UDim2.new(0, 62, 0, 36)
+		bonusLabel.BackgroundTransparency = 1
+		bonusLabel.TextColor3 = Color3.fromRGB(150, 200, 150)
+		bonusLabel.TextSize = ResponsiveUtil.scaledTextSize(12, 10)
+		bonusLabel.Font = Enum.Font.Gotham
+		bonusLabel.Text = bonusText
+		bonusLabel.TextXAlignment = Enum.TextXAlignment.Left
+		bonusLabel.Parent = card
+
+		-- 액션 버튼
+		local button = Instance.new("TextButton")
+		button.Size = UDim2.new(0, 120, 0, 50)
+		button.Position = UDim2.new(1, -132, 0.5, -25)
+		button.Font = Enum.Font.GothamBold
+		button.TextSize = ResponsiveUtil.scaledTextSize(13, 11)
+		button.Parent = card
+
+		local btnCorner = Instance.new("UICorner")
+		btnCorner.CornerRadius = UDim.new(0, 6)
+		btnCorner.Parent = button
+
+		if isEquipped then
+			button.BackgroundColor3 = Color3.fromRGB(255, 215, 0)
+			button.TextColor3 = Color3.fromRGB(0, 0, 0)
+			button.Text = "장착 중"
+			button.Active = false
+		elseif isOwned then
+			button.BackgroundColor3 = Color3.fromRGB(0, 130, 200)
+			button.TextColor3 = Color3.fromRGB(255, 255, 255)
+			button.Text = "장착"
+			button.MouseButton1Click:Connect(function()
+				RemoteEvents.EquipPet:FireServer({ petId = pet.id })
+			end)
+		elseif pet.price == 0 then
+			-- 무료 (기본 펫 자동 지급됨, 도달할 수 없음)
+			button.BackgroundColor3 = Color3.fromRGB(80, 80, 100)
+			button.TextColor3 = Color3.fromRGB(200, 200, 200)
+			button.Text = "무료"
+			button.Active = false
+		elseif canAfford then
+			button.BackgroundColor3 = Color3.fromRGB(0, 180, 0)
+			button.TextColor3 = Color3.fromRGB(255, 255, 255)
+			button.Text = `구매\n{pet.price}코인`
+			button.MouseButton1Click:Connect(function()
+				RemoteEvents.PetPurchase:FireServer({ petId = pet.id })
+			end)
+		else
+			button.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
+			button.TextColor3 = Color3.fromRGB(150, 150, 150)
+			button.Text = `코인 부족\n({pet.price})`
+			button.Active = false
+		end
+	end
+end
+
 function ShopController:_populateUpgrades(container: ScrollingFrame)
 	local upgrades = (self._playerData and self._playerData.upgrades) or {}
 	local coins = (self._playerData and self._playerData.coins) or 0
