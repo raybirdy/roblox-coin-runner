@@ -34,6 +34,7 @@ export type ChunkService = typeof(setmetatable(
 		_backgroundService: any?, -- BackgroundService 참조 (배경 생성용)
 		_startZone: Model?, -- 시작 구역 (출발선 포함)
 		_mercyChunkCount: number, -- 남은 자비 청크 수
+		_breatheChunkCount: number, -- 존 전환 시 강제 Bonus 숨 고르기 청크 수
 		_currentZoneIndex: number, -- Phase B: 현재 zone
 		_pendingTransitionChunk: boolean, -- Phase B: 전환 터널 대기
 		_pendingEventChunk: string?, -- Phase B: 이벤트 청크 대기
@@ -62,6 +63,7 @@ function ChunkService.new(): ChunkService
 		_backgroundService = nil,
 		_startZone = nil,
 		_mercyChunkCount = 0,
+		_breatheChunkCount = 0,
 		_currentZoneIndex = 1,
 		_pendingTransitionChunk = false,
 		_pendingEventChunk = nil,
@@ -397,6 +399,13 @@ function ChunkService:_selectDifficulty(): string
 		rateTable = GameConstants.CHUNK_SPAWN_RATES[#GameConstants.CHUNK_SPAWN_RATES]
 	end
 
+	-- 존 전환 숨 고르기 구간 (Zone 진입 직후 2 Bonus 청크 보장)
+	if self._breatheChunkCount > 0 then
+		self._breatheChunkCount -= 1
+		print(`[ChunkService] 🌿 Breathe chunk (zone entry): Bonus ({self._breatheChunkCount} remaining)`)
+		return "Bonus"
+	end
+
 	-- 자비 구간 체크 (연속 피격 시 강제 Easy/Bonus)
 	if self._mercyChunkCount > 0 then
 		self._mercyChunkCount -= 1
@@ -591,6 +600,12 @@ end
 function ChunkService:RequestMercyChunks(count: number)
 	self._mercyChunkCount = count
 	print(`[ChunkService] Mercy mode activated: {count} easy chunks queued`)
+end
+
+-- 존 전환 시 숨 고르기 Bonus 청크 요청 (Zone 진입 직후 쉬어가기)
+function ChunkService:RequestBreatheChunks(count: number)
+	self._breatheChunkCount = count
+	print(`[ChunkService] 🌿 Breathe mode activated: {count} bonus chunks queued (zone transition)`)
 end
 
 -- 활성 청크 수 반환

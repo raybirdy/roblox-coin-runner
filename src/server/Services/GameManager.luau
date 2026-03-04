@@ -898,6 +898,8 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 				displayName = theme.displayName,
 			})
 			chunkService:RequestTransitionChunk()
+			-- Zone 진입 후 2개 Bonus 청크 보장 (숨 고르기 리듬)
+			chunkService:RequestBreatheChunks(2)
 		end
 
 		-- Phase B: 이벤트 청크 확률 체크

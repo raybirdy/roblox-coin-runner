@@ -26,6 +26,7 @@ export type FeverController = typeof(setmetatable(
 		_gaugeLabel: TextLabel?,
 		_feverOverlay: ScreenGui?,
 		_feverFrame: Frame?,
+		_edgeGlowFrame: Frame?, -- 콤보 빌드업 엣지 글로우 오버레이
 		_feverSound: Sound?,
 		_feverEndSound: Sound?,
 		_miniFeverSound: Sound?,
@@ -33,6 +34,7 @@ export type FeverController = typeof(setmetatable(
 		_particleEmitter: ParticleEmitter?,
 		_characterGlow: PointLight?,
 		_colorCycleConnection: RBXScriptConnection?,
+		_gaugePulseConnection: RBXScriptConnection?,
 		_onFeverStart: ((speedBoost: number) -> ())?,
 		_onFeverEnd: (() -> ())?,
 	},
@@ -52,6 +54,7 @@ function FeverController.new(): FeverController
 		_gaugeLabel = nil,
 		_feverOverlay = nil,
 		_feverFrame = nil,
+		_edgeGlowFrame = nil,
 		_feverSound = nil,
 		_feverEndSound = nil,
 		_miniFeverSound = nil,
@@ -59,12 +62,14 @@ function FeverController.new(): FeverController
 		_particleEmitter = nil,
 		_characterGlow = nil,
 		_colorCycleConnection = nil,
+		_gaugePulseConnection = nil,
 		_onFeverStart = nil,
 		_onFeverEnd = nil,
 	}, FeverController)
 
 	self:_createGaugeUI()
 	self:_createOverlay()
+	self:_createEdgeGlow()
 	self:_createSounds()
 	self:_setupEventHandlers()
 
@@ -154,6 +159,36 @@ function FeverController:_createOverlay()
 	frame.BorderSizePixel = 0
 	frame.Parent = gui
 	self._feverFrame = frame
+end
+
+-- 콤보 빌드업 엣지 글로우 (화면 테두리 점점 밝아지는 효과)
+function FeverController:_createEdgeGlow()
+	local gui = self._feverOverlay -- feverOverlay ScreenGui 재사용 (별도 ScreenGui 비용 절약)
+	if not gui then
+		return
+	end
+
+	-- 화면 테두리 글로우 Frame (UIGradient로 엣지에서 안쪽으로 페이드)
+	local edgeFrame = Instance.new("Frame")
+	edgeFrame.Name = "EdgeGlowFrame"
+	edgeFrame.Size = UDim2.new(1, 0, 1, 0)
+	edgeFrame.BackgroundColor3 = Color3.fromRGB(255, 180, 50) -- 황금색
+	edgeFrame.BackgroundTransparency = 1 -- 처음엔 완전 투명
+	edgeFrame.BorderSizePixel = 0
+	edgeFrame.ZIndex = 1 -- FeverOverlay(ZIndex 기본)보다 낮게
+	edgeFrame.Parent = gui
+	self._edgeGlowFrame = edgeFrame
+
+	-- UIGradient: 테두리만 빛나게 (중앙은 투명)
+	local gradient = Instance.new("UIGradient")
+	gradient.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.3), -- 엣지: 30% 불투명
+		NumberSequenceKeypoint.new(0.15, 1), -- 중앙 방향으로 완전 투명
+		NumberSequenceKeypoint.new(0.85, 1),
+		NumberSequenceKeypoint.new(1, 0.3), -- 반대 엣지
+	})
+	gradient.Rotation = 90
+	gradient.Parent = edgeFrame
 end
 
 -- Fever sounds
@@ -304,7 +339,7 @@ function FeverController:_onFeverEnded()
 	print("[FeverController] Fever ended")
 end
 
--- Update gauge fill
+-- Update gauge fill + 콤보 빌드업 피드백 계단
 function FeverController:_updateGauge(data: { combo: number, threshold: number, onCooldown: boolean })
 	if not self._gaugeFrame or not self._gaugeFill then
 		return
@@ -314,6 +349,10 @@ function FeverController:_updateGauge(data: { combo: number, threshold: number, 
 	self._gaugeFrame.Visible = true
 
 	if self._isFever then
+		-- 피버 중 엣지 글로우 숨기기
+		if self._edgeGlowFrame then
+			self._edgeGlowFrame.BackgroundTransparency = 1
+		end
 		return -- Don't update fill during fever (it stays full)
 	end
 
@@ -324,11 +363,70 @@ function FeverController:_updateGauge(data: { combo: number, threshold: number, 
 		Size = UDim2.new(0, maxWidth * ratio, 1, -4),
 	}):Play()
 
+	-- ===== 콤보 빌드업 피드백 계단 =====
+	-- 엣지 글로우: ratio에 비례해 점점 선명해짐 (0% 투명 → 80%에서 강하게)
+	if self._edgeGlowFrame and not data.onCooldown then
+		local glowAlpha = math.max(0, (ratio - 0.3) / 0.7) -- 30% 이상부터 서서히
+		local glowTransparency = 1 - (glowAlpha * 0.7) -- 최대 0.3 (30% 불투명)
+		TweenService:Create(self._edgeGlowFrame, TweenInfo.new(0.3), {
+			BackgroundTransparency = glowTransparency,
+		}):Play()
+		-- 색상: 황금 → 주황 → 빨강
+		if ratio >= 0.9 then
+			self._edgeGlowFrame.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+		elseif ratio >= 0.6 then
+			self._edgeGlowFrame.BackgroundColor3 = Color3.fromRGB(255, 130, 0)
+		else
+			self._edgeGlowFrame.BackgroundColor3 = Color3.fromRGB(255, 200, 50)
+		end
+	elseif self._edgeGlowFrame then
+		-- 쿨다운 또는 리셋 시 엣지 글로우 꺼짐
+		TweenService:Create(self._edgeGlowFrame, TweenInfo.new(0.5), {
+			BackgroundTransparency = 1,
+		}):Play()
+	end
+
+	-- 게이지 펄스: ratio >= 0.8 시 심장박동처럼 펄스 시작
+	if ratio >= 0.8 and not data.onCooldown then
+		if not self._gaugePulseConnection then
+			local pulseUp = true
+			self._gaugePulseConnection = game:GetService("RunService").Heartbeat:Connect(function(_dt)
+				if not self._gaugeFrame then
+					return
+				end
+				-- 게이지 테두리 펄스
+				local stroke = self._gaugeFrame:FindFirstChildOfClass("UIStroke")
+				if stroke then
+					local t = tick()
+					local pulse = math.sin(t * 8) * 0.5 + 0.5 -- 8 rad/s 진동
+					stroke.Thickness = 2 + pulse * 2 -- 2~4px 진동
+				end
+				pulseUp = not pulseUp
+			end)
+		end
+	else
+		-- 펄스 중지
+		if self._gaugePulseConnection then
+			self._gaugePulseConnection:Disconnect()
+			self._gaugePulseConnection = nil
+			-- 두께 원복
+			local stroke = self._gaugeFrame:FindFirstChildOfClass("UIStroke")
+			if stroke then
+				stroke.Thickness = 2
+			end
+		end
+	end
+
 	-- Color gradient based on progress
 	if data.onCooldown then
 		self._gaugeFill.BackgroundColor3 = Color3.fromRGB(100, 100, 120) -- Gray during cooldown
 		if self._gaugeLabel then
 			self._gaugeLabel.Text = "COOLDOWN"
+		end
+	elseif ratio >= 0.93 then
+		self._gaugeFill.BackgroundColor3 = Color3.fromRGB(255, 20, 20) -- 강렬한 빨강
+		if self._gaugeLabel then
+			self._gaugeLabel.Text = "⚡ ALMOST!"
 		end
 	elseif ratio >= 0.8 then
 		self._gaugeFill.BackgroundColor3 = Color3.fromRGB(255, 50, 50) -- Red near threshold
@@ -547,6 +645,11 @@ end
 function FeverController:Destroy()
 	self:_stopColorCycle()
 	self:_stopCharacterEffects()
+
+	if self._gaugePulseConnection then
+		self._gaugePulseConnection:Disconnect()
+		self._gaugePulseConnection = nil
+	end
 
 	if self._miniFeverGlow then
 		self._miniFeverGlow:Destroy()
