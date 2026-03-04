@@ -109,6 +109,30 @@ function CharacterEffectsController:FlashShieldBreak()
 	self:_flash(Color3.fromRGB(160, 255, 160), 0.25)
 end
 
+-- 히트 회복 영웅 순간: 황금 글로우 지속 (duration 동안)
+function CharacterEffectsController:FlashHitRecovery(duration: number)
+	if self._flashTween then
+		self._flashTween:Cancel()
+		self._flashTween = nil
+	end
+	self._highlight.FillColor = Color3.fromRGB(255, 240, 100) -- 황금빛
+	self._highlight.OutlineColor = Color3.fromRGB(255, 200, 50)
+	self._highlight.FillTransparency = 0.2
+	self._highlight.OutlineTransparency = 0
+
+	-- duration 동안 유지 후 서서히 사라짐
+	task.delay(duration - 0.5, function()
+		if not self._highlight or not self._highlight.Parent then
+			return
+		end
+		TweenService:Create(
+			self._highlight,
+			TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+			{ FillTransparency = 1, OutlineTransparency = 1 }
+		):Play()
+	end)
+end
+
 -- 내부: 플래시 후 글로우 상태로 복귀 or 투명으로 복귀
 function CharacterEffectsController:_flash(color: Color3, duration: number)
 	if self._flashTween then

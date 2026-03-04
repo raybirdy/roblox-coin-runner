@@ -539,9 +539,29 @@ end)
 -- Phase B: Zone 전환 이벤트
 RemoteEvents.ZoneTransition.OnClientEvent:Connect(function(data)
 	zoneController:TransitionToZone(data.zoneIndex, data.displayName)
-	-- 구역 전환 연출: 화면 피드백 + 카메라 흔들림
-	uiController:ShowGameFeedback(`🗺 {data.displayName} 진입!`, Color3.fromRGB(100, 220, 255))
-	cameraController:Shake(0.25)
+	-- 구역 도착 연출: 카메라 줌아웃 → 복귀 + 화면 피드백 + 미약한 흔들림
+	cameraController:Zoom(8, 1.5) -- 1.5초 동안 살짝 줌아웃 (새 구역 전경 노출)
+	cameraController:Shake(0.2)
+	-- 축하 피드백 (더 큰 텍스트, 구역별 색상)
+	uiController:ShowGameFeedback(`✨ {data.displayName} 도착!`, Color3.fromRGB(255, 220, 80))
+end)
+
+-- 히트 회복 영웅 순간 연출 (피격 후 코인 러시 시작 시)
+RemoteEvents.HitRushStart.OnClientEvent:Connect(function(data)
+	-- 0.25초 슬로우모션으로 극적 효과
+	playerController:SetSpeedMultiplier(0.4)
+	task.delay(0.25, function()
+		if playerController:IsPlaying() and not feverController:IsFever() then
+			playerController:SetSpeedMultiplier(1.0)
+		end
+	end)
+	-- 캐릭터 황금 글로우 (회복 시간 동안)
+	characterEffectsController:FlashHitRecovery(data.duration)
+	-- 카메라 살짝 줌인 (집중감)
+	cameraController:Zoom(-3, 0.3)
+	task.delay(0.3, function()
+		cameraController:Zoom(0, 0.5)
+	end)
 end)
 
 -- Phase B: 이벤트 청크 알림
