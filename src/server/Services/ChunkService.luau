@@ -37,6 +37,13 @@ export type ChunkService = typeof(setmetatable(
 		_currentZoneIndex: number, -- Phase B: 현재 zone
 		_pendingTransitionChunk: boolean, -- Phase B: 전환 터널 대기
 		_pendingEventChunk: string?, -- Phase B: 이벤트 청크 대기
+		-- 호흡 패턴 (60초 이후 하드15s/이지10s 사이클)
+		_breathPhaseStart: number,
+		_breathIsHard: boolean,
+		-- 스타 웨이브 (주기적 Bonus 구간)
+		_nextStarWaveTime: number,
+		_starWaveActive: boolean,
+		_starWaveEndTime: number,
 	},
 	ChunkService
 ))
@@ -58,6 +65,11 @@ function ChunkService.new(): ChunkService
 		_currentZoneIndex = 1,
 		_pendingTransitionChunk = false,
 		_pendingEventChunk = nil,
+		_breathPhaseStart = 0,
+		_breathIsHard = true,
+		_nextStarWaveTime = 0,
+		_starWaveActive = false,
+		_starWaveEndTime = 0,
 	}, ChunkService)
 
 	self:_loadChunkTemplates()
@@ -131,6 +143,13 @@ function ChunkService:StartGame()
 	self._activeChunks = {}
 	self._chunkCounter = 0
 	self._lastChunkEndHeight = "LOW"
+
+	-- 호흡 패턴 초기화
+	self._breathPhaseStart = tick()
+	self._breathIsHard = true
+	self._nextStarWaveTime = math.random(75, 90)
+	self._starWaveActive = false
+	self._starWaveEndTime = 0
 
 	-- 시작 구역 생성 (출발선 포함)
 	self:_spawnStartZone()
@@ -345,9 +364,25 @@ function ChunkService:SpawnNextChunk(): Model?
 	return chunk
 end
 
--- 난이도 선택 (시간대별 확률 기반)
+-- 난이도 선택 (시간대별 확률 기반 + 호흡 패턴)
 function ChunkService:_selectDifficulty(): string
 	local elapsedTime = tick() - self._gameStartTime
+
+	-- 스타 웨이브 체크: 주기적으로 5초간 Bonus 청크만 스폰 (코인 잔치)
+	if not self._starWaveActive and elapsedTime >= self._nextStarWaveTime then
+		self._starWaveActive = true
+		self._starWaveEndTime = tick() + 5
+		self._nextStarWaveTime = elapsedTime + math.random(75, 90)
+		print(`[ChunkService] ⭐ Star wave at {math.floor(elapsedTime)}s!`)
+	end
+	if self._starWaveActive then
+		if tick() < self._starWaveEndTime then
+			return "Bonus"
+		else
+			self._starWaveActive = false
+			print("[ChunkService] ⭐ Star wave ended")
+		end
+	end
 
 	-- 시간대에 맞는 확률 테이블 찾기
 	local rateTable = nil
@@ -359,7 +394,6 @@ function ChunkService:_selectDifficulty(): string
 	end
 
 	if not rateTable then
-		-- 기본값: 마지막 테이블 사용
 		rateTable = GameConstants.CHUNK_SPAWN_RATES[#GameConstants.CHUNK_SPAWN_RATES]
 	end
 
@@ -371,7 +405,35 @@ function ChunkService:_selectDifficulty(): string
 		return mercyDifficulty
 	end
 
-	-- 가중 랜덤 선택
+	-- 호흡 패턴 (60초 이후: Hard 15s → Easy 10s 반복 사이클)
+	if elapsedTime >= 60 then
+		local phaseElapsed = tick() - self._breathPhaseStart
+		if self._breathIsHard and phaseElapsed >= 15 then
+			self._breathIsHard = false
+			self._breathPhaseStart = tick()
+			print("[ChunkService] 🌬️ Breath: easy phase")
+		elseif not self._breathIsHard and phaseElapsed >= 10 then
+			self._breathIsHard = true
+			self._breathPhaseStart = tick()
+			print("[ChunkService] 🌬️ Breath: hard phase")
+		end
+
+		-- 이지 호흡 구간: Easy/Bonus 위주로 확률 덮어쓰기
+		if not self._breathIsHard then
+			local rand = math.random()
+			if rand < 0.60 then
+				return "Easy"
+			elseif rand < 0.80 then
+				return "Bonus"
+			elseif rand < 0.92 then
+				return "NPC"
+			else
+				return "Normal"
+			end
+		end
+	end
+
+	-- 가중 랜덤 선택 (기본 시간대별 테이블)
 	local rand = math.random()
 	local cumulative = 0
 

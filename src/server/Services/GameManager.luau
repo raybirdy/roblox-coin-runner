@@ -785,6 +785,10 @@ function GameManager.EndGame(player: Player)
 		objectivesCompleted = objCompleted,
 		objectivesTotal = objTotal,
 		objectiveBonus = ObjectiveService:GetCompletionBonus(player),
+		-- 스킨 리텐션 데이터
+		equippedSkinId = playerData and playerData.equippedSkin or "default",
+		playerTotalCoins = playerData and playerData.coins or 0,
+		ownedSkins = playerData and playerData.ownedSkins or { "default" },
 	})
 
 	-- 위로 보상 알림 (별도 이벤트)
