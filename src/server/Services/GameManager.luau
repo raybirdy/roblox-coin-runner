@@ -109,6 +109,10 @@ type GameSession = {
 	-- Super Fever
 	lastFeverEndTime: number,
 	isSuperFever: boolean,
+	-- Mini Fever (15 combo)
+	isMiniFever: boolean,
+	miniFeverEndTime: number,
+	miniFeverTriggeredAt: number, -- 마지막 미니 피버 발동 콤보 수
 	-- Async Battle
 	asyncBattleTarget: { targetName: string, targetScore: number }?,
 	-- Daily Event
@@ -281,6 +285,9 @@ RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { 
 		hitRushEndTime = 0,
 		lastFeverEndTime = 0,
 		isSuperFever = false,
+		isMiniFever = false,
+		miniFeverEndTime = 0,
+		miniFeverTriggeredAt = 0,
 		coinsCollectedCount = 0,
 		lastEventProgressTime = 0,
 		upgradeBonuses = upgBonuses1,
@@ -519,6 +526,9 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 		hitRushEndTime = 0,
 		lastFeverEndTime = 0,
 		isSuperFever = false,
+		isMiniFever = false,
+		miniFeverEndTime = 0,
+		miniFeverTriggeredAt = 0,
 		coinsCollectedCount = 0,
 		lastEventProgressTime = 0,
 		upgradeBonuses = upgBonuses2,
@@ -742,12 +752,18 @@ function GameManager.EndGame(player: Player)
 
 	-- 위로 보상 체크
 	local consolationReward = 0
+	local consolationShield = false
 	if finalScore < GameConstants.CONSOLATION.QUICK_DEATH_SCORE then
 		consolationTracker[player] = (consolationTracker[player] or 0) + 1
 		if consolationTracker[player] >= GameConstants.CONSOLATION.THRESHOLD then
 			consolationReward = GameConstants.CONSOLATION.REWARD_COINS
 			PlayerDataService:AddCoins(player, consolationReward)
 			consolationTracker[player] = 0
+			-- 위로 쉴드 지급 (다음 런 시작 파워업)
+			if GameConstants.CONSOLATION.REWARD_SHIELD then
+				consolationShield = true
+				PlayerDataService:PurchaseStartPowerup(player, "shield", 0) -- 무료 지급
+			end
 			print(`[GameManager] Consolation reward: +{consolationReward} coins for {player.Name}`)
 		end
 	else
@@ -794,7 +810,7 @@ function GameManager.EndGame(player: Player)
 
 	-- 위로 보상 알림 (별도 이벤트)
 	if consolationReward > 0 then
-		RemoteEvents.ConsolationReward:FireClient(player, { coins = consolationReward })
+		RemoteEvents.ConsolationReward:FireClient(player, { coins = consolationReward, shield = consolationShield })
 		-- 업데이트된 데이터 재전송
 		RemoteEvents.PlayerDataLoaded:FireClient(player, PlayerDataService:GetPlayerData(player))
 	end
@@ -931,6 +947,8 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 			magnetRadius = math.max(magnetRadius, GameConstants.SUPER_FEVER.MAGNET_RADIUS)
 		elseif session.isFever then
 			magnetRadius = math.max(magnetRadius, GameConstants.FEVER.MAGNET_RADIUS)
+		elseif session.isMiniFever then
+			magnetRadius = math.max(magnetRadius, GameConstants.MINI_FEVER.MAGNET_RADIUS)
 		end
 		local collectedCoins = coinService:CheckCoinCollection(hrp.Position, magnetRadius)
 		local coinMultiplier = powerupService:GetCoinMultiplier()
@@ -942,6 +960,8 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 			coinMultiplier *= GameConstants.SUPER_FEVER.COIN_MULTIPLIER
 		elseif session.isFever then
 			coinMultiplier *= GameConstants.FEVER.COIN_MULTIPLIER
+		elseif session.isMiniFever then
+			coinMultiplier *= GameConstants.MINI_FEVER.COIN_MULTIPLIER
 		end
 		local hitRushActive = tick() < session.hitRushEndTime
 		local hitRushMult = if hitRushActive then GameConstants.HIT_RECOVERY.COIN_MULTIPLIER else 1
@@ -1004,6 +1024,23 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 			if comboBonus > 0 then
 				session.bonusScore += comboBonus
 				print(`[GameManager] Combo {session.comboCount}x! +{comboBonus} bonus for {player.Name}`)
+			end
+
+			-- 미니 피버 발동 체크 (15 콤보, 정식 피버 미발동 상태에서만)
+			local miniFeverThreshold = GameConstants.MINI_FEVER.COMBO_THRESHOLD
+			if
+				not session.isFever
+				and not session.isMiniFever
+				and session.comboCount >= miniFeverThreshold
+				and session.miniFeverTriggeredAt < session.comboCount - miniFeverThreshold + 1
+			then
+				session.isMiniFever = true
+				session.miniFeverEndTime = now + GameConstants.MINI_FEVER.DURATION
+				session.miniFeverTriggeredAt = session.comboCount
+				RemoteEvents.MiniFeverStart:FireClient(player, {
+					duration = GameConstants.MINI_FEVER.DURATION,
+				})
+				print(`[GameManager] MINI FEVER activated for {player.Name}! Combo: {session.comboCount}`)
 			end
 
 			-- Phase B: 최대 콤보 추적
@@ -1070,13 +1107,22 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 			end
 		end
 
+		-- 미니 피버 종료 체크
+		if session.isMiniFever and tick() >= session.miniFeverEndTime then
+			session.isMiniFever = false
+			RemoteEvents.MiniFeverEnd:FireClient(player)
+			print(`[GameManager] MINI FEVER ended for {player.Name}`)
+		end
+
 		-- 피버 모드 종료 체크
 		if session.isFever and tick() >= session.feverEndTime then
 			session.isFever = false
 			session.lastFeverEndTime = tick()
 			session.isSuperFever = false
+			session.isMiniFever = false -- 피버 종료 시 미니 피버도 해제
 			session.feverCooldownEnd = tick() + GameConstants.FEVER.COOLDOWN
 			session.comboCount = 0 -- 피버 종료 시 콤보 리셋
+			session.miniFeverTriggeredAt = 0 -- 피버 종료 시 미니 피버 카운터 초기화
 			RemoteEvents.FeverEnd:FireClient(player)
 			RemoteEvents.FeverGaugeUpdate:FireClient(player, {
 				combo = 0,
@@ -1156,6 +1202,12 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 						})
 						print(`[GameManager] Magnet burst: +{burstTotal} coins for {player.Name}`)
 					end
+				end
+
+				-- 미니 피버 해제 (피격 시)
+				if session.isMiniFever then
+					session.isMiniFever = false
+					RemoteEvents.MiniFeverEnd:FireClient(player)
 				end
 
 				-- 생존 배율 리셋 + 히트 러시 시작
