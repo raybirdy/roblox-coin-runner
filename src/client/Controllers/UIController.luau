@@ -941,6 +941,16 @@ function UIController:ShowGameOver(
 		existingHint:Destroy()
 	end
 
+	-- 스킨 섹션: 기존 제거 후 재생성
+	local existingSkinBadge = self._gameOverFrame:FindFirstChild("SkinBadge")
+	if existingSkinBadge then
+		existingSkinBadge:Destroy()
+	end
+	local existingSkinNext = self._gameOverFrame:FindFirstChild("SkinNext")
+	if existingSkinNext then
+		existingSkinNext:Destroy()
+	end
+
 	if not canRevive and extraData and extraData.loginStreak ~= nil then
 		local streak = extraData.loginStreak or 0
 		local nextDay = (streak % 7) + 1
@@ -1076,6 +1086,81 @@ function UIController:ShowGameOver(
 			almostLabel.Text = `"{extraData.almostMessage}"`
 			almostLabel.TextWrapped = true
 			almostLabel.Parent = self._gameOverFrame
+		end
+	end
+
+	-- 스킨 배지 + 다음 스킨 진행바 (비부활 화면에서만, 스킨 데이터 있을 때)
+	if not canRevive and extraData and extraData.equippedSkinId then
+		-- 장착 스킨 정보 찾기
+		local equippedSkinData = nil
+		for _, skin in GameConstants.SHOP.SKINS do
+			if skin.id == extraData.equippedSkinId then
+				equippedSkinData = skin
+				break
+			end
+		end
+
+		if equippedSkinData then
+			-- 현재 스킨 배지 (스킨 색상 배경)
+			local skinBadge = Instance.new("Frame")
+			skinBadge.Name = "SkinBadge"
+			skinBadge.Size = UDim2.new(1, -20, 0, 22)
+			skinBadge.Position = UDim2.new(0, 10, 1, -160)
+			skinBadge.BackgroundColor3 = equippedSkinData.color
+			skinBadge.BackgroundTransparency = 0.5
+			skinBadge.Parent = self._gameOverFrame
+
+			local skinBadgeCorner = Instance.new("UICorner")
+			skinBadgeCorner.CornerRadius = UDim.new(0, 6)
+			skinBadgeCorner.Parent = skinBadge
+
+			local skinBadgeText = Instance.new("TextLabel")
+			skinBadgeText.Size = UDim2.new(1, 0, 1, 0)
+			skinBadgeText.BackgroundTransparency = 1
+			skinBadgeText.Text = `🎨 현재 스킨: {equippedSkinData.name}`
+			skinBadgeText.TextColor3 = Color3.fromRGB(255, 255, 255)
+			skinBadgeText.TextSize = ResponsiveUtil.scaledTextSize(13, 10)
+			skinBadgeText.Font = Enum.Font.GothamBold
+			skinBadgeText.TextXAlignment = Enum.TextXAlignment.Center
+			skinBadgeText.Parent = skinBadge
+
+			-- 다음 미보유 코인 스킨 찾기 (오름차순 정렬된 SHOP.SKINS 기준)
+			local ownedSkins: { string } = extraData.ownedSkins or { "default" }
+			local nextSkin = nil
+			for _, skin in GameConstants.SHOP.SKINS do
+				if skin.currency == "coins" and skin.price > 0 then
+					local owned = false
+					for _, ownedId in ownedSkins do
+						if ownedId == skin.id then
+							owned = true
+							break
+						end
+					end
+					if not owned then
+						nextSkin = skin
+						break
+					end
+				end
+			end
+
+			if nextSkin then
+				local totalCoins = extraData.playerTotalCoins or 0
+				local progress = math.min(totalCoins, nextSkin.price)
+				local filled = math.floor(progress / nextSkin.price * 10)
+				local bar = string.rep("█", filled) .. string.rep("░", 10 - filled)
+
+				local skinNextLabel = Instance.new("TextLabel")
+				skinNextLabel.Name = "SkinNext"
+				skinNextLabel.Size = UDim2.new(1, -20, 0, 20)
+				skinNextLabel.Position = UDim2.new(0, 10, 1, -133)
+				skinNextLabel.BackgroundTransparency = 1
+				skinNextLabel.Text = `다음: {nextSkin.name}  {bar}  {progress}/{nextSkin.price}🪙`
+				skinNextLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+				skinNextLabel.TextSize = ResponsiveUtil.scaledTextSize(11, 9)
+				skinNextLabel.Font = Enum.Font.Gotham
+				skinNextLabel.TextXAlignment = Enum.TextXAlignment.Center
+				skinNextLabel.Parent = self._gameOverFrame
+			end
 		end
 	end
 
