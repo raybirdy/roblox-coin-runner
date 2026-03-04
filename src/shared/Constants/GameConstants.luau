@@ -323,6 +323,8 @@ GameConstants.SHOP = {
 			currency = "coins",
 			color = Color3.fromRGB(0, 170, 255),
 			thumbnailId = "rbxassetid://3535928381",
+			material = "SmoothPlastic",
+			trail = false,
 		},
 		-- 코인 스킨 (누구나 접근 가능)
 		{
@@ -332,6 +334,8 @@ GameConstants.SHOP = {
 			currency = "coins",
 			color = Color3.fromRGB(220, 50, 50),
 			thumbnailId = "rbxassetid://3535928917",
+			material = "SmoothPlastic",
+			trail = false,
 		},
 		{
 			id = "ninja",
@@ -340,6 +344,8 @@ GameConstants.SHOP = {
 			currency = "coins",
 			color = Color3.fromRGB(30, 30, 50),
 			thumbnailId = "rbxassetid://3535929309",
+			material = "Metal",
+			trail = false,
 		},
 		{
 			id = "blue_cape",
@@ -348,6 +354,8 @@ GameConstants.SHOP = {
 			currency = "coins",
 			color = Color3.fromRGB(50, 100, 220),
 			thumbnailId = "rbxassetid://3535929635",
+			material = "SmoothPlastic",
+			trail = false,
 		},
 		{
 			id = "pirate",
@@ -356,6 +364,8 @@ GameConstants.SHOP = {
 			currency = "coins",
 			color = Color3.fromRGB(100, 60, 30),
 			thumbnailId = "rbxassetid://3535929876",
+			material = "Wood",
+			trail = false,
 		},
 		{
 			id = "robot",
@@ -364,6 +374,8 @@ GameConstants.SHOP = {
 			currency = "coins",
 			color = Color3.fromRGB(160, 170, 180),
 			thumbnailId = "rbxassetid://3535930077",
+			material = "Metal",
+			trail = false,
 		},
 		{
 			id = "golden",
@@ -372,8 +384,10 @@ GameConstants.SHOP = {
 			currency = "coins",
 			color = Color3.fromRGB(255, 215, 0),
 			thumbnailId = "rbxassetid://3535930233",
+			material = "Neon",
+			trail = false,
 		},
-		-- 프리미엄 스킨 (젬으로 구매 - 희소성 높음)
+		-- 프리미엄 스킨 (젬으로 구매 - Neon 재질 + 트레일 효과)
 		{
 			id = "galaxy",
 			name = "갤럭시",
@@ -381,6 +395,9 @@ GameConstants.SHOP = {
 			currency = "gems",
 			color = Color3.fromRGB(60, 20, 120),
 			thumbnailId = "rbxassetid://3535936432",
+			material = "Neon",
+			trail = true,
+			trailColor = Color3.fromRGB(100, 50, 200),
 		},
 		{
 			id = "unicorn",
@@ -389,6 +406,9 @@ GameConstants.SHOP = {
 			currency = "gems",
 			color = Color3.fromRGB(255, 180, 255),
 			thumbnailId = "rbxassetid://3535936633",
+			material = "Neon",
+			trail = true,
+			trailColor = Color3.fromRGB(255, 100, 255),
 		},
 		{
 			id = "ice_king",
@@ -397,6 +417,9 @@ GameConstants.SHOP = {
 			currency = "gems",
 			color = Color3.fromRGB(150, 220, 255),
 			thumbnailId = "rbxassetid://3535936812",
+			material = "Neon",
+			trail = true,
+			trailColor = Color3.fromRGB(100, 200, 255),
 		},
 		{
 			id = "dragon",
@@ -405,6 +428,9 @@ GameConstants.SHOP = {
 			currency = "gems",
 			color = Color3.fromRGB(200, 50, 0),
 			thumbnailId = "rbxassetid://3535937071",
+			material = "Neon",
+			trail = true,
+			trailColor = Color3.fromRGB(255, 80, 0),
 		},
 		{
 			id = "rainbow",
@@ -413,6 +439,9 @@ GameConstants.SHOP = {
 			currency = "gems",
 			color = Color3.fromRGB(255, 100, 200),
 			thumbnailId = "rbxassetid://3535937245",
+			material = "Neon",
+			trail = true,
+			trailColor = Color3.fromRGB(255, 100, 200),
 		},
 		{
 			id = "shadow",
@@ -421,6 +450,8 @@ GameConstants.SHOP = {
 			currency = "gems",
 			color = Color3.fromRGB(20, 20, 30),
 			thumbnailId = "rbxassetid://3535937404",
+			material = "Metal",
+			trail = false,
 		},
 		-- 시즌 한정 스킨 (TODO: 스킨 콘텐츠 준비 후 활성화)
 		-- {
@@ -1220,6 +1251,78 @@ GameConstants.RUN_OBJECTIVES = {
 		{ id = "nearmiss_chain_5",  desc = "니어미스 5연속",   condition = "near_miss_chain_max", target = 5,  weight = 4,  tier = "hard" },
 	},
 	SELECTION = { MIN_EASY = 1, MAX_HARD = 1 },
+}
+
+-- 펫 시스템
+GameConstants.PETS = {
+	LIST = {
+		{
+			id = "chick",
+			name = "병아리",
+			emoji = "🐤",
+			price = 0,
+			currency = "coins",
+			coinBonus = 0,
+			magnetBonus = 0,
+			feverBonus = 0,
+			color = Color3.fromRGB(255, 220, 0),
+		},
+		{
+			id = "rabbit",
+			name = "토끼",
+			emoji = "🐰",
+			price = 150,
+			currency = "coins",
+			coinBonus = 0.05,
+			magnetBonus = 0,
+			feverBonus = 0,
+			color = Color3.fromRGB(255, 200, 200),
+		},
+		{
+			id = "cat",
+			name = "고양이",
+			emoji = "🐱",
+			price = 300,
+			currency = "coins",
+			coinBonus = 0.08,
+			magnetBonus = 1.0,
+			feverBonus = 0,
+			color = Color3.fromRGB(255, 165, 0),
+		},
+		{
+			id = "dog",
+			name = "강아지",
+			emoji = "🐶",
+			price = 500,
+			currency = "coins",
+			coinBonus = 0.10,
+			magnetBonus = 1.5,
+			feverBonus = 0,
+			color = Color3.fromRGB(210, 180, 140),
+		},
+		{
+			id = "penguin",
+			name = "펭귄",
+			emoji = "🐧",
+			price = 800,
+			currency = "coins",
+			coinBonus = 0.05,
+			magnetBonus = 2.0,
+			feverBonus = 0.05,
+			color = Color3.fromRGB(50, 50, 60),
+		},
+		{
+			id = "fox",
+			name = "여우",
+			emoji = "🦊",
+			price = 1500,
+			currency = "coins",
+			coinBonus = 0.15,
+			magnetBonus = 2.5,
+			feverBonus = 0.10,
+			color = Color3.fromRGB(255, 130, 30),
+		},
+	},
 }
 
 return GameConstants

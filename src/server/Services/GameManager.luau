@@ -28,6 +28,7 @@ local RealtimeBattleService = require(script.Parent.RealtimeBattleService)
 local DailyEventService = require(script.Parent.DailyEventService)
 local UpgradeService = require(script.Parent.UpgradeService)
 local ObjectiveService = require(script.Parent.ObjectiveService)
+local PetService = require(script.Parent.PetService)
 local RateLimiter = require(ReplicatedStorage.Shared.Utils.RateLimiter)
 
 local GameManager = {}
@@ -925,7 +926,7 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 		session.powerupsCollected += #collectedPowerups
 
 		-- 코인 수집 체크 (자석 효과 적용, 피버/슈퍼피버 시 초강력 자석)
-		local magnetRadius = powerupService:GetMagnetRadius() + session.scenarioStatBonuses.magnetRadius + session.upgradeBonuses.magnetBonus
+		local magnetRadius = powerupService:GetMagnetRadius() + session.scenarioStatBonuses.magnetRadius + session.upgradeBonuses.magnetBonus + PetService:GetMagnetBonus(player, PlayerDataService)
 		if session.isSuperFever then
 			magnetRadius = math.max(magnetRadius, GameConstants.SUPER_FEVER.MAGNET_RADIUS)
 		elseif session.isFever then
@@ -936,6 +937,7 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 			* MonetizationService:GetCoinMultiplier(player)
 			* (1 + session.scenarioStatBonuses.coinValue)
 			* (1 + session.upgradeBonuses.coinValueBonus)
+			* PetService:GetCoinMultiplier(player, PlayerDataService)
 		if session.isSuperFever then
 			coinMultiplier *= GameConstants.SUPER_FEVER.COIN_MULTIPLIER
 		elseif session.isFever then

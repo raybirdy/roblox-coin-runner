@@ -66,6 +66,9 @@ type PlayerData = {
 	upgrades: { [string]: number }, -- { [upgradeId]: level }
 	-- 런 목표
 	runObjectivesCompleted: number, -- 누적 전체 완료 횟수
+	-- 펫 시스템
+	ownedPets: { string },
+	equippedPet: string,
 }
 
 local DEFAULT_DATA: PlayerData = {
@@ -113,6 +116,9 @@ local DEFAULT_DATA: PlayerData = {
 	upgrades = {},
 	-- 런 목표
 	runObjectivesCompleted = 0,
+	-- 펫 시스템
+	ownedPets = { "chick" },
+	equippedPet = "chick",
 }
 
 -- 메모리 캐시 (활성 플레이어)
@@ -703,6 +709,55 @@ function PlayerDataService:GetUpgradeLevel(player: Player, upgradeId: string): n
 	return playerData.upgrades[upgradeId] or 0
 end
 
+-- 펫 소유 여부 확인
+function PlayerDataService:OwnsPet(player: Player, petId: string): boolean
+	local playerData = playerDataCache[player]
+	if not playerData then
+		return false
+	end
+	for _, id in playerData.ownedPets do
+		if id == petId then
+			return true
+		end
+	end
+	return false
+end
+
+-- 펫 추가
+function PlayerDataService:AddPet(player: Player, petId: string)
+	local playerData = playerDataCache[player]
+	if not playerData then
+		return
+	end
+	if not playerData.ownedPets then
+		playerData.ownedPets = { "chick" }
+	end
+	table.insert(playerData.ownedPets, petId)
+end
+
+-- 펫 장착
+function PlayerDataService:EquipPet(player: Player, petId: string): boolean
+	local playerData = playerDataCache[player]
+	if not playerData then
+		return false
+	end
+	if not self:OwnsPet(player, petId) then
+		return false
+	end
+	playerData.equippedPet = petId
+	self:SavePlayerData(player)
+	return true
+end
+
+-- 장착된 펫 조회
+function PlayerDataService:GetEquippedPet(player: Player): string
+	local playerData = playerDataCache[player]
+	if not playerData then
+		return "chick"
+	end
+	return playerData.equippedPet or "chick"
+end
+
 -- 런 목표 완료 횟수 증가
 function PlayerDataService:IncrementRunObjectivesCompleted(player: Player)
 	local playerData = playerDataCache[player]
@@ -739,6 +794,8 @@ VALID_KEYS["lastLoginDate"] = true
 VALID_KEYS["lastSpinDate"] = true
 VALID_KEYS["skinPieces"] = true
 VALID_KEYS["dailyEventDate"] = true
+VALID_KEYS["ownedPets"] = true
+VALID_KEYS["equippedPet"] = true
 
 -- 유틸리티: 기본값 병합
 function PlayerDataService:_mergeWithDefaults(data: any): PlayerData

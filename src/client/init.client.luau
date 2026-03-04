@@ -94,6 +94,7 @@ local AsyncBattleController = require(script.Controllers.AsyncBattleController)
 local RealtimeBattleController = require(script.Controllers.RealtimeBattleController)
 local DailyEventController = require(script.Controllers.DailyEventController)
 local ObjectiveHudController = require(script.Controllers.ObjectiveHudController)
+local PetController = require(script.Controllers.PetController)
 
 -- 컨트롤러 인스턴스 생성
 local inputController = InputController.new()
@@ -127,6 +128,7 @@ local asyncBattleController = AsyncBattleController.new(player)
 local realtimeBattleController = RealtimeBattleController.new(player)
 local dailyEventController = DailyEventController.new(player)
 local objectiveHudController = ObjectiveHudController.new()
+local petController = PetController.new()
 
 -- Fever mode callbacks (speed boost + camera shake + BGM speed)
 feverController:OnFeverStart(function(speedBoost: number)
@@ -363,6 +365,7 @@ RemoteEvents.GameStart.OnClientEvent:Connect(function(data)
 		feverController:ShowGauge()
 		skillController:SetGameActive(true)
 		dailyEventController:StartGame()
+		petController:StartGame()
 
 		-- 비동기 배틀 HUD (도전 모드인 경우)
 		if data.asyncBattle then
@@ -426,6 +429,8 @@ RemoteEvents.GameOver.OnClientEvent:Connect(function(data)
 	dailyEventController:EndGame()
 	-- 런 목표 HUD 숨기기
 	objectiveHudController:EndGame()
+	-- 펫 HUD 숨기기
+	petController:EndGame()
 
 	-- 비동기 배틀 HUD 숨기기
 	asyncBattleController:EndBattle()

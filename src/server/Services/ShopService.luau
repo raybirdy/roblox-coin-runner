@@ -202,6 +202,44 @@ local function getSkinColor(skinId: string): Color3
 	return Color3.fromRGB(0, 170, 255) -- 기본 색상
 end
 
+-- 스킨 데이터 가져오기 (색상 + 재질 + 트레일)
+local function getSkinData(skinId: string): any
+	for _, skin in GameConstants.SHOP.SKINS do
+		if skin.id == skinId then
+			return skin
+		end
+	end
+	return nil
+end
+
+-- 재질 문자열 → Enum.Material 변환
+local function parseMaterial(mat: string?): Enum.Material
+	if mat == "Metal" then
+		return Enum.Material.Metal
+	elseif mat == "Wood" then
+		return Enum.Material.Wood
+	elseif mat == "Neon" then
+		return Enum.Material.Neon
+	end
+	return Enum.Material.SmoothPlastic
+end
+
+-- 기존 트레일/어태치먼트 제거
+local function removeTrail(character: Model)
+	local root = character:FindFirstChild("HumanoidRootPart")
+	if not root then
+		return
+	end
+	for _, obj in root:GetChildren() do
+		if obj:IsA("Attachment") and (obj.Name == "TrailTop" or obj.Name == "TrailBottom") then
+			obj:Destroy()
+		end
+		if obj:IsA("Trail") and obj.Name == "SkinTrail" then
+			obj:Destroy()
+		end
+	end
+end
+
 -- 캐릭터에 스킨 외형 적용
 function ShopService:ApplySkinToCharacter(player: Player, skinId: string)
 	local character = player.Character
@@ -209,12 +247,53 @@ function ShopService:ApplySkinToCharacter(player: Player, skinId: string)
 		return
 	end
 
-	local skinColor = getSkinColor(skinId)
+	local skin = getSkinData(skinId)
+	local skinColor = (skin and skin.color) or Color3.fromRGB(0, 170, 255)
+	local skinMaterial = parseMaterial(skin and skin.material)
 
-	-- 캐릭터의 모든 BodyPart 색상 변경
+	-- 기존 트레일 제거
+	removeTrail(character)
+
+	-- 캐릭터의 모든 BodyPart 색상 + 재질 변경
 	for _, part in character:GetChildren() do
 		if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
 			part.Color = skinColor
+			part.Material = skinMaterial
+		end
+	end
+
+	-- 트레일 생성 (trail=true 스킨)
+	if skin and skin.trail then
+		local root = character:FindFirstChild("HumanoidRootPart") :: BasePart?
+		if root then
+			local attachTop = Instance.new("Attachment")
+			attachTop.Name = "TrailTop"
+			attachTop.Position = Vector3.new(0, 1, 0)
+			attachTop.Parent = root
+
+			local attachBottom = Instance.new("Attachment")
+			attachBottom.Name = "TrailBottom"
+			attachBottom.Position = Vector3.new(0, -1, 0)
+			attachBottom.Parent = root
+
+			local trail = Instance.new("Trail")
+			trail.Name = "SkinTrail"
+			trail.Attachment0 = attachTop
+			trail.Attachment1 = attachBottom
+			trail.Lifetime = 0.4
+			trail.MinLength = 0
+			trail.FaceCamera = true
+
+			local trailColor = skin.trailColor or skinColor
+			trail.Color = ColorSequence.new({
+				ColorSequenceKeypoint.new(0, trailColor),
+				ColorSequenceKeypoint.new(1, trailColor),
+			})
+			trail.Transparency = NumberSequence.new({
+				NumberSequenceKeypoint.new(0, 0.1),
+				NumberSequenceKeypoint.new(1, 1),
+			})
+			trail.Parent = root
 		end
 	end
 

@@ -35,6 +35,7 @@ local AsyncBattleService = require(ServerScriptService.Server.Services.AsyncBatt
 local RealtimeBattleService = require(ServerScriptService.Server.Services.RealtimeBattleService)
 local DailyEventService = require(ServerScriptService.Server.Services.DailyEventService)
 local UpgradeService = require(ServerScriptService.Server.Services.UpgradeService)
+local PetService = require(ServerScriptService.Server.Services.PetService)
 
 print("[Server] Game Constants Loaded")
 print("[Server] Remote Events Initialized")
@@ -72,6 +73,10 @@ print("[Server] DailyEventService Loaded")
 UpgradeService:SetupRemoteEvents(PlayerDataService)
 print("[Server] UpgradeService Loaded")
 
+-- PetService RemoteEvent 연결
+PetService:SetupRemoteEvents(PlayerDataService)
+print("[Server] PetService Loaded")
+
 -- 플레이어 참가 처리
 game.Players.PlayerAdded:Connect(function(player: Player)
 	print(`[Server] Player {player.Name} joined`)
@@ -94,6 +99,9 @@ game.Players.PlayerAdded:Connect(function(player: Player)
 
 		-- 업그레이드 데이터 전송
 		UpgradeService:SendUpgradeData(player, PlayerDataService)
+
+		-- 펫 데이터 전송
+		PetService:SendPetData(player, PlayerDataService)
 		print(`[Server] Sent player data to {player.Name}`)
 	end
 

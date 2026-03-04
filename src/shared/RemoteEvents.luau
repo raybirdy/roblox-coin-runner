@@ -445,4 +445,22 @@ RemoteEvents.RunObjectivesGenerated = getOrCreateRemoteEvent("RunObjectivesGener
 RemoteEvents.RunObjectiveProgress = getOrCreateRemoteEvent("RunObjectiveProgress")
 -- 파라미터: { objectives: { { id, progress, completed } }, allCompleted: boolean, bonus: number? }
 
+-- ==================== 펫 시스템 ====================
+
+-- 펫 데이터 (서버 → 클라이언트)
+RemoteEvents.PetData = getOrCreateRemoteEvent("PetData")
+-- 파라미터: { ownedPets: {string}, equippedPet: string }
+
+-- 펫 구매 요청 (클라이언트 → 서버)
+RemoteEvents.PetPurchase = getOrCreateRemoteEvent("PetPurchase")
+-- 파라미터: { petId: string }
+
+-- 펫 구매 결과 (서버 → 클라이언트)
+RemoteEvents.PetPurchaseResult = getOrCreateRemoteEvent("PetPurchaseResult")
+-- 파라미터: { success: boolean, petId: string?, newBalance: number?, error: string? }
+
+-- 펫 장착 (클라이언트 → 서버)
+RemoteEvents.EquipPet = getOrCreateRemoteEvent("EquipPet")
+-- 파라미터: { petId: string }
+
 return RemoteEvents
