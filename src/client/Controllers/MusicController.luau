@@ -15,6 +15,7 @@ export type MusicController = typeof(setmetatable(
 		_bgm: Sound?,
 		_isPlaying: boolean,
 		_volume: number,
+		_zoneSpeed: number, -- 현재 구역 기반 기본 재생 속도
 		_connections: { RBXScriptConnection },
 	},
 	MusicController
@@ -34,6 +35,7 @@ function MusicController.new(): MusicController
 		_bgm = nil,
 		_isPlaying = false,
 		_volume = BGM_CONFIG.volume,
+		_zoneSpeed = 1.0,
 		_connections = {},
 	}, MusicController)
 
@@ -155,7 +157,7 @@ function MusicController:Stop()
 	print("[MusicController] Music stopped")
 end
 
--- 피버 BGM 속도 변조 (피버 시 1.25배 빠르게, 종료 시 정상으로)
+-- 피버 BGM 속도 변조 (피버 시 1.25배 빠르게, 종료 시 구역 기본 속도로 복귀)
 function MusicController:SetFeverSpeed(isFever: boolean)
 	if not self._bgm or not self._isPlaying then
 		return
@@ -167,10 +169,28 @@ function MusicController:SetFeverSpeed(isFever: boolean)
 			PlaybackSpeed = 1.25,
 		}):Play()
 	else
+		-- 피버 종료 시 현재 구역 기본 속도로 복귀 (zone mood 유지)
 		TweenService:Create(self._bgm, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-			PlaybackSpeed = 1.0,
+			PlaybackSpeed = self._zoneSpeed,
 		}):Play()
 	end
+end
+
+-- 구역 진입 시 BGM 템포 진화 (구역이 깊어질수록 살짝 빠르게)
+function MusicController:UpdateZoneMood(zoneIndex: number)
+	if not self._bgm or not self._isPlaying then
+		return
+	end
+
+	-- 구역별 기본 재생 속도 (최대 5구역 기준)
+	local zoneSpeeds = { 1.0, 1.03, 1.06, 1.09, 1.12 }
+	local speed = zoneSpeeds[math.min(zoneIndex, #zoneSpeeds)] or 1.0
+	self._zoneSpeed = speed
+
+	local TweenService = game:GetService("TweenService")
+	TweenService:Create(self._bgm, TweenInfo.new(2.0, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+		PlaybackSpeed = speed,
+	}):Play()
 end
 
 -- 볼륨 설정

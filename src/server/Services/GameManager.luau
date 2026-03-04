@@ -806,6 +806,18 @@ function GameManager.EndGame(player: Player)
 		equippedSkinId = playerData and playerData.equippedSkin or "default",
 		playerTotalCoins = playerData and playerData.coins or 0,
 		ownedSkins = playerData and playerData.ownedSkins or { "default" },
+		-- TIER 3: 다음 구역 목표 힌트 (재도전 동기 부여)
+		nextZoneInfo = (function()
+			local elapsed = tick() - session.startTime
+			local nextZone = GameConstants.ZONE_THEMES[session.currentZoneIndex + 1]
+			if nextZone then
+				return {
+					displayName = nextZone.displayName,
+					remainingSeconds = math.max(1, math.ceil(nextZone.startTime - elapsed)),
+				}
+			end
+			return nil
+		end)(),
 	})
 
 	-- 위로 보상 알림 (별도 이벤트)

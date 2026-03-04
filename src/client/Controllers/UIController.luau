@@ -934,6 +934,10 @@ function UIController:ShowGameOver(
 	if existingAlmost then
 		existingAlmost:Destroy()
 	end
+	local existingNextZone = self._gameOverFrame:FindFirstChild("NextZoneHint")
+	if existingNextZone then
+		existingNextZone:Destroy()
+	end
 
 	-- RetentionHint: 기존 제거 후 재생성
 	local existingHint = self._gameOverFrame:FindFirstChild("RetentionHint")
@@ -1086,6 +1090,21 @@ function UIController:ShowGameOver(
 			almostLabel.Text = `"{extraData.almostMessage}"`
 			almostLabel.TextWrapped = true
 			almostLabel.Parent = self._gameOverFrame
+		end
+
+		-- TIER 3: 다음 구역 목표 힌트 (재도전 동기 부여)
+		if extraData.nextZoneInfo then
+			local nextZoneInfo = extraData.nextZoneInfo
+			local hintLabel = Instance.new("TextLabel")
+			hintLabel.Name = "NextZoneHint"
+			hintLabel.Size = UDim2.new(1, -20, 0, 24)
+			hintLabel.Position = UDim2.new(0, 10, 0, 298)
+			hintLabel.BackgroundTransparency = 1
+			hintLabel.TextColor3 = Color3.fromRGB(100, 220, 255)
+			hintLabel.TextSize = ResponsiveUtil.scaledTextSize(13, 10)
+			hintLabel.Font = Enum.Font.GothamBold
+			hintLabel.Text = `🗺️ 다음 구역: {nextZoneInfo.displayName} ({nextZoneInfo.remainingSeconds}초 더!)`
+			hintLabel.Parent = self._gameOverFrame
 		end
 	end
 
