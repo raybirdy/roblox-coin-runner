@@ -124,12 +124,20 @@ local DEFAULT_DATA: PlayerData = {
 -- 메모리 캐시 (활성 플레이어)
 local playerDataCache: { [Player]: PlayerData } = {}
 
+-- 스튜디오 디버그: "기존 유저" 시뮬레이션 (true → 인트로 팝업 건너뛰고 ch1 컷씬 테스트)
+local STUDIO_SIMULATE_EXISTING_USER = false
+
 -- 플레이어 데이터 로드
 function PlayerDataService:LoadPlayerData(player: Player): PlayerData?
 	-- DataStore 사용 불가 시 기본값 사용 (Studio 모드)
 	if not playerDataStore then
 		print(`[PlayerDataService] Studio mode - using default data for {player.Name}`)
 		local newData = self:_copyTable(DEFAULT_DATA)
+		if STUDIO_SIMULATE_EXISTING_USER then
+			newData.hasSeenScenarioIntro = true
+			newData.hasSeenCh1Opening = false
+			print("[PlayerDataService] DEBUG: Simulating existing user (hasSeenScenarioIntro=true)")
+		end
 		playerDataCache[player] = newData
 		return newData
 	end
