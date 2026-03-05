@@ -23,6 +23,7 @@ export type DailyEventController = typeof(setmetatable(
 		_currentProgress: number,
 		_goalCompleted: boolean,
 		_isGameActive: boolean,
+		_dismissed: boolean,
 	},
 	DailyEventController
 ))
@@ -50,6 +51,7 @@ function DailyEventController.new(player: Player): DailyEventController
 		_currentProgress = 0,
 		_goalCompleted = false,
 		_isGameActive = false,
+		_dismissed = false,
 	}, DailyEventController)
 
 	self:_createLobbyBanner()
@@ -106,10 +108,10 @@ function DailyEventController:_createLobbyBanner()
 	titleLabel.TextTruncate = Enum.TextTruncate.AtEnd
 	titleLabel.Parent = banner
 
-	-- Bottom row: goalDesc + reward
+	-- Bottom row: goalDesc + reward (narrowed to leave room for close button)
 	local descLabel = Instance.new("TextLabel")
 	descLabel.Name = "DescLabel"
-	descLabel.Size = UDim2.new(1, -12, 0, 18)
+	descLabel.Size = UDim2.new(1, -40, 0, 18)
 	descLabel.Position = UDim2.new(0, 8, 0, 28)
 	descLabel.BackgroundTransparency = 1
 	descLabel.TextColor3 = Color3.fromRGB(150, 170, 220)
@@ -119,6 +121,32 @@ function DailyEventController:_createLobbyBanner()
 	descLabel.TextXAlignment = Enum.TextXAlignment.Left
 	descLabel.TextTruncate = Enum.TextTruncate.AtEnd
 	descLabel.Parent = banner
+
+	-- Close (X) button: top-right corner of banner
+	local closeBtn = Instance.new("TextButton")
+	closeBtn.Name = "CloseBtn"
+	closeBtn.Size = UDim2.new(0, 24, 0, 24)
+	closeBtn.Position = UDim2.new(1, -28, 0, 4)
+	closeBtn.AnchorPoint = Vector2.new(0, 0)
+	closeBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 90)
+	closeBtn.BackgroundTransparency = 0.3
+	closeBtn.TextColor3 = Color3.fromRGB(200, 200, 220)
+	closeBtn.TextSize = 14
+	closeBtn.Font = Enum.Font.GothamBold
+	closeBtn.Text = "✕"
+	closeBtn.ZIndex = 5
+	closeBtn.Parent = banner
+
+	local closeBtnCorner = Instance.new("UICorner")
+	closeBtnCorner.CornerRadius = UDim.new(0, 6)
+	closeBtnCorner.Parent = closeBtn
+
+	closeBtn.MouseButton1Click:Connect(function()
+		self._dismissed = true
+		if self._lobbyGui then
+			self._lobbyGui.Enabled = false
+		end
+	end)
 end
 
 -- In-game HUD: top-right, shows progress during run
@@ -199,6 +227,11 @@ end
 function DailyEventController:_setupEventHandlers()
 	-- Receive full event data
 	local dataConn = RemoteEvents.DailyEventData.OnClientEvent:Connect(function(data)
+		-- Reset dismissed state when a new event day arrives
+		local prevThemeId = self._currentTheme and self._currentTheme.themeId
+		if prevThemeId ~= data.themeId then
+			self._dismissed = false
+		end
 		self._currentTheme = data
 		self._currentProgress = data.progress or 0
 		self._goalCompleted = data.completed == true
@@ -419,11 +452,11 @@ function DailyEventController:EndGame()
 	end
 end
 
--- Called when returning to lobby (show banner)
+-- Called when returning to lobby (show banner if not dismissed)
 function DailyEventController:ShowInLobby()
 	self._isGameActive = false
 	if self._lobbyGui then
-		self._lobbyGui.Enabled = true
+		self._lobbyGui.Enabled = not self._dismissed
 	end
 	if self._hudGui then
 		self._hudGui.Enabled = false
