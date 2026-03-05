@@ -198,7 +198,7 @@ function UIController:_createUI()
 	gameOverDim.Name = "GameOverDim"
 	gameOverDim.Size = UDim2.new(1, 0, 1, 0)
 	gameOverDim.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-	gameOverDim.BackgroundTransparency = 0.45
+	gameOverDim.BackgroundTransparency = 0.55 -- 0.45→0.55: 배경을 살짝 밝게 해 프레임과 대비 확보
 	gameOverDim.BorderSizePixel = 0
 	gameOverDim.Visible = false
 	gameOverDim.ZIndex = 2
@@ -211,22 +211,31 @@ function UIController:_createUI()
 	gameOverFrame.ZIndex = 3
 	gameOverFrame.Size = ResponsiveUtil.clampedSize(380, 360, 0.88, 0.70)
 	gameOverFrame.Position = ResponsiveUtil.clampedPosition(380, 360, 0.88, 0.70)
-	gameOverFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-	gameOverFrame.BackgroundTransparency = 0.15
+	gameOverFrame.BackgroundColor3 = Color3.fromRGB(18, 22, 48) -- 순검정→다크 네이비: 가독성 확보
+	gameOverFrame.BackgroundTransparency = 0.05 -- 0.15→0.05: 더 불투명하게
 	gameOverFrame.Visible = false
 	gameOverFrame.Parent = screenGui
 	self._gameOverFrame = gameOverFrame
+
+	-- 그라디언트 (상→하 미세 밝기 차이로 깊이감)
+	local gameOverGradient = Instance.new("UIGradient")
+	gameOverGradient.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(35, 42, 80)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(12, 15, 35)),
+	})
+	gameOverGradient.Rotation = 90
+	gameOverGradient.Parent = gameOverFrame
 
 	-- 둥근 모서리
 	local gameOverCorner = Instance.new("UICorner")
 	gameOverCorner.CornerRadius = UDim.new(0, 16)
 	gameOverCorner.Parent = gameOverFrame
 
-	-- 테두리
+	-- 테두리 (밝은 파란색, 선명하게)
 	local gameOverStroke = Instance.new("UIStroke")
-	gameOverStroke.Color = Color3.fromRGB(255, 255, 255)
+	gameOverStroke.Color = Color3.fromRGB(120, 160, 255)
 	gameOverStroke.Thickness = 2
-	gameOverStroke.Transparency = 0.3
+	gameOverStroke.Transparency = 0.0
 	gameOverStroke.Parent = gameOverFrame
 
 	-- 게임 오버 텍스트
@@ -1003,8 +1012,8 @@ function UIController:ShowGameOver(
 		hint.Name = "RetentionHint"
 		hint.Size = UDim2.new(0.9, 0, 0, 36)
 		hint.Position = UDim2.new(0.05, 0, 1, -105)
-		hint.BackgroundColor3 = Color3.fromRGB(40, 60, 40)
-		hint.BackgroundTransparency = 0.2
+		hint.BackgroundColor3 = Color3.fromRGB(30, 80, 30)
+		hint.BackgroundTransparency = 0.0
 		hint.Text = `🎁 내일 다시 오면 {nextRewardText} 보상! (Day {nextDay})`
 		hint.TextColor3 = Color3.fromRGB(180, 255, 180)
 		hint.TextSize = ResponsiveUtil.scaledTextSize(14, 11)
@@ -1030,9 +1039,9 @@ function UIController:ShowGameOver(
 			objRow.Size = UDim2.new(1, -20, 0, 26)
 			objRow.Position = UDim2.new(0, 10, 0, 183)
 			objRow.BackgroundColor3 = if allDone
-				then Color3.fromRGB(30, 90, 30)
-				else Color3.fromRGB(60, 55, 20)
-			objRow.BackgroundTransparency = 0.2
+				then Color3.fromRGB(25, 100, 25)
+				else Color3.fromRGB(80, 70, 15)
+			objRow.BackgroundTransparency = 0.0
 			objRow.Parent = self._gameOverFrame
 
 			local objCorner = Instance.new("UICorner")
@@ -1164,7 +1173,7 @@ function UIController:ShowGameOver(
 			skinBadge.Size = UDim2.new(1, -20, 0, 22)
 			skinBadge.Position = UDim2.new(0, 10, 1, -160)
 			skinBadge.BackgroundColor3 = equippedSkinData.color
-			skinBadge.BackgroundTransparency = 0.5
+			skinBadge.BackgroundTransparency = 0.2
 			skinBadge.Parent = self._gameOverFrame
 
 			local skinBadgeCorner = Instance.new("UICorner")
