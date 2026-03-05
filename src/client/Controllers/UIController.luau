@@ -1574,13 +1574,17 @@ function UIController:HideGameOver()
 		local restartButton = self._gameOverFrame:FindFirstChild("RestartButton") :: TextButton?
 		if restartButton then
 			restartButton.Visible = true
-			restartButton.Position = UDim2.new(0.5, -210, 0, 340)
+			restartButton.Active = true
+			restartButton.Text = "▶ PLAY AGAIN"
+			restartButton.Position = UDim2.new(0.03, 0, 1, -62)
 		end
 
 		local lobbyButton = self._gameOverFrame:FindFirstChild("LobbyButton") :: TextButton?
 		if lobbyButton then
 			lobbyButton.Visible = true
-			lobbyButton.Position = UDim2.new(0.5, 10, 0, 340)
+			lobbyButton.Active = true
+			lobbyButton.Text = "🏠 LOBBY"
+			lobbyButton.Position = UDim2.new(0.53, 0, 1, -62)
 		end
 	end
 
@@ -1612,13 +1616,33 @@ function UIController:ShowTutorialComplete()
 
 	-- 완료 알림 표시
 	if self._tutorialNotification then
-		self._tutorialNotification.Visible = true
-
-		-- 2초 후 자동 숨김
+		local notif = self._tutorialNotification
+		notif.BackgroundTransparency = 1
+		local textLabel = notif:FindFirstChildOfClass("TextLabel")
+		if textLabel then
+			textLabel.TextTransparency = 1
+		end
+		notif.Visible = true
+		TweenService:Create(notif, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+			BackgroundTransparency = 0.2,
+		}):Play()
+		if textLabel then
+			TweenService:Create(textLabel, TweenInfo.new(0.3), { TextTransparency = 0 }):Play()
+		end
 		task.delay(2, function()
-			if self._tutorialNotification then
-				self._tutorialNotification.Visible = false
+			if not notif or not notif.Parent then return end
+			local fadeOut = TweenService:Create(notif, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+				BackgroundTransparency = 1,
+			})
+			fadeOut:Play()
+			if textLabel and textLabel.Parent then
+				TweenService:Create(textLabel, TweenInfo.new(0.3), { TextTransparency = 1 }):Play()
 			end
+			fadeOut.Completed:Connect(function()
+				if notif and notif.Parent then
+					notif.Visible = false
+				end
+			end)
 		end)
 	end
 	print("[UIController] Tutorial complete notification shown")
@@ -1650,6 +1674,14 @@ function UIController:ShowCountdown(onComplete: () -> ())
 		task.delay(totalDelay, function()
 			countdownLabel.Text = step.text
 			countdownLabel.TextColor3 = step.color
+
+			-- 팝 애니메이션: 큰 TextSize에서 목표 크기로 줄어들기
+			local popSize = ResponsiveUtil.scaledTextSize(72, 36)
+			local targetSize = ResponsiveUtil.scaledTextSize(48, 28)
+			countdownLabel.TextSize = popSize
+			TweenService:Create(countdownLabel, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+				TextSize = targetSize,
+			}):Play()
 
 			-- 마지막 스텝에서 콜백 호출
 			if i == #sequence then

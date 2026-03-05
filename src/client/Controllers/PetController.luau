@@ -23,6 +23,7 @@ local _equippedPet: string = "chick"
 local _billboard: BillboardGui? = nil
 local _floatTween: Tween? = nil
 local _active: boolean = false
+local _petDataConn: RBXScriptConnection? = nil
 
 -- BillboardGui 생성
 local function _createBillboard(emoji: string): BillboardGui
@@ -123,7 +124,7 @@ function PetController:EndGame()
 end
 
 -- 서버에서 펫 데이터 수신
-RemoteEvents.PetData.OnClientEvent:Connect(function(data: any)
+_petDataConn = RemoteEvents.PetData.OnClientEvent:Connect(function(data: any)
 	if type(data) ~= "table" then
 		return
 	end
@@ -137,6 +138,23 @@ RemoteEvents.PetData.OnClientEvent:Connect(function(data: any)
 		end
 	end
 end)
+
+-- 정리
+function PetController:Destroy()
+	_active = false
+	if _floatTween then
+		_floatTween:Cancel()
+		_floatTween = nil
+	end
+	if _billboard then
+		_billboard:Destroy()
+		_billboard = nil
+	end
+	if _petDataConn then
+		_petDataConn:Disconnect()
+		_petDataConn = nil
+	end
+end
 
 print("[PetController] Initialized")
 

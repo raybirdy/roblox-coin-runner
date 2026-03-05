@@ -68,6 +68,7 @@ function RealtimeBattleController:_createGui()
 	local queueGui = Instance.new("ScreenGui")
 	queueGui.Name = "BattleQueueGui"
 	queueGui.ResetOnSpawn = false
+	queueGui.ScreenInsets = Enum.ScreenInsets.DeviceSafeInsets
 	queueGui.DisplayOrder = 22
 	queueGui.Enabled = false
 	queueGui.Parent = playerGui
@@ -110,7 +111,7 @@ function RealtimeBattleController:_createGui()
 	queueStatus.Position = UDim2.new(0, 0, 0, 50)
 	queueStatus.BackgroundTransparency = 1
 	queueStatus.TextColor3 = Color3.fromRGB(200, 200, 220)
-	queueStatus.TextSize = 14
+	queueStatus.TextSize = ResponsiveUtil.scaledTextSize(14, 10)
 	queueStatus.Font = Enum.Font.Gotham
 	queueStatus.Text = "상대를 찾는 중..."
 	queueStatus.Parent = queuePanel
@@ -121,7 +122,7 @@ function RealtimeBattleController:_createGui()
 	queueTimer.Position = UDim2.new(0, 0, 0, 82)
 	queueTimer.BackgroundTransparency = 1
 	queueTimer.TextColor3 = Color3.fromRGB(255, 215, 0)
-	queueTimer.TextSize = 28
+	queueTimer.TextSize = ResponsiveUtil.scaledTextSize(22, 14)
 	queueTimer.Font = Enum.Font.GothamBold
 	queueTimer.Text = "12"
 	queueTimer.Parent = queuePanel
@@ -132,7 +133,7 @@ function RealtimeBattleController:_createGui()
 	cancelBtn.Position = UDim2.new(0.5, -70, 0, 130)
 	cancelBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 100)
 	cancelBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-	cancelBtn.TextSize = 14
+	cancelBtn.TextSize = ResponsiveUtil.scaledTextSize(14, 10)
 	cancelBtn.Font = Enum.Font.GothamBold
 	cancelBtn.Text = "취소"
 	cancelBtn.Parent = queuePanel
@@ -149,6 +150,7 @@ function RealtimeBattleController:_createGui()
 	local hudGui = Instance.new("ScreenGui")
 	hudGui.Name = "BattleHud"
 	hudGui.ResetOnSpawn = false
+	hudGui.ScreenInsets = Enum.ScreenInsets.DeviceSafeInsets
 	hudGui.DisplayOrder = 21
 	hudGui.Enabled = false
 	hudGui.Parent = playerGui
@@ -176,7 +178,7 @@ function RealtimeBattleController:_createGui()
 	hudVsLabel.Position = UDim2.new(0, 4, 0, 4)
 	hudVsLabel.BackgroundTransparency = 1
 	hudVsLabel.TextColor3 = Color3.fromRGB(150, 180, 255)
-	hudVsLabel.TextSize = 11
+	hudVsLabel.TextSize = ResponsiveUtil.scaledTextSize(11, 9)
 	hudVsLabel.Font = Enum.Font.GothamBold
 	hudVsLabel.Text = "⚔️ VS"
 	hudVsLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -188,7 +190,7 @@ function RealtimeBattleController:_createGui()
 	opponentNameLabel.Position = UDim2.new(0, 4, 0, 22)
 	opponentNameLabel.BackgroundTransparency = 1
 	opponentNameLabel.TextColor3 = Color3.fromRGB(200, 210, 255)
-	opponentNameLabel.TextSize = 11
+	opponentNameLabel.TextSize = ResponsiveUtil.scaledTextSize(11, 9)
 	opponentNameLabel.Font = Enum.Font.Gotham
 	opponentNameLabel.Text = "---"
 	opponentNameLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -202,7 +204,7 @@ function RealtimeBattleController:_createGui()
 	opponentScoreLabel.Position = UDim2.new(0, 4, 0, 36)
 	opponentScoreLabel.BackgroundTransparency = 1
 	opponentScoreLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
-	opponentScoreLabel.TextSize = 16
+	opponentScoreLabel.TextSize = ResponsiveUtil.scaledTextSize(16, 11)
 	opponentScoreLabel.Font = Enum.Font.GothamBold
 	opponentScoreLabel.Text = "0점"
 	opponentScoreLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -213,6 +215,7 @@ function RealtimeBattleController:_createGui()
 	local resultGui = Instance.new("ScreenGui")
 	resultGui.Name = "BattleResultGui"
 	resultGui.ResetOnSpawn = false
+	resultGui.ScreenInsets = Enum.ScreenInsets.DeviceSafeInsets
 	resultGui.DisplayOrder = 26
 	resultGui.Enabled = false
 	resultGui.Parent = playerGui
@@ -248,7 +251,7 @@ function RealtimeBattleController:_createGui()
 	resultTitle.Size = UDim2.new(1, 0, 0, 68)
 	resultTitle.BackgroundTransparency = 1
 	resultTitle.TextColor3 = Color3.fromRGB(255, 215, 0)
-	resultTitle.TextSize = 36
+	resultTitle.TextSize = ResponsiveUtil.scaledTextSize(24, 15)
 	resultTitle.Font = Enum.Font.GothamBlack
 	resultTitle.Text = "🏆 승리!"
 	resultTitle.Parent = resultFrame
@@ -259,7 +262,7 @@ function RealtimeBattleController:_createGui()
 	resultDetail.Position = UDim2.new(0, 10, 0, 72)
 	resultDetail.BackgroundTransparency = 1
 	resultDetail.TextColor3 = Color3.fromRGB(200, 200, 220)
-	resultDetail.TextSize = 15
+	resultDetail.TextSize = ResponsiveUtil.scaledTextSize(14, 10)
 	resultDetail.Font = Enum.Font.Gotham
 	resultDetail.TextWrapped = true
 	resultDetail.Text = ""
@@ -271,7 +274,7 @@ function RealtimeBattleController:_createGui()
 	resultReward.Position = UDim2.new(0, 0, 0, 135)
 	resultReward.BackgroundTransparency = 1
 	resultReward.TextColor3 = Color3.fromRGB(80, 220, 100)
-	resultReward.TextSize = 20
+	resultReward.TextSize = ResponsiveUtil.scaledTextSize(20, 13)
 	resultReward.Font = Enum.Font.GothamBold
 	resultReward.Text = ""
 	resultReward.Parent = resultFrame
@@ -281,7 +284,7 @@ function RealtimeBattleController:_createGui()
 	closeBtn.Position = UDim2.new(0.5, -90, 0, 180)
 	closeBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 100)
 	closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-	closeBtn.TextSize = 14
+	closeBtn.TextSize = ResponsiveUtil.scaledTextSize(14, 10)
 	closeBtn.Font = Enum.Font.GothamBold
 	closeBtn.Text = "닫기"
 	closeBtn.Parent = resultFrame
@@ -298,6 +301,7 @@ function RealtimeBattleController:_createGui()
 	local lobbyGui = Instance.new("ScreenGui")
 	lobbyGui.Name = "BattleLobbyButton"
 	lobbyGui.ResetOnSpawn = false
+	lobbyGui.ScreenInsets = Enum.ScreenInsets.DeviceSafeInsets
 	lobbyGui.DisplayOrder = 12
 	lobbyGui.Enabled = false
 	lobbyGui.Parent = playerGui
@@ -309,7 +313,7 @@ function RealtimeBattleController:_createGui()
 	battleBtn.Position = UDim2.new(1, -64, 0, 182)
 	battleBtn.BackgroundColor3 = Color3.fromRGB(20, 30, 80)
 	battleBtn.TextColor3 = Color3.fromRGB(100, 170, 255)
-	battleBtn.TextSize = 26
+	battleBtn.TextSize = ResponsiveUtil.scaledTextSize(22, 14)
 	battleBtn.Font = Enum.Font.GothamBold
 	battleBtn.Text = "⚔️"
 	battleBtn.Parent = lobbyGui

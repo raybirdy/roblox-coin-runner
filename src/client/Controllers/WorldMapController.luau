@@ -7,6 +7,7 @@ local TweenService = game:GetService("TweenService")
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)
+local ResponsiveUtil = require(ReplicatedStorage.Shared.Utils.ResponsiveUtil)
 local ScenarioConstants = require(ReplicatedStorage.Shared.Constants.ScenarioConstants)
 
 local WorldMapController = {}
@@ -108,7 +109,7 @@ function WorldMapController:_createGui()
 	mapBtn.Position = UDim2.new(0, 284, 0, 16)
 	mapBtn.BackgroundColor3 = Color3.fromRGB(40, 100, 50)
 	mapBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-	mapBtn.TextSize = 22
+	mapBtn.TextSize = ResponsiveUtil.scaledTextSize(22, 14)
 	mapBtn.Font = Enum.Font.GothamBold
 	mapBtn.Text = "🗺️"
 	mapBtn.Parent = gui
@@ -157,8 +158,8 @@ function WorldMapController:_createGui()
 	-- 맵 프레임
 	local mapFrame = Instance.new("Frame")
 	mapFrame.Name = "MapFrame"
-	mapFrame.Size = UDim2.new(0, 360, 0, 480)
-	mapFrame.Position = UDim2.new(0.5, -180, 0.5, -240)
+	mapFrame.Size = ResponsiveUtil.clampedSize(360, 480, 0.90, 0.85)
+	mapFrame.Position = ResponsiveUtil.clampedPosition(360, 480, 0.90, 0.85)
 	mapFrame.BackgroundColor3 = Color3.fromRGB(12, 18, 30)
 	mapFrame.BorderSizePixel = 0
 	mapFrame.Parent = popupGui
@@ -180,7 +181,7 @@ function WorldMapController:_createGui()
 	titleLabel.Position = UDim2.new(0, 16, 0, 8)
 	titleLabel.BackgroundTransparency = 1
 	titleLabel.TextColor3 = Color3.fromRGB(120, 200, 130)
-	titleLabel.TextSize = 18
+	titleLabel.TextSize = ResponsiveUtil.scaledTextSize(18, 12)
 	titleLabel.Font = Enum.Font.GothamBlack
 	titleLabel.Text = "🗺️ WORLD MAP"
 	titleLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -193,7 +194,7 @@ function WorldMapController:_createGui()
 	closeBtn.Position = UDim2.new(1, -40, 0, 10)
 	closeBtn.BackgroundColor3 = Color3.fromRGB(80, 40, 40)
 	closeBtn.TextColor3 = Color3.fromRGB(255, 150, 150)
-	closeBtn.TextSize = 16
+	closeBtn.TextSize = ResponsiveUtil.scaledTextSize(16, 11)
 	closeBtn.Font = Enum.Font.GothamBold
 	closeBtn.Text = "✕"
 	closeBtn.Parent = mapFrame
@@ -292,7 +293,7 @@ function WorldMapController:_buildNodes(canvas: Frame)
 		themeLabel.Position = UDim2.new(0, 0, 0, 0)
 		themeLabel.BackgroundTransparency = 1
 		themeLabel.Text = chapter.theme
-		themeLabel.TextSize = 20
+		themeLabel.TextSize = ResponsiveUtil.scaledTextSize(22, 14)
 		themeLabel.Font = Enum.Font.GothamBold
 		themeLabel.TextTransparency = NODE_STATES.locked.textAlpha
 		themeLabel.ZIndex = 3
@@ -305,7 +306,7 @@ function WorldMapController:_buildNodes(canvas: Frame)
 		numLabel.Position = UDim2.new(0, 0, 0.6, 0)
 		numLabel.BackgroundTransparency = 1
 		numLabel.Text = `CH.{chapter.num}`
-		numLabel.TextSize = 10
+		numLabel.TextSize = ResponsiveUtil.scaledTextSize(11, 9)
 		numLabel.Font = Enum.Font.GothamBold
 		numLabel.TextColor3 = Color3.fromRGB(200, 210, 230)
 		numLabel.TextTransparency = NODE_STATES.locked.textAlpha
@@ -319,7 +320,7 @@ function WorldMapController:_buildNodes(canvas: Frame)
 		starBadge.Position = UDim2.new(1, -8, 0, -8)
 		starBadge.BackgroundTransparency = 1
 		starBadge.Text = "⭐"
-		starBadge.TextSize = 14
+		starBadge.TextSize = ResponsiveUtil.scaledTextSize(14, 10)
 		starBadge.Font = Enum.Font.GothamBold
 		starBadge.Visible = false
 		starBadge.ZIndex = 4
@@ -332,7 +333,7 @@ function WorldMapController:_buildNodes(canvas: Frame)
 		nameLbl.Position = UDim2.new(0.5, -40, 1, 2)
 		nameLbl.BackgroundTransparency = 1
 		nameLbl.Text = chapter.name
-		nameLbl.TextSize = 9
+		nameLbl.TextSize = ResponsiveUtil.scaledTextSize(11, 9)
 		nameLbl.Font = Enum.Font.Gotham
 		nameLbl.TextColor3 = Color3.fromRGB(160, 180, 210)
 		nameLbl.TextWrapped = true
@@ -556,10 +557,11 @@ function WorldMapController:Open()
 	self._isOpen = true
 	popupGui.Enabled = true
 
-	mapFrame.Position = UDim2.new(0.5, -180, 0.5, -240 + 40)
+	local targetPos = ResponsiveUtil.clampedPosition(360, 480, 0.90, 0.85)
+	mapFrame.Position = UDim2.new(targetPos.X.Scale, targetPos.X.Offset, targetPos.Y.Scale, targetPos.Y.Offset + 40)
 	mapFrame.BackgroundTransparency = 1
 	TweenService:Create(mapFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-		Position = UDim2.new(0.5, -180, 0.5, -240),
+		Position = targetPos,
 		BackgroundTransparency = 0,
 	}):Play()
 end
@@ -573,8 +575,9 @@ function WorldMapController:Close()
 
 	self._isOpen = false
 
+	local targetPos = ResponsiveUtil.clampedPosition(360, 480, 0.90, 0.85)
 	TweenService:Create(mapFrame, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-		Position = UDim2.new(0.5, -180, 0.5, -200),
+		Position = UDim2.new(targetPos.X.Scale, targetPos.X.Offset, targetPos.Y.Scale, targetPos.Y.Offset - 40),
 		BackgroundTransparency = 1,
 	}):Play()
 

@@ -88,6 +88,7 @@ function ProgressionController:_createLevelDisplay()
 	local screenGui = Instance.new("ScreenGui")
 	screenGui.Name = "ProgressionGui"
 	screenGui.ResetOnSpawn = false
+	screenGui.ScreenInsets = Enum.ScreenInsets.DeviceSafeInsets
 	screenGui.DisplayOrder = 5
 	screenGui.Parent = playerGui
 	self._screenGui = screenGui
@@ -191,6 +192,7 @@ function ProgressionController:_createMissionPopup()
 	local missionGui = Instance.new("ScreenGui")
 	missionGui.Name = "MissionPopupGui"
 	missionGui.ResetOnSpawn = false
+	missionGui.ScreenInsets = Enum.ScreenInsets.DeviceSafeInsets
 	missionGui.DisplayOrder = 16
 	missionGui.Enabled = false
 	missionGui.Parent = playerGui
@@ -1009,10 +1011,11 @@ function ProgressionController:_showNextNotification()
 	end
 
 	-- 알림 배너
+	local bannerW = math.min(300, ResponsiveUtil.getViewportSize().X * 0.85)
 	local banner = Instance.new("Frame")
 	banner.Name = "NotificationBanner"
-	banner.Size = UDim2.new(0, 300, 0, 60)
-	banner.Position = UDim2.new(0.5, -150, 0, -70)
+	banner.Size = ResponsiveUtil.clampedSize(300, 60, 0.85, 0.10)
+	banner.Position = UDim2.new(0.5, -bannerW / 2, 0, -70)
 	banner.BackgroundColor3 = Color3.fromRGB(20, 20, 35)
 	banner.BorderSizePixel = 0
 	banner.Parent = self._screenGui
@@ -1050,7 +1053,7 @@ function ProgressionController:_showNextNotification()
 
 	-- 슬라이드 인
 	TweenService:Create(banner, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-		Position = UDim2.new(0.5, -150, 0, 10),
+		Position = UDim2.new(0.5, -bannerW / 2, 0, 10),
 	}):Play()
 
 	-- 3초 후 슬라이드 아웃
@@ -1058,7 +1061,7 @@ function ProgressionController:_showNextNotification()
 		if banner and banner.Parent then
 			local tweenOut =
 				TweenService:Create(banner, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-					Position = UDim2.new(0.5, -150, 0, -70),
+					Position = UDim2.new(0.5, -bannerW / 2, 0, -70),
 				})
 			tweenOut:Play()
 			tweenOut.Completed:Connect(function()

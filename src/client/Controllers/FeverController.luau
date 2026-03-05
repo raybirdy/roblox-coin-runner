@@ -89,6 +89,8 @@ function FeverController:_createGaugeUI()
 	local gui = Instance.new("ScreenGui")
 	gui.Name = "FeverGaugeUI"
 	gui.ResetOnSpawn = false
+	gui.ScreenInsets = Enum.ScreenInsets.DeviceSafeInsets
+	gui.DisplayOrder = 8
 	gui.Parent = playerGui
 	self._gaugeGui = gui
 
@@ -152,6 +154,7 @@ function FeverController:_createOverlay()
 	local gui = Instance.new("ScreenGui")
 	gui.Name = "FeverOverlayUI"
 	gui.ResetOnSpawn = false
+	gui.ScreenInsets = Enum.ScreenInsets.None
 	gui.IgnoreGuiInset = true
 	gui.Parent = playerGui
 	self._feverOverlay = gui
@@ -400,7 +403,6 @@ function FeverController:_updateGauge(data: { combo: number, threshold: number, 
 	-- 게이지 펄스: ratio >= 0.8 시 심장박동처럼 펄스 시작
 	if ratio >= 0.8 and not data.onCooldown then
 		if not self._gaugePulseConnection then
-			local pulseUp = true
 			self._gaugePulseConnection = game:GetService("RunService").Heartbeat:Connect(function(_dt)
 				if not self._gaugeFrame then
 					return
@@ -408,11 +410,10 @@ function FeverController:_updateGauge(data: { combo: number, threshold: number, 
 				-- 게이지 테두리 펄스
 				local stroke = self._gaugeFrame:FindFirstChildOfClass("UIStroke")
 				if stroke then
-					local t = tick()
+					local t = os.clock()
 					local pulse = math.sin(t * 8) * 0.5 + 0.5 -- 8 rad/s 진동
 					stroke.Thickness = 2 + pulse * 2 -- 2~4px 진동
 				end
-				pulseUp = not pulseUp
 			end)
 		end
 	else
