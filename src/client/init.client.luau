@@ -97,6 +97,7 @@ local DailyEventController = require(script.Controllers.DailyEventController)
 local ObjectiveHudController = require(script.Controllers.ObjectiveHudController)
 local PetController = require(script.Controllers.PetController)
 local CoinKingController = require(script.Controllers.CoinKingController)
+local CoinSpinController = require(script.Controllers.CoinSpinController)
 
 -- 컨트롤러 인스턴스 생성
 local inputController = InputController.new()
@@ -132,6 +133,7 @@ local dailyEventController = DailyEventController.new(player)
 local objectiveHudController = ObjectiveHudController.new()
 local petController = PetController.new()
 local coinKingController = CoinKingController.new()
+local _coinSpinController = CoinSpinController.new()
 
 -- Fever mode callbacks (speed boost + camera shake + BGM speed + P0: 카메라 줌인)
 feverController:OnFeverStart(function(speedBoost: number, duration: number)

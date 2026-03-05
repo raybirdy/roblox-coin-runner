@@ -70,6 +70,8 @@ export type CutsceneController = typeof(setmetatable(
 		_currentLines: { { speaker: string?, text: string, characterId: string?, effect: string? } },
 		_cutsceneQueue: { { lines: { { speaker: string?, text: string, characterId: string?, effect: string? } }, title: string? } },
 		_typingThread: thread?,
+		_portraitBobThread: thread?,
+		_charTintThread: thread?,
 		-- 스킬 튜토리얼
 		_pendingSkillTutorial: string?,
 		_shownSkillTutorials: { [string]: boolean },
@@ -103,6 +105,8 @@ function CutsceneController.new(): CutsceneController
 		_currentLines = {},
 		_cutsceneQueue = {},
 		_typingThread = nil,
+		_portraitBobThread = nil,
+		_charTintThread = nil,
 		_pendingSkillTutorial = nil,
 		_shownSkillTutorials = {},
 		_portraitFrame = nil,
@@ -387,6 +391,19 @@ function CutsceneController:_advanceLine()
 	local characterId = line.characterId
 	local profile = if characterId then ScenarioConstants.CHARACTER_PROFILES[characterId] else nil
 
+	-- 캐릭터 역할별 딤 오버레이 틴트
+	local roleColors = {
+		villain = Color3.fromRGB(80, 10, 10),
+		mentor  = Color3.fromRGB(10, 20, 60),
+		ally    = Color3.fromRGB(10, 40, 20),
+	}
+	local tint = roleColors[profile and profile.role or ""] or Color3.fromRGB(10, 10, 30)
+	if self._dimOverlay then
+		TweenService:Create(self._dimOverlay, TweenInfo.new(0.4), {
+			BackgroundColor3 = tint,
+		}):Play()
+	end
+
 	if profile then
 		self:_updatePortrait(profile)
 		if self._speakerLabel then
@@ -395,6 +412,17 @@ function CutsceneController:_advanceLine()
 		if self._speakerBg then
 			TweenService:Create(self._speakerBg, TweenInfo.new(0.2), {
 				BackgroundColor3 = profile.bgColor,
+			}):Play()
+			-- 화자 이름 배경 바운스 애니메이션
+			local speakerScaleInst = self._speakerBg:FindFirstChildOfClass("UIScale")
+			if not speakerScaleInst then
+				speakerScaleInst = Instance.new("UIScale")
+				speakerScaleInst.Parent = self._speakerBg
+			end
+			local speakerScale = speakerScaleInst :: UIScale
+			speakerScale.Scale = 0.85
+			TweenService:Create(speakerScale, TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+				Scale = 1.0,
 			}):Play()
 		end
 		self:_updateBorderColor(profile.role)
@@ -415,7 +443,17 @@ function CutsceneController:_advanceLine()
 		self:_showVictoryParticle()
 	end
 
+	-- 대화 라인 전환 페이드 (첫 번째 줄이 아닌 경우 fade-out 후 진행)
+	if self._currentLineIndex > 1 and self._dialogueLabel then
+		local fadeOutTween = TweenService:Create(self._dialogueLabel, TweenInfo.new(0.1), {
+			TextTransparency = 1,
+		})
+		fadeOutTween:Play()
+		task.wait(0.12)
+	end
+
 	if self._dialogueLabel then
+		self._dialogueLabel.TextTransparency = 1
 		self._dialogueLabel.Text = ""
 	end
 	self:_typeText(line.text)
@@ -431,6 +469,10 @@ function CutsceneController:_typeText(text: string)
 		if not label then
 			return
 		end
+
+		-- 텍스트 페이드인 (타이핑 시작 시)
+		label.TextTransparency = 1
+		TweenService:Create(label, TweenInfo.new(0.2), { TextTransparency = 0 }):Play()
 
 		local bytes = string.len(text)
 		for i = 1, bytes do
@@ -481,6 +523,43 @@ function CutsceneController:_skipAll()
 		task.delay(0.6, function()
 			self:_showSkillTutorial(pendingSkill)
 		end)
+	end
+end
+
+-- ==================== 초상화 밥 애니메이션 ====================
+
+function CutsceneController:_startPortraitBob()
+	if self._portraitBobThread then
+		task.cancel(self._portraitBobThread)
+		self._portraitBobThread = nil
+	end
+
+	local portraitFrame = self._portraitFrame
+	if not portraitFrame then
+		return
+	end
+
+	self._portraitBobThread = task.spawn(function()
+		local t = 0
+		while self._isPlaying and portraitFrame.Parent do
+			t += 1 / 30
+			portraitFrame.Position = UDim2.new(0, 12, 0, -36 + math.sin(t * 4) * 3)
+			task.wait(1 / 30)
+		end
+		-- 루프 종료 시 원래 위치로 복원
+		if portraitFrame.Parent then
+			portraitFrame.Position = UDim2.new(0, 12, 0, -36)
+		end
+	end)
+end
+
+function CutsceneController:_stopPortraitBob()
+	if self._portraitBobThread then
+		task.cancel(self._portraitBobThread)
+		self._portraitBobThread = nil
+	end
+	if self._portraitFrame then
+		self._portraitFrame.Position = UDim2.new(0, 12, 0, -36)
 	end
 end
 
@@ -642,6 +721,8 @@ function CutsceneController:_show()
 	TweenService:Create(panel, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
 		Position = UDim2.new(0, 0, 0.72, 0),
 	}):Play()
+
+	self:_startPortraitBob()
 end
 
 function CutsceneController:_hide()
@@ -655,10 +736,13 @@ function CutsceneController:_hide()
 		self._onPlayEnd()
 	end
 
-	-- 딤 오버레이 페이드아웃
+	self:_stopPortraitBob()
+
+	-- 딤 오버레이 페이드아웃 + 틴트 초기화
 	if self._dimOverlay then
 		TweenService:Create(self._dimOverlay, TweenInfo.new(0.3), {
 			BackgroundTransparency = 1,
+			BackgroundColor3 = Color3.fromRGB(0, 0, 0),
 		}):Play()
 	end
 

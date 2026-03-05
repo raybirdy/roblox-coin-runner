@@ -616,6 +616,8 @@ function FeverController:_startColorCycle()
 	self:_stopColorCycle()
 
 	local hue = 0
+	local BASE_BRIGHTNESS = 3
+	local PULSE_SPEED = 4 -- rad/s
 	local conn = game:GetService("RunService").Heartbeat:Connect(function(dt)
 		if not self._isFever or not self._feverFrame then
 			return
@@ -623,9 +625,13 @@ function FeverController:_startColorCycle()
 		hue = (hue + dt * 0.5) % 1
 		self._feverFrame.BackgroundColor3 = Color3.fromHSV(hue, 0.6, 1)
 
-		-- Character glow color cycle
+		-- Character glow: 색상 + 밝기 펄스 + 범위 펄스
 		if self._characterGlow then
 			self._characterGlow.Color = Color3.fromHSV(hue, 0.8, 1)
+			-- 밝기 펄스: 2.5 ~ 4.5 사인파
+			self._characterGlow.Brightness = BASE_BRIGHTNESS + math.sin(tick() * PULSE_SPEED) * 1.0
+			-- 범위 펄스: 18 ~ 24 사인파
+			self._characterGlow.Range = 20 + math.sin(tick() * 3) * 4
 		end
 	end)
 	self._colorCycleConnection = conn

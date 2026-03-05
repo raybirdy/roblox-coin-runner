@@ -6,6 +6,7 @@
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local SoundService = game:GetService("SoundService")
+local TweenService = game:GetService("TweenService")
 
 local GameConstants = require(ReplicatedStorage.Shared.Constants.GameConstants)
 local AnimationController = require(script.Parent.AnimationController)
@@ -68,6 +69,9 @@ export type PlayerController = typeof(setmetatable(
 		_jumpSound: Sound?,
 		_landSound: Sound?,
 
+		-- 애니메이션 보조 변수
+		_dashLeanAngle: number,
+
 		-- 디버그
 		_lastJumpTime: number,
 	},
@@ -110,6 +114,7 @@ function PlayerController.new(player: Player, character: Model): PlayerControlle
 		_jumpSound = nil,
 		_landSound = nil,
 		_lastJumpTime = 0,
+		_dashLeanAngle = 0,
 	}, PlayerController)
 
 	self:_createSounds()
@@ -254,6 +259,29 @@ function PlayerController:Dash()
 		if self.state ~= "Idle" then
 			self.speedMultiplier = originalMultiplier
 		end
+	end)
+
+	-- 대시 린 애니메이션 (앞으로 기울었다가 복귀)
+	local leanStart = os.clock()
+	local LEAN_ANGLE = -18 -- degrees forward
+	task.spawn(function()
+		-- Lean in (first 0.1s)
+		while os.clock() - leanStart < 0.1 do
+			local p = (os.clock() - leanStart) / 0.1
+			self._dashLeanAngle = LEAN_ANGLE * p
+			task.wait()
+		end
+		self._dashLeanAngle = LEAN_ANGLE
+		-- Hold (0.1s)
+		task.wait(0.1)
+		-- Lean out (last 0.1s)
+		local leanOutStart = os.clock()
+		while os.clock() - leanOutStart < 0.1 do
+			local p = (os.clock() - leanOutStart) / 0.1
+			self._dashLeanAngle = LEAN_ANGLE * (1 - p)
+			task.wait()
+		end
+		self._dashLeanAngle = 0
 	end)
 
 	print(`[PlayerController] Dash activated! Speed: {dashSpeed}`)
@@ -500,9 +528,9 @@ function PlayerController:_moveForward(deltaTime: number)
 		self.humanoidRootPart.CFrame = CFrame.new(newX, pos.Y, GameConstants.PLAYER.Z_POSITION)
 			* CFrame.Angles(math.rad(-90), math.rad(-90), 0)
 	else
-		-- 일반 상태: 정상 자세
+		-- 일반 상태: 대시 린 각도 포함한 자세
 		self.humanoidRootPart.CFrame = CFrame.new(newX, pos.Y, GameConstants.PLAYER.Z_POSITION)
-			* CFrame.Angles(0, math.rad(-90), 0)
+			* CFrame.Angles(math.rad(self._dashLeanAngle), math.rad(-90), 0)
 
 		-- 달리기 애니메이션 트리거 (Humanoid에게 이동 중임을 알림)
 		self.humanoid:Move(Vector3.new(1, 0, 0), false)
@@ -557,6 +585,9 @@ function PlayerController:_checkGrounded()
 
 			-- 착지 먼지 이펙트
 			self:_spawnLandingDust()
+
+			-- 착지 스쿼시 애니메이션
+			self:_doLandingSquash()
 
 			-- 착지 카메라 흔들림 (미약)
 			local cameraShakeEvent = ReplicatedStorage:FindFirstChild("CameraShake") :: BindableEvent?
@@ -767,6 +798,30 @@ function PlayerController:_endSlide()
 	self.humanoidRootPart:SetAttribute("IsSliding", false)
 
 	print("[PlayerController] Slide ended")
+end
+
+-- 착지 스쿼시 애니메이션 (납작해졌다가 Back easing으로 복귀)
+function PlayerController:_doLandingSquash()
+	if not self.humanoid then
+		return
+	end
+	local heightScale = self.humanoid:FindFirstChild("BodyHeightScale") :: NumberValue?
+	local widthScale = self.humanoid:FindFirstChild("BodyWidthScale") :: NumberValue?
+	if not heightScale or not widthScale then
+		return
+	end
+
+	-- Squash: 납작하게 + 옆으로 퍼지기
+	heightScale.Value = 0.82
+	widthScale.Value = 1.18
+
+	-- Spring back to normal
+	TweenService:Create(heightScale, TweenInfo.new(0.18, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+		Value = 1.0,
+	}):Play()
+	TweenService:Create(widthScale, TweenInfo.new(0.18, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+		Value = 1.0,
+	}):Play()
 end
 
 -- 착지 먼지 파티클 이펙트
