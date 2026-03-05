@@ -81,6 +81,9 @@ export type CutsceneController = typeof(setmetatable(
 		_currentChapterId: string?,
 		-- 배경 딤 오버레이
 		_dimOverlay: Frame?,
+		-- 입력 차단 콜백
+		_onPlayStart: (() -> ())?,
+		_onPlayEnd: (() -> ())?,
 	},
 	CutsceneController
 ))
@@ -108,12 +111,24 @@ function CutsceneController.new(): CutsceneController
 		_topBorder = nil,
 		_currentChapterId = nil,
 		_dimOverlay = nil,
+		_onPlayStart = nil,
+		_onPlayEnd = nil,
 	}, CutsceneController)
 
 	self:_createGui()
 	self:_setupEventHandlers()
 
 	return self
+end
+
+-- ==================== 입력 차단 콜백 등록 ====================
+
+function CutsceneController:OnPlayStart(callback: () -> ())
+	self._onPlayStart = callback
+end
+
+function CutsceneController:OnPlayEnd(callback: () -> ())
+	self._onPlayEnd = callback
 end
 
 -- ==================== GUI 생성 ====================
@@ -139,6 +154,16 @@ function CutsceneController:_createGui()
 	dimOverlay.ZIndex = 1
 	dimOverlay.Parent = gui
 	self._dimOverlay = dimOverlay
+
+	-- 전체화면 투명 입력 차단 버튼 (모바일 터치 이벤트 차단)
+	local inputBlocker = Instance.new("TextButton")
+	inputBlocker.Name = "InputBlocker"
+	inputBlocker.Size = UDim2.new(1, 0, 1, 0)
+	inputBlocker.BackgroundTransparency = 1
+	inputBlocker.Text = ""
+	inputBlocker.AutoButtonColor = false
+	inputBlocker.ZIndex = 0
+	inputBlocker.Parent = gui
 
 	-- 하단 패널 (화면 하단 28%)
 	local panel = Instance.new("Frame")
@@ -598,6 +623,10 @@ function CutsceneController:_show()
 		return
 	end
 
+	if self._onPlayStart then
+		self._onPlayStart()
+	end
+
 	gui.Enabled = true
 
 	-- 딤 오버레이 페이드인
@@ -619,6 +648,10 @@ function CutsceneController:_hide()
 	local panel = self._panel
 	if not gui or not panel then
 		return
+	end
+
+	if self._onPlayEnd then
+		self._onPlayEnd()
 	end
 
 	-- 딤 오버레이 페이드아웃

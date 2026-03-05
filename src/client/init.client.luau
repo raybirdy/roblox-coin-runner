@@ -7,6 +7,7 @@ print("[Client] Coin Runner Client Starting...")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 
 -- 공유 모듈 로드
 local GameConstants = require(ReplicatedStorage.Shared.Constants.GameConstants)
@@ -114,12 +115,12 @@ local leaderboardController = LeaderboardController.new(player)
 local startPowerupController = StartPowerupController.new(player)
 local progressionController = ProgressionController.new(player)
 local loginRewardController = LoginRewardController.new(player)
-local _luckySpinController = LuckySpinController.new(player)
+local luckySpinController = LuckySpinController.new(player)
 local feverController = FeverController.new()
 local zoneController = ZoneController.new()
 local characterEffectsController = CharacterEffectsController.new(character)
 local scenarioController = ScenarioController.new(player)
-local _cutsceneController = CutsceneController.new()
+local cutsceneController = CutsceneController.new()
 local worldMapController = WorldMapController.new(player)
 scenarioController:SetWorldMapController(worldMapController)
 local _bossRunController = BossRunController.new()
@@ -266,10 +267,24 @@ RemoteEvents.PortalEnter.OnClientEvent:Connect(function()
 	end)
 end)
 
+-- 모달 상호배제 헬퍼
+local function closeAllModals()
+	if shopController:IsOpen() then
+		shopController:Close()
+	end
+	if loginRewardController:IsOpen() then
+		loginRewardController:Hide()
+	end
+	if luckySpinController:IsOpen() then
+		luckySpinController:Hide()
+	end
+end
+
 -- 상점 열기 (서버에서 상점 감지 시)
 RemoteEvents.ShopOpen.OnClientEvent:Connect(function()
 	print("[Client] Shop open requested")
 	if not shopController:IsOpen() then
+		closeAllModals()
 		shopController:Open()
 	end
 end)
@@ -680,6 +695,28 @@ RunService.Heartbeat:Connect(function(_deltaTime: number)
 	if playerController:IsPlaying() then
 		local effectiveSpeed = playerController:GetEffectiveSpeed()
 		speedEffectController:SetSpeed(effectiveSpeed)
+	end
+end)
+
+-- ESC/뒤로가기 키: 열린 모달 닫기 (Bug #1)
+UserInputService.InputBegan:Connect(function(input: InputObject, gameProcessed: boolean)
+	if gameProcessed then
+		return
+	end
+	if input.KeyCode == Enum.KeyCode.Escape then
+		closeAllModals()
+	end
+end)
+
+-- 컷신 재생 중 게임 입력 차단 (Bug #11)
+cutsceneController:OnPlayStart(function()
+	if playerController:IsPlaying() then
+		inputController:SetGameActive(false)
+	end
+end)
+cutsceneController:OnPlayEnd(function()
+	if playerController:IsPlaying() then
+		inputController:SetGameActive(true)
 	end
 end)
 

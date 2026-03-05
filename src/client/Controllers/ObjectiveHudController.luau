@@ -7,6 +7,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 
 local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)
+local ResponsiveUtil = require(ReplicatedStorage.Shared.Utils.ResponsiveUtil)
 
 local ObjectiveHudController = {}
 ObjectiveHudController.__index = ObjectiveHudController
@@ -45,14 +46,17 @@ function ObjectiveHudController:_createUI()
 	screenGui.Name = "ObjectiveHUD"
 	screenGui.ResetOnSpawn = false
 	screenGui.DisplayOrder = 7
+	screenGui.ScreenInsets = Enum.ScreenInsets.DeviceSafeInsets
 	screenGui.Parent = playerGui
 	self._screenGui = screenGui
 
 	-- Main frame (left side, above slide button: slide btn top is at Y=1,-154; frame bottom at Y=1,-168)
+	local hudW = math.max(160, ResponsiveUtil.scaledOffset(180))
+	local hudH = math.max(100, ResponsiveUtil.scaledOffset(112))
 	local hudFrame = Instance.new("Frame")
 	hudFrame.Name = "HudFrame"
-	hudFrame.Size = UDim2.new(0, 180, 0, 112)
-	hudFrame.Position = UDim2.new(0, 10, 1, -280)
+	hudFrame.Size = UDim2.new(0, hudW, 0, hudH)
+	hudFrame.Position = UDim2.new(0, ResponsiveUtil.scaledOffset(10), 1, -math.max(200, ResponsiveUtil.scaledOffset(280)))
 	hudFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 30)
 	hudFrame.BackgroundTransparency = 0.25
 	hudFrame.Visible = false
@@ -72,7 +76,7 @@ function ObjectiveHudController:_createUI()
 	local titleLabel = Instance.new("TextLabel")
 	titleLabel.Name = "Title"
 	titleLabel.Size = UDim2.new(1, 0, 0, 18)
-	titleLabel.Position = UDim2.new(0, 0, 0, 4)
+	titleLabel.Position = UDim2.new(0, 0, 0, ResponsiveUtil.scaledOffset(4))
 	titleLabel.BackgroundTransparency = 1
 	titleLabel.TextColor3 = Color3.fromRGB(180, 180, 240)
 	titleLabel.TextSize = 13
@@ -84,8 +88,8 @@ function ObjectiveHudController:_createUI()
 	for i = 1, 3 do
 		local row = Instance.new("Frame")
 		row.Name = "Row" .. i
-		row.Size = UDim2.new(1, -12, 0, 24)
-		row.Position = UDim2.new(0, 6, 0, 22 + (i - 1) * 28)
+		row.Size = UDim2.new(1, -ResponsiveUtil.scaledOffset(12), 0, math.max(20, ResponsiveUtil.scaledOffset(24)))
+		row.Position = UDim2.new(0, ResponsiveUtil.scaledOffset(6), 0, math.max(18, ResponsiveUtil.scaledOffset(22)) + (i - 1) * math.max(22, ResponsiveUtil.scaledOffset(28)))
 		row.BackgroundColor3 = Color3.fromRGB(35, 35, 55)
 		row.BackgroundTransparency = 0.4
 		row.Parent = hudFrame

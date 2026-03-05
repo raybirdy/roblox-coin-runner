@@ -6,6 +6,7 @@ local TweenService = game:GetService("TweenService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)
+local ResponsiveUtil = require(ReplicatedStorage.Shared.Utils.ResponsiveUtil)
 
 local DailyEventController = {}
 DailyEventController.__index = DailyEventController
@@ -69,12 +70,13 @@ function DailyEventController:_createLobbyBanner()
 	gui.DisplayOrder = 6
 	gui.Enabled = false
 	gui.Parent = playerGui
+	gui.ScreenInsets = Enum.ScreenInsets.DeviceSafeInsets
 	self._lobbyGui = gui
 
 	local banner = Instance.new("Frame")
 	banner.Name = "Banner"
-	banner.Size = UDim2.new(0, 300, 0, 54)
-	banner.Position = UDim2.new(0.5, -150, 0, 90)
+	banner.Size = ResponsiveUtil.clampedSize(300, 54, 0.80, 0.12)
+	banner.Position = UDim2.new(0.5, -math.min(150, ResponsiveUtil.getViewportSize().X * 0.40), 0, math.max(70, ResponsiveUtil.scaledOffset(90)))
 	banner.BackgroundColor3 = Color3.fromRGB(15, 20, 45)
 	banner.BackgroundTransparency = 0.15
 	banner.BorderSizePixel = 0
@@ -130,12 +132,13 @@ function DailyEventController:_createHud()
 	gui.DisplayOrder = 8
 	gui.Enabled = false
 	gui.Parent = playerGui
+	gui.ScreenInsets = Enum.ScreenInsets.DeviceSafeInsets
 	self._hudGui = gui
 
 	local hudFrame = Instance.new("Frame")
 	hudFrame.Name = "HudFrame"
-	hudFrame.Size = UDim2.new(0, 160, 0, 46)
-	hudFrame.Position = UDim2.new(1, -170, 0, 155) -- 메인 HUD(~138px) 아래에 배치
+	hudFrame.Size = UDim2.new(0, math.max(140, ResponsiveUtil.scaledOffset(160)), 0, math.max(40, ResponsiveUtil.scaledOffset(46)))
+	hudFrame.Position = UDim2.new(1, -math.max(150, ResponsiveUtil.scaledOffset(170)), 0, math.max(130, ResponsiveUtil.scaledOffset(155))) -- 메인 HUD(~138px) 아래에 배치
 	hudFrame.BackgroundColor3 = Color3.fromRGB(10, 15, 35)
 	hudFrame.BackgroundTransparency = 0.2
 	hudFrame.BorderSizePixel = 0

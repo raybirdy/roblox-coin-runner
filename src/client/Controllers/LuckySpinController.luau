@@ -110,15 +110,23 @@ function LuckySpinController:_createUI()
 	screenGui.Parent = playerGui
 	self._screenGui = screenGui
 
-	-- Overlay
-	local overlay = Instance.new("Frame")
+	-- Overlay (터치 닫기 지원)
+	local overlay = Instance.new("TextButton")
 	overlay.Name = "Overlay"
 	overlay.Size = UDim2.new(1, 0, 1, 0)
 	overlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 	overlay.BackgroundTransparency = 0.5
 	overlay.BorderSizePixel = 0
+	overlay.Text = ""
+	overlay.AutoButtonColor = false
 	overlay.Visible = false
 	overlay.Parent = screenGui
+
+	overlay.MouseButton1Click:Connect(function()
+		if not self._isSpinning then
+			self:_hideWheel()
+		end
+	end)
 
 	-- Main panel
 	local panel = Instance.new("Frame")
@@ -513,6 +521,18 @@ function LuckySpinController:_setupEventHandlers()
 		end)
 	end)
 	table.insert(self._connections, conn)
+end
+
+-- 휠 열림 상태 확인
+function LuckySpinController:IsOpen(): boolean
+	return self._isOpen
+end
+
+-- 휠 닫기 (외부 호출용)
+function LuckySpinController:Hide()
+	if not self._isSpinning then
+		self:_hideWheel()
+	end
 end
 
 -- 정리
