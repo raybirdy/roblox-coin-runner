@@ -52,6 +52,7 @@ function LoginRewardController:_createUI()
 	local screenGui = Instance.new("ScreenGui")
 	screenGui.Name = "LoginRewardGui"
 	screenGui.ResetOnSpawn = false
+	screenGui.ScreenInsets = Enum.ScreenInsets.DeviceSafeInsets
 	screenGui.DisplayOrder = 20
 	screenGui.Parent = playerGui
 	self._screenGui = screenGui
@@ -98,7 +99,7 @@ function LoginRewardController:_createUI()
 	title.Size = UDim2.new(1, 0, 0, 40)
 	title.Position = UDim2.new(0, 0, 0, 10)
 	title.BackgroundTransparency = 1
-	title.Text = "Daily Login Reward"
+	title.Text = "출석 보상"
 	title.TextColor3 = Color3.fromRGB(255, 220, 100)
 	title.TextSize = ResponsiveUtil.scaledTextSize(22, 16)
 	title.Font = Enum.Font.GothamBold

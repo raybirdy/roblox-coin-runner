@@ -6,6 +6,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 
 local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)
+local ResponsiveUtil = require(ReplicatedStorage.Shared.Utils.ResponsiveUtil)
 
 local AsyncBattleController = {}
 AsyncBattleController.__index = AsyncBattleController
@@ -47,6 +48,7 @@ function AsyncBattleController:_createGui()
 	local hudGui = Instance.new("ScreenGui")
 	hudGui.Name = "AsyncBattleHud"
 	hudGui.ResetOnSpawn = false
+	hudGui.ScreenInsets = Enum.ScreenInsets.DeviceSafeInsets
 	hudGui.DisplayOrder = 20
 	hudGui.Enabled = false
 	hudGui.Parent = playerGui
@@ -74,7 +76,7 @@ function AsyncBattleController:_createGui()
 	vsLabel.Position = UDim2.new(0, 0, 0, 0)
 	vsLabel.BackgroundTransparency = 1
 	vsLabel.TextColor3 = Color3.fromRGB(255, 130, 130)
-	vsLabel.TextSize = 11
+	vsLabel.TextSize = ResponsiveUtil.scaledTextSize(11, 9)
 	vsLabel.Font = Enum.Font.GothamBold
 	vsLabel.Text = "⚔️ 도전 모드"
 	vsLabel.Parent = hudFrame
@@ -85,7 +87,7 @@ function AsyncBattleController:_createGui()
 	targetScoreLabel.Position = UDim2.new(0, 0, 0.45, 0)
 	targetScoreLabel.BackgroundTransparency = 1
 	targetScoreLabel.TextColor3 = Color3.fromRGB(255, 210, 210)
-	targetScoreLabel.TextSize = 14
+	targetScoreLabel.TextSize = ResponsiveUtil.scaledTextSize(14, 10)
 	targetScoreLabel.Font = Enum.Font.GothamBold
 	targetScoreLabel.Text = "목표: ---"
 	targetScoreLabel.Parent = hudFrame
@@ -95,6 +97,7 @@ function AsyncBattleController:_createGui()
 	local resultGui = Instance.new("ScreenGui")
 	resultGui.Name = "AsyncBattleResult"
 	resultGui.ResetOnSpawn = false
+	resultGui.ScreenInsets = Enum.ScreenInsets.DeviceSafeInsets
 	resultGui.DisplayOrder = 25
 	resultGui.Enabled = false
 	resultGui.Parent = playerGui
@@ -130,7 +133,7 @@ function AsyncBattleController:_createGui()
 	resultTitle.Size = UDim2.new(1, 0, 0, 64)
 	resultTitle.BackgroundTransparency = 1
 	resultTitle.TextColor3 = Color3.fromRGB(255, 215, 0)
-	resultTitle.TextSize = 34
+	resultTitle.TextSize = ResponsiveUtil.scaledTextSize(24, 15)
 	resultTitle.Font = Enum.Font.GothamBlack
 	resultTitle.Text = "🏆 승리!"
 	resultTitle.Parent = resultFrame
@@ -141,7 +144,7 @@ function AsyncBattleController:_createGui()
 	resultDetail.Position = UDim2.new(0, 10, 0, 68)
 	resultDetail.BackgroundTransparency = 1
 	resultDetail.TextColor3 = Color3.fromRGB(200, 200, 220)
-	resultDetail.TextSize = 15
+	resultDetail.TextSize = ResponsiveUtil.scaledTextSize(14, 10)
 	resultDetail.Font = Enum.Font.Gotham
 	resultDetail.TextWrapped = true
 	resultDetail.Text = ""
@@ -153,7 +156,7 @@ function AsyncBattleController:_createGui()
 	resultReward.Position = UDim2.new(0, 0, 0, 122)
 	resultReward.BackgroundTransparency = 1
 	resultReward.TextColor3 = Color3.fromRGB(80, 220, 100)
-	resultReward.TextSize = 20
+	resultReward.TextSize = ResponsiveUtil.scaledTextSize(20, 13)
 	resultReward.Font = Enum.Font.GothamBold
 	resultReward.Text = ""
 	resultReward.Parent = resultFrame
@@ -163,7 +166,7 @@ function AsyncBattleController:_createGui()
 	closeBtn.Position = UDim2.new(0.5, -90, 0, 163)
 	closeBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 100)
 	closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-	closeBtn.TextSize = 14
+	closeBtn.TextSize = ResponsiveUtil.scaledTextSize(14, 10)
 	closeBtn.Font = Enum.Font.GothamBold
 	closeBtn.Text = "닫기"
 	closeBtn.Parent = resultFrame

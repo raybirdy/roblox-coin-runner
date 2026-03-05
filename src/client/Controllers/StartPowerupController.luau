@@ -43,18 +43,26 @@ function StartPowerupController:_createUI()
 	local screenGui = Instance.new("ScreenGui")
 	screenGui.Name = "StartPowerupUI"
 	screenGui.ResetOnSpawn = false
+	screenGui.ScreenInsets = Enum.ScreenInsets.DeviceSafeInsets
 	screenGui.DisplayOrder = 10
 	screenGui.Parent = self._playerGui
 	self._screenGui = screenGui
 
 	-- 배경 딤
-	local dim = Instance.new("Frame")
+	local dim = Instance.new("TextButton")
 	dim.Name = "Dim"
 	dim.Size = UDim2.new(1, 0, 1, 0)
 	dim.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 	dim.BackgroundTransparency = 0.5
+	dim.Text = ""
+	dim.AutoButtonColor = false
 	dim.Visible = false
 	dim.Parent = screenGui
+
+	dim.MouseButton1Click:Connect(function()
+		self._selectedPowerups = {}
+		self:_confirm()
+	end)
 
 	-- 팝업 프레임
 	local popup = Instance.new("Frame")

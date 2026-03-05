@@ -48,6 +48,7 @@ function CoinKingController:_createUI()
 	local screenGui = Instance.new("ScreenGui")
 	screenGui.Name = "CoinKingOverlay"
 	screenGui.ResetOnSpawn = false
+	screenGui.ScreenInsets = Enum.ScreenInsets.None
 	screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 	screenGui.Enabled = false
 	screenGui.Parent = playerGui
@@ -87,7 +88,7 @@ end
 
 function CoinKingController:StartGame()
 	self._isActive = true
-	self._gameStartTime = tick()
+	self._gameStartTime = os.clock()
 
 	if self._container then
 		self._container.Enabled = true
@@ -114,7 +115,7 @@ function CoinKingController:_update()
 		return
 	end
 
-	local elapsed = tick() - self._gameStartTime
+	local elapsed = os.clock() - self._gameStartTime
 
 	-- APPEAR_TIME 이전: 숨겨둠
 	if elapsed < APPEAR_TIME then

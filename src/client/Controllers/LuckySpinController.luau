@@ -106,6 +106,7 @@ function LuckySpinController:_createUI()
 	local screenGui = Instance.new("ScreenGui")
 	screenGui.Name = "LuckySpinGui"
 	screenGui.ResetOnSpawn = false
+	screenGui.ScreenInsets = Enum.ScreenInsets.DeviceSafeInsets
 	screenGui.DisplayOrder = 18
 	screenGui.Parent = playerGui
 	self._screenGui = screenGui

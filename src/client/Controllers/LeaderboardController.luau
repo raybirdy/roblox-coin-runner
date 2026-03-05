@@ -64,6 +64,7 @@ function LeaderboardController:_createPopupGui()
 	local screenGui = Instance.new("ScreenGui")
 	screenGui.Name = "LeaderboardPopupGui"
 	screenGui.ResetOnSpawn = false
+	screenGui.ScreenInsets = Enum.ScreenInsets.DeviceSafeInsets
 	screenGui.DisplayOrder = 15
 	screenGui.Enabled = false
 	screenGui.Parent = playerGui
@@ -253,11 +254,11 @@ function LeaderboardController:_createPopupGui()
 		-- 도전 버튼 (내 자신 제외)
 		local challengeBtn = Instance.new("TextButton")
 		challengeBtn.Name = "ChallengeBtn"
-		challengeBtn.Size = UDim2.new(0, 44, 0, 22)
-		challengeBtn.Position = UDim2.new(1, -48, 0.5, -11)
+		challengeBtn.Size = UDim2.new(0, 44, 0, math.max(28, ResponsiveUtil.scaledOffset(28)))
+		challengeBtn.Position = UDim2.new(1, -48, 0.5, -math.max(28, ResponsiveUtil.scaledOffset(28)) / 2)
 		challengeBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
 		challengeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-		challengeBtn.TextSize = 10
+		challengeBtn.TextSize = ResponsiveUtil.scaledTextSize(13, 10)
 		challengeBtn.Font = Enum.Font.GothamBold
 		challengeBtn.Text = "⚔️도전"
 		challengeBtn.Visible = false
