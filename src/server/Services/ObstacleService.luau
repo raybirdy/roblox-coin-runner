@@ -33,6 +33,7 @@ export type ObstacleService = typeof(setmetatable(
 		_collidedObstacles: { [BasePart]: boolean }, -- already-hit tracking
 		_gameStartTime: number, -- 게임 시작 시간 (Chase Mob MIN_TIME 판단용)
 		_lastPlayerPosition: Vector3, -- 가장 최근의 플레이어 위치 (Chase Mob 스폰용)
+		_currentZoneIndex: number, -- 현재 구역 인덱스 (장애물 색상 테마용)
 	},
 	ObstacleService
 ))
@@ -47,6 +48,7 @@ function ObstacleService.new(player: Player): ObstacleService
 		_collidedObstacles = {},
 		_gameStartTime = 0,
 		_lastPlayerPosition = Vector3.zero,
+		_currentZoneIndex = 1,
 	}, ObstacleService)
 
 	return self
@@ -55,6 +57,17 @@ end
 -- 게임 시작 시간 설정 (GameManager에서 호출)
 function ObstacleService:SetGameStartTime(startTime: number)
 	self._gameStartTime = startTime
+end
+
+-- 현재 구역 설정 (ChunkService에서 Zone 전환 시 호출)
+function ObstacleService:SetCurrentZone(zoneIndex: number)
+	self._currentZoneIndex = zoneIndex
+end
+
+-- 현재 구역에 맞는 장애물 색상 반환
+function ObstacleService:_getZoneObstacleColor(): Color3
+	return GameConstants.ZONE_OBSTACLE_COLORS[self._currentZoneIndex]
+		or GameConstants.ZONE_OBSTACLE_COLORS[1]
 end
 
 -- 플레이어 현재 위치 업데이트 (GameManager Heartbeat에서 호출)
@@ -188,6 +201,41 @@ function ObstacleService:TrySpawnChaseMobForChunk(difficulty: string)
 	self:SpawnChaseMob(self._lastPlayerPosition)
 end
 
+-- 콤보 패턴 생성 (청크 로컬 X 오프셋 기준으로 월드 위치 계산)
+-- baseX: 청크 중심 기준 로컬 X 오프셋 (obstacleX와 동일 좌표계)
+function ObstacleService:_spawnObstacleCombo(
+	difficulty: string,
+	baseX: number,
+	chunkCFrame: CFrame,
+	chunkHalfX: number
+): { Vector3 }
+	local comboPool = if difficulty == "Hard"
+		then GameConstants.OBSTACLE_COMBOS.hard
+		else GameConstants.OBSTACLE_COMBOS.normal
+	if not comboPool or #comboPool == 0 then
+		return {}
+	end
+
+	local combo = comboPool[math.random(1, #comboPool)]
+	local spawnedPositions: { Vector3 } = {}
+
+	for _, entry in combo.obstacles do
+		local localX = baseX + entry.xOffset
+		-- 청크 우측 경계 5 studs 여유 체크 (chunkHalfX - 5)
+		if localX > chunkHalfX - 5 then
+			break
+		end
+		local worldPos = chunkCFrame.Position + Vector3.new(localX, 0, 0)
+		self:_spawnObstacle(worldPos, entry.type)
+		table.insert(spawnedPositions, worldPos)
+	end
+
+	if #spawnedPositions > 0 then
+		print(`[ObstacleService] Spawned combo '{combo.name}' difficulty={difficulty} baseX={baseX}`)
+	end
+	return spawnedPositions
+end
+
 -- 청크 내 장애물 생성 (생성된 장애물 위치 목록 반환)
 function ObstacleService:SpawnObstaclesInChunk(chunk: Model, difficulty: string): { Vector3 }
 	local obstaclePositions: { Vector3 } = {}
@@ -214,12 +262,29 @@ function ObstacleService:SpawnObstaclesInChunk(chunk: Model, difficulty: string)
 		end
 	end
 
+	-- 이번 청크에 콤보 패턴 사용 여부 결정 (Normal 20%, Hard 35%)
+	local comboChance = if difficulty == "Hard" then 0.35 elseif difficulty == "Normal" then 0.20 else 0
+	local useCombo = comboChance > 0 and math.random() < comboChance
+
+	local chunkHalfX = chunkSize.X / 2
+
 	for i = 1, obstacleCount do
 		-- 장애물 위치 계산 (균등 배치 + 약간의 랜덤)
 		local segmentLength = availableLength / obstacleCount
-		local baseX = -chunkSize.X / 2 + ENTRY_SAFE + (i - 1) * segmentLength + segmentLength / 2
+		local baseX = -chunkHalfX + ENTRY_SAFE + (i - 1) * segmentLength + segmentLength / 2
 		local randomOffset = (math.random() - 0.5) * (segmentLength * 0.3)
 		local obstacleX = baseX + randomOffset
+
+		-- 첫 번째 슬롯에서 콤보 시도
+		if i == 1 and useCombo then
+			local comboPositions = self:_spawnObstacleCombo(difficulty, obstacleX, chunkCFrame, chunkHalfX)
+			if #comboPositions > 0 then
+				table.insert(obstaclePositions, comboPositions[1])
+				-- 콤보가 청크 공간을 채우므로 나머지 단독 장애물은 스킵
+				break
+			end
+			-- 콤보 풀이 비어있거나 실패했으면 단독 장애물로 폴백
+		end
 
 		local obstaclePosition = chunkCFrame.Position + Vector3.new(obstacleX, 0, 0)
 
@@ -402,6 +467,16 @@ function ObstacleService:_spawnObstacle(position: Vector3, obstacleType: string)
 		obstacle.CanCollide = false
 		obstacle.Material = Enum.Material.Neon
 		obstacle:SetAttribute("ObstacleType", obstacleType)
+
+		-- 구역 색상 틴트 적용 (35% 구역 색상 영향)
+		local mwZoneColor = self:_getZoneObstacleColor()
+		local mwBaseColor = obstacle.Color
+		obstacle.Color = Color3.new(
+			mwBaseColor.R * 0.65 + mwZoneColor.R * 0.35,
+			mwBaseColor.G * 0.65 + mwZoneColor.G * 0.35,
+			mwBaseColor.B * 0.65 + mwZoneColor.B * 0.35
+		)
+
 		obstacle.Parent = workspace
 
 		-- 상하 왕복 트윈 시작 (자동 클라이언트 복제)
@@ -482,6 +557,16 @@ function ObstacleService:_spawnObstacle(position: Vector3, obstacleType: string)
 		obstacle.Anchored = true
 		obstacle.CanCollide = false
 		obstacle:SetAttribute("ObstacleType", obstacleType)
+
+		-- 구역 색상 틴트 적용 (35% 구역 색상 영향)
+		local ebZoneColor = self:_getZoneObstacleColor()
+		local ebBaseColor = obstacle.Color
+		obstacle.Color = Color3.new(
+			ebBaseColor.R * 0.65 + ebZoneColor.R * 0.35,
+			ebBaseColor.G * 0.65 + ebZoneColor.G * 0.35,
+			ebBaseColor.B * 0.65 + ebZoneColor.B * 0.35
+		)
+
 		obstacle.Parent = workspace
 
 		-- 장애물 데이터 저장 후 return (공통 코드 건너뜀, 이미 Anchored/CanCollide 설정됨)
@@ -503,6 +588,15 @@ function ObstacleService:_spawnObstacle(position: Vector3, obstacleType: string)
 	obstacle.CanCollide = false -- 저연령층 게임: 장애물 통과 가능 (에너지만 감소)
 	obstacle.Material = Enum.Material.SmoothPlastic
 	obstacle:SetAttribute("ObstacleType", obstacleType)
+
+	-- 구역 색상 틴트 적용 (35% 구역 색상 영향)
+	local zoneColor = self:_getZoneObstacleColor()
+	local baseColor = obstacle.Color
+	obstacle.Color = Color3.new(
+		baseColor.R * 0.65 + zoneColor.R * 0.35,
+		baseColor.G * 0.65 + zoneColor.G * 0.35,
+		baseColor.B * 0.65 + zoneColor.B * 0.35
+	)
 
 	obstacle.Parent = workspace
 

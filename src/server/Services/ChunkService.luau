@@ -107,6 +107,9 @@ end
 -- Phase B: 현재 zone 설정
 function ChunkService:SetCurrentZone(zoneIndex: number)
 	self._currentZoneIndex = zoneIndex
+	if self._obstacleService then
+		self._obstacleService:SetCurrentZone(zoneIndex)
+	end
 end
 
 -- Phase B: 전환 터널 요청

@@ -1298,6 +1298,32 @@ GameConstants.RUN_OBJECTIVES = {
 	SELECTION = { MIN_EASY = 1, MAX_HARD = 1 },
 }
 
+-- 장애물 콤보 패턴 (청크 내 복합 배치)
+GameConstants.OBSTACLE_COMBOS = {
+	-- Normal 난이도 콤보 (20% 확률로 선택)
+	normal = {
+		{ name = "low_double",   obstacles = { { type = "LowWall",   xOffset = 0 }, { type = "LowWall",   xOffset = 20 } } },
+		{ name = "spike_gap",    obstacles = { { type = "SpikeTrap", xOffset = 0 }, { type = "Gap",       xOffset = 22 } } },
+		{ name = "tunnel_spike", obstacles = { { type = "Tunnel",    xOffset = 0 }, { type = "SpikeTrap", xOffset = 22 } } },
+	},
+	-- Hard 난이도 콤보 (35% 확률로 선택)
+	hard = {
+		{ name = "wall_barrel",     obstacles = { { type = "LowWall",    xOffset = 0 }, { type = "ExplodingBarrel", xOffset = 18 } } },
+		{ name = "moving_spike",    obstacles = { { type = "MovingWall", xOffset = 0 }, { type = "SpikeTrap",       xOffset = 20 } } },
+		{ name = "double_gap",      obstacles = { { type = "DoubleWall", xOffset = 0 }, { type = "Gap",             xOffset = 22 } } },
+		{ name = "triple_gauntlet", obstacles = { { type = "LowWall",    xOffset = 0 }, { type = "SpikeTrap",       xOffset = 18 }, { type = "Gap", xOffset = 36 } } },
+	},
+}
+
+-- 구역별 장애물 색상 (ObstacleService에서 참조)
+GameConstants.ZONE_OBSTACLE_COLORS = {
+	[1] = Color3.fromRGB(110, 75,  40),  -- Meadow: 나무색
+	[2] = Color3.fromRGB(190, 80, 140),  -- FlowerPath: 보라/분홍
+	[3] = Color3.fromRGB(90,  45, 110),  -- MushroomWood: 짙은 보라
+	[4] = Color3.fromRGB(200, 100, 35),  -- Sunset: 오렌지
+	[5] = Color3.fromRGB(45,  65, 150),  -- Starlight: 짙은 파랑
+}
+
 -- 펫 시스템
 GameConstants.PETS = {
 	LIST = {
