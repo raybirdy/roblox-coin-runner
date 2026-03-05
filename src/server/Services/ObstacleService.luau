@@ -15,13 +15,24 @@ type ObstacleData = {
 	spawnTime: number,
 }
 
+-- Chase Mob 전용 데이터 (동적으로 이동하는 추격 NPC)
+type ChaseMobData = {
+	part: BasePart,
+	label: BillboardGui,
+	spawnTime: number,
+	lastUpdateTime: number,
+}
+
 export type ObstacleService = typeof(setmetatable(
 	{} :: {
 		_activeObstacles: { ObstacleData },
+		_activeChaseMobs: { ChaseMobData }, -- 활성 추격 NPC 목록
 		_player: Player,
 		_lastHitTime: number,
 		_isInvincible: boolean,
 		_collidedObstacles: { [BasePart]: boolean }, -- already-hit tracking
+		_gameStartTime: number, -- 게임 시작 시간 (Chase Mob MIN_TIME 판단용)
+		_lastPlayerPosition: Vector3, -- 가장 최근의 플레이어 위치 (Chase Mob 스폰용)
 	},
 	ObstacleService
 ))
@@ -29,13 +40,152 @@ export type ObstacleService = typeof(setmetatable(
 function ObstacleService.new(player: Player): ObstacleService
 	local self = setmetatable({
 		_activeObstacles = {},
+		_activeChaseMobs = {},
 		_player = player,
 		_lastHitTime = 0,
 		_isInvincible = false,
 		_collidedObstacles = {},
+		_gameStartTime = 0,
+		_lastPlayerPosition = Vector3.zero,
 	}, ObstacleService)
 
 	return self
+end
+
+-- 게임 시작 시간 설정 (GameManager에서 호출)
+function ObstacleService:SetGameStartTime(startTime: number)
+	self._gameStartTime = startTime
+end
+
+-- 플레이어 현재 위치 업데이트 (GameManager Heartbeat에서 호출)
+function ObstacleService:UpdatePlayerPosition(position: Vector3)
+	self._lastPlayerPosition = position
+end
+
+-- Chase Mob 스폰 (플레이어 위치 기준으로 즉시 생성)
+function ObstacleService:SpawnChaseMob(playerPosition: Vector3)
+	local cfg = GameConstants.CHASE_MOB
+
+	-- Chase Mob 파트 생성
+	local mobPart = Instance.new("Part")
+	mobPart.Name = "Obstacle_ChaseMob"
+	mobPart.Size = cfg.SIZE
+	-- 플레이어 뒤 20 studs, 지면 위
+	mobPart.Position = Vector3.new(
+		playerPosition.X + cfg.SPAWN_OFFSET_X,
+		playerPosition.Y,
+		playerPosition.Z
+	)
+	mobPart.Color = cfg.COLOR
+	mobPart.Material = Enum.Material.SmoothPlastic
+	mobPart.Anchored = true
+	mobPart.CanCollide = false
+	mobPart:SetAttribute("ObstacleType", "ChaseMob")
+	mobPart.Parent = workspace
+
+	-- 추격 NPC BillboardGui 라벨
+	local billboard = Instance.new("BillboardGui")
+	billboard.Name = "ChaseMobLabel"
+	billboard.Size = UDim2.new(0, 60, 0, 60)
+	billboard.StudsOffset = Vector3.new(0, 2, 0)
+	billboard.AlwaysOnTop = false
+	billboard.Parent = mobPart
+
+	local icon = Instance.new("TextLabel")
+	icon.Size = UDim2.new(1, 0, 1, 0)
+	icon.BackgroundTransparency = 1
+	icon.Text = "🦊"
+	icon.TextScaled = true
+	icon.Parent = billboard
+
+	local mobData: ChaseMobData = {
+		part = mobPart,
+		label = billboard,
+		spawnTime = tick(),
+		lastUpdateTime = tick(),
+	}
+	table.insert(self._activeChaseMobs, mobData)
+	print(`[ObstacleService] Spawned ChaseMob behind {self._player.Name} at {mobPart.Position}`)
+end
+
+-- Chase Mob 위치 업데이트 (GameManager Heartbeat에서 호출)
+-- playerPosition: 현재 플레이어 HRP 위치
+-- playerSpeed: 서버에서 추정한 현재 플레이어 속도 (studs/s)
+-- isFever: 현재 피버 상태 여부
+function ObstacleService:UpdateChaseMobs(playerPosition: Vector3, playerSpeed: number, isFever: boolean): boolean
+	local cfg = GameConstants.CHASE_MOB
+	local now = tick()
+	local hitDetected = false
+
+	for i = #self._activeChaseMobs, 1, -1 do
+		local mobData = self._activeChaseMobs[i]
+		local mobPart = mobData.part
+
+		-- 파트 유효성 체크
+		if not mobPart or not mobPart.Parent then
+			table.remove(self._activeChaseMobs, i)
+			continue
+		end
+
+		-- 최대 지속 시간 초과 시 제거
+		local age = now - mobData.spawnTime
+		if age >= cfg.DURATION then
+			mobPart:Destroy()
+			table.remove(self._activeChaseMobs, i)
+			print(`[ObstacleService] ChaseMob expired after {cfg.DURATION}s`)
+			continue
+		end
+
+		-- 플레이어와의 X 거리 계산
+		local dx = playerPosition.X - mobPart.Position.X
+
+		-- 피버 상태에서 일정 거리 이상 벌어지면 탈출 성공 → 제거
+		if isFever and dx > cfg.ESCAPE_DISTANCE then
+			mobPart:Destroy()
+			table.remove(self._activeChaseMobs, i)
+			print(`[ObstacleService] ChaseMob escaped (fever)! Distance: {dx}`)
+			continue
+		end
+
+		-- 이동: 플레이어 속도 - SPEED_OFFSET만큼 X축으로 추격
+		local mobSpeed = math.max(0, playerSpeed + cfg.SPEED_OFFSET)
+		local dt = now - mobData.lastUpdateTime
+		mobData.lastUpdateTime = now
+
+		local newX = mobPart.Position.X + mobSpeed * dt
+		mobPart.Position = Vector3.new(newX, mobPart.Position.Y, mobPart.Position.Z)
+
+		-- 피격 판정: 플레이어와의 거리가 CATCH_DISTANCE 이하
+		if not self._isInvincible and dx <= cfg.CATCH_DISTANCE and dx >= -cfg.CATCH_DISTANCE then
+			hitDetected = true
+			mobPart:Destroy()
+			table.remove(self._activeChaseMobs, i)
+			print(`[ObstacleService] ChaseMob caught {self._player.Name}! Distance: {dx}`)
+		end
+	end
+
+	return hitDetected
+end
+
+-- Hard 청크 스폰 시 Chase Mob 등장 여부 결정 (ChunkService에서 호출)
+-- _lastPlayerPosition 을 사용하므로 UpdatePlayerPosition이 먼저 호출되어야 함
+function ObstacleService:TrySpawnChaseMobForChunk(difficulty: string)
+	if difficulty ~= "Hard" then
+		return
+	end
+
+	-- 게임 시작 후 MIN_TIME 이후부터만 등장
+	local elapsed = tick() - self._gameStartTime
+	if elapsed < GameConstants.CHASE_MOB.MIN_TIME then
+		return
+	end
+
+	-- 확률 체크
+	if math.random() >= GameConstants.CHASE_MOB.SPAWN_CHANCE then
+		return
+	end
+
+	self:SpawnChaseMob(self._lastPlayerPosition)
 end
 
 -- 청크 내 장애물 생성 (생성된 장애물 위치 목록 반환)
@@ -110,27 +260,31 @@ function ObstacleService:_selectObstacleType(difficulty: string): string
 		-- Easy는 Low Wall만 (점프만 연습)
 		return "LowWall"
 	elseif difficulty == "Normal" then
-		-- Normal은 Low Wall + Tunnel + SpikeTrap
-		if rand < 0.50 then
+		-- Normal: Low Wall + Tunnel + SpikeTrap + ExplodingBarrel (20%)
+		if rand < 0.20 then
+			return "ExplodingBarrel"
+		elseif rand < 0.50 then
 			return "LowWall"
-		elseif rand < 0.80 then
+		elseif rand < 0.78 then
 			return "Tunnel"
-		elseif rand < 0.95 then
+		elseif rand < 0.93 then
 			return "SpikeTrap"
 		else
 			return "Gap"
 		end
 	elseif difficulty == "Hard" then
-		-- Hard는 모든 타입 (DoubleWall + MovingWall 포함)
-		if rand < 0.22 then
+		-- Hard: 모든 타입 + ExplodingBarrel (30%), ChaseMob은 SpawnObstaclesInChunk에서 별도 처리
+		if rand < 0.30 then
+			return "ExplodingBarrel"
+		elseif rand < 0.49 then
 			return "LowWall"
-		elseif rand < 0.40 then
+		elseif rand < 0.65 then
 			return "Tunnel"
-		elseif rand < 0.54 then
+		elseif rand < 0.76 then
 			return "SpikeTrap"
-		elseif rand < 0.72 then
+		elseif rand < 0.88 then
 			return "DoubleWall"
-		elseif rand < 0.84 then
+		elseif rand < 0.96 then
 			return "MovingWall"
 		else
 			return "Gap"
@@ -271,6 +425,74 @@ function ObstacleService:_spawnObstacle(position: Vector3, obstacleType: string)
 		table.insert(self._activeObstacles, obstacleData)
 		print(`[ObstacleService] Spawned MovingWall at {position} (startHigh: {startHigh})`)
 		return
+	elseif obstacleType == "ExplodingBarrel" then
+		-- 폭발 배럴 (Normal/Hard 전용, 범위 피해)
+		obstacle = Instance.new("Part")
+		obstacle.Name = "Obstacle_ExplodingBarrel"
+		obstacle.Size = GameConstants.EXPLODING_BARREL.SIZE
+		obstacle.Position = position + Vector3.new(0, GameConstants.EXPLODING_BARREL.SIZE.Y / 2, 0)
+		obstacle.Color = GameConstants.EXPLODING_BARREL.COLOR
+		obstacle.Material = Enum.Material.SmoothPlastic
+		obstacle.Transparency = 0.05
+		obstacle.Shape = Enum.PartType.Cylinder
+
+		-- 경고 PointLight (빨간 빛)
+		local warnLight = Instance.new("PointLight")
+		warnLight.Brightness = GameConstants.EXPLODING_BARREL.LIGHT_BRIGHTNESS
+		warnLight.Range = GameConstants.EXPLODING_BARREL.LIGHT_RANGE
+		warnLight.Color = Color3.fromRGB(255, 80, 30)
+		warnLight.Parent = obstacle
+
+		-- 폭발 위험 BillboardGui 라벨
+		local billboard = Instance.new("BillboardGui")
+		billboard.Name = "BarrelLabel"
+		billboard.Size = UDim2.new(0, 50, 0, 50)
+		billboard.StudsOffset = Vector3.new(0, 2.5, 0)
+		billboard.AlwaysOnTop = false
+		billboard.Parent = obstacle
+
+		local icon = Instance.new("TextLabel")
+		icon.Size = UDim2.new(1, 0, 1, 0)
+		icon.BackgroundTransparency = 1
+		icon.Text = "💥"
+		icon.TextScaled = true
+		icon.Parent = billboard
+
+		-- 스폰 후 경고 점멸 이펙트 (0.5초 동안 빛 깜빡임)
+		task.delay(0, function()
+			if not obstacle or not obstacle.Parent then
+				return
+			end
+			local pulseCount = 3
+			local pulseDuration = GameConstants.EXPLODING_BARREL.WARNING_DURATION / (pulseCount * 2)
+			for _ = 1, pulseCount do
+				if not obstacle or not obstacle.Parent then
+					break
+				end
+				warnLight.Brightness = GameConstants.EXPLODING_BARREL.LIGHT_BRIGHTNESS * 3
+				task.wait(pulseDuration)
+				if not obstacle or not obstacle.Parent then
+					break
+				end
+				warnLight.Brightness = GameConstants.EXPLODING_BARREL.LIGHT_BRIGHTNESS
+				task.wait(pulseDuration)
+			end
+		end)
+
+		obstacle.Anchored = true
+		obstacle.CanCollide = false
+		obstacle:SetAttribute("ObstacleType", obstacleType)
+		obstacle.Parent = workspace
+
+		-- 장애물 데이터 저장 후 return (공통 코드 건너뜀, 이미 Anchored/CanCollide 설정됨)
+		local obstacleData: ObstacleData = {
+			part = obstacle,
+			obstacleType = obstacleType,
+			spawnTime = tick(),
+		}
+		table.insert(self._activeObstacles, obstacleData)
+		print(`[ObstacleService] Spawned ExplodingBarrel at {position}`)
+		return
 	else
 		obstacle = Instance.new("Part")
 		obstacle.Size = Vector3.new(2, 4, 8)
@@ -324,6 +546,11 @@ function ObstacleService:CheckObstacleCollision(playerPosition: Vector3, isSlidi
 		local PLAYER_MARGIN = if isMini then 1 else 2
 		local collisionRadius = obstaclePart.Size.X / 2 + PLAYER_MARGIN
 
+		-- ExplodingBarrel: 폭발 반경(4 studs) 이내이면 collisionRadius를 덮어씀
+		if obstacleType == "ExplodingBarrel" then
+			collisionRadius = math.max(collisionRadius, GameConstants.EXPLODING_BARREL.EXPLOSION_RADIUS)
+		end
+
 		if xDistance < collisionRadius then
 			-- 장애물 타입별 회피 조건 확인
 			if obstacleType == "LowWall" then
@@ -333,6 +560,18 @@ function ObstacleService:CheckObstacleCollision(playerPosition: Vector3, isSlidi
 					continue
 				else
 					self._collidedObstacles[obstaclePart] = true
+					return true
+				end
+			elseif obstacleType == "ExplodingBarrel" then
+				-- ExplodingBarrel: 점프로 피할 수 없음 (범위 피해), 단 공중 높이에서는 범위 외
+				local barrelTop = obstaclePart.Position.Y + obstaclePart.Size.Y / 2
+				if playerPosition.Y > barrelTop + GameConstants.EXPLODING_BARREL.EXPLOSION_RADIUS then
+					-- 배럴 훨씬 위로 점프 시 회피
+					print(`[ObstacleService] {self._player.Name} jumped over ExplodingBarrel!`)
+					continue
+				else
+					self._collidedObstacles[obstaclePart] = true
+					print(`[ObstacleService] {self._player.Name} caught in ExplodingBarrel blast!`)
 					return true
 				end
 			elseif obstacleType == "Tunnel" then
@@ -484,9 +723,17 @@ function ObstacleService:CheckNearMiss(
 			-- MovingWall: barely jumped over or passed under
 			local wallTop = obstaclePart.Position.Y + obstaclePart.Size.Y / 2
 			local wallBottom = obstaclePart.Position.Y - obstaclePart.Size.Y / 2
-			if playerPosition.Y > wallTop and playerPosition.Y < wallTop + NEAR_MISS_Y_MARGIN then
+			local justOverTop = playerPosition.Y > wallTop and playerPosition.Y < wallTop + NEAR_MISS_Y_MARGIN
+			local justUnderBottom = playerPosition.Y < wallBottom and playerPosition.Y > wallBottom - NEAR_MISS_Y_MARGIN
+			if justOverTop or justUnderBottom then
 				isNearMiss = true
-			elseif playerPosition.Y < wallBottom and playerPosition.Y > wallBottom - NEAR_MISS_Y_MARGIN then
+			end
+		elseif obstacleType == "ExplodingBarrel" then
+			-- ExplodingBarrel: 폭발 반경 바로 바깥으로 빠져나갈 때 니어미스
+			-- dx = playerX - barrelX (양수: 플레이어가 배럴보다 앞에 있음)
+			local blastRadius = GameConstants.EXPLODING_BARREL.EXPLOSION_RADIUS
+			local absDx = math.abs(dx)
+			if absDx >= blastRadius and absDx < blastRadius + NEAR_MISS_X_RANGE then
 				isNearMiss = true
 			end
 		end
@@ -527,6 +774,14 @@ function ObstacleService:Destroy()
 	end
 	self._activeObstacles = {}
 	self._collidedObstacles = {}
+
+	-- Chase Mob 정리
+	for _, mobData in self._activeChaseMobs do
+		if mobData.part then
+			mobData.part:Destroy()
+		end
+	end
+	self._activeChaseMobs = {}
 end
 
 return ObstacleService

@@ -314,6 +314,9 @@ RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { 
 	-- 파워업 서비스 시작
 	powerupService:StartGame()
 
+	-- 장애물 서비스: 게임 시작 시간 설정 (Chase Mob MIN_TIME 판단용)
+	obstacleService:SetGameStartTime(tick())
+
 	-- Initial zone setup
 	chunkService:SetCurrentZone(1)
 
@@ -554,6 +557,9 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 
 	-- 파워업 서비스 시작
 	powerupService:StartGame()
+
+	-- 장애물 서비스: 게임 시작 시간 설정 (Chase Mob MIN_TIME 판단용)
+	obstacleService:SetGameStartTime(tick())
 
 	-- Initial zone setup
 	chunkService:SetCurrentZone(1)
@@ -1168,10 +1174,29 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 			continue
 		end
 
+		-- 장애물 서비스: 플레이어 위치 최신화 (Chase Mob 스폰 위치 추적용)
+		obstacleService:UpdatePlayerPosition(hrp.Position)
+
+		-- Chase Mob 업데이트: 추격 NPC 이동 및 피격 판정
+		-- 서버에서 플레이어 속도 추정 (GameConstants 기반 ramp 공식)
+		local _chaseElapsed = elapsedTime
+		local _t = math.min(_chaseElapsed / GameConstants.PHYSICS.SPEED_RAMP_TIME, 1)
+		local _easedT = _t * _t * (3 - 2 * _t) -- smoothstep
+		local _estimatedSpeed = GameConstants.PHYSICS.SPEED_MIN
+			+ (GameConstants.PHYSICS.SPEED_MAX - GameConstants.PHYSICS.SPEED_MIN) * _easedT
+		-- 피버/슈퍼피버 중에는 속도 배율 반영
+		if session.isSuperFever then
+			_estimatedSpeed = _estimatedSpeed * GameConstants.SUPER_FEVER.SPEED_BOOST
+		elseif session.isFever then
+			_estimatedSpeed = _estimatedSpeed * GameConstants.FEVER.SPEED_BOOST
+		end
+		local chaseMobHit = obstacleService:UpdateChaseMobs(hrp.Position, _estimatedSpeed, session.isFever or session.isSuperFever)
+
 		-- 장애물 충돌 체크
 		local isSliding = hrp:GetAttribute("IsSliding") or false
 		local isMini = powerupService:IsMiniSizeActive()
 		local hitObstacle = obstacleService:CheckObstacleCollision(hrp.Position, isSliding, isMini)
+			or chaseMobHit
 
 		if hitObstacle and session.lives > 0 then
 			-- 피버 모드 무적 체크

@@ -470,4 +470,10 @@ RemoteEvents.PetPurchaseResult = getOrCreateRemoteEvent("PetPurchaseResult")
 RemoteEvents.EquipPet = getOrCreateRemoteEvent("EquipPet")
 -- 파라미터: { petId: string }
 
+-- ==================== 스토리 자막 ====================
+
+-- 런 중 NPC 스토리 자막 표시 (서버 → 클라이언트)
+RemoteEvents.StorySubtitle = getOrCreateRemoteEvent("StorySubtitle")
+-- 파라미터: { speaker: string, emoji: string, text: string }
+
 return RemoteEvents

@@ -326,6 +326,8 @@ function ChunkService:SpawnNextChunk(): Model?
 	local isInSafeZone = self._chunkCounter <= GameConstants.CHUNK.SAFE_ZONE_CHUNKS
 	if self._obstacleService and not isInSafeZone and not eventType then
 		obstaclePositions = self._obstacleService:SpawnObstaclesInChunk(chunk, difficulty)
+		-- Hard 청크: Chase Mob 등장 확률 체크 (60초 이후, 15% 확률)
+		self._obstacleService:TrySpawnChaseMobForChunk(difficulty)
 	elseif isInSafeZone then
 		print(`[ChunkService] Chunk #{self._chunkCounter} is in safe zone - no obstacles`)
 	end

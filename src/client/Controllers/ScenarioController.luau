@@ -10,6 +10,56 @@ local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)
 local ScenarioConstants = require(ReplicatedStorage.Shared.Constants.ScenarioConstants)
 local ResponsiveUtil = require(ReplicatedStorage.Shared.Utils.ResponsiveUtil)
 
+-- ==================== 런 중 스토리 자막 데이터 ====================
+
+-- 챕터별 런 중 NPC 대사 (45~75초마다 1회 랜덤 표시)
+local RUN_DIALOGUES: { [number]: { { speaker: string, emoji: string, text: string } } } = {
+	[1] = {
+		{ speaker = "치치",    emoji = "🐿️", text = "코인 킹은 저쪽으로 갔어! 빨리 따라가!" },
+		{ speaker = "부엉이",  emoji = "🦉", text = "조심해! 함정이 있어!" },
+	},
+	[2] = {
+		{ speaker = "사이버봇", emoji = "🤖", text = "장애물 회피 경로 계산 완료!" },
+		{ speaker = "부엉이",   emoji = "🦉", text = "도시의 코인을 되찾아야 해!" },
+	},
+	[3] = {
+		{ speaker = "하맘",   emoji = "🧙", text = "모래폭풍이 온다! 멈추지 마!" },
+		{ speaker = "부엉이", emoji = "🦉", text = "사막에서 코인이 반짝이고 있어!" },
+	},
+	[4] = {
+		{ speaker = "루나", emoji = "❄️", text = "눈보라가 온다! 조심해!" },
+		{ speaker = "루나", emoji = "❄️", text = "빨리! 따뜻한 곳을 찾아야 해!" },
+	},
+	[5] = {
+		{ speaker = "마리나", emoji = "🧜", text = "산호초를 조심해! 날카로워!" },
+		{ speaker = "부엉이", emoji = "🦉", text = "바닷속 코인이 빛나고 있어!" },
+	},
+	[6] = {
+		{ speaker = "불무", emoji = "🔥", text = "용암이다! 뛰어!" },
+		{ speaker = "불무", emoji = "🔥", text = "코인 킹의 용을 조심해!" },
+	},
+	[7] = {
+		{ speaker = "아름",   emoji = "☁️", text = "구름 발판을 밟으면 더 높이 올라가!" },
+		{ speaker = "부엉이", emoji = "🦉", text = "하늘 코인을 모두 되찾자!" },
+	},
+	[8] = {
+		{ speaker = "알렉산더", emoji = "🏛️", text = "함정을 조심해! 고대의 저주야!" },
+		{ speaker = "알렉산더", emoji = "🏛️", text = "저 문양을 통과하면 보물이 있어!" },
+	},
+	[9] = {
+		{ speaker = "오메가", emoji = "🤖", text = "우주 해적선이 접근 중! 빨리!" },
+		{ speaker = "오메가", emoji = "🤖", text = "중력 이상 감지! 점프에 주의!" },
+	},
+	[10] = {
+		{ speaker = "코인 킹", emoji = "🦊", text = "이제 끝이야! 막아봐라!" },
+		{ speaker = "부엉이",  emoji = "🦉", text = "거의 다 왔어! 포기하지 마!" },
+	},
+}
+
+-- 자막 표시 간격 (초): 45~75초 사이 랜덤
+local SUBTITLE_MIN_INTERVAL = 45
+local SUBTITLE_MAX_INTERVAL = 75
+
 local ScenarioController = {}
 ScenarioController.__index = ScenarioController
 
@@ -56,6 +106,14 @@ export type ScenarioController = typeof(setmetatable(
 		_introShown: boolean,
 		-- 복귀 유저 활성 챕터 알림 (1회)
 		_activeChapterNotified: boolean,
+		-- 런 중 스토리 자막
+		_subtitleGui: ScreenGui?,
+		_subtitleBg: Frame?,
+		_subtitleLabel: TextLabel?,
+		_subtitleThread: thread?,
+		_currentChapterId: string?,
+		_subtitleTimer: number,
+		_subtitleNextTime: number,
 	},
 	ScenarioController
 ))
@@ -91,6 +149,13 @@ function ScenarioController.new(player: Player): ScenarioController
 		_newBadge = nil,
 		_introShown = false,
 		_activeChapterNotified = false,
+		_subtitleGui = nil,
+		_subtitleBg = nil,
+		_subtitleLabel = nil,
+		_subtitleThread = nil,
+		_currentChapterId = nil,
+		_subtitleTimer = 0,
+		_subtitleNextTime = 0,
 	}, ScenarioController)
 
 	self:_createGui()
@@ -1132,6 +1197,22 @@ function ScenarioController:_updateWithData(data: any)
 	local chapters = data.chapters :: { any }
 	local unlockedSkills = data.unlockedSkills :: { string }
 
+	-- 활성 챕터(진행 중) ID 갱신 → 자막 시스템에서 사용
+	local activeChapterId: string? = nil
+	local activeChapterNum = math.huge
+	for _, ch in chapters do
+		if ch.isUnlocked and not ch.isCompleted then
+			local chData = ScenarioConstants.CHAPTER_MAP[ch.id]
+			if chData and chData.num < activeChapterNum then
+				activeChapterId = ch.id
+				activeChapterNum = chData.num
+			end
+		end
+	end
+	if activeChapterId then
+		self._currentChapterId = activeChapterId
+	end
+
 	-- 해금 스킬 셋
 	local skillSet: { [string]: boolean } = {}
 	for _, skillId in unlockedSkills do
@@ -1361,6 +1442,13 @@ function ScenarioController:HideForGame()
 	-- 게임 중 퀘스트 HUD 활성화
 	self._isGameActive = true
 	self:_updateQuestHud()
+	-- 자막 루프 시작
+	self:_startSubtitleLoop()
+end
+
+-- 현재 챕터 ID 설정 (외부에서 호출하거나 ScenarioData로 갱신)
+function ScenarioController:SetCurrentChapterId(chapterId: string)
+	self._currentChapterId = chapterId
 end
 
 -- 로비에서 표시
@@ -1373,6 +1461,8 @@ function ScenarioController:ShowInLobby()
 	if self._questHudGui then
 		self._questHudGui.Enabled = false
 	end
+	-- 자막 루프 중단
+	self:_stopSubtitleLoop()
 end
 
 -- ==================== 이벤트 핸들러 ====================
@@ -1472,6 +1562,160 @@ function ScenarioController:_setupEventHandlers()
 		end
 	end)
 	table.insert(self._connections, chapterConn)
+
+	-- 런 중 스토리 자막 수신 (StorySubtitle)
+	local subtitleConn = RemoteEvents.StorySubtitle.OnClientEvent:Connect(function(data)
+		self:_showStorySubtitle(data.speaker, data.emoji, data.text)
+	end)
+	table.insert(self._connections, subtitleConn)
+end
+
+-- ==================== 스토리 자막 시스템 ====================
+
+-- 자막 ScreenGui 생성 (최초 1회)
+function ScenarioController:_ensureSubtitleGui()
+	if self._subtitleGui then
+		return
+	end
+
+	local playerGui = self._player:WaitForChild("PlayerGui")
+
+	local gui = Instance.new("ScreenGui")
+	gui.Name = "StorySubtitleGui"
+	gui.ResetOnSpawn = false
+	gui.DisplayOrder = 18
+	gui.ScreenInsets = Enum.ScreenInsets.DeviceSafeInsets
+	gui.Enabled = false
+	gui.Parent = playerGui
+	self._subtitleGui = gui
+
+	-- 반투명 어두운 배경 (화면 상단 중앙, HUD 아래)
+	local bg = Instance.new("Frame")
+	bg.Name = "SubtitleBg"
+	bg.Size = UDim2.new(0.6, 0, 0, 56)
+	bg.AnchorPoint = Vector2.new(0.5, 0)
+	bg.Position = UDim2.new(0.5, 0, 0, 64)
+	bg.BackgroundColor3 = Color3.fromRGB(10, 10, 20)
+	bg.BackgroundTransparency = 0.3
+	bg.BorderSizePixel = 0
+	bg.Parent = gui
+	self._subtitleBg = bg
+
+	local bgCorner = Instance.new("UICorner")
+	bgCorner.CornerRadius = UDim.new(0, 10)
+	bgCorner.Parent = bg
+
+	local bgStroke = Instance.new("UIStroke")
+	bgStroke.Color = Color3.fromRGB(100, 150, 255)
+	bgStroke.Thickness = 1.5
+	bgStroke.Transparency = 0.4
+	bgStroke.Parent = bg
+
+	-- 대사 텍스트 (이모지 + 화자 이름 + 대사)
+	local label = Instance.new("TextLabel")
+	label.Name = "SubtitleLabel"
+	label.Size = UDim2.new(1, -16, 1, 0)
+	label.Position = UDim2.new(0, 8, 0, 0)
+	label.BackgroundTransparency = 1
+	label.TextColor3 = Color3.fromRGB(240, 240, 255)
+	label.TextSize = 14
+	label.Font = Enum.Font.GothamBold
+	label.Text = ""
+	label.TextXAlignment = Enum.TextXAlignment.Center
+	label.TextYAlignment = Enum.TextYAlignment.Center
+	label.TextWrapped = true
+	label.TextTransparency = 1
+	label.Parent = bg
+	self._subtitleLabel = label
+end
+
+-- 스토리 자막 1건 표시 (fade in → 3초 대기 → fade out)
+function ScenarioController:_showStorySubtitle(speaker: string, emoji: string, text: string)
+	self:_ensureSubtitleGui()
+
+	local gui = self._subtitleGui
+	local bg = self._subtitleBg
+	local label = self._subtitleLabel
+	if not gui or not bg or not label then
+		return
+	end
+
+	-- 이전 스레드 취소
+	if self._subtitleThread then
+		task.cancel(self._subtitleThread)
+		self._subtitleThread = nil
+	end
+
+	label.Text = `{emoji} {speaker}: {text}`
+	bg.BackgroundTransparency = 1
+	label.TextTransparency = 1
+	gui.Enabled = true
+
+	self._subtitleThread = task.spawn(function()
+		-- fade in
+		TweenService:Create(bg, TweenInfo.new(0.35), { BackgroundTransparency = 0.3 }):Play()
+		TweenService:Create(label, TweenInfo.new(0.35), { TextTransparency = 0 }):Play()
+		task.wait(3.0)
+		-- fade out
+		TweenService:Create(bg, TweenInfo.new(0.4), { BackgroundTransparency = 1 }):Play()
+		TweenService:Create(label, TweenInfo.new(0.4), { TextTransparency = 1 }):Play()
+		task.wait(0.45)
+		if gui.Parent then
+			gui.Enabled = false
+		end
+		self._subtitleThread = nil
+	end)
+end
+
+-- 자막 자동 표시 루프 시작 (게임 시작 시 호출)
+function ScenarioController:_startSubtitleLoop()
+	-- 이전 루프 취소
+	if self._subtitleThread then
+		task.cancel(self._subtitleThread)
+		self._subtitleThread = nil
+	end
+
+	self._subtitleThread = task.spawn(function()
+		-- 첫 대사는 15~25초 후 (게임 초반 안정화 대기)
+		local firstDelay = 15 + math.random() * 10
+		task.wait(firstDelay)
+
+		while self._isGameActive do
+			local chapterId = self._currentChapterId
+			local chapterNum: number? = nil
+			if chapterId then
+				local ch = ScenarioConstants.CHAPTER_MAP[chapterId]
+				if ch then
+					chapterNum = ch.num
+				end
+			end
+
+			local dialogues = if chapterNum then RUN_DIALOGUES[chapterNum] else nil
+			if dialogues and #dialogues > 0 then
+				local entry = dialogues[math.random(1, #dialogues)]
+				self:_showStorySubtitle(entry.speaker, entry.emoji, entry.text)
+			end
+
+			-- 다음 대사까지 랜덤 대기
+			local interval = SUBTITLE_MIN_INTERVAL + math.random() * (SUBTITLE_MAX_INTERVAL - SUBTITLE_MIN_INTERVAL)
+			task.wait(interval)
+		end
+
+		self._subtitleThread = nil
+	end)
+end
+
+-- 자막 루프 중단 (게임 종료 시 호출)
+function ScenarioController:_stopSubtitleLoop()
+	if self._subtitleThread then
+		task.cancel(self._subtitleThread)
+		self._subtitleThread = nil
+	end
+
+	local gui = self._subtitleGui
+	if gui then
+		gui.Enabled = false
+	end
 end
 
 -- 퀘스트 완료 토스트 (화면 상단)

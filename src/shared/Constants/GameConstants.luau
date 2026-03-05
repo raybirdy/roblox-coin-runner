@@ -38,7 +38,7 @@ GameConstants.CHUNK = {
 	MAX_LOADED = 6, -- 동시 로드 최대 청크 수 (더 많이 미리 로드)
 	MIN_AHEAD_DISTANCE = 200, -- 플레이어 앞에 최소 이 거리만큼 청크 유지 (studs)
 	DELETE_DISTANCE = 100, -- 캐릭터 뒤 이 거리 초과 시 청크 삭제
-	SAFE_ZONE_CHUNKS = 4, -- 시작 안전 구역 (처음 4개 청크는 장애물 없음)
+	SAFE_ZONE_CHUNKS = 2, -- 시작 안전 구역 (처음 4개 청크는 장애물 없음)
 
 	-- 높이 태그
 	HEIGHT_LOW = 0,
@@ -145,6 +145,34 @@ GameConstants.OBSTACLE = {
 	MOVING_WALL_CYCLE_TIME = 2, -- 상하 왕복 주기 (초)
 }
 
+-- 추격 NPC (Chase Mob) — 60초 이후 Hard 청크에서 등장
+-- 플레이어 뒤에서 따라오며, 피버 속도로 따돌릴 수 있음
+GameConstants.CHASE_MOB = {
+	SPAWN_CHANCE = 0.15, -- Hard 청크에서 15% 확률
+	MIN_TIME = 60, -- 60초 이후부터 등장 가능
+	SPAWN_OFFSET_X = -20, -- 플레이어 뒤 20 studs에서 스폰
+	SPEED_OFFSET = -8, -- 플레이어 추정 속도보다 8 studs/s 느림 (따라잡힐 위협)
+	CATCH_DISTANCE = 3, -- 이 거리 이하 접근 시 피격
+	ESCAPE_DISTANCE = 40, -- 이 거리 이상 벌어지면 사라짐 (피버 탈출)
+	DURATION = 8, -- 최대 8초 후 자동 사라짐
+	COLOR = Color3.fromRGB(220, 60, 60), -- 빨간 미니언 색상
+	SIZE = Vector3.new(2, 2, 2), -- 정육면체 크기
+	UPDATE_INTERVAL = 0.1, -- 위치 업데이트 간격 (초)
+}
+
+-- 폭발 배럴 (Exploding Barrel) — Normal/Hard 청크에서 등장
+-- 닿으면 범위 피해 (반경 4 studs 내 플레이어 피격)
+GameConstants.EXPLODING_BARREL = {
+	NORMAL_CHANCE = 0.20, -- Normal 청크에서 20% 확률로 배럴 타입 선택
+	HARD_CHANCE = 0.30, -- Hard 청크에서 30% 확률로 배럴 타입 선택
+	EXPLOSION_RADIUS = 4, -- 폭발 반경 (studs)
+	COLOR = Color3.fromRGB(200, 50, 50), -- 빨간 배럴 색상
+	SIZE = Vector3.new(2, 3, 2), -- 원통형(Part) 크기
+	WARNING_DURATION = 0.5, -- 경고 이펙트 지속 시간 (초)
+	LIGHT_BRIGHTNESS = 2, -- PointLight 밝기
+	LIGHT_RANGE = 8, -- PointLight 범위 (studs)
+}
+
 -- 라이프 시스템
 GameConstants.LIFE = {
 	STARTING_LIVES = 3,
@@ -168,7 +196,7 @@ GameConstants.SCORE = {
 	COMBO_10_BONUS = 10,
 	COMBO_30_BONUS = 30,
 	COMBO_50_BONUS = 50,
-	COMBO_TIMEOUT = 3, -- 콤보 리셋 시간 (초) - 6~8세 반응속도 고려: 2→3초
+	COMBO_TIMEOUT = 2, -- 콤보 리셋 시간 (초) - 6~8세 반응속도 고려: 2→3초
 }
 
 -- 파워업 (자석, 쉴드, 무적, 2배코인, 미니사이즈)
@@ -179,8 +207,8 @@ GameConstants.POWERUP = {
 	INVINCIBLE_DURATION = 5, -- 무적 지속 시간 (초)
 	DOUBLE_COIN_DURATION = 8, -- 2배 코인 지속 시간 (초)
 	MINI_SIZE_DURATION = 5, -- 미니 사이즈 지속 시간 (초)
-	MIN_SPAWN_TIME = 12, -- 첫 파워업 등장 시간 (초) - 더 빠르게 (20→12)
-	MIN_INTERVAL = 10, -- 파워업 간 최소 간격 (초) - 더 자주 (15→10)
+	MIN_SPAWN_TIME = 20, -- 첫 파워업 등장 시간 (초) - 더 빠르게 (20→12)
+	MIN_INTERVAL = 15, -- 파워업 간 최소 간격 (초) - 더 자주 (15→10)
 
 	-- 출현 확률 (합계 1.0)
 	MAGNET_RATE = 0.35,
@@ -915,18 +943,18 @@ GameConstants.NEAR_RECORD = {
 
 -- 피버 모드
 GameConstants.FEVER = {
-	COMBO_THRESHOLD = 30, -- 피버 발동 콤보 수 (50→30, 타깃 연령 도달 가능하게)
-	DURATION = 5, -- 지속 시간 (초)
+	COMBO_THRESHOLD = 45, -- 피버 발동 콤보 수 (50→30, 타깃 연령 도달 가능하게)
+	DURATION = 6, -- 지속 시간 (초)
 	COIN_MULTIPLIER = 3, -- 코인 가치 배율
 	SPEED_BOOST = 1.5, -- 속도 배율
 	MAGNET_RADIUS = 30, -- 초강력 자석 반경 (studs)
-	COOLDOWN = 10, -- 피버 종료 후 재발동 쿨타임 (초)
+	COOLDOWN = 15, -- 피버 종료 후 재발동 쿨타임 (초)
 	INVINCIBLE = true, -- 무적 여부
 }
 
 -- 미니 피버 (15 콤보 - 작은 보상으로 어린이도 빠르게 달성 가능)
 GameConstants.MINI_FEVER = {
-	COMBO_THRESHOLD = 15, -- 미니 피버 발동 콤보 수
+	COMBO_THRESHOLD = 25, -- 미니 피버 발동 콤보 수
 	DURATION = 3, -- 지속 시간 (초)
 	COIN_MULTIPLIER = 2, -- 코인 가치 2배
 	MAGNET = true, -- 자석 효과 (기본 반경)
@@ -1056,7 +1084,7 @@ GameConstants.HIT_RECOVERY = {
 
 -- 슈퍼 피버 (피버 2연속 시 강화 피버)
 GameConstants.SUPER_FEVER = {
-	CHAIN_WINDOW = 15,   -- 피버 종료 후 이 시간 내 재발동 시 슈퍼 피버 (초)
+	CHAIN_WINDOW = 10,   -- 피버 종료 후 이 시간 내 재발동 시 슈퍼 피버 (초)
 	DURATION = 8,        -- 지속 시간 (초)
 	COIN_MULTIPLIER = 5, -- 코인 배율
 	SPEED_BOOST = 1.8,   -- 속도 배율
