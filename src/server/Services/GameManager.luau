@@ -7,6 +7,7 @@ local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local GameConstants = require(ReplicatedStorage.Shared.Constants.GameConstants)
+local ScenarioConstants = require(ReplicatedStorage.Shared.Constants.ScenarioConstants)
 local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)
 local ChunkService = require(script.Parent.ChunkService)
 local CoinService = require(script.Parent.CoinService)
@@ -120,6 +121,8 @@ type GameSession = {
 	lastEventProgressTime: number, -- 마지막 이벤트 진행도 업데이트 시각
 	-- Upgrade bonuses
 	upgradeBonuses: UpgradeBonuses,
+	-- 보스 조우 연출
+	_bossDialogueFired: boolean,
 }
 
 local activeSessions: { [Player]: GameSession } = {}
@@ -291,6 +294,7 @@ RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { 
 		coinsCollectedCount = 0,
 		lastEventProgressTime = 0,
 		upgradeBonuses = upgBonuses1,
+		_bossDialogueFired = false,
 	}
 
 	activeSessions[player] = session
@@ -535,6 +539,7 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 		coinsCollectedCount = 0,
 		lastEventProgressTime = 0,
 		upgradeBonuses = upgBonuses2,
+		_bossDialogueFired = false,
 	}
 
 	activeSessions[player] = session
@@ -918,6 +923,35 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 			chunkService:RequestTransitionChunk()
 			-- Zone 진입 후 2개 Bonus 청크 보장 (숨 고르기 리듬)
 			chunkService:RequestBreatheChunks(2)
+		end
+
+		-- 보스 조우: 90초 생존 시 챕터 보스 등장 대사 (런당 1회)
+		if not session._bossDialogueFired and elapsedTime >= 90 then
+			session._bossDialogueFired = true
+			local activeChapterId = ScenarioService:GetActiveChapterId(player)
+			if activeChapterId then
+				local cutscenes = ScenarioConstants.CUTSCENES[activeChapterId]
+				if cutscenes and cutscenes.bossIntro and #cutscenes.bossIntro > 0 then
+					local line1 = cutscenes.bossIntro[1]
+					RemoteEvents.BossDialogue:FireClient(player, {
+						characterId = line1.characterId or "coin_king",
+						text = line1.text,
+						isVillain = true,
+					})
+					if #cutscenes.bossIntro >= 2 then
+						local line2 = cutscenes.bossIntro[2]
+						task.delay(3, function()
+							if activeSessions[player] then
+								RemoteEvents.BossDialogue:FireClient(player, {
+									characterId = line2.characterId or "coin_king",
+									text = line2.text,
+									isVillain = true,
+								})
+							end
+						end)
+					end
+				end
+			end
 		end
 
 		-- Phase B: 이벤트 청크 확률 체크

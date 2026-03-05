@@ -476,4 +476,9 @@ RemoteEvents.EquipPet = getOrCreateRemoteEvent("EquipPet")
 RemoteEvents.StorySubtitle = getOrCreateRemoteEvent("StorySubtitle")
 -- 파라미터: { speaker: string, emoji: string, text: string }
 
+-- ==================== 보스 조우 ====================
+-- 런 중 보스 등장 연출 (서버 → 클라이언트)
+RemoteEvents.BossDialogue = getOrCreateRemoteEvent("BossDialogue")
+-- 파라미터: { characterId: string, text: string, isVillain: boolean }
+
 return RemoteEvents
