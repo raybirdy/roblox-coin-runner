@@ -10,6 +10,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)
 local ScenarioConstants = require(ReplicatedStorage.Shared.Constants.ScenarioConstants)
 
+local CutsceneCharacterBuilder = require(script.Parent.CutsceneCharacterBuilder)
+
 local CutsceneController = {}
 CutsceneController.__index = CutsceneController
 
@@ -86,6 +88,13 @@ export type CutsceneController = typeof(setmetatable(
 		-- 입력 차단 콜백
 		_onPlayStart: (() -> ())?,
 		_onPlayEnd: (() -> ())?,
+		-- 3D character viewport
+		_viewportFrame: ViewportFrame?,
+		_worldModel: Instance?,
+		_vpCamera: Camera?,
+		_charCache: { [string]: any },
+		_idleAnimHolder: { thread: thread? },
+		_currentRig: any?,
 	},
 	CutsceneController
 ))
@@ -117,6 +126,12 @@ function CutsceneController.new(): CutsceneController
 		_dimOverlay = nil,
 		_onPlayStart = nil,
 		_onPlayEnd = nil,
+		_viewportFrame = nil,
+		_worldModel = nil,
+		_vpCamera = nil,
+		_charCache = {},
+		_idleAnimHolder = { thread = nil },
+		_currentRig = nil,
 	}, CutsceneController)
 
 	self:_createGui()
@@ -194,8 +209,8 @@ function CutsceneController:_createGui()
 	-- 캐릭터 초상화 원형 프레임 (패널 좌측 상단, 패널 위로 돌출)
 	local portraitFrame = Instance.new("Frame")
 	portraitFrame.Name = "PortraitFrame"
-	portraitFrame.Size = UDim2.new(0, 60, 0, 60)
-	portraitFrame.Position = UDim2.new(0, 12, 0, -36)
+	portraitFrame.Size = UDim2.new(0, 90, 0, 90)
+	portraitFrame.Position = UDim2.new(0, 12, 0, -50)
 	portraitFrame.BackgroundColor3 = Color3.fromRGB(40, 80, 160)
 	portraitFrame.BorderSizePixel = 0
 	portraitFrame.Parent = panel
@@ -210,15 +225,40 @@ function CutsceneController:_createGui()
 	portraitStroke.Thickness = 3
 	portraitStroke.Parent = portraitFrame
 
+	-- Emoji label hidden; kept for fallback reference
 	local portraitEmoji = Instance.new("TextLabel")
 	portraitEmoji.Name = "PortraitEmoji"
 	portraitEmoji.Size = UDim2.new(1, 0, 1, 0)
 	portraitEmoji.BackgroundTransparency = 1
-	portraitEmoji.Text = "🦉"
+	portraitEmoji.Text = ""
 	portraitEmoji.TextSize = 28
 	portraitEmoji.Font = Enum.Font.GothamBold
+	portraitEmoji.Visible = false
 	portraitEmoji.Parent = portraitFrame
 	self._portraitEmoji = portraitEmoji
+
+	-- 3D ViewportFrame for character display
+	local vf = Instance.new("ViewportFrame")
+	vf.Name = "CharViewport"
+	vf.Size = UDim2.new(1, 0, 1, 0)
+	vf.BackgroundTransparency = 1
+	vf.Ambient = Color3.fromRGB(200, 200, 200)
+	vf.LightColor = Color3.fromRGB(255, 255, 255)
+	vf.LightDirection = Vector3.new(-1, -2, -1)
+	vf.Parent = portraitFrame
+	self._viewportFrame = vf
+
+	local worldModel = Instance.new("WorldModel")
+	worldModel.Parent = vf
+	self._worldModel = worldModel
+
+	local vpCam = Instance.new("Camera")
+	-- Camera positioned to show character from front: head at approx y=2.2, camera at z=5.5
+	vpCam.CFrame = CFrame.new(Vector3.new(0, 2.2, 5.5), Vector3.new(0, 2.2, 0))
+	vpCam.FieldOfView = 35
+	vpCam.Parent = vf
+	vf.CurrentCamera = vpCam
+	self._vpCamera = vpCam
 
 	-- 화자 이름 배경 (초상화 오른쪽으로 이동)
 	local speakerBg = Instance.new("Frame")
@@ -437,10 +477,19 @@ function CutsceneController:_advanceLine()
 	local effect = line.effect
 	if effect == "shake" then
 		self:_shakePanel()
+		if self._currentRig then
+			CutsceneCharacterBuilder.PlayEffectAnimation(self._currentRig, "shake")
+		end
 	elseif effect == "flash" then
 		self:_flashPanel()
+		if self._currentRig then
+			CutsceneCharacterBuilder.PlayEffectAnimation(self._currentRig, "flash")
+		end
 	elseif effect == "particle" then
 		self:_showVictoryParticle()
+		if self._currentRig then
+			CutsceneCharacterBuilder.PlayEffectAnimation(self._currentRig, "particle")
+		end
 	end
 
 	-- 대화 라인 전환 페이드 (첫 번째 줄이 아닌 경우 fade-out 후 진행)
@@ -456,6 +505,12 @@ function CutsceneController:_advanceLine()
 		self._dialogueLabel.TextTransparency = 1
 		self._dialogueLabel.Text = ""
 	end
+
+	-- Trigger talk animation on current 3D character
+	if self._currentRig then
+		CutsceneCharacterBuilder.PlayTalkAnimation(self._currentRig)
+	end
+
 	self:_typeText(line.text)
 end
 
@@ -543,12 +598,12 @@ function CutsceneController:_startPortraitBob()
 		local t = 0
 		while self._isPlaying and portraitFrame.Parent do
 			t += 1 / 30
-			portraitFrame.Position = UDim2.new(0, 12, 0, -36 + math.sin(t * 4) * 3)
+			portraitFrame.Position = UDim2.new(0, 12, 0, -50 + math.sin(t * 4) * 3)
 			task.wait(1 / 30)
 		end
 		-- 루프 종료 시 원래 위치로 복원
 		if portraitFrame.Parent then
-			portraitFrame.Position = UDim2.new(0, 12, 0, -36)
+			portraitFrame.Position = UDim2.new(0, 12, 0, -50)
 		end
 	end)
 end
@@ -559,7 +614,7 @@ function CutsceneController:_stopPortraitBob()
 		self._portraitBobThread = nil
 	end
 	if self._portraitFrame then
-		self._portraitFrame.Position = UDim2.new(0, 12, 0, -36)
+		self._portraitFrame.Position = UDim2.new(0, 12, 0, -50)
 	end
 end
 
@@ -567,8 +622,7 @@ end
 
 function CutsceneController:_updatePortrait(profile: { id: string, name: string, emoji: string, role: string, bgColor: Color3, textColor: Color3 })
 	local portraitFrame = self._portraitFrame
-	local portraitEmoji = self._portraitEmoji
-	if not portraitFrame or not portraitEmoji then
+	if not portraitFrame then
 		return
 	end
 
@@ -577,11 +631,10 @@ function CutsceneController:_updatePortrait(profile: { id: string, name: string,
 		BackgroundColor3 = profile.bgColor,
 	}):Play()
 
-	-- 이모지 변경 + 팝 애니메이션
-	portraitEmoji.Text = profile.emoji
-	portraitFrame.Size = UDim2.new(0, 50, 0, 50)
+	-- 팝 애니메이션 (75→90 크기)
+	portraitFrame.Size = UDim2.new(0, 75, 0, 75)
 	TweenService:Create(portraitFrame, TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-		Size = UDim2.new(0, 60, 0, 60),
+		Size = UDim2.new(0, 90, 0, 90),
 	}):Play()
 
 	-- 테두리 색상 (역할별)
@@ -589,6 +642,9 @@ function CutsceneController:_updatePortrait(profile: { id: string, name: string,
 	if stroke then
 		stroke.Color = ROLE_COLORS[profile.role] or Color3.fromRGB(200, 200, 200)
 	end
+
+	-- Load 3D character into viewport
+	self:_loadCharacterIntoViewport(profile.id)
 end
 
 function CutsceneController:_updateBorderColor(role: string)
@@ -600,6 +656,58 @@ function CutsceneController:_updateBorderColor(role: string)
 	TweenService:Create(topBorder, TweenInfo.new(0.2), {
 		BackgroundColor3 = color,
 	}):Play()
+end
+
+-- ==================== 3D 뷰포트 캐릭터 ====================
+
+function CutsceneController:_loadCharacterIntoViewport(characterId: string)
+	if not self._worldModel or not self._viewportFrame then
+		return
+	end
+
+	-- Check cache first
+	local rig = self._charCache[characterId]
+	if not rig then
+		rig = CutsceneCharacterBuilder.Build(characterId)
+		if rig then
+			self._charCache[characterId] = rig
+		end
+	end
+	if not rig then
+		return
+	end
+
+	-- Stop existing idle animation
+	if self._idleAnimHolder.thread then
+		task.cancel(self._idleAnimHolder.thread)
+		self._idleAnimHolder.thread = nil
+	end
+
+	-- Remove previous character from WorldModel
+	local prevRig = self._currentRig
+	if prevRig then
+		local prevModel = (prevRig :: any).model
+		if prevModel then
+			prevModel.Parent = nil
+		end
+	end
+
+	-- Reset pose and place into WorldModel
+	CutsceneCharacterBuilder.ResetPose(rig)
+	local rigModel = (rig :: any).model
+	rigModel.Parent = self._worldModel
+
+	-- Anchor root so it stays at origin
+	local rigRoot = (rig :: any).root
+	if rigRoot then
+		rigRoot.Anchored = true
+		rigRoot.CFrame = CFrame.new(0, 0, 0)
+	end
+
+	self._currentRig = rig
+
+	-- Start idle animation loop
+	CutsceneCharacterBuilder.PlayIdleAnimation(rig, self._idleAnimHolder)
 end
 
 -- ==================== 이펙트 ====================
@@ -737,6 +845,12 @@ function CutsceneController:_hide()
 	end
 
 	self:_stopPortraitBob()
+
+	-- 아이들 애니메이션 스레드 정지
+	if self._idleAnimHolder.thread then
+		task.cancel(self._idleAnimHolder.thread)
+		self._idleAnimHolder.thread = nil
+	end
 
 	-- 딤 오버레이 페이드아웃 + 틴트 초기화
 	if self._dimOverlay then
@@ -1201,6 +1315,43 @@ function CutsceneController:ShowChapterClearCelebration(chapterNum: number, chap
 			end)
 		end)
 	end)
+end
+
+-- ==================== 소멸 ====================
+
+function CutsceneController:Destroy()
+	-- 아이들 애니메이션 스레드 정지
+	if self._idleAnimHolder.thread then
+		task.cancel(self._idleAnimHolder.thread)
+		self._idleAnimHolder.thread = nil
+	end
+
+	-- 캐시된 캐릭터 모델 정리
+	for _, rig in self._charCache do
+		local cachedModel = (rig :: any).model
+		if cachedModel then
+			cachedModel:Destroy()
+		end
+	end
+	self._charCache = {}
+
+	-- 뷰포트 프레임 정리
+	if self._viewportFrame then
+		self._viewportFrame:Destroy()
+		self._viewportFrame = nil
+	end
+
+	-- 연결 해제
+	for _, conn in self._connections do
+		conn:Disconnect()
+	end
+	self._connections = {}
+
+	-- GUI 제거
+	if self._gui then
+		self._gui:Destroy()
+		self._gui = nil
+	end
 end
 
 return CutsceneController
