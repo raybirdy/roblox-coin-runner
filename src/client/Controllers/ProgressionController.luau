@@ -1142,13 +1142,31 @@ function ProgressionController:HideForGame()
 	if self._isMissionOpen then
 		self:CloseMissions()
 	end
+	-- 게임 진입 시 스테일 알림 제거 (로비 복귀 후 재출현 방지)
+	self._notificationQueue = {}
+	self._isShowingNotification = false
+	if self._screenGui then
+		for _, child in self._screenGui:GetChildren() do
+			if child.Name == "NotificationBanner" then
+				child:Destroy()
+			end
+		end
+	end
 end
 
 -- 로비 복귀 시 레벨 디스플레이 표시
 function ProgressionController:ShowInLobby()
+	-- 잔류 알림 배너 제거 후 재활성화 (게임 중 생성된 배너가 로비에 재출현하는 버그 방지)
 	if self._screenGui then
+		for _, child in self._screenGui:GetChildren() do
+			if child.Name == "NotificationBanner" then
+				child:Destroy()
+			end
+		end
 		self._screenGui.Enabled = true
 	end
+	self._notificationQueue = {}
+	self._isShowingNotification = false
 	-- 데이터 새로고침
 	RemoteEvents.ProgressionDataRequest:FireServer()
 end
