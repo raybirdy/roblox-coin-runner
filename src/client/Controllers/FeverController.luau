@@ -800,9 +800,9 @@ function FeverController:_onSuperFeverStarted(data: { duration: number, speedBoo
 		self._gaugeFill.BackgroundColor3 = Color3.fromRGB(140, 0, 200)
 	end
 
-	-- Speed boost callback
+	-- Speed boost callback (duration 전달: 카메라 줌 지속시간에 사용)
 	if self._onFeverStart then
-		self._onFeverStart(data.speedBoost)
+		self._onFeverStart(data.speedBoost, data.duration)
 	end
 
 	-- Big announcement

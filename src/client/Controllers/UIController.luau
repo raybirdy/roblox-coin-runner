@@ -38,6 +38,7 @@ export type UIController = typeof(setmetatable(
 		_highScoreDisplay: Frame?, -- 로비 최고 점수 표시
 		_lobbyGuideAnimation: boolean?, -- 로비 안내 펄스 애니메이션 활성 여부
 		_multiplierBadge: Frame?, -- 생존 배율 뱃지
+		_coinLabelBaseSize: number, -- UpdateCoins 인플레이션 방지용 고정 기준 텍스트 크기
 		_connections: { RBXScriptConnection },
 		_onJumpCallback: (() -> ())?,
 		_onSlideCallback: (() -> ())?,
@@ -71,6 +72,7 @@ function UIController.new(player: Player): UIController
 		_highScoreDisplay = nil,
 		_lobbyGuideAnimation = false,
 		_multiplierBadge = nil,
+		_coinLabelBaseSize = 0,
 		_connections = {},
 		_onJumpCallback = nil,
 		_onSlideCallback = nil,
@@ -92,6 +94,7 @@ function UIController:_createUI()
 	screenGui.Name = "GameUI"
 	screenGui.ResetOnSpawn = false
 	screenGui.ScreenInsets = Enum.ScreenInsets.DeviceSafeInsets
+	screenGui.DisplayOrder = 9 -- ObjectiveHUD(7), DailyEventHUD(8) 위에, 팝업 모달(10+) 아래
 	screenGui.Parent = self._playerGui
 	self._screenGui = screenGui
 
@@ -177,6 +180,7 @@ function UIController:_createUI()
 	coinsLabel.TextXAlignment = Enum.TextXAlignment.Left
 	coinsLabel.Parent = hudFrame
 	self._coinsLabel = coinsLabel
+	self._coinLabelBaseSize = coinsLabel.TextSize -- 인플레이션 방지: 생성 시점 크기 고정
 
 	-- 기존 livesLabel은 숨김 처리 (호환성)
 	local livesLabel = Instance.new("TextLabel")
@@ -827,8 +831,8 @@ function UIController:UpdateCoins(coins: number)
 	end
 	self._coinsLabel.Text = `🪙 {coins}`
 
-	-- 현재 크기에서 펀치 (즉시 +6pt 키운 후 복귀)
-	local baseSize = self._coinsLabel.TextSize
+	-- 고정 기준 크기에서 펀치 (연속 수집 시 누진 인플레이션 방지)
+	local baseSize = self._coinLabelBaseSize
 	self._coinsLabel.TextSize = baseSize + 7
 	self._coinsLabel.TextColor3 = Color3.fromRGB(255, 255, 200) -- 밝은 황금 플래시
 
@@ -1480,6 +1484,16 @@ function UIController:HideStartMenu()
 	self:HideLobbyUI()
 end
 
+-- 게임 오버 화면 복구 (부활 실패 시 - 기존 스코어 데이터 유지, 부활 버튼만 숨김)
+function UIController:RestoreGameOver()
+	if self._gameOverFrame then
+		self._gameOverFrame.Visible = true
+	end
+	if self._reviveButton then
+		self._reviveButton.Visible = false -- 이미 실패했으므로 부활 버튼 재노출 안 함
+	end
+end
+
 -- 게임 오버 화면 숨기기 (재시작 시)
 function UIController:HideGameOver()
 	if self._gameOverFrame then
@@ -1807,7 +1821,7 @@ function UIController:UpdateSurvivalMultiplierBadge(data: { tier: number, multip
 	local badge = Instance.new("Frame")
 	badge.Name = "SurvivalMultiplierBadge"
 	badge.Size = UDim2.new(0, 90, 0, 32)
-	badge.Position = UDim2.new(1, -100, 0, 80)
+	badge.Position = UDim2.new(1, -100, 0, 155) -- 메인 HUD(~138px) 아래에 배치
 	badge.BackgroundColor3 = if data.tier >= 3
 		then Color3.fromRGB(80, 0, 160) -- 3단계: 보라
 		elseif data.tier == 2

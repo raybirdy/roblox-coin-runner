@@ -135,7 +135,7 @@ function DailyEventController:_createHud()
 	local hudFrame = Instance.new("Frame")
 	hudFrame.Name = "HudFrame"
 	hudFrame.Size = UDim2.new(0, 160, 0, 46)
-	hudFrame.Position = UDim2.new(1, -170, 0, 60)
+	hudFrame.Position = UDim2.new(1, -170, 0, 155) -- 메인 HUD(~138px) 아래에 배치
 	hudFrame.BackgroundColor3 = Color3.fromRGB(10, 15, 35)
 	hudFrame.BackgroundTransparency = 0.2
 	hudFrame.BorderSizePixel = 0

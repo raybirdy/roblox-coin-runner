@@ -513,6 +513,9 @@ RemoteEvents.Revive.OnClientEvent:Connect(function(data)
 		end)
 	else
 		print(`[Client] Revive failed: {data.reason}`)
+		-- 게임오버 화면 복구 (부활 실패 시 빈 화면에 갇히는 버그 방지)
+		uiController:RestoreGameOver()
+		uiController:ShowGameFeedback("부활 실패 😢", Color3.fromRGB(255, 80, 80))
 	end
 end)
 
