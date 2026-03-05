@@ -132,21 +132,32 @@ local objectiveHudController = ObjectiveHudController.new()
 local petController = PetController.new()
 local coinKingController = CoinKingController.new()
 
--- Fever mode callbacks (speed boost + camera shake + BGM speed)
-feverController:OnFeverStart(function(speedBoost: number)
+-- Fever mode callbacks (speed boost + camera shake + BGM speed + P0: 카메라 줌인)
+feverController:OnFeverStart(function(speedBoost: number, duration: number)
 	playerController:SetSpeedMultiplier(speedBoost)
 	cameraController:Shake(0.8) -- strong shake on fever start
 	musicController:SetFeverSpeed(true)
+	-- P0: 피버 진입 시 카메라 줌인 (피버 지속 시간 동안 유지 → 체감 강화)
+	cameraController:Zoom(-6, duration)
 end)
 
 feverController:OnFeverEnd(function()
 	playerController:SetSpeedMultiplier(1.0)
 	musicController:SetFeverSpeed(false)
+	-- P0: 피버 종료 시 카메라 원위치 복귀
+	cameraController:Zoom(0, 0.6)
 end)
 
 -- 코인 수집 캐릭터 플래시
 coinController:OnCoinEffect(function(coinType: string)
 	characterEffectsController:FlashCoin(coinType)
+end)
+
+-- P0: 마이크로 카메라 쉐이크 (코인 타입별 강도)
+local COIN_SHAKE_INTENSITY = { Bronze = 0.02, Silver = 0.04, Gold = 0.06 }
+coinController:OnCoinShake(function(coinType: string)
+	local intensity = COIN_SHAKE_INTENSITY[coinType] or 0.02
+	cameraController:Shake(intensity)
 end)
 
 -- 파워업 캐릭터 글로우 (활성/비활성)

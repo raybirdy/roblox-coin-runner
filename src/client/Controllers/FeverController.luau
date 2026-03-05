@@ -35,7 +35,7 @@ export type FeverController = typeof(setmetatable(
 		_characterGlow: PointLight?,
 		_colorCycleConnection: RBXScriptConnection?,
 		_gaugePulseConnection: RBXScriptConnection?,
-		_onFeverStart: ((speedBoost: number) -> ())?,
+		_onFeverStart: ((speedBoost: number, duration: number) -> ())?,
 		_onFeverEnd: (() -> ())?,
 	},
 	FeverController
@@ -288,9 +288,9 @@ function FeverController:_onFeverStarted(data: { duration: number, speedBoost: n
 		self._gaugeFill.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
 	end
 
-	-- Callback to PlayerController for speed boost
+	-- Callback to PlayerController for speed boost (+ duration for camera zoom)
 	if self._onFeverStart then
-		self._onFeverStart(data.speedBoost)
+		self._onFeverStart(data.speedBoost, data.duration)
 	end
 
 	-- Show big announcement
@@ -606,7 +606,7 @@ function FeverController:_showFeverAnnouncement()
 end
 
 -- Set callbacks for PlayerController integration
-function FeverController:OnFeverStart(callback: (speedBoost: number) -> ())
+function FeverController:OnFeverStart(callback: (speedBoost: number, duration: number) -> ())
 	self._onFeverStart = callback
 end
 

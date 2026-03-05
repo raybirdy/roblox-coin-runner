@@ -34,7 +34,8 @@ export type CoinController = typeof(setmetatable(
 		_isGameActive: boolean,
 		_localCollectedCoins: { [Model]: boolean },
 		_onDiamondCollected: (() -> ())?,
-		_onCoinEffect: ((coinType: string) -> ())?
+		_onCoinEffect: ((coinType: string) -> ())?,
+		_onCoinShake: ((coinType: string) -> ())?,
 	},
 	CoinController
 ))
@@ -50,6 +51,7 @@ function CoinController.new(): CoinController
 		_localCollectedCoins = {},
 		_onDiamondCollected = nil,
 		_onCoinEffect = nil,
+		_onCoinShake = nil,
 	}, CoinController)
 
 	self:_setupEventHandlers()
@@ -241,6 +243,11 @@ function CoinController:_setupLocalCollectionCheck()
 				self._onCoinEffect(coinType :: string)
 			end
 
+			-- 마이크로 카메라 쉐이크 (Diamond는 별도 핸들러에서 더 강한 쉐이크 처리)
+			if self._onCoinShake and coinType ~= "Diamond" then
+				self._onCoinShake(coinType :: string)
+			end
+
 			-- 다이아몬드 코인 특수 콜백
 			if coinType == "Diamond" and self._onDiamondCollected then
 				self._onDiamondCollected()
@@ -275,11 +282,12 @@ function CoinController:_createParticlePool()
 			NumberSequenceKeypoint.new(0.8, 0.3),
 			NumberSequenceKeypoint.new(1, 1),
 		})
-		particle.Lifetime = NumberRange.new(0.5, 1)
-		particle.Speed = NumberRange.new(5, 15)
-		particle.SpreadAngle = Vector2.new(180, 180)
+		particle.Lifetime = NumberRange.new(0.1, 0.25) -- 빠르게 터지는 임팩트
+		particle.Speed = NumberRange.new(15, 35) -- 폭발적 속도
+		particle.SpreadAngle = Vector2.new(80, 80) -- 집중된 방향성
 		particle.Rate = 0
-		particle.Acceleration = Vector3.new(0, 10, 0)
+		particle.Acceleration = Vector3.new(0, -40, 0) -- 중력: "팡!" 후 낙하
+		particle.Drag = 3 -- 공기 저항으로 자연스러운 감속
 		particle.Parent = attachment
 
 		table.insert(self._particlePool, {
@@ -336,11 +344,13 @@ function CoinController:_playCoinParticle(coinType: string, isDoubled: boolean?)
 	poolEntry.attachment.Parent = hrp
 	poolEntry.emitter.Color = ColorSequence.new(color)
 
-	-- 파티클 버스트
-	poolEntry.emitter:Emit(isDoubled and 30 or 15)
+	-- 코인 타입별 방출 수 차별화 (가치 높을수록 더 화려하게)
+	local emitCounts = { Bronze = 10, Silver = 14, Gold = 22, Diamond = 35 }
+	local baseCount = emitCounts[coinType] or 10
+	poolEntry.emitter:Emit(isDoubled and baseCount * 2 or baseCount)
 
-	-- 파티클 완료 후 풀에 반환
-	task.delay(1.5, function()
+	-- 파티클 완료 후 풀에 반환 (짧은 Lifetime에 맞춰 빠르게 반환)
+	task.delay(0.4, function()
 		poolEntry.attachment.Parent = nil
 		poolEntry.inUse = false
 	end)
@@ -354,6 +364,11 @@ end
 -- 코인 수집 캐릭터 이펙트 콜백 설정
 function CoinController:OnCoinEffect(callback: (coinType: string) -> ())
 	self._onCoinEffect = callback
+end
+
+-- 마이크로 카메라 쉐이크 콜백 설정
+function CoinController:OnCoinShake(callback: (coinType: string) -> ())
+	self._onCoinShake = callback
 end
 
 -- 현재 총 코인 수 반환

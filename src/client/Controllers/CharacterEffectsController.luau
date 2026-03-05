@@ -40,7 +40,7 @@ export type CharacterEffectsController = typeof(setmetatable(
 function CharacterEffectsController.new(character: Model): CharacterEffectsController
 	local highlight = Instance.new("Highlight")
 	highlight.Name = "CharacterHighlight"
-	highlight.DepthMode = Enum.HighlightDepthMode.Occluded
+	highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
 	highlight.FillColor = Color3.fromRGB(255, 255, 255)
 	highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
 	highlight.FillTransparency = 1
@@ -142,7 +142,7 @@ function CharacterEffectsController:_flash(color: Color3, duration: number)
 
 	self._highlight.FillColor = color
 	self._highlight.OutlineColor = color
-	self._highlight.FillTransparency = 0.3
+	self._highlight.FillTransparency = 0.05 -- 거의 불투명 (더 강한 플래시)
 	self._highlight.OutlineTransparency = 0
 
 	-- 플래시 후 복귀 목표값 결정
@@ -192,7 +192,7 @@ function CharacterEffectsController:UpdateCharacter(newCharacter: Model)
 
 	local highlight = Instance.new("Highlight")
 	highlight.Name = "CharacterHighlight"
-	highlight.DepthMode = Enum.HighlightDepthMode.Occluded
+	highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
 	highlight.FillColor = Color3.fromRGB(255, 255, 255)
 	highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
 	highlight.FillTransparency = 1
