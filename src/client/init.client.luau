@@ -226,6 +226,7 @@ RemoteEvents.PlayerDataRequest:FireServer()
 -- 로비 복귀 처리
 RemoteEvents.ReturnToLobby.OnClientEvent:Connect(function()
 	print("[Client] Returned to lobby")
+	uiController:HideGameOver() -- 게임오버 화면 명시적 제거 (로비 안내와 겹침 방지)
 	uiController:ShowLobbyUI()
 	feverController:HideGauge()
 

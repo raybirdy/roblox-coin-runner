@@ -48,11 +48,11 @@ function ObjectiveHudController:_createUI()
 	screenGui.Parent = playerGui
 	self._screenGui = screenGui
 
-	-- Main frame (bottom-left, below game HUD stats)
+	-- Main frame (left side, above slide button: slide btn top is at Y=1,-154; frame bottom at Y=1,-168)
 	local hudFrame = Instance.new("Frame")
 	hudFrame.Name = "HudFrame"
 	hudFrame.Size = UDim2.new(0, 180, 0, 112)
-	hudFrame.Position = UDim2.new(0, 10, 1, -130)
+	hudFrame.Position = UDim2.new(0, 10, 1, -280)
 	hudFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 30)
 	hudFrame.BackgroundTransparency = 0.25
 	hudFrame.Visible = false
