@@ -65,10 +65,14 @@ function SkillController:_createGui()
 	self._gui = gui
 
 	-- 대쉬 버튼 (우하단)
+	-- Dash button: stacked ABOVE the jump button to avoid overlap
+	-- Jump button: size=120, margin=34 → right edge at W-34, top at H-154
+	-- Dash button: right-aligned (W-106 to W-34), above jump top with 8px gap (H-234 to H-162)
+	local DASH_SIZE = 72
 	local dashBtn = Instance.new("TextButton")
 	dashBtn.Name = "DashBtn"
-	dashBtn.Size = UDim2.new(0, 72, 0, 72)
-	dashBtn.Position = UDim2.new(1, -88, 1, -180)
+	dashBtn.Size = UDim2.new(0, DASH_SIZE, 0, DASH_SIZE)
+	dashBtn.Position = UDim2.new(1, -(34 + DASH_SIZE), 1, -(154 + 8 + DASH_SIZE)) -- above jump button
 	dashBtn.AnchorPoint = Vector2.new(0, 0)
 	dashBtn.BackgroundColor3 = Color3.fromRGB(60, 100, 220)
 	dashBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
