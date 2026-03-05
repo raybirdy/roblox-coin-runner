@@ -820,11 +820,23 @@ function UIController:UpdateScore(score: number, distance: number, _coins: numbe
 	end
 end
 
--- 코인 업데이트
+-- 코인 업데이트 (바운스 + 금색 플래시 애니메이션)
 function UIController:UpdateCoins(coins: number)
-	if self._coinsLabel then
-		self._coinsLabel.Text = `🪙 {coins}`
+	if not self._coinsLabel then
+		return
 	end
+	self._coinsLabel.Text = `🪙 {coins}`
+
+	-- 현재 크기에서 펀치 (즉시 +6pt 키운 후 복귀)
+	local baseSize = self._coinsLabel.TextSize
+	self._coinsLabel.TextSize = baseSize + 7
+	self._coinsLabel.TextColor3 = Color3.fromRGB(255, 255, 200) -- 밝은 황금 플래시
+
+	TweenService:Create(
+		self._coinsLabel,
+		TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+		{ TextSize = baseSize, TextColor3 = Color3.fromRGB(255, 215, 0) }
+	):Play()
 end
 
 -- 라이프 업데이트
