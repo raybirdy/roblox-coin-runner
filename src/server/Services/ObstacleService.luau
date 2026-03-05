@@ -50,7 +50,9 @@ function ObstacleService:SpawnObstaclesInChunk(chunk: Model, difficulty: string)
 	local chunkSize = chunk:GetExtentsSize()
 
 	-- 장애물 배치 (간격 확보)
-	local availableLength = chunkSize.X - 10 -- 양끝 여유 공간
+	-- ENTRY_SAFE: 청크 진입 직후 안전 구역 (이전 청크 장애물 회피 후 즉각 판단 방지)
+	local ENTRY_SAFE = 15 -- 진입 15studs 안전 (52studs/s 기준 약 0.29초 반응 시간 보장)
+	local availableLength = chunkSize.X - ENTRY_SAFE - 5 -- 진입 15 + 종료 5 여유
 
 	-- Hard 청크: 최소 반응 간격 보장 (SPEED_MAX * 0.4초 = ~20.8 studs)
 	if difficulty == "Hard" and obstacleCount > 1 then
@@ -65,7 +67,7 @@ function ObstacleService:SpawnObstaclesInChunk(chunk: Model, difficulty: string)
 	for i = 1, obstacleCount do
 		-- 장애물 위치 계산 (균등 배치 + 약간의 랜덤)
 		local segmentLength = availableLength / obstacleCount
-		local baseX = -chunkSize.X / 2 + 5 + (i - 1) * segmentLength + segmentLength / 2
+		local baseX = -chunkSize.X / 2 + ENTRY_SAFE + (i - 1) * segmentLength + segmentLength / 2
 		local randomOffset = (math.random() - 0.5) * (segmentLength * 0.3)
 		local obstacleX = baseX + randomOffset
 

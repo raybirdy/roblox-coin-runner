@@ -6,6 +6,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local SoundService = game:GetService("SoundService")
+local Lighting = game:GetService("Lighting")
 
 local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)
 local ResponsiveUtil = require(ReplicatedStorage.Shared.Utils.ResponsiveUtil)
@@ -37,6 +38,8 @@ export type FeverController = typeof(setmetatable(
 		_gaugePulseConnection: RBXScriptConnection?,
 		_onFeverStart: ((speedBoost: number, duration: number) -> ())?,
 		_onFeverEnd: (() -> ())?,
+		_feverBloom: BloomEffect?,        -- 피버 포스트 프로세싱
+		_feverColorCorrection: ColorCorrectionEffect?, -- 피버 색조 보정
 	},
 	FeverController
 ))
@@ -65,6 +68,8 @@ function FeverController.new(): FeverController
 		_gaugePulseConnection = nil,
 		_onFeverStart = nil,
 		_onFeverEnd = nil,
+		_feverBloom = nil,
+		_feverColorCorrection = nil,
 	}, FeverController)
 
 	self:_createGaugeUI()
@@ -278,6 +283,9 @@ function FeverController:_onFeverStarted(data: { duration: number, speedBoost: n
 	-- Rainbow color cycle on overlay
 	self:_startColorCycle()
 
+	-- 포스트 프로세싱: 화면 전체 bloom + 채도 강화
+	self:_startPostProcessing()
+
 	-- Gauge shows "FEVER!" text
 	if self._gaugeLabel then
 		self._gaugeLabel.Text = "FEVER!"
@@ -324,6 +332,9 @@ function FeverController:_onFeverEnded()
 
 	-- Stop color cycle
 	self:_stopColorCycle()
+
+	-- 포스트 프로세싱 해제
+	self:_stopPostProcessing()
 
 	-- Reset gauge
 	if self._gaugeLabel then
@@ -531,6 +542,74 @@ function FeverController:_stopCharacterEffects()
 	end
 end
 
+-- 피버 포스트 프로세싱 활성 (BloomEffect + ColorCorrection)
+function FeverController:_startPostProcessing()
+	-- BloomEffect (화면 전체 발광)
+	if not self._feverBloom then
+		local bloom = Instance.new("BloomEffect")
+		bloom.Name = "FeverBloom"
+		bloom.Intensity = 0
+		bloom.Size = 24
+		bloom.Threshold = 0.9
+		bloom.Parent = Lighting
+		self._feverBloom = bloom
+	end
+	TweenService:Create(
+		self._feverBloom,
+		TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+		{ Intensity = 1.2 }
+	):Play()
+
+	-- ColorCorrection (채도 + 밝기 강화 → 화면이 더 생생해짐)
+	if not self._feverColorCorrection then
+		local cc = Instance.new("ColorCorrectionEffect")
+		cc.Name = "FeverColorCorrection"
+		cc.Saturation = 0
+		cc.Brightness = 0
+		cc.Contrast = 0
+		cc.Parent = Lighting
+		self._feverColorCorrection = cc
+	end
+	TweenService:Create(
+		self._feverColorCorrection,
+		TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+		{ Saturation = 0.5, Brightness = 0.06 }
+	):Play()
+end
+
+-- 피버 포스트 프로세싱 해제 (부드럽게 원복)
+function FeverController:_stopPostProcessing()
+	if self._feverBloom then
+		local bloom = self._feverBloom
+		TweenService:Create(
+			bloom,
+			TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+			{ Intensity = 0 }
+		):Play()
+		task.delay(0.7, function()
+			if bloom and bloom.Parent then
+				bloom:Destroy()
+			end
+		end)
+		self._feverBloom = nil
+	end
+
+	if self._feverColorCorrection then
+		local cc = self._feverColorCorrection
+		TweenService:Create(
+			cc,
+			TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+			{ Saturation = 0, Brightness = 0 }
+		):Play()
+		task.delay(0.7, function()
+			if cc and cc.Parent then
+				cc:Destroy()
+			end
+		end)
+		self._feverColorCorrection = nil
+	end
+end
+
 -- Rainbow color cycle on overlay
 function FeverController:_startColorCycle()
 	self:_stopColorCycle()
@@ -645,6 +724,7 @@ end
 function FeverController:Destroy()
 	self:_stopColorCycle()
 	self:_stopCharacterEffects()
+	self:_stopPostProcessing()
 
 	if self._gaugePulseConnection then
 		self._gaugePulseConnection:Disconnect()

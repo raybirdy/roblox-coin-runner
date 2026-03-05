@@ -21,6 +21,7 @@ export type CoinService = typeof(setmetatable(
 		_activeCoins: { CoinData },
 		_connections: { RBXScriptConnection },
 		_player: Player,
+		_spawnCount: number, -- 코인 밀도 리듬: Normal/Hard 청크 카운터
 	},
 	CoinService
 ))
@@ -30,6 +31,7 @@ function CoinService.new(player: Player): CoinService
 		_activeCoins = {},
 		_connections = {},
 		_player = player,
+		_spawnCount = 0,
 	}, CoinService)
 
 	self:_setupCollisionHandlers()
@@ -339,13 +341,26 @@ function CoinService:SpawnCoinsInChunk(chunk: Model, difficulty: string, obstacl
 	end
 end
 
--- 난이도별 코인 개수 결정
+-- 난이도별 코인 개수 결정 (밀도 리듬 적용)
 function CoinService:_getCoinCountForDifficulty(difficulty: string): number
 	local counts = GameConstants.COIN_COUNTS[difficulty:upper()]
-	if counts then
-		return math.random(counts.min, counts.max)
+	if not counts then
+		return 5
 	end
-	return 5
+	local base = math.random(counts.min, counts.max)
+
+	-- Normal/Hard 청크에 코인 밀도 리듬 적용 (DENSE_EVERY번째마다 폭발적 밀도)
+	if difficulty == "Normal" or difficulty == "Hard" then
+		self._spawnCount = self._spawnCount + 1
+		if self._spawnCount % GameConstants.COIN_RHYTHM.DENSE_EVERY == 0 then
+			base = math.min(
+				math.ceil(base * GameConstants.COIN_RHYTHM.DENSE_MULTIPLIER),
+				GameConstants.COIN_RHYTHM.DENSE_MAX
+			)
+		end
+	end
+
+	return base
 end
 
 -- 코인 타입 선택 (가중 랜덤)
