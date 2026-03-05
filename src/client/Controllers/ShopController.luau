@@ -54,8 +54,25 @@ function ShopController:_createUI()
 	local screenGui = Instance.new("ScreenGui")
 	screenGui.Name = "ShopUI"
 	screenGui.ResetOnSpawn = false
+	screenGui.DisplayOrder = 15
 	screenGui.Parent = self._playerGui
 	self._screenGui = screenGui
+
+	-- 배경 딤 오버레이 (터치 닫기 지원)
+	local shopDim = Instance.new("TextButton")
+	shopDim.Name = "ShopDim"
+	shopDim.Size = UDim2.new(1, 0, 1, 0)
+	shopDim.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	shopDim.BackgroundTransparency = 0.5
+	shopDim.BorderSizePixel = 0
+	shopDim.Text = ""
+	shopDim.AutoButtonColor = false
+	shopDim.Visible = false
+	shopDim.Parent = screenGui
+
+	shopDim.MouseButton1Click:Connect(function()
+		self:Close()
+	end)
 
 	-- 상점 프레임 (초기 숨김)
 	local shopFrame = Instance.new("Frame")
@@ -1468,6 +1485,11 @@ function ShopController:Open()
 	self._isOpen = true
 	self._shopFrame.Visible = true
 
+	local dim = self._screenGui and self._screenGui:FindFirstChild("ShopDim") :: TextButton?
+	if dim then
+		dim.Visible = true
+	end
+
 	-- 서버에서 최신 상점 데이터 요청
 	RemoteEvents.ShopDataRequest:FireServer()
 
@@ -1494,6 +1516,11 @@ function ShopController:Close()
 	end
 
 	self._isOpen = false
+
+	local dim = self._screenGui and self._screenGui:FindFirstChild("ShopDim") :: TextButton?
+	if dim then
+		dim.Visible = false
+	end
 
 	-- 사라지는 애니메이션
 	local tween =

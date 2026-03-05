@@ -56,15 +56,21 @@ function LoginRewardController:_createUI()
 	screenGui.Parent = playerGui
 	self._screenGui = screenGui
 
-	-- 어두운 배경
-	local overlay = Instance.new("Frame")
+	-- 어두운 배경 (터치 닫기 지원)
+	local overlay = Instance.new("TextButton")
 	overlay.Name = "Overlay"
 	overlay.Size = UDim2.new(1, 0, 1, 0)
 	overlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 	overlay.BackgroundTransparency = 0.5
 	overlay.BorderSizePixel = 0
+	overlay.Text = ""
+	overlay.AutoButtonColor = false
 	overlay.Visible = false
 	overlay.Parent = screenGui
+
+	overlay.MouseButton1Click:Connect(function()
+		self:_hidePopup()
+	end)
 
 	-- 팝업 프레임
 	local popup = Instance.new("Frame")
@@ -382,6 +388,16 @@ function LoginRewardController:_setupEventHandlers()
 		end
 	end)
 	table.insert(self._connections, conn)
+end
+
+-- 팝업 열림 상태 확인
+function LoginRewardController:IsOpen(): boolean
+	return self._isOpen
+end
+
+-- 팝업 닫기 (외부 호출용)
+function LoginRewardController:Hide()
+	self:_hidePopup()
 end
 
 -- 첫 런 완료 후 팝업 표시 (pending 상태일 때만)

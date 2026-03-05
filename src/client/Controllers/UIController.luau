@@ -38,6 +38,7 @@ export type UIController = typeof(setmetatable(
 		_highScoreDisplay: Frame?, -- 로비 최고 점수 표시
 		_lobbyGuideAnimation: boolean?, -- 로비 안내 펄스 애니메이션 활성 여부
 		_multiplierBadge: Frame?, -- 생존 배율 뱃지
+		_gameOverDim: Frame?, -- 게임오버 배경 딤 오버레이
 		_coinLabelBaseSize: number, -- UpdateCoins 인플레이션 방지용 고정 기준 텍스트 크기
 		_connections: { RBXScriptConnection },
 		_onJumpCallback: (() -> ())?,
@@ -72,6 +73,7 @@ function UIController.new(player: Player): UIController
 		_highScoreDisplay = nil,
 		_lobbyGuideAnimation = false,
 		_multiplierBadge = nil,
+		_gameOverDim = nil,
 		_coinLabelBaseSize = 0,
 		_connections = {},
 		_onJumpCallback = nil,
@@ -125,11 +127,13 @@ function UIController:_createUI()
 
 	-- 개별 하트 생성
 	self._heartLabels = {}
+	local heartSize = math.max(20, ResponsiveUtil.scaledOffset(28))
+	local heartSpacing = math.max(22, ResponsiveUtil.scaledOffset(30))
 	for i = 1, GameConstants.LIFE.STARTING_LIVES do
 		local heart = Instance.new("TextLabel")
 		heart.Name = `Heart{i}`
-		heart.Size = UDim2.new(0, 28, 0, 28)
-		heart.Position = UDim2.new(0, 10 + (i - 1) * 30, 0, 0)
+		heart.Size = UDim2.new(0, heartSize, 0, heartSize)
+		heart.Position = UDim2.new(0, ResponsiveUtil.scaledOffset(6) + (i - 1) * heartSpacing, 0, 0)
 		heart.BackgroundTransparency = 1
 		heart.TextColor3 = Color3.fromRGB(255, 50, 50)
 		heart.TextSize = ResponsiveUtil.scaledTextSize(20, 14)
@@ -189,9 +193,22 @@ function UIController:_createUI()
 	livesLabel.Parent = screenGui
 	self._livesLabel = livesLabel
 
+	-- 게임오버 배경 딤 오버레이 (gameOverFrame 뒤에 표시)
+	local gameOverDim = Instance.new("Frame")
+	gameOverDim.Name = "GameOverDim"
+	gameOverDim.Size = UDim2.new(1, 0, 1, 0)
+	gameOverDim.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	gameOverDim.BackgroundTransparency = 0.45
+	gameOverDim.BorderSizePixel = 0
+	gameOverDim.Visible = false
+	gameOverDim.ZIndex = 2
+	gameOverDim.Parent = screenGui
+	self._gameOverDim = gameOverDim
+
 	-- 게임 오버 프레임 (초기 숨김) — 컴팩트 사이즈
 	local gameOverFrame = Instance.new("Frame")
 	gameOverFrame.Name = "GameOverFrame"
+	gameOverFrame.ZIndex = 3
 	gameOverFrame.Size = ResponsiveUtil.clampedSize(380, 360, 0.88, 0.70)
 	gameOverFrame.Position = ResponsiveUtil.clampedPosition(380, 360, 0.88, 0.70)
 	gameOverFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
@@ -907,6 +924,11 @@ function UIController:ShowGameOver(
 		return
 	end
 
+	-- 배경 딤 표시
+	if self._gameOverDim then
+		self._gameOverDim.Visible = true
+	end
+
 	-- 최종 점수 표시
 	local finalScoreLabel = self._gameOverFrame:FindFirstChild("FinalScore") :: TextLabel?
 	if finalScoreLabel then
@@ -1287,10 +1309,20 @@ end
 function UIController:OnRestartButtonClicked()
 	print("[UIController] Play Again clicked - restarting game")
 
-	-- 게임 오버 화면 숨기기
-	self:HideGameOver()
+	-- 버튼 비활성화 (서버 응답 대기 중 이중 클릭 방지)
+	if self._gameOverFrame then
+		local restartBtn = self._gameOverFrame:FindFirstChild("RestartButton") :: TextButton?
+		local lobbyBtn = self._gameOverFrame:FindFirstChild("LobbyButton") :: TextButton?
+		if restartBtn then
+			restartBtn.Active = false
+			restartBtn.Text = "..."
+		end
+		if lobbyBtn then
+			lobbyBtn.Active = false
+		end
+	end
 
-	-- 서버에 게임 시작 요청 (포탈 없이 바로 시작)
+	-- 서버에 게임 시작 요청 (HideGameOver는 GameStart.OnClientEvent에서 처리)
 	RemoteEvents.GameStart:FireServer()
 end
 
@@ -1298,10 +1330,20 @@ end
 function UIController:OnLobbyButtonClicked()
 	print("[UIController] Lobby button clicked - returning to lobby")
 
-	-- 게임 오버 화면 숨기기
-	self:HideGameOver()
+	-- 버튼 비활성화 (서버 응답 대기 중 이중 클릭 방지)
+	if self._gameOverFrame then
+		local restartBtn = self._gameOverFrame:FindFirstChild("RestartButton") :: TextButton?
+		local lobbyBtn = self._gameOverFrame:FindFirstChild("LobbyButton") :: TextButton?
+		if restartBtn then
+			restartBtn.Active = false
+		end
+		if lobbyBtn then
+			lobbyBtn.Active = false
+			lobbyBtn.Text = "..."
+		end
+	end
 
-	-- 서버에 로비 복귀 요청
+	-- 서버에 로비 복귀 요청 (HideGameOver는 ReturnToLobby.OnClientEvent에서 처리)
 	RemoteEvents.ReturnToLobby:FireServer()
 end
 
@@ -1499,6 +1541,11 @@ function UIController:HideGameOver()
 	if self._gameOverFrame then
 		self._gameOverFrame.Visible = false
 
+		-- 배경 딤 숨기기
+		if self._gameOverDim then
+			self._gameOverDim.Visible = false
+		end
+
 		-- NEW RECORD 숨기기
 		local newRecordLabel = self._gameOverFrame:FindFirstChild("NewRecord") :: TextLabel?
 		if newRecordLabel then
@@ -1680,11 +1727,12 @@ function UIController:ShowNearRecordAlert(data: { currentScore: number, highScor
 	local frame = Instance.new("Frame")
 	frame.Name = "NearRecordFrame"
 	frame.Size = ResponsiveUtil.clampedSize(300, 36, 0.80, 0.08)
+	-- Y=0.80 상대 위치로 모바일 버튼(슬라이드/점프) 영역과 겹치지 않게 배치
 	frame.Position = UDim2.new(
 		0.5,
 		-math.min(300, ResponsiveUtil.getViewportSize().X * 0.80) / 2,
-		1,
-		-ResponsiveUtil.scaledOffset(120)
+		0.80,
+		0
 	)
 	frame.BackgroundColor3 = Color3.fromRGB(255, 200, 50)
 	frame.BackgroundTransparency = 0.2

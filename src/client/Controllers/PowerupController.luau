@@ -287,10 +287,19 @@ function PowerupController:OnPowerupCollected(data: { powerupType: string })
 			self._onPowerupGlowEnd("Shield")
 		end
 
-		-- 쉴드 아이콘 제거
+		-- 쉴드 아이콘 제거 (사라지는 애니메이션)
 		if self._powerupIcons["Shield"] then
-			self._powerupIcons["Shield"]:Destroy()
+			local shieldIcon = self._powerupIcons["Shield"]
 			self._powerupIcons["Shield"] = nil
+			local disappearTween =
+				TweenService:Create(shieldIcon, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+					Size = UDim2.new(0, 0, 0, 0),
+					BackgroundTransparency = 1,
+				})
+			disappearTween:Play()
+			disappearTween.Completed:Connect(function()
+				shieldIcon:Destroy()
+			end)
 		end
 	end
 end
