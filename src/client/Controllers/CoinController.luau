@@ -16,6 +16,7 @@ local CoinController = {}
 CoinController.__index = CoinController
 
 local PARTICLE_POOL_SIZE = 5
+local SOUND_POOL_SIZE = 5 -- 빠른 연속 수집 시 사운드 끊김 방지
 local LOCAL_COLLECTION_RADIUS = 3.5 -- 서버(3)보다 약간 넓게 (선제 감지)
 
 type ParticlePoolEntry = {
@@ -29,7 +30,10 @@ export type CoinController = typeof(setmetatable(
 		_connections: { RBXScriptConnection },
 		_totalCoins: number,
 		_popupGui: ScreenGui?,
-		_coinSound: Sound?,
+		_soundPool: { Sound }, -- #10 사운드 풀링 (빠른 연속 수집)
+		_soundPoolIndex: number,
+		_comboStreak: number, -- #10 연속 수집 카운터 (상승 음계용)
+		_lastCoinTime: number,
 		_particlePool: { ParticlePoolEntry },
 		_isGameActive: boolean,
 		_localCollectedCoins: { [Model]: boolean },
@@ -45,7 +49,10 @@ function CoinController.new(): CoinController
 		_connections = {},
 		_totalCoins = 0,
 		_popupGui = nil,
-		_coinSound = nil,
+		_soundPool = {},
+		_soundPoolIndex = 0,
+		_comboStreak = 0,
+		_lastCoinTime = 0,
 		_particlePool = {},
 		_isGameActive = false,
 		_localCollectedCoins = {},
@@ -56,7 +63,7 @@ function CoinController.new(): CoinController
 
 	self:_setupEventHandlers()
 	self:_createPopupGui()
-	self:_createCoinSound()
+	self:_createSoundPool()
 	self:_createParticlePool()
 	self:_setupLocalCollectionCheck()
 
@@ -83,14 +90,16 @@ function CoinController:_createPopupGui()
 	self._popupGui = screenGui
 end
 
--- 코인 사운드 생성
-function CoinController:_createCoinSound()
-	local sound = Instance.new("Sound")
-	sound.Name = "CoinSound"
-	sound.SoundId = "rbxassetid://1169755927" -- Coin Collect SFX (public, free to use)
-	sound.Volume = 0.5
-	sound.Parent = SoundService
-	self._coinSound = sound
+-- 사운드 풀 생성 (#10: 5개 인스턴스로 빠른 연속 수집 시 끊김 방지)
+function CoinController:_createSoundPool()
+	for i = 1, SOUND_POOL_SIZE do
+		local sound = Instance.new("Sound")
+		sound.Name = "CoinSound_" .. i
+		sound.SoundId = "rbxassetid://1169755927" -- Coin Collect SFX (public, free to use)
+		sound.Volume = 0.5
+		sound.Parent = SoundService
+		table.insert(self._soundPool, sound)
+	end
 end
 
 -- 코인 팝업 표시 (+1, +5 등)
@@ -227,12 +236,23 @@ function CoinController:_setupLocalCollectionCheck()
 			-- 로컬에서 즉시 이펙트 재생
 			self._localCollectedCoins[coinModel] = true
 
-			-- 사운드 재생 (코인 타입별 피치 차별화 + ±5% 랜덤 변형)
-			if self._coinSound then
+			-- #10 사운드 풀링 + 상승 음계 (연속 수집마다 피치 +3%, 최대 +25%)
+			local now = tick()
+			if now - self._lastCoinTime > 1.5 then
+				self._comboStreak = 0 -- 1.5초 공백 시 스트릭 리셋
+			end
+			self._comboStreak = self._comboStreak + 1
+			self._lastCoinTime = now
+
+			if #self._soundPool > 0 then
+				self._soundPoolIndex = (self._soundPoolIndex % #self._soundPool) + 1
+				local sound = self._soundPool[self._soundPoolIndex]
 				local pitchMap = { Bronze = 1.0, Silver = 1.2, Gold = 1.5, Diamond = 2.0 }
 				local basePitch = pitchMap[coinType :: string] or 1.0
-				self._coinSound.PlaybackSpeed = basePitch + (math.random() * 0.1 - 0.05)
-				self._coinSound:Play()
+				local comboBonus = math.min((self._comboStreak - 1) * 0.03, 0.25) -- 연속 수집 음계 상승
+				local jitter = math.random() * 0.06 - 0.03 -- ±3% 자연스러운 변형
+				sound.PlaybackSpeed = basePitch + comboBonus + jitter
+				sound:Play()
 			end
 
 			-- 파티클 효과 (플레이어 위치에서)
@@ -253,10 +273,14 @@ function CoinController:_setupLocalCollectionCheck()
 				self._onDiamondCollected()
 			end
 
-			-- 코인 즉시 숨기기 (서버가 나중에 Destroy 처리)
+			-- #6 코인 스케일팝: 1.8x 확대 + 투명화 (0.12s) 후 소멸
+			local scaleTween = TweenInfo.new(0.12, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 			for _, child in coinModel:GetChildren() do
 				if child:IsA("BasePart") then
-					child.Transparency = 1
+					TweenService:Create(child, scaleTween, {
+						Size = child.Size * 1.8,
+						Transparency = 1,
+					}):Play()
 				end
 			end
 		end
@@ -389,11 +413,14 @@ function CoinController:Destroy()
 	end
 	self._particlePool = {}
 
+	-- 사운드 풀 정리
+	for _, sound in self._soundPool do
+		sound:Destroy()
+	end
+	self._soundPool = {}
+
 	if self._popupGui then
 		self._popupGui:Destroy()
-	end
-	if self._coinSound then
-		self._coinSound:Destroy()
 	end
 
 	self._localCollectedCoins = {}

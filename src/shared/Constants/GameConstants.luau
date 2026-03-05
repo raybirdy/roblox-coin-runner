@@ -121,6 +121,13 @@ GameConstants.COIN_COUNTS = {
 	NPC = { min = 3, max = 4 },
 }
 
+-- 코인 밀도 리듬 (긴장-이완 구조: N번째 청크마다 코인 폭발)
+GameConstants.COIN_RHYTHM = {
+	DENSE_EVERY = 4, -- 4번째 Normal/Hard 청크마다 밀집 구간
+	DENSE_MULTIPLIER = 2.0, -- 밀집 구간 코인 2배
+	DENSE_MAX = 14, -- 최대 코인 수 (너무 많으면 렉)
+}
+
 -- 장애물
 GameConstants.OBSTACLE = {
 	LOW_WALL_HEIGHT = 4, -- 낮은 벽 높이
