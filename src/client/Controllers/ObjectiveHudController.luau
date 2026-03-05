@@ -50,13 +50,18 @@ function ObjectiveHudController:_createUI()
 	screenGui.Parent = playerGui
 	self._screenGui = screenGui
 
-	-- Main frame (left side, above slide button: slide btn top is at Y=1,-154; frame bottom at Y=1,-168)
+	-- Main frame (left side, above slide button)
+	-- Slide button: size=120, margin=34 → top edge at Y=1,-154 from bottom
+	-- We must ensure: hudBottom < -154, i.e., -(yOffset) + hudH < -154 → yOffset > hudH + 154 + gap
 	local hudW = math.max(160, ResponsiveUtil.scaledOffset(180))
 	local hudH = math.max(100, ResponsiveUtil.scaledOffset(112))
+	local SLIDE_BTN_TOP = 154 -- TOUCH_BUTTON_SIZE(120) + btnMargin(34)
+	local HUD_GAP = 14
+	local minYOffset = hudH + SLIDE_BTN_TOP + HUD_GAP -- e.g. 100+154+14 = 268
 	local hudFrame = Instance.new("Frame")
 	hudFrame.Name = "HudFrame"
 	hudFrame.Size = UDim2.new(0, hudW, 0, hudH)
-	hudFrame.Position = UDim2.new(0, ResponsiveUtil.scaledOffset(10), 1, -math.max(200, ResponsiveUtil.scaledOffset(280)))
+	hudFrame.Position = UDim2.new(0, ResponsiveUtil.scaledOffset(10), 1, -math.max(minYOffset, ResponsiveUtil.scaledOffset(280)))
 	hudFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 30)
 	hudFrame.BackgroundTransparency = 0.25
 	hudFrame.Visible = false
