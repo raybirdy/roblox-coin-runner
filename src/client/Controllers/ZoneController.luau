@@ -44,6 +44,7 @@ function ZoneController:_createZoneUI()
 	local screenGui = Instance.new("ScreenGui")
 	screenGui.Name = "ZoneUI"
 	screenGui.ResetOnSpawn = false
+	screenGui.DisplayOrder = 11
 	screenGui.ScreenInsets = Enum.ScreenInsets.DeviceSafeInsets
 	screenGui.Parent = playerGui
 	self._zoneGui = screenGui

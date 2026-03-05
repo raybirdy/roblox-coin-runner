@@ -65,6 +65,7 @@ function BossRunController:_createGui()
 	gui.ResetOnSpawn = false
 	gui.DisplayOrder = 16
 	gui.Enabled = false
+	gui.ScreenInsets = Enum.ScreenInsets.DeviceSafeInsets
 	gui.Parent = playerGui
 	self._gui = gui
 
@@ -311,6 +312,7 @@ function BossRunController:ShowResult(success: boolean, data: any)
 	resultGui.Name = "BossRunResultGui"
 	resultGui.ResetOnSpawn = false
 	resultGui.DisplayOrder = 25
+	resultGui.ScreenInsets = Enum.ScreenInsets.DeviceSafeInsets
 	resultGui.Parent = playerGui
 
 	-- 배경 딤

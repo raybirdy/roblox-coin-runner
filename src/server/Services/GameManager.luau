@@ -167,7 +167,7 @@ local function setupPortalDetection()
 			end
 
 			-- 디바운스 체크
-			local now = tick()
+			local now = os.clock()
 			if portalDebounce[player] and (now - portalDebounce[player]) < PORTAL_DEBOUNCE_TIME then
 				return
 			end
@@ -249,7 +249,7 @@ RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { 
 		tutorialService = globalTutorialService,
 		backgroundService = backgroundService,
 		isPlaying = true,
-		startTime = tick(),
+		startTime = os.clock(),
 		startPosition = startPosition,
 		score = 0,
 		coins = 0,
@@ -278,9 +278,9 @@ RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { 
 		powerupsCollected = 0,
 		scenarioStatBonuses = statBonuses,
 		unlockedSkillsSet = unlockedSkillsSet,
-		lastShieldRegenTime = tick(),
+		lastShieldRegenTime = os.clock(),
 		feverThreshold = feverThreshold,
-		survivalStartTime = tick(),
+		survivalStartTime = os.clock(),
 		survivalMultiplierTier = 0,
 		hitRushEndTime = 0,
 		lastFeverEndTime = 0,
@@ -411,10 +411,10 @@ local function setupShopDetection()
 
 			-- 디바운스 체크
 			local lastOpen = shopDebounce[player]
-			if lastOpen and (tick() - lastOpen) < SHOP_DEBOUNCE_TIME then
+			if lastOpen and (os.clock() - lastOpen) < SHOP_DEBOUNCE_TIME then
 				return
 			end
-			shopDebounce[player] = tick()
+			shopDebounce[player] = os.clock()
 
 			-- 상점 열기 알림
 			RemoteEvents.ShopOpen:FireClient(player)
@@ -490,7 +490,7 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 		tutorialService = globalTutorialService,
 		backgroundService = backgroundService,
 		isPlaying = true,
-		startTime = tick(),
+		startTime = os.clock(),
 		startPosition = startPosition,
 		score = 0,
 		coins = 0,
@@ -518,10 +518,10 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 		powerupsCollected = 0,
 		scenarioStatBonuses = statBonuses,
 		unlockedSkillsSet = unlockedSkillsSet2,
-		lastShieldRegenTime = tick(),
+		lastShieldRegenTime = os.clock(),
 		feverThreshold = feverThreshold2,
 		asyncBattleTarget = battleTarget2,
-		survivalStartTime = tick(),
+		survivalStartTime = os.clock(),
 		survivalMultiplierTier = 0,
 		hitRushEndTime = 0,
 		lastFeverEndTime = 0,
@@ -706,7 +706,7 @@ function GameManager.EndGame(player: Player)
 	end
 
 	-- 시나리오 퀘스트 진행도 업데이트
-	local sessionDuration = math.floor(tick() - session.startTime)
+	local sessionDuration = math.floor(os.clock() - session.startTime)
 	local wasNoHit = session.lastHitDistance == 0 and finalScore > 0
 	ScenarioService:UpdateQuestProgress(player, "play_games", 1)
 	ScenarioService:UpdateQuestProgress(player, "score_reach", finalScore)
@@ -808,7 +808,7 @@ function GameManager.EndGame(player: Player)
 		ownedSkins = playerData and playerData.ownedSkins or { "default" },
 		-- TIER 3: 다음 구역 목표 힌트 (재도전 동기 부여)
 		nextZoneInfo = (function()
-			local elapsed = tick() - session.startTime
+			local elapsed = os.clock() - session.startTime
 			local nextZone = GameConstants.ZONE_THEMES[session.currentZoneIndex + 1]
 			if nextZone then
 				return {
@@ -892,7 +892,7 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 		end
 
 		-- Phase B: Zone 전환 체크
-		local elapsedTime = tick() - session.startTime
+		local elapsedTime = os.clock() - session.startTime
 		local newZoneIndex = 1
 		for i = #GameConstants.ZONE_THEMES, 1, -1 do
 			if elapsedTime >= GameConstants.ZONE_THEMES[i].startTime then
@@ -916,19 +916,19 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 
 		-- Phase B: 이벤트 청크 확률 체크
 		local eventCooldown = GameConstants.EVENT_CHUNKS.COOLDOWN
-		if (tick() - session.lastEventTime) >= eventCooldown then
+		if (os.clock() - session.lastEventTime) >= eventCooldown then
 			if
 				elapsedTime >= GameConstants.EVENT_CHUNKS.GIANT_COIN.MIN_TIME
 				and math.random() < GameConstants.EVENT_CHUNKS.GIANT_COIN.CHANCE
 			then
-				session.lastEventTime = tick()
+				session.lastEventTime = os.clock()
 				chunkService:RequestEventChunk("GiantCoin")
 				RemoteEvents.EventChunkAlert:FireClient(player, { eventType = "GiantCoin" })
 			elseif
 				elapsedTime >= GameConstants.EVENT_CHUNKS.COIN_RUSH.MIN_TIME
 				and math.random() < GameConstants.EVENT_CHUNKS.COIN_RUSH.CHANCE
 			then
-				session.lastEventTime = tick()
+				session.lastEventTime = os.clock()
 				chunkService:RequestEventChunk("CoinRush")
 				RemoteEvents.EventChunkAlert:FireClient(player, { eventType = "CoinRush" })
 			end
@@ -977,7 +977,7 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 		elseif session.isMiniFever then
 			coinMultiplier *= GameConstants.MINI_FEVER.COIN_MULTIPLIER
 		end
-		local hitRushActive = tick() < session.hitRushEndTime
+		local hitRushActive = os.clock() < session.hitRushEndTime
 		local hitRushMult = if hitRushActive then GameConstants.HIT_RECOVERY.COIN_MULTIPLIER else 1
 		for _, coinData in collectedCoins do
 			-- 2배 코인 적용 (파워업 + VIP 배율 + 히트 러시)
@@ -1015,7 +1015,7 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 
 		-- 콤보 시스템
 		if #collectedCoins > 0 then
-			local now = tick()
+			local now = os.clock()
 			local comboTimeout = GameConstants.SCORE.COMBO_TIMEOUT + session.upgradeBonuses.comboBufferSeconds
 			if now - session.lastCoinTime < comboTimeout then
 				session.comboCount += #collectedCoins
@@ -1110,31 +1110,31 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 		else
 			-- 콤보 타임아웃 체크 (combo_buffer 업그레이드로 연장 가능)
 			local comboTimeout = GameConstants.SCORE.COMBO_TIMEOUT + session.upgradeBonuses.comboBufferSeconds
-			if session.comboCount > 0 and tick() - session.lastCoinTime >= comboTimeout then
+			if session.comboCount > 0 and os.clock() - session.lastCoinTime >= comboTimeout then
 				session.comboCount = 0
 				RemoteEvents.ComboUpdate:FireClient(player, { combo = 0 })
 				RemoteEvents.FeverGaugeUpdate:FireClient(player, {
 					combo = 0,
 					threshold = session.feverThreshold,
-					onCooldown = tick() < session.feverCooldownEnd,
+					onCooldown = os.clock() < session.feverCooldownEnd,
 				})
 			end
 		end
 
 		-- 미니 피버 종료 체크
-		if session.isMiniFever and tick() >= session.miniFeverEndTime then
+		if session.isMiniFever and os.clock() >= session.miniFeverEndTime then
 			session.isMiniFever = false
 			RemoteEvents.MiniFeverEnd:FireClient(player)
 			print(`[GameManager] MINI FEVER ended for {player.Name}`)
 		end
 
 		-- 피버 모드 종료 체크
-		if session.isFever and tick() >= session.feverEndTime then
+		if session.isFever and os.clock() >= session.feverEndTime then
 			session.isFever = false
-			session.lastFeverEndTime = tick()
+			session.lastFeverEndTime = os.clock()
 			session.isSuperFever = false
 			session.isMiniFever = false -- 피버 종료 시 미니 피버도 해제
-			session.feverCooldownEnd = tick() + GameConstants.FEVER.COOLDOWN
+			session.feverCooldownEnd = os.clock() + GameConstants.FEVER.COOLDOWN
 			session.comboCount = 0 -- 피버 종료 시 콤보 리셋
 			session.miniFeverTriggeredAt = 0 -- 피버 종료 시 미니 피버 카운터 초기화
 			RemoteEvents.FeverEnd:FireClient(player)
@@ -1148,7 +1148,7 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 
 		-- shield_regen 스킬: 60초마다 쉴드 자동 재생
 		if session.unlockedSkillsSet["shield_regen"] then
-			local now2 = tick()
+			local now2 = os.clock()
 			if now2 - session.lastShieldRegenTime >= 60 and not powerupService:HasShield() then
 				session.lastShieldRegenTime = now2
 				powerupService:ActivatePowerup("Shield")
@@ -1225,12 +1225,12 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 				end
 
 				-- 생존 배율 리셋 + 히트 러시 시작
-				session.survivalStartTime = tick()
+				session.survivalStartTime = os.clock()
 				if session.survivalMultiplierTier > 0 then
 					session.survivalMultiplierTier = 0
 					RemoteEvents.SurvivalMultiplierUpdate:FireClient(player, { tier = 0, multiplier = 1.0 })
 				end
-				session.hitRushEndTime = tick() + GameConstants.HIT_RECOVERY.RUSH_DURATION
+				session.hitRushEndTime = os.clock() + GameConstants.HIT_RECOVERY.RUSH_DURATION
 				RemoteEvents.HitRushStart:FireClient(player, { duration = GameConstants.HIT_RECOVERY.RUSH_DURATION })
 
 				-- 퍼펙트 런 리셋 (피격 시 현재 거리 기록)
@@ -1296,7 +1296,7 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 			session.nearMissCount += 1 -- Phase B: 니어미스 횟수 추적
 
 			-- 체인 업데이트
-			local now = tick()
+			local now = os.clock()
 			local chainTimeout = GameConstants.NEAR_MISS_CHAIN.CHAIN_TIMEOUT
 			if now - session.lastNearMissTime < chainTimeout then
 				session.nearMissChain = math.min(session.nearMissChain + 1, 5)
@@ -1345,7 +1345,7 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 		end
 
 		-- 생존 배율 티어 업데이트
-		local cleanTime = tick() - session.survivalStartTime
+		local cleanTime = os.clock() - session.survivalStartTime
 		local newTier = 0
 		for i = #GameConstants.SURVIVAL_MULTIPLIER.TIERS, 1, -1 do
 			if cleanTime >= GameConstants.SURVIVAL_MULTIPLIER.TIERS[i].minTime then
@@ -1389,7 +1389,7 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 		session.score = distanceScore + session.coins + session.bonusScore
 
 		-- 점수 변경 시 클라이언트에 업데이트 알림 (0.5초마다)
-		if tick() % 0.5 < deltaTime then
+		if os.clock() % 0.5 < deltaTime then
 			RemoteEvents.ScoreUpdate:FireClient(player, {
 				score = session.score,
 				distance = math.floor(distanceTraveled),
@@ -1397,7 +1397,7 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 			})
 
 			-- 데일리 이벤트 + 런 목표 진행도 업데이트 (0.5초 간격)
-			local now = tick()
+			local now = os.clock()
 			if now - session.lastEventProgressTime >= 0.5 then
 				session.lastEventProgressTime = now
 				DailyEventService:OnDistanceUpdate(player, distanceTraveled)
@@ -1429,7 +1429,7 @@ end)
 
 -- Phase B: "거의 다 왔어!" 메시지 생성
 function GameManager._generateAlmostMessage(session: GameSession): string?
-	local elapsed = tick() - session.startTime
+	local elapsed = os.clock() - session.startTime
 	local currentZoneIdx = session.currentZoneIndex
 	local nextZone = GameConstants.ZONE_THEMES[currentZoneIdx + 1]
 

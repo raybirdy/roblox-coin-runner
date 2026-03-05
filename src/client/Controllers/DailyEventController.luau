@@ -24,6 +24,7 @@ export type DailyEventController = typeof(setmetatable(
 		_goalCompleted: boolean,
 		_isGameActive: boolean,
 		_dismissed: boolean,
+		_pulseConnection: RBXScriptConnection?,
 	},
 	DailyEventController
 ))
@@ -52,6 +53,7 @@ function DailyEventController.new(player: Player): DailyEventController
 		_goalCompleted = false,
 		_isGameActive = false,
 		_dismissed = false,
+		_pulseConnection = nil,
 	}, DailyEventController)
 
 	self:_createLobbyBanner()
@@ -101,7 +103,7 @@ function DailyEventController:_createLobbyBanner()
 	titleLabel.Position = UDim2.new(0, 8, 0, 4)
 	titleLabel.BackgroundTransparency = 1
 	titleLabel.TextColor3 = Color3.fromRGB(220, 220, 255)
-	titleLabel.TextSize = 13
+	titleLabel.TextSize = ResponsiveUtil.scaledTextSize(13, 10)
 	titleLabel.Font = Enum.Font.GothamBold
 	titleLabel.Text = "📅 데일리 이벤트 로딩 중..."
 	titleLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -115,7 +117,7 @@ function DailyEventController:_createLobbyBanner()
 	descLabel.Position = UDim2.new(0, 8, 0, 28)
 	descLabel.BackgroundTransparency = 1
 	descLabel.TextColor3 = Color3.fromRGB(150, 170, 220)
-	descLabel.TextSize = 11
+	descLabel.TextSize = ResponsiveUtil.scaledTextSize(11, 9)
 	descLabel.Font = Enum.Font.Gotham
 	descLabel.Text = ""
 	descLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -188,7 +190,7 @@ function DailyEventController:_createHud()
 	label.Position = UDim2.new(0, 6, 0, 2)
 	label.BackgroundTransparency = 1
 	label.TextColor3 = Color3.fromRGB(200, 220, 255)
-	label.TextSize = 11
+	label.TextSize = ResponsiveUtil.scaledTextSize(11, 9)
 	label.Font = Enum.Font.GothamBold
 	label.Text = "이벤트 목표"
 	label.TextXAlignment = Enum.TextXAlignment.Left
@@ -372,7 +374,7 @@ function DailyEventController:_showCompletionEffect()
 	label.Position = UDim2.new(0.5, -140, 0.4, 0)
 	label.BackgroundTransparency = 1
 	label.TextColor3 = Color3.fromRGB(255, 215, 0)
-	label.TextSize = 12
+	label.TextSize = ResponsiveUtil.scaledTextSize(12, 9)
 	label.Font = Enum.Font.GothamBlack
 	label.Text = "🎉 이벤트 CLEAR!"
 	label.TextStrokeTransparency = 0
@@ -405,11 +407,10 @@ function DailyEventController:_showCompletionEffect()
 end
 
 -- Pulse animation on lobby banner (stops when completed)
-local pulseConnection: RBXScriptConnection? = nil
 function DailyEventController:_startPulse(banner: Frame)
-	if pulseConnection then
-		pulseConnection:Disconnect()
-		pulseConnection = nil
+	if self._pulseConnection then
+		self._pulseConnection:Disconnect()
+		self._pulseConnection = nil
 	end
 
 	local stroke = banner:FindFirstChild("BannerStroke") :: UIStroke?
@@ -418,11 +419,11 @@ function DailyEventController:_startPulse(banner: Frame)
 	end
 
 	local t = 0
-	pulseConnection = game:GetService("RunService").Heartbeat:Connect(function(dt)
+	self._pulseConnection = game:GetService("RunService").Heartbeat:Connect(function(dt)
 		if self._goalCompleted then
-			if pulseConnection then
-				pulseConnection:Disconnect()
-				pulseConnection = nil
+			if self._pulseConnection then
+				self._pulseConnection:Disconnect()
+				self._pulseConnection = nil
 			end
 			return
 		end
@@ -465,9 +466,9 @@ end
 
 -- Cleanup
 function DailyEventController:Destroy()
-	if pulseConnection then
-		pulseConnection:Disconnect()
-		pulseConnection = nil
+	if self._pulseConnection then
+		self._pulseConnection:Disconnect()
+		self._pulseConnection = nil
 	end
 	for _, conn in self._connections do
 		conn:Disconnect()

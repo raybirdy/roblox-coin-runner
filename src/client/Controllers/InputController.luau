@@ -120,7 +120,7 @@ function InputController:_setupTouchInput()
 		end
 
 		self._touchStartPos = input.Position
-		self._touchStartTime = tick()
+		self._touchStartTime = os.clock()
 	end)
 	table.insert(self._connections, touchBeganConn)
 
@@ -136,7 +136,7 @@ function InputController:_setupTouchInput()
 			return
 		end
 
-		local elapsed = tick() - self._touchStartTime
+		local elapsed = os.clock() - self._touchStartTime
 		if elapsed > GameConstants.UI.SWIPE_MAX_TIME then
 			self._touchStartPos = nil
 			return
@@ -173,7 +173,7 @@ end
 
 -- Debounce check for shared action timing (prevents swipe + button double trigger)
 function InputController:_canTriggerAction(): boolean
-	local now = tick()
+	local now = os.clock()
 	if now - self._lastActionTime < ACTION_DEBOUNCE_TIME then
 		return false
 	end
