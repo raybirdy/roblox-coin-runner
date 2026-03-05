@@ -58,6 +58,7 @@ function RankingController:_createGui()
 	gui.ResetOnSpawn = false
 	gui.DisplayOrder = 16
 	gui.Enabled = false
+	gui.ScreenInsets = Enum.ScreenInsets.DeviceSafeInsets
 	gui.Parent = playerGui
 	self._gui = gui
 
@@ -309,6 +310,7 @@ function RankingController:_createGui()
 	lobbyGui.ResetOnSpawn = false
 	lobbyGui.DisplayOrder = 12
 	lobbyGui.Enabled = false
+	lobbyGui.ScreenInsets = Enum.ScreenInsets.DeviceSafeInsets
 	lobbyGui.Parent = playerGui
 
 	local lobbyBtn = Instance.new("TextButton")

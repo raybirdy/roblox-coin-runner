@@ -86,6 +86,7 @@ function CoinController:_createPopupGui()
 	local screenGui = Instance.new("ScreenGui")
 	screenGui.Name = "CoinPopupGui"
 	screenGui.ResetOnSpawn = false
+	screenGui.ScreenInsets = Enum.ScreenInsets.DeviceSafeInsets
 	screenGui.Parent = playerGui
 	self._popupGui = screenGui
 end
@@ -237,7 +238,7 @@ function CoinController:_setupLocalCollectionCheck()
 			self._localCollectedCoins[coinModel] = true
 
 			-- #10 사운드 풀링 + 상승 음계 (연속 수집마다 피치 +3%, 최대 +25%)
-			local now = tick()
+			local now = os.clock()
 			if now - self._lastCoinTime > 1.5 then
 				self._comboStreak = 0 -- 1.5초 공백 시 스트릭 리셋
 			end

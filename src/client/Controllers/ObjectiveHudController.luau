@@ -84,7 +84,7 @@ function ObjectiveHudController:_createUI()
 	titleLabel.Position = UDim2.new(0, 0, 0, ResponsiveUtil.scaledOffset(4))
 	titleLabel.BackgroundTransparency = 1
 	titleLabel.TextColor3 = Color3.fromRGB(180, 180, 240)
-	titleLabel.TextSize = 13
+	titleLabel.TextSize = ResponsiveUtil.scaledTextSize(13, 10)
 	titleLabel.Font = Enum.Font.GothamBold
 	titleLabel.Text = "런 목표"
 	titleLabel.Parent = hudFrame
@@ -122,7 +122,7 @@ function ObjectiveHudController:_createUI()
 		descLabel.Position = UDim2.new(0, 22, 0, 0)
 		descLabel.BackgroundTransparency = 1
 		descLabel.TextColor3 = Color3.fromRGB(210, 210, 210)
-		descLabel.TextSize = 11
+		descLabel.TextSize = ResponsiveUtil.scaledTextSize(11, 9)
 		descLabel.Font = Enum.Font.Gotham
 		descLabel.Text = "..."
 		descLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -136,7 +136,7 @@ function ObjectiveHudController:_createUI()
 		progressLabel.Position = UDim2.new(1, -38, 0, 0)
 		progressLabel.BackgroundTransparency = 1
 		progressLabel.TextColor3 = Color3.fromRGB(140, 200, 140)
-		progressLabel.TextSize = 11
+		progressLabel.TextSize = ResponsiveUtil.scaledTextSize(11, 9)
 		progressLabel.Font = Enum.Font.Gotham
 		progressLabel.Text = ""
 		progressLabel.TextXAlignment = Enum.TextXAlignment.Right

@@ -141,6 +141,7 @@ function CutsceneController:_createGui()
 	gui.ResetOnSpawn = false
 	gui.DisplayOrder = 20
 	gui.Enabled = false
+	gui.ScreenInsets = Enum.ScreenInsets.None
 	gui.Parent = playerGui
 	self._gui = gui
 
@@ -684,6 +685,7 @@ function CutsceneController:_showSkillTutorial(skillId: string)
 	tutGui.Name = "SkillTutorialGui"
 	tutGui.ResetOnSpawn = false
 	tutGui.DisplayOrder = 22
+	tutGui.ScreenInsets = Enum.ScreenInsets.DeviceSafeInsets
 	tutGui.Parent = playerGui
 
 	local dimBg = Instance.new("TextButton")
@@ -850,6 +852,7 @@ function CutsceneController:ShowChapterClearCelebration(chapterNum: number, chap
 	celebGui.Name = "ChapterClearCelebration"
 	celebGui.ResetOnSpawn = false
 	celebGui.DisplayOrder = 25
+	celebGui.ScreenInsets = Enum.ScreenInsets.DeviceSafeInsets
 	celebGui.Parent = playerGui
 
 	-- 1. 배경 딤 (서서히)

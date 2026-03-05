@@ -8,6 +8,7 @@ local TweenService = game:GetService("TweenService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)
+local ResponsiveUtil = require(ReplicatedStorage.Shared.Utils.ResponsiveUtil)
 
 local DASH_COOLDOWN = 8 -- seconds (ScenarioConstants.SKILLS.dash.cooldown)
 local MAGNET_BURST_FLASH_DURATION = 0.6
@@ -61,6 +62,7 @@ function SkillController:_createGui()
 	gui.ResetOnSpawn = false
 	gui.DisplayOrder = 12
 	gui.Enabled = false
+	gui.ScreenInsets = Enum.ScreenInsets.DeviceSafeInsets
 	gui.Parent = playerGui
 	self._gui = gui
 
@@ -68,15 +70,15 @@ function SkillController:_createGui()
 	-- Dash button: stacked ABOVE the jump button to avoid overlap
 	-- Jump button: size=120, margin=34 → right edge at W-34, top at H-154
 	-- Dash button: right-aligned (W-106 to W-34), above jump top with 8px gap (H-234 to H-162)
-	local DASH_SIZE = 72
+	local dashSize = math.max(56, ResponsiveUtil.scaledOffset(72))
 	local dashBtn = Instance.new("TextButton")
 	dashBtn.Name = "DashBtn"
-	dashBtn.Size = UDim2.new(0, DASH_SIZE, 0, DASH_SIZE)
-	dashBtn.Position = UDim2.new(1, -(34 + DASH_SIZE), 1, -(154 + 8 + DASH_SIZE)) -- above jump button
+	dashBtn.Size = UDim2.new(0, dashSize, 0, dashSize)
+	dashBtn.Position = UDim2.new(1, -(34 + dashSize), 1, -(154 + 8 + dashSize)) -- above jump button
 	dashBtn.AnchorPoint = Vector2.new(0, 0)
 	dashBtn.BackgroundColor3 = Color3.fromRGB(60, 100, 220)
 	dashBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-	dashBtn.TextSize = 14
+	dashBtn.TextSize = ResponsiveUtil.scaledTextSize(14, 10)
 	dashBtn.Font = Enum.Font.GothamBold
 	dashBtn.Text = "💨\n대쉬"
 	dashBtn.Parent = gui
@@ -93,7 +95,7 @@ function SkillController:_createGui()
 	cooldownLabel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 	cooldownLabel.BackgroundTransparency = 0.4
 	cooldownLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-	cooldownLabel.TextSize = 18
+	cooldownLabel.TextSize = ResponsiveUtil.scaledTextSize(18, 13)
 	cooldownLabel.Font = Enum.Font.GothamBold
 	cooldownLabel.Text = ""
 	cooldownLabel.Visible = false
@@ -190,7 +192,7 @@ function SkillController:_activateDash()
 		return
 	end
 
-	local now = tick()
+	local now = os.clock()
 	if now - self._dashLastUsed < DASH_COOLDOWN then
 		return
 	end
@@ -214,7 +216,7 @@ function SkillController:_startDashCooldownUI()
 		local remaining = DASH_COOLDOWN
 		while remaining > 0 do
 			task.wait(0.1)
-			remaining = math.max(0, DASH_COOLDOWN - (tick() - self._dashLastUsed))
+			remaining = math.max(0, DASH_COOLDOWN - (os.clock() - self._dashLastUsed))
 			if label and label.Parent then
 				label.Text = math.ceil(remaining) .. "s"
 			end
@@ -237,7 +239,7 @@ function SkillController:_showMagnetBurstEffect(coinValue: number)
 
 	local toast = Instance.new("Frame")
 	toast.Name = "MagnetBurstToast"
-	toast.Size = UDim2.new(0, 220, 0, 44)
+	toast.Size = ResponsiveUtil.clampedSize(220, 44, 0.75, 0.08)
 	toast.Position = UDim2.new(0.5, -110, 0, -50)
 	toast.BackgroundColor3 = Color3.fromRGB(30, 120, 220)
 	toast.BorderSizePixel = 0
@@ -283,7 +285,7 @@ function SkillController:_showShieldRegenEffect()
 
 	local toast = Instance.new("Frame")
 	toast.Name = "ShieldRegenToast"
-	toast.Size = UDim2.new(0, 200, 0, 40)
+	toast.Size = ResponsiveUtil.clampedSize(200, 40, 0.70, 0.08)
 	toast.Position = UDim2.new(0.5, -100, 0, -50)
 	toast.BackgroundColor3 = Color3.fromRGB(40, 160, 80)
 	toast.BorderSizePixel = 0

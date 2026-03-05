@@ -113,6 +113,7 @@ function ScenarioController:_createGui()
 	gui.Name = "ScenarioGui"
 	gui.ResetOnSpawn = false
 	gui.DisplayOrder = 17
+	gui.ScreenInsets = Enum.ScreenInsets.DeviceSafeInsets
 	gui.Parent = playerGui
 	self._gui = gui
 
@@ -157,7 +158,7 @@ function ScenarioController:_createGui()
 	newBadgeLabel.Size = UDim2.new(1, 0, 1, 0)
 	newBadgeLabel.BackgroundTransparency = 1
 	newBadgeLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-	newBadgeLabel.TextSize = 9
+	newBadgeLabel.TextSize = ResponsiveUtil.scaledTextSize(9, 7)
 	newBadgeLabel.Font = Enum.Font.GothamBlack
 	newBadgeLabel.Text = "NEW"
 	newBadgeLabel.Parent = newBadge
@@ -176,6 +177,7 @@ function ScenarioController:_createGui()
 	popupGui.ResetOnSpawn = false
 	popupGui.DisplayOrder = 18
 	popupGui.Enabled = false
+	popupGui.ScreenInsets = Enum.ScreenInsets.DeviceSafeInsets
 	popupGui.Parent = playerGui
 
 	-- 딤 배경
@@ -232,7 +234,7 @@ function ScenarioController:_createGui()
 	closeBtn.Position = UDim2.new(1, -44, 0, 8)
 	closeBtn.BackgroundColor3 = Color3.fromRGB(80, 40, 40)
 	closeBtn.TextColor3 = Color3.fromRGB(255, 150, 150)
-	closeBtn.TextSize = 18
+	closeBtn.TextSize = ResponsiveUtil.scaledTextSize(18, 14)
 	closeBtn.Font = Enum.Font.GothamBold
 	closeBtn.Text = "✕"
 	closeBtn.Parent = frame
@@ -371,7 +373,7 @@ function ScenarioController:_createGui()
 	openMapBtn.Position = UDim2.new(0.5, -100, 0.5, -80)
 	openMapBtn.BackgroundColor3 = Color3.fromRGB(40, 100, 50)
 	openMapBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-	openMapBtn.TextSize = 20
+	openMapBtn.TextSize = ResponsiveUtil.scaledTextSize(20, 14)
 	openMapBtn.Font = Enum.Font.GothamBold
 	openMapBtn.Text = "🗺️ 전체 보기"
 	openMapBtn.Parent = worldMapFrame
@@ -390,7 +392,7 @@ function ScenarioController:_createGui()
 	mapHintLabel.Position = UDim2.new(0, 10, 0.5, -20)
 	mapHintLabel.BackgroundTransparency = 1
 	mapHintLabel.TextColor3 = Color3.fromRGB(140, 160, 200)
-	mapHintLabel.TextSize = 13
+	mapHintLabel.TextSize = ResponsiveUtil.scaledTextSize(13, 10)
 	mapHintLabel.Font = Enum.Font.Gotham
 	mapHintLabel.Text = "10개 챕터 진행 상황을\n지도에서 한눈에 확인하세요!"
 	mapHintLabel.TextWrapped = true
@@ -420,6 +422,7 @@ function ScenarioController:_createQuestHud()
 	hudGui.ResetOnSpawn = false
 	hudGui.DisplayOrder = 15
 	hudGui.Enabled = false
+	hudGui.ScreenInsets = Enum.ScreenInsets.DeviceSafeInsets
 	hudGui.Parent = playerGui
 	self._questHudGui = hudGui
 
@@ -446,7 +449,7 @@ function ScenarioController:_createQuestHud()
 	titleLabel.Position = UDim2.new(0, 8, 0, 4)
 	titleLabel.BackgroundTransparency = 1
 	titleLabel.TextColor3 = Color3.fromRGB(140, 170, 255)
-	titleLabel.TextSize = 11
+	titleLabel.TextSize = ResponsiveUtil.scaledTextSize(11, 9)
 	titleLabel.Font = Enum.Font.GothamBold
 	titleLabel.Text = "🎯 현재 퀘스트"
 	titleLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -473,7 +476,7 @@ function ScenarioController:_createQuestHud()
 		nameLabel.Position = UDim2.new(0, 6, 0, 2)
 		nameLabel.BackgroundTransparency = 1
 		nameLabel.TextColor3 = Color3.fromRGB(210, 215, 235)
-		nameLabel.TextSize = 10
+		nameLabel.TextSize = ResponsiveUtil.scaledTextSize(10, 8)
 		nameLabel.Font = Enum.Font.GothamBold
 		nameLabel.Text = ""
 		nameLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -486,7 +489,7 @@ function ScenarioController:_createQuestHud()
 		progressText.Position = UDim2.new(1, -54, 0, 2)
 		progressText.BackgroundTransparency = 1
 		progressText.TextColor3 = Color3.fromRGB(160, 190, 255)
-		progressText.TextSize = 10
+		progressText.TextSize = ResponsiveUtil.scaledTextSize(10, 8)
 		progressText.Font = Enum.Font.Gotham
 		progressText.Text = ""
 		progressText.TextXAlignment = Enum.TextXAlignment.Right
@@ -565,7 +568,7 @@ function ScenarioController:_updateQuestHud()
 	end
 
 	table.sort(inProgress, function(a, b)
-		return (a.progress / a.target) > (b.progress / b.target)
+		return (a.progress / math.max(a.target, 1)) > (b.progress / math.max(b.target, 1))
 	end)
 
 	hudGui.Enabled = #inProgress > 0
@@ -885,11 +888,11 @@ function ScenarioController:_closeChapterDetail()
 		return
 	end
 
-	TweenService:Create(detail, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+	local tween = TweenService:Create(detail, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
 		Position = UDim2.new(1, 0, 0, 0),
-	}):Play()
-
-	task.delay(0.2, function()
+	})
+	tween:Play()
+	tween.Completed:Connect(function()
 		detail.Visible = false
 		self._currentDetailChapterId = nil
 	end)
@@ -1337,12 +1340,12 @@ function ScenarioController:ClosePanel()
 
 	local targetSize = ResponsiveUtil.clampedSize(370, 440, 0.92, 0.88)
 	local targetW = targetSize.X.Offset
-	TweenService:Create(frame, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+	local closeTween = TweenService:Create(frame, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
 		Size = UDim2.new(0, targetW, 0, 0),
 		Position = UDim2.new(0.5, -targetW / 2, 0.5, 0),
-	}):Play()
-
-	task.delay(0.22, function()
+	})
+	closeTween:Play()
+	closeTween.Completed:Connect(function()
 		popupGui.Enabled = false
 	end)
 end
@@ -1479,7 +1482,7 @@ function ScenarioController:_showQuestCompleteToast(questName: string)
 	end
 
 	local toast = Instance.new("Frame")
-	toast.Size = UDim2.new(0, 260, 0, 44)
+	toast.Size = ResponsiveUtil.clampedSize(260, 44, 0.80, 0.08)
 	toast.Position = UDim2.new(0.5, -130, 0, -50)
 	toast.BackgroundColor3 = Color3.fromRGB(30, 80, 30)
 	toast.BorderSizePixel = 0
@@ -1499,7 +1502,7 @@ function ScenarioController:_showQuestCompleteToast(questName: string)
 	toastLabel.Position = UDim2.new(0, 8, 0, 0)
 	toastLabel.BackgroundTransparency = 1
 	toastLabel.TextColor3 = Color3.fromRGB(140, 255, 140)
-	toastLabel.TextSize = 14
+	toastLabel.TextSize = ResponsiveUtil.scaledTextSize(14, 10)
 	toastLabel.Font = Enum.Font.GothamBold
 	toastLabel.Text = `✅ 퀘스트 완료: {questName}`
 	toastLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -1550,7 +1553,7 @@ function ScenarioController:_showActiveChapterToast(chapter: any)
 
 	local toast = Instance.new("TextButton")
 	toast.Name = "ActiveChapterToast"
-	toast.Size = UDim2.new(0, 300, 0, 56)
+	toast.Size = ResponsiveUtil.clampedSize(300, 56, 0.85, 0.10)
 	toast.Position = UDim2.new(0.5, -150, 0, -64)
 	toast.BackgroundColor3 = Color3.fromRGB(20, 30, 70)
 	toast.BorderSizePixel = 0
@@ -1573,7 +1576,7 @@ function ScenarioController:_showActiveChapterToast(chapter: any)
 	titleLabel.Position = UDim2.new(0, 10, 0, 4)
 	titleLabel.BackgroundTransparency = 1
 	titleLabel.TextColor3 = Color3.fromRGB(160, 200, 255)
-	titleLabel.TextSize = 13
+	titleLabel.TextSize = ResponsiveUtil.scaledTextSize(13, 10)
 	titleLabel.Font = Enum.Font.GothamBold
 	titleLabel.Text = string.format(
 		"%s CH%d. %s 진행 중!",
@@ -1591,7 +1594,7 @@ function ScenarioController:_showActiveChapterToast(chapter: any)
 	subtitleLabel.Position = UDim2.new(0, 10, 0, 30)
 	subtitleLabel.BackgroundTransparency = 1
 	subtitleLabel.TextColor3 = Color3.fromRGB(120, 140, 180)
-	subtitleLabel.TextSize = 11
+	subtitleLabel.TextSize = ResponsiveUtil.scaledTextSize(11, 9)
 	subtitleLabel.Font = Enum.Font.Gotham
 	subtitleLabel.Text = string.format(
 		"퀘스트 %d/%d 완료  ·  탭하여 확인 →",
@@ -1654,6 +1657,7 @@ function ScenarioController:_showIntroPopup()
 	introGui.Name = "ScenarioIntroGui"
 	introGui.ResetOnSpawn = false
 	introGui.DisplayOrder = 25
+	introGui.ScreenInsets = Enum.ScreenInsets.DeviceSafeInsets
 	introGui.Parent = playerGui
 
 	-- 반투명 배경
@@ -1667,8 +1671,8 @@ function ScenarioController:_showIntroPopup()
 	-- 카드
 	local card = Instance.new("Frame")
 	card.Name = "IntroCard"
-	card.Size = UDim2.new(0, 340, 0, 400)
-	card.Position = UDim2.new(0.5, -170, 0.5, -200)
+	card.Size = ResponsiveUtil.clampedSize(340, 400, 0.92, 0.88)
+	card.Position = ResponsiveUtil.clampedPosition(340, 400, 0.92, 0.88)
 	card.BackgroundColor3 = Color3.fromRGB(14, 18, 36)
 	card.BorderSizePixel = 0
 	card.Parent = introGui
@@ -1706,7 +1710,7 @@ function ScenarioController:_showIntroPopup()
 	titleLabel.Position = UDim2.new(0, 12, 0, 0)
 	titleLabel.BackgroundTransparency = 1
 	titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-	titleLabel.TextSize = 18
+	titleLabel.TextSize = ResponsiveUtil.scaledTextSize(18, 13)
 	titleLabel.Font = Enum.Font.GothamBlack
 	titleLabel.Text = "🌟 시나리오 시스템 오픈!"
 	titleLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -1718,7 +1722,7 @@ function ScenarioController:_showIntroPopup()
 	descLabel.Position = UDim2.new(0, 12, 0, 66)
 	descLabel.BackgroundTransparency = 1
 	descLabel.TextColor3 = Color3.fromRGB(200, 210, 235)
-	descLabel.TextSize = 13
+	descLabel.TextSize = ResponsiveUtil.scaledTextSize(13, 10)
 	descLabel.Font = Enum.Font.Gotham
 	descLabel.Text = "게임을 플레이하면서 퀘스트를 완료하고\n챕터를 클리어해 강력한 스킬을 얻어보세요!"
 	descLabel.TextWrapped = true
@@ -1739,7 +1743,7 @@ function ScenarioController:_showIntroPopup()
 	skillTitle.Position = UDim2.new(0, 12, 0, 126)
 	skillTitle.BackgroundTransparency = 1
 	skillTitle.TextColor3 = Color3.fromRGB(140, 170, 255)
-	skillTitle.TextSize = 12
+	skillTitle.TextSize = ResponsiveUtil.scaledTextSize(12, 9)
 	skillTitle.Font = Enum.Font.GothamBold
 	skillTitle.Text = "챕터 클리어 보상 스킬"
 	skillTitle.TextXAlignment = Enum.TextXAlignment.Left
@@ -1840,10 +1844,11 @@ function ScenarioController:_showIntroPopup()
 	laterBtnCorner.Parent = laterBtn
 
 	-- 등장 애니메이션
-	card.Position = UDim2.new(0.5, -170, 0.5, -180)
+	local introTargetPos = ResponsiveUtil.clampedPosition(340, 400, 0.92, 0.88)
+	card.Position = UDim2.new(introTargetPos.X.Scale, introTargetPos.X.Offset, introTargetPos.Y.Scale, introTargetPos.Y.Offset + 20)
 	card.BackgroundTransparency = 1
 	TweenService:Create(card, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-		Position = UDim2.new(0.5, -170, 0.5, -200),
+		Position = introTargetPos,
 		BackgroundTransparency = 0,
 	}):Play()
 
@@ -1856,7 +1861,7 @@ function ScenarioController:_showIntroPopup()
 		end
 		-- 카드 닫기 애니메이션
 		TweenService:Create(card, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-			Position = UDim2.new(0.5, -170, 0.5, -170),
+			Position = UDim2.new(introTargetPos.X.Scale, introTargetPos.X.Offset, introTargetPos.Y.Scale, introTargetPos.Y.Offset + 30),
 			BackgroundTransparency = 1,
 		}):Play()
 		task.delay(0.25, function()
@@ -1885,6 +1890,7 @@ function ScenarioController:_showChapterRewardPopup(data: any)
 	rewardGui.Name = "ChapterRewardPopup"
 	rewardGui.ResetOnSpawn = false
 	rewardGui.DisplayOrder = 24
+	rewardGui.ScreenInsets = Enum.ScreenInsets.DeviceSafeInsets
 	rewardGui.Parent = playerGui
 
 	-- 딤 배경 (닫기 가능)

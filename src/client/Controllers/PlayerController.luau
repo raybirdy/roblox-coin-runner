@@ -136,7 +136,7 @@ function PlayerController:StartGame()
 	_lastUpdateTime = 0
 
 	-- 모든 상태 초기화
-	self.gameStartTime = tick()
+	self.gameStartTime = os.clock()
 	self.currentSpeed = GameConstants.PHYSICS.SPEED_MIN
 	self.speedMultiplier = 1.0
 	self.state = "Running"
@@ -237,7 +237,7 @@ function PlayerController:Dash()
 	if self.state == "Idle" then
 		return
 	end
-	local now = tick()
+	local now = os.clock()
 	local DASH_COOLDOWN = 8
 	if now - self._lastDashTime < DASH_COOLDOWN then
 		return
@@ -430,7 +430,7 @@ end
 -- 메인 업데이트 루프
 function PlayerController:_update(deltaTime: number)
 	-- 프레임당 한 번만 업데이트 (중복 연결 방지)
-	local now = tick()
+	local now = os.clock()
 	if now - _lastUpdateTime < 0.001 then
 		return -- 너무 빠른 업데이트는 무시 (1ms 이내)
 	end
@@ -457,7 +457,7 @@ end
 
 -- 속도 증가 (EaseInQuad) + 최고속 후 호흡 패턴
 function PlayerController:_updateSpeed()
-	local elapsedTime = tick() - self.gameStartTime
+	local elapsedTime = os.clock() - self.gameStartTime
 	local t = math.min(elapsedTime / GameConstants.PHYSICS.SPEED_RAMP_TIME, 1)
 
 	-- EaseInQuad: t^2 (처음에 느리게, 나중에 빠르게 가속)
@@ -596,7 +596,7 @@ function PlayerController:Jump()
 	end
 
 	-- 점프 쿨다운 (연타 방지) - 0.1초로 단축
-	local now = tick()
+	local now = os.clock()
 	if now - self._lastJumpTime < 0.1 then
 		return
 	end

@@ -56,6 +56,7 @@ function PowerupController:_createPowerupUI()
 	local powerupGui = Instance.new("ScreenGui")
 	powerupGui.Name = "PowerupUI"
 	powerupGui.ResetOnSpawn = false
+	powerupGui.ScreenInsets = Enum.ScreenInsets.DeviceSafeInsets
 	powerupGui.Parent = playerGui
 	self._powerupGui = powerupGui
 

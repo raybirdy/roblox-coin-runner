@@ -48,7 +48,7 @@ function LifeController:_createDamageEffects()
 	local screenGui = Instance.new("ScreenGui")
 	screenGui.Name = "DamageGui"
 	screenGui.ResetOnSpawn = false
-	screenGui.IgnoreGuiInset = true
+	screenGui.ScreenInsets = Enum.ScreenInsets.None
 	screenGui.Parent = playerGui
 	self._damageGui = screenGui
 
