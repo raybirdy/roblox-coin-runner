@@ -27,6 +27,7 @@ export type ChunkService = typeof(setmetatable(
 		_chunkCounter: number, -- 청크 생성 카운터
 		_lastChunkEndHeight: string, -- 마지막 청크의 끝 높이
 		_gameStartTime: number, -- 게임 시작 시간
+		_easyStartTime: number, -- easy_start 업그레이드 적용 시간 (초)
 		_coinService: any?, -- CoinService 참조 (코인 생성용)
 		_obstacleService: any?, -- ObstacleService 참조 (장애물 생성용)
 		_powerupService: any?, -- PowerupService 참조 (파워업 생성용)
@@ -56,6 +57,7 @@ function ChunkService.new(): ChunkService
 		_chunkCounter = 0,
 		_lastChunkEndHeight = "LOW", -- 초기 높이
 		_gameStartTime = 0,
+		_easyStartTime = 30, -- 기본 30초 (업그레이드 미구매 시 기존 동작 유지)
 		_coinService = nil,
 		_obstacleService = nil,
 		_powerupService = nil,
@@ -102,6 +104,11 @@ end
 -- BackgroundService 설정 (GameManager에서 호출)
 function ChunkService:SetBackgroundService(backgroundService: any)
 	self._backgroundService = backgroundService
+end
+
+-- easy_start 업그레이드 적용 시간 설정 (GameManager에서 호출)
+function ChunkService:SetEasyStartTime(seconds: number)
+	self._easyStartTime = seconds
 end
 
 -- Phase B: 현재 zone 설정
@@ -374,6 +381,12 @@ end
 -- 난이도 선택 (시간대별 확률 기반 + 호흡 패턴)
 function ChunkService:_selectDifficulty(): string
 	local elapsedTime = tick() - self._gameStartTime
+
+	-- easy_start 업그레이드: 설정된 시간 동안 Easy/Bonus 청크만 등장
+	if elapsedTime < self._easyStartTime then
+		local rand = math.random()
+		return if rand < 0.8 then "Easy" else "Bonus"
+	end
 
 	-- 스타 웨이브 체크: 주기적으로 5초간 Bonus 청크만 스폰 (코인 잔치)
 	if not self._starWaveActive and elapsedTime >= self._nextStarWaveTime then
