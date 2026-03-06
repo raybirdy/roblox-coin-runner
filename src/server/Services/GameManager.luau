@@ -302,6 +302,10 @@ RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { 
 	-- 데일리 이벤트 세션 초기화
 	DailyEventService:InitSession(player)
 
+	-- 업그레이드 보너스 적용
+	chunkService:SetEasyStartTime(upgBonuses1.easyStartTime)
+	coinService:SetLuckyCoinsBonus(upgBonuses1.luckyCoinsBonus)
+
 	-- 청크 서비스에 코인/장애물/파워업/NPC/배경 서비스 연결
 	chunkService:SetCoinService(coinService)
 	chunkService:SetObstacleService(obstacleService)
@@ -546,6 +550,10 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 
 	-- 데일리 이벤트 세션 초기화
 	DailyEventService:InitSession(player)
+
+	-- 업그레이드 보너스 적용
+	chunkService:SetEasyStartTime(upgBonuses2.easyStartTime)
+	coinService:SetLuckyCoinsBonus(upgBonuses2.luckyCoinsBonus)
 
 	-- 청크 서비스에 코인/장애물/파워업/NPC/배경 서비스 연결
 	chunkService:SetCoinService(coinService)
