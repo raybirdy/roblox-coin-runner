@@ -228,9 +228,10 @@ function CoinController:_setupLocalCollectionCheck()
 				continue
 			end
 
-			-- 정확한 거리 체크
-			local distance = (part.Position - playerPos).Magnitude
-			if distance > LOCAL_COLLECTION_RADIUS then
+			-- 정확한 거리 체크 (전진 방향 X 가중치 2배 → 앞쪽 수집 범위 절반으로 제한)
+			local delta = part.Position - playerPos
+			local scaledDist = Vector3.new(delta.X * 2, delta.Y, delta.Z).Magnitude
+			if scaledDist > LOCAL_COLLECTION_RADIUS then
 				continue
 			end
 

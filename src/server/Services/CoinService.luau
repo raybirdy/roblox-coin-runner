@@ -526,11 +526,25 @@ function CoinService:CheckCoinCollection(playerPosition: Vector3, magnetRadius: 
 		collectionRadius = magnetRadius
 	end
 
+	-- 캐릭터가 +X 방향으로 달리므로, 정면(X) 수집 범위를 절반으로 압축해
+	-- 코인이 시각적으로 캐릭터에 닿기 전에 수집되는 문제를 방지한다.
+	-- 자석 효과 중에는 전방향 구형 판정을 유지한다.
+	local useMagnet = magnetRadius and magnetRadius > 0
+
 	for i = #self._activeCoins, 1, -1 do
 		local coinData = self._activeCoins[i]
-		local distance = (coinData.part.Position - playerPosition).Magnitude
+		local delta = coinData.part.Position - playerPosition
 
-		if distance < collectionRadius then
+		local effectiveDist: number
+		if useMagnet then
+			-- 자석: 모든 방향 동일한 구형 판정
+			effectiveDist = delta.Magnitude
+		else
+			-- 일반: 전진 방향(+X) 판정 거리를 2배 가중 → 실제 수집 범위 절반(1.5 studs)
+			effectiveDist = Vector3.new(delta.X * 2, delta.Y, delta.Z).Magnitude
+		end
+
+		if effectiveDist < collectionRadius then
 			table.insert(collectedCoins, coinData)
 
 			local coinModel = coinData.part.Parent
