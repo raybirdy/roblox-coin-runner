@@ -95,6 +95,7 @@ function UIController:_createUI()
 	local screenGui = Instance.new("ScreenGui")
 	screenGui.Name = "GameUI"
 	screenGui.ResetOnSpawn = false
+	screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling -- 부모-자식 계층으로 ZIndex 적용 (검정 화면 방지)
 	screenGui.ScreenInsets = Enum.ScreenInsets.DeviceSafeInsets
 	screenGui.DisplayOrder = 9 -- ObjectiveHUD(7), DailyEventHUD(8) 위에, 팝업 모달(10+) 아래
 	screenGui.Parent = self._playerGui
@@ -217,11 +218,11 @@ function UIController:_createUI()
 	gameOverFrame.Parent = screenGui
 	self._gameOverFrame = gameOverFrame
 
-	-- 그라디언트 (상→하 미세 밝기 차이로 깊이감)
+	-- 그라디언트 (상→하 미세 밝기 차이로 깊이감, 텍스트 가독성 확보 위해 밝은 네이비)
 	local gameOverGradient = Instance.new("UIGradient")
 	gameOverGradient.Color = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, Color3.fromRGB(35, 42, 80)),
-		ColorSequenceKeypoint.new(1, Color3.fromRGB(12, 15, 35)),
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(40, 50, 100)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(25, 30, 70)),
 	})
 	gameOverGradient.Rotation = 90
 	gameOverGradient.Parent = gameOverFrame
