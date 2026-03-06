@@ -10,6 +10,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)
 local ScenarioConstants = require(ReplicatedStorage.Shared.Constants.ScenarioConstants)
 
+local CutsceneCharacterBuilder = require(script.Parent.CutsceneCharacterBuilder)
+
 local CutsceneController = {}
 CutsceneController.__index = CutsceneController
 
@@ -70,6 +72,8 @@ export type CutsceneController = typeof(setmetatable(
 		_currentLines: { { speaker: string?, text: string, characterId: string?, effect: string? } },
 		_cutsceneQueue: { { lines: { { speaker: string?, text: string, characterId: string?, effect: string? } }, title: string? } },
 		_typingThread: thread?,
+		_portraitBobThread: thread?,
+		_charTintThread: thread?,
 		-- 스킬 튜토리얼
 		_pendingSkillTutorial: string?,
 		_shownSkillTutorials: { [string]: boolean },
@@ -84,6 +88,13 @@ export type CutsceneController = typeof(setmetatable(
 		-- 입력 차단 콜백
 		_onPlayStart: (() -> ())?,
 		_onPlayEnd: (() -> ())?,
+		-- 3D character viewport
+		_viewportFrame: ViewportFrame?,
+		_worldModel: Instance?,
+		_vpCamera: Camera?,
+		_charCache: { [string]: any },
+		_idleAnimHolder: { thread: thread? },
+		_currentRig: any?,
 	},
 	CutsceneController
 ))
@@ -103,6 +114,8 @@ function CutsceneController.new(): CutsceneController
 		_currentLines = {},
 		_cutsceneQueue = {},
 		_typingThread = nil,
+		_portraitBobThread = nil,
+		_charTintThread = nil,
 		_pendingSkillTutorial = nil,
 		_shownSkillTutorials = {},
 		_portraitFrame = nil,
@@ -113,6 +126,12 @@ function CutsceneController.new(): CutsceneController
 		_dimOverlay = nil,
 		_onPlayStart = nil,
 		_onPlayEnd = nil,
+		_viewportFrame = nil,
+		_worldModel = nil,
+		_vpCamera = nil,
+		_charCache = {},
+		_idleAnimHolder = { thread = nil },
+		_currentRig = nil,
 	}, CutsceneController)
 
 	self:_createGui()
@@ -190,8 +209,8 @@ function CutsceneController:_createGui()
 	-- 캐릭터 초상화 원형 프레임 (패널 좌측 상단, 패널 위로 돌출)
 	local portraitFrame = Instance.new("Frame")
 	portraitFrame.Name = "PortraitFrame"
-	portraitFrame.Size = UDim2.new(0, 60, 0, 60)
-	portraitFrame.Position = UDim2.new(0, 12, 0, -36)
+	portraitFrame.Size = UDim2.new(0, 90, 0, 90)
+	portraitFrame.Position = UDim2.new(0, 12, 0, -50)
 	portraitFrame.BackgroundColor3 = Color3.fromRGB(40, 80, 160)
 	portraitFrame.BorderSizePixel = 0
 	portraitFrame.Parent = panel
@@ -206,15 +225,40 @@ function CutsceneController:_createGui()
 	portraitStroke.Thickness = 3
 	portraitStroke.Parent = portraitFrame
 
+	-- Emoji label hidden; kept for fallback reference
 	local portraitEmoji = Instance.new("TextLabel")
 	portraitEmoji.Name = "PortraitEmoji"
 	portraitEmoji.Size = UDim2.new(1, 0, 1, 0)
 	portraitEmoji.BackgroundTransparency = 1
-	portraitEmoji.Text = "🦉"
+	portraitEmoji.Text = ""
 	portraitEmoji.TextSize = 28
 	portraitEmoji.Font = Enum.Font.GothamBold
+	portraitEmoji.Visible = false
 	portraitEmoji.Parent = portraitFrame
 	self._portraitEmoji = portraitEmoji
+
+	-- 3D ViewportFrame for character display
+	local vf = Instance.new("ViewportFrame")
+	vf.Name = "CharViewport"
+	vf.Size = UDim2.new(1, 0, 1, 0)
+	vf.BackgroundTransparency = 1
+	vf.Ambient = Color3.fromRGB(200, 200, 200)
+	vf.LightColor = Color3.fromRGB(255, 255, 255)
+	vf.LightDirection = Vector3.new(-1, -2, -1)
+	vf.Parent = portraitFrame
+	self._viewportFrame = vf
+
+	local worldModel = Instance.new("WorldModel")
+	worldModel.Parent = vf
+	self._worldModel = worldModel
+
+	local vpCam = Instance.new("Camera")
+	-- Camera positioned to show character from front: head at approx y=2.2, camera at z=5.5
+	vpCam.CFrame = CFrame.new(Vector3.new(0, 2.2, 5.5), Vector3.new(0, 2.2, 0))
+	vpCam.FieldOfView = 35
+	vpCam.Parent = vf
+	vf.CurrentCamera = vpCam
+	self._vpCamera = vpCam
 
 	-- 화자 이름 배경 (초상화 오른쪽으로 이동)
 	local speakerBg = Instance.new("Frame")
@@ -387,6 +431,19 @@ function CutsceneController:_advanceLine()
 	local characterId = line.characterId
 	local profile = if characterId then ScenarioConstants.CHARACTER_PROFILES[characterId] else nil
 
+	-- 캐릭터 역할별 딤 오버레이 틴트
+	local roleColors = {
+		villain = Color3.fromRGB(80, 10, 10),
+		mentor  = Color3.fromRGB(10, 20, 60),
+		ally    = Color3.fromRGB(10, 40, 20),
+	}
+	local tint = roleColors[profile and profile.role or ""] or Color3.fromRGB(10, 10, 30)
+	if self._dimOverlay then
+		TweenService:Create(self._dimOverlay, TweenInfo.new(0.4), {
+			BackgroundColor3 = tint,
+		}):Play()
+	end
+
 	if profile then
 		self:_updatePortrait(profile)
 		if self._speakerLabel then
@@ -395,6 +452,17 @@ function CutsceneController:_advanceLine()
 		if self._speakerBg then
 			TweenService:Create(self._speakerBg, TweenInfo.new(0.2), {
 				BackgroundColor3 = profile.bgColor,
+			}):Play()
+			-- 화자 이름 배경 바운스 애니메이션
+			local speakerScaleInst = self._speakerBg:FindFirstChildOfClass("UIScale")
+			if not speakerScaleInst then
+				speakerScaleInst = Instance.new("UIScale")
+				speakerScaleInst.Parent = self._speakerBg
+			end
+			local speakerScale = speakerScaleInst :: UIScale
+			speakerScale.Scale = 0.85
+			TweenService:Create(speakerScale, TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+				Scale = 1.0,
 			}):Play()
 		end
 		self:_updateBorderColor(profile.role)
@@ -409,15 +477,40 @@ function CutsceneController:_advanceLine()
 	local effect = line.effect
 	if effect == "shake" then
 		self:_shakePanel()
+		if self._currentRig then
+			CutsceneCharacterBuilder.PlayEffectAnimation(self._currentRig, "shake")
+		end
 	elseif effect == "flash" then
 		self:_flashPanel()
+		if self._currentRig then
+			CutsceneCharacterBuilder.PlayEffectAnimation(self._currentRig, "flash")
+		end
 	elseif effect == "particle" then
 		self:_showVictoryParticle()
+		if self._currentRig then
+			CutsceneCharacterBuilder.PlayEffectAnimation(self._currentRig, "particle")
+		end
+	end
+
+	-- 대화 라인 전환 페이드 (첫 번째 줄이 아닌 경우 fade-out 후 진행)
+	if self._currentLineIndex > 1 and self._dialogueLabel then
+		local fadeOutTween = TweenService:Create(self._dialogueLabel, TweenInfo.new(0.1), {
+			TextTransparency = 1,
+		})
+		fadeOutTween:Play()
+		task.wait(0.12)
 	end
 
 	if self._dialogueLabel then
+		self._dialogueLabel.TextTransparency = 1
 		self._dialogueLabel.Text = ""
 	end
+
+	-- Trigger talk animation on current 3D character
+	if self._currentRig then
+		CutsceneCharacterBuilder.PlayTalkAnimation(self._currentRig)
+	end
+
 	self:_typeText(line.text)
 end
 
@@ -431,6 +524,10 @@ function CutsceneController:_typeText(text: string)
 		if not label then
 			return
 		end
+
+		-- 텍스트 페이드인 (타이핑 시작 시)
+		label.TextTransparency = 1
+		TweenService:Create(label, TweenInfo.new(0.2), { TextTransparency = 0 }):Play()
 
 		local bytes = string.len(text)
 		for i = 1, bytes do
@@ -484,12 +581,48 @@ function CutsceneController:_skipAll()
 	end
 end
 
+-- ==================== 초상화 밥 애니메이션 ====================
+
+function CutsceneController:_startPortraitBob()
+	if self._portraitBobThread then
+		task.cancel(self._portraitBobThread)
+		self._portraitBobThread = nil
+	end
+
+	local portraitFrame = self._portraitFrame
+	if not portraitFrame then
+		return
+	end
+
+	self._portraitBobThread = task.spawn(function()
+		local t = 0
+		while self._isPlaying and portraitFrame.Parent do
+			t += 1 / 30
+			portraitFrame.Position = UDim2.new(0, 12, 0, -50 + math.sin(t * 4) * 3)
+			task.wait(1 / 30)
+		end
+		-- 루프 종료 시 원래 위치로 복원
+		if portraitFrame.Parent then
+			portraitFrame.Position = UDim2.new(0, 12, 0, -50)
+		end
+	end)
+end
+
+function CutsceneController:_stopPortraitBob()
+	if self._portraitBobThread then
+		task.cancel(self._portraitBobThread)
+		self._portraitBobThread = nil
+	end
+	if self._portraitFrame then
+		self._portraitFrame.Position = UDim2.new(0, 12, 0, -50)
+	end
+end
+
 -- ==================== 초상화 업데이트 ====================
 
 function CutsceneController:_updatePortrait(profile: { id: string, name: string, emoji: string, role: string, bgColor: Color3, textColor: Color3 })
 	local portraitFrame = self._portraitFrame
-	local portraitEmoji = self._portraitEmoji
-	if not portraitFrame or not portraitEmoji then
+	if not portraitFrame then
 		return
 	end
 
@@ -498,11 +631,10 @@ function CutsceneController:_updatePortrait(profile: { id: string, name: string,
 		BackgroundColor3 = profile.bgColor,
 	}):Play()
 
-	-- 이모지 변경 + 팝 애니메이션
-	portraitEmoji.Text = profile.emoji
-	portraitFrame.Size = UDim2.new(0, 50, 0, 50)
+	-- 팝 애니메이션 (75→90 크기)
+	portraitFrame.Size = UDim2.new(0, 75, 0, 75)
 	TweenService:Create(portraitFrame, TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-		Size = UDim2.new(0, 60, 0, 60),
+		Size = UDim2.new(0, 90, 0, 90),
 	}):Play()
 
 	-- 테두리 색상 (역할별)
@@ -510,6 +642,9 @@ function CutsceneController:_updatePortrait(profile: { id: string, name: string,
 	if stroke then
 		stroke.Color = ROLE_COLORS[profile.role] or Color3.fromRGB(200, 200, 200)
 	end
+
+	-- Load 3D character into viewport
+	self:_loadCharacterIntoViewport(profile.id)
 end
 
 function CutsceneController:_updateBorderColor(role: string)
@@ -521,6 +656,58 @@ function CutsceneController:_updateBorderColor(role: string)
 	TweenService:Create(topBorder, TweenInfo.new(0.2), {
 		BackgroundColor3 = color,
 	}):Play()
+end
+
+-- ==================== 3D 뷰포트 캐릭터 ====================
+
+function CutsceneController:_loadCharacterIntoViewport(characterId: string)
+	if not self._worldModel or not self._viewportFrame then
+		return
+	end
+
+	-- Check cache first
+	local rig = self._charCache[characterId]
+	if not rig then
+		rig = CutsceneCharacterBuilder.Build(characterId)
+		if rig then
+			self._charCache[characterId] = rig
+		end
+	end
+	if not rig then
+		return
+	end
+
+	-- Stop existing idle animation
+	if self._idleAnimHolder.thread then
+		task.cancel(self._idleAnimHolder.thread)
+		self._idleAnimHolder.thread = nil
+	end
+
+	-- Remove previous character from WorldModel
+	local prevRig = self._currentRig
+	if prevRig then
+		local prevModel = (prevRig :: any).model
+		if prevModel then
+			prevModel.Parent = nil
+		end
+	end
+
+	-- Reset pose and place into WorldModel
+	CutsceneCharacterBuilder.ResetPose(rig)
+	local rigModel = (rig :: any).model
+	rigModel.Parent = self._worldModel
+
+	-- Anchor root so it stays at origin
+	local rigRoot = (rig :: any).root
+	if rigRoot then
+		rigRoot.Anchored = true
+		rigRoot.CFrame = CFrame.new(0, 0, 0)
+	end
+
+	self._currentRig = rig
+
+	-- Start idle animation loop
+	CutsceneCharacterBuilder.PlayIdleAnimation(rig, self._idleAnimHolder)
 end
 
 -- ==================== 이펙트 ====================
@@ -642,6 +829,8 @@ function CutsceneController:_show()
 	TweenService:Create(panel, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
 		Position = UDim2.new(0, 0, 0.72, 0),
 	}):Play()
+
+	self:_startPortraitBob()
 end
 
 function CutsceneController:_hide()
@@ -655,10 +844,19 @@ function CutsceneController:_hide()
 		self._onPlayEnd()
 	end
 
-	-- 딤 오버레이 페이드아웃
+	self:_stopPortraitBob()
+
+	-- 아이들 애니메이션 스레드 정지
+	if self._idleAnimHolder.thread then
+		task.cancel(self._idleAnimHolder.thread)
+		self._idleAnimHolder.thread = nil
+	end
+
+	-- 딤 오버레이 페이드아웃 + 틴트 초기화
 	if self._dimOverlay then
 		TweenService:Create(self._dimOverlay, TweenInfo.new(0.3), {
 			BackgroundTransparency = 1,
+			BackgroundColor3 = Color3.fromRGB(0, 0, 0),
 		}):Play()
 	end
 
@@ -842,11 +1040,63 @@ function CutsceneController:_showSkillTutorial(skillId: string)
 	end)
 end
 
--- ==================== 챕터 클리어 축하 ====================
+-- ==================== 챕터 클리어 축하 (4단계 강화 연출) ====================
 
--- 전체화면 챕터 클리어 축하 이펙트
+-- 황금 파티클 스폰 헬퍼
+local function _spawnGoldParticles(parent: Instance, count: number)
+	for i = 1, count do
+		task.delay(i * 0.03, function()
+			if not (parent :: any).Parent then
+				return
+			end
+			local p = Instance.new("Frame")
+			p.Size = UDim2.new(0, math.random(6, 14), 0, math.random(6, 14))
+			local startX = math.random()
+			p.Position = UDim2.new(startX, 0, -0.05, 0)
+			p.BackgroundColor3 = Color3.fromRGB(255, math.random(180, 240), math.random(0, 100))
+			p.Rotation = math.random(0, 360)
+			p.ZIndex = 5
+			p.BorderSizePixel = 0
+			p.Parent = parent
+
+			local pCorner = Instance.new("UICorner")
+			pCorner.CornerRadius = UDim.new(0, 3)
+			pCorner.Parent = p
+
+			TweenService:Create(p, TweenInfo.new(
+				1.5 + math.random() * 1.0,
+				Enum.EasingStyle.Quad,
+				Enum.EasingDirection.In
+			), {
+				Position = UDim2.new(startX + (math.random() - 0.5) * 0.3, 0, 1.1, 0),
+				Rotation = math.random(360, 1080),
+				BackgroundTransparency = 0.5,
+			}):Play()
+
+			task.delay(2.5, function()
+				if p.Parent then
+					p:Destroy()
+				end
+			end)
+		end)
+	end
+end
+
+--[[
+	ShowChapterClearCelebration
+	4단계 챕터 클리어 연출:
+	  Stage 1 (0~0.5s)  - 전체화면 골드 플래시
+	  Stage 2 (0.5~2.5s) - "CHAPTER N CLEAR!" 대형 텍스트 + 파티클
+	  Stage 3 (2.5s~)   - 기존 컷씬 대화창 (clear 컷씬은 QueueCutscene으로 처리됨)
+	  Stage 4 (3.5~4.5s) - 다음 챕터 예고 텍스트 fade in/out
+--]]
 function CutsceneController:ShowChapterClearCelebration(chapterNum: number, chapterName: string)
 	local playerGui = self._player:WaitForChild("PlayerGui")
+
+	-- 다음 챕터 정보 조회
+	local nextChapterId = "ch" .. tostring(chapterNum + 1)
+	local nextChapter = ScenarioConstants.CHAPTER_MAP[nextChapterId]
+	local nextChapterName: string? = if nextChapter then nextChapter.name else nil
 
 	local celebGui = Instance.new("ScreenGui")
 	celebGui.Name = "ChapterClearCelebration"
@@ -855,139 +1105,253 @@ function CutsceneController:ShowChapterClearCelebration(chapterNum: number, chap
 	celebGui.ScreenInsets = Enum.ScreenInsets.DeviceSafeInsets
 	celebGui.Parent = playerGui
 
-	-- 1. 배경 딤 (서서히)
+	-- ===== Stage 1: 전체화면 골드 플래시 (0 ~ 0.5초) =====
+	local goldFlash = Instance.new("Frame")
+	goldFlash.Name = "GoldFlash"
+	goldFlash.Size = UDim2.new(1, 0, 1, 0)
+	goldFlash.BackgroundColor3 = Color3.fromRGB(255, 215, 0)
+	goldFlash.BackgroundTransparency = 0
+	goldFlash.BorderSizePixel = 0
+	goldFlash.ZIndex = 10
+	goldFlash.Parent = celebGui
+
+	TweenService:Create(goldFlash, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+		BackgroundTransparency = 1,
+	}):Play()
+
+	-- ===== Stage 2: 딤 배경 + "CHAPTER N CLEAR!" 대형 텍스트 (0.5초부터) =====
 	local dimBg = Instance.new("Frame")
 	dimBg.Name = "DimBg"
 	dimBg.Size = UDim2.new(1, 0, 1, 0)
 	dimBg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 	dimBg.BackgroundTransparency = 1
 	dimBg.BorderSizePixel = 0
+	dimBg.ZIndex = 1
 	dimBg.Parent = celebGui
 
-	TweenService:Create(dimBg, TweenInfo.new(0.5), {
-		BackgroundTransparency = 0.6,
-	}):Play()
-
-	-- 2. 챕터 번호 대형 텍스트
-	local chapterLabel = Instance.new("TextLabel")
-	chapterLabel.Name = "ChapterLabel"
-	chapterLabel.Size = UDim2.new(0, 300, 0, 80)
-	chapterLabel.Position = UDim2.new(0.5, -150, 0.35, -40)
-	chapterLabel.BackgroundTransparency = 1
-	chapterLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
-	chapterLabel.TextSize = 48
-	chapterLabel.Font = Enum.Font.GothamBlack
-	chapterLabel.Text = `CHAPTER {chapterNum}`
-	chapterLabel.TextStrokeTransparency = 0.5
-	chapterLabel.TextStrokeColor3 = Color3.fromRGB(200, 150, 0)
-	chapterLabel.TextTransparency = 1
-	chapterLabel.Parent = celebGui
-
-	local uiScale = Instance.new("UIScale")
-	uiScale.Scale = 0.3
-	uiScale.Parent = chapterLabel
-
-	TweenService:Create(uiScale, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-		Scale = 1.0,
-	}):Play()
-	TweenService:Create(chapterLabel, TweenInfo.new(0.3), {
-		TextTransparency = 0,
-	}):Play()
-
-	-- 3. "CLEAR!" 텍스트
-	local clearLabel = Instance.new("TextLabel")
-	clearLabel.Name = "ClearLabel"
-	clearLabel.Size = UDim2.new(0, 200, 0, 50)
-	clearLabel.Position = UDim2.new(0.5, -100, 0.45, 0)
-	clearLabel.BackgroundTransparency = 1
-	clearLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-	clearLabel.TextSize = 36
-	clearLabel.Font = Enum.Font.GothamBlack
-	clearLabel.Text = "CLEAR!"
-	clearLabel.TextTransparency = 1
-	clearLabel.Parent = celebGui
-
-	task.delay(0.3, function()
-		TweenService:Create(clearLabel, TweenInfo.new(0.3), {
-			TextTransparency = 0,
-		}):Play()
-	end)
-
-	-- 4. 챕터 이름
-	local nameLabel = Instance.new("TextLabel")
-	nameLabel.Name = "NameLabel"
-	nameLabel.Size = UDim2.new(0, 300, 0, 30)
-	nameLabel.Position = UDim2.new(0.5, -150, 0.52, 0)
-	nameLabel.BackgroundTransparency = 1
-	nameLabel.TextColor3 = Color3.fromRGB(200, 220, 255)
-	nameLabel.TextSize = 18
-	nameLabel.Font = Enum.Font.GothamBold
-	nameLabel.Text = chapterName
-	nameLabel.TextTransparency = 1
-	nameLabel.Parent = celebGui
-
-	task.delay(0.5, function()
-		TweenService:Create(nameLabel, TweenInfo.new(0.3), {
-			TextTransparency = 0,
-		}):Play()
-	end)
-
-	-- 5. 황금 파티클 (화면 위에서 아래로 낙하)
-	task.delay(0.2, function()
-		for i = 1, 25 do
-			task.delay(i * 0.03, function()
-				if not celebGui.Parent then
-					return
-				end
-				local p = Instance.new("Frame")
-				p.Size = UDim2.new(0, math.random(6, 14), 0, math.random(6, 14))
-				local startX = math.random()
-				p.Position = UDim2.new(startX, 0, -0.05, 0)
-				p.BackgroundColor3 = Color3.fromRGB(255, math.random(180, 240), math.random(0, 100))
-				p.Rotation = math.random(0, 360)
-				p.ZIndex = 5
-				p.BorderSizePixel = 0
-				p.Parent = celebGui
-
-				local pCorner = Instance.new("UICorner")
-				pCorner.CornerRadius = UDim.new(0, 3)
-				pCorner.Parent = p
-
-				TweenService:Create(p, TweenInfo.new(
-					1.5 + math.random() * 1.0,
-					Enum.EasingStyle.Quad,
-					Enum.EasingDirection.In
-				), {
-					Position = UDim2.new(startX + (math.random() - 0.5) * 0.3, 0, 1.1, 0),
-					Rotation = math.random(360, 1080),
-					BackgroundTransparency = 0.5,
-				}):Play()
-
-				task.delay(2.5, function()
-					if p.Parent then
-						p:Destroy()
-					end
-				end)
-			end)
-		end
-	end)
-
-	-- 6. 3.5초 후 자동 닫기
-	task.delay(3.5, function()
+	task.delay(0.4, function()
 		if not celebGui.Parent then
 			return
 		end
-		TweenService:Create(dimBg, TweenInfo.new(0.5), { BackgroundTransparency = 1 }):Play()
-		TweenService:Create(chapterLabel, TweenInfo.new(0.3), { TextTransparency = 1 }):Play()
-		TweenService:Create(clearLabel, TweenInfo.new(0.3), { TextTransparency = 1 }):Play()
-		TweenService:Create(nameLabel, TweenInfo.new(0.3), { TextTransparency = 1 }):Play()
 
-		task.delay(0.6, function()
+		TweenService:Create(dimBg, TweenInfo.new(0.3), {
+			BackgroundTransparency = 0.55,
+		}):Play()
+
+		-- CHAPTER N 텍스트 (위에서 솟아오름)
+		local chapterLabel = Instance.new("TextLabel")
+		chapterLabel.Name = "ChapterLabel"
+		chapterLabel.Size = UDim2.new(0, 400, 0, 80)
+		chapterLabel.AnchorPoint = Vector2.new(0.5, 0.5)
+		chapterLabel.Position = UDim2.new(0.5, 0, 0.32, 0)
+		chapterLabel.BackgroundTransparency = 1
+		chapterLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
+		chapterLabel.TextSize = 44
+		chapterLabel.Font = Enum.Font.GothamBlack
+		chapterLabel.Text = `CHAPTER {chapterNum}`
+		chapterLabel.TextStrokeTransparency = 0.4
+		chapterLabel.TextStrokeColor3 = Color3.fromRGB(180, 120, 0)
+		chapterLabel.TextTransparency = 1
+		chapterLabel.ZIndex = 6
+		chapterLabel.Parent = celebGui
+
+		local uiScale = Instance.new("UIScale")
+		uiScale.Scale = 0.4
+		uiScale.Parent = chapterLabel
+
+		-- 스케일 팝 + 페이드인 (위로 솟아오르는 연출)
+		chapterLabel.Position = UDim2.new(0.5, 0, 0.40, 0)
+		TweenService:Create(chapterLabel, TweenInfo.new(0.45, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+			Position = UDim2.new(0.5, 0, 0.32, 0),
+			TextTransparency = 0,
+		}):Play()
+		TweenService:Create(uiScale, TweenInfo.new(0.45, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+			Scale = 1.0,
+		}):Play()
+
+		-- "CLEAR! ✨" 텍스트 (약간 딜레이)
+		local clearLabel = Instance.new("TextLabel")
+		clearLabel.Name = "ClearLabel"
+		clearLabel.Size = UDim2.new(0, 400, 0, 70)
+		clearLabel.AnchorPoint = Vector2.new(0.5, 0.5)
+		clearLabel.Position = UDim2.new(0.5, 0, 0.46, 0)
+		clearLabel.BackgroundTransparency = 1
+		clearLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+		clearLabel.TextSize = 52
+		clearLabel.Font = Enum.Font.GothamBlack
+		clearLabel.Text = "CLEAR! ✨"
+		clearLabel.TextStrokeTransparency = 0.5
+		clearLabel.TextStrokeColor3 = Color3.fromRGB(255, 215, 0)
+		clearLabel.TextTransparency = 1
+		clearLabel.ZIndex = 6
+		clearLabel.Parent = celebGui
+
+		local clearScale = Instance.new("UIScale")
+		clearScale.Scale = 0.3
+		clearScale.Parent = clearLabel
+
+		task.delay(0.2, function()
+			if not celebGui.Parent then
+				return
+			end
+			clearLabel.Position = UDim2.new(0.5, 0, 0.54, 0)
+			TweenService:Create(clearLabel, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+				Position = UDim2.new(0.5, 0, 0.46, 0),
+				TextTransparency = 0,
+			}):Play()
+			TweenService:Create(clearScale, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+				Scale = 1.0,
+			}):Play()
+		end)
+
+		-- 챕터 이름
+		local nameLabel = Instance.new("TextLabel")
+		nameLabel.Name = "NameLabel"
+		nameLabel.Size = UDim2.new(0, 380, 0, 30)
+		nameLabel.AnchorPoint = Vector2.new(0.5, 0.5)
+		nameLabel.Position = UDim2.new(0.5, 0, 0.57, 0)
+		nameLabel.BackgroundTransparency = 1
+		nameLabel.TextColor3 = Color3.fromRGB(220, 235, 255)
+		nameLabel.TextSize = 20
+		nameLabel.Font = Enum.Font.GothamBold
+		nameLabel.Text = chapterName
+		nameLabel.TextTransparency = 1
+		nameLabel.ZIndex = 6
+		nameLabel.Parent = celebGui
+
+		task.delay(0.45, function()
+			if not celebGui.Parent then
+				return
+			end
+			TweenService:Create(nameLabel, TweenInfo.new(0.3), {
+				TextTransparency = 0,
+			}):Play()
+		end)
+
+		-- 황금 파티클 (화면 위에서 낙하)
+		task.delay(0.1, function()
 			if celebGui.Parent then
-				celebGui:Destroy()
+				_spawnGoldParticles(celebGui, 28)
 			end
 		end)
+
+		-- ===== Stage 4: 다음 챕터 예고 텍스트 (3.2초부터) =====
+		if nextChapterName then
+			local previewBg = Instance.new("Frame")
+			previewBg.Name = "NextChapterPreview"
+			previewBg.Size = UDim2.new(0, 340, 0, 40)
+			previewBg.AnchorPoint = Vector2.new(0.5, 0.5)
+			previewBg.Position = UDim2.new(0.5, 0, 0.82, 0)
+			previewBg.BackgroundColor3 = Color3.fromRGB(10, 10, 25)
+			previewBg.BackgroundTransparency = 0.3
+			previewBg.BorderSizePixel = 0
+			previewBg.ZIndex = 6
+			previewBg.Parent = celebGui
+
+			local previewCorner = Instance.new("UICorner")
+			previewCorner.CornerRadius = UDim.new(0, 10)
+			previewCorner.Parent = previewBg
+
+			local previewLabel = Instance.new("TextLabel")
+			previewLabel.Name = "NextChapterLabel"
+			previewLabel.Size = UDim2.new(1, -16, 1, 0)
+			previewLabel.Position = UDim2.new(0, 8, 0, 0)
+			previewLabel.BackgroundTransparency = 1
+			previewLabel.TextColor3 = Color3.fromRGB(255, 230, 140)
+			previewLabel.TextSize = 15
+			previewLabel.Font = Enum.Font.GothamBold
+			previewLabel.Text = `다음 이야기: {nextChapterName} →`
+			previewLabel.TextTransparency = 1
+			previewLabel.ZIndex = 7
+			previewLabel.Parent = previewBg
+
+			-- Stage 4 시작 (3.2초 후 fade in)
+			previewBg.BackgroundTransparency = 1
+			task.delay(3.2, function()
+				if not celebGui.Parent then
+					return
+				end
+				TweenService:Create(previewBg, TweenInfo.new(0.4), {
+					BackgroundTransparency = 0.3,
+				}):Play()
+				TweenService:Create(previewLabel, TweenInfo.new(0.4), {
+					TextTransparency = 0,
+				}):Play()
+				-- 1초 표시 후 fade out
+				task.delay(1.0, function()
+					if not celebGui.Parent then
+						return
+					end
+					TweenService:Create(previewBg, TweenInfo.new(0.4), {
+						BackgroundTransparency = 1,
+					}):Play()
+					TweenService:Create(previewLabel, TweenInfo.new(0.4), {
+						TextTransparency = 1,
+					}):Play()
+				end)
+			end)
+		end
+
+		-- 전체 자동 닫기 (4.8초 후)
+		task.delay(4.0, function()
+			if not celebGui.Parent then
+				return
+			end
+			TweenService:Create(dimBg, TweenInfo.new(0.5), { BackgroundTransparency = 1 }):Play()
+
+			local function fadeOutLabel(lbl: TextLabel?)
+				if lbl and lbl.Parent then
+					TweenService:Create(lbl, TweenInfo.new(0.35), { TextTransparency = 1 }):Play()
+				end
+			end
+			fadeOutLabel(celebGui:FindFirstChild("ChapterLabel") :: TextLabel?)
+			fadeOutLabel(celebGui:FindFirstChild("ClearLabel") :: TextLabel?)
+			fadeOutLabel(celebGui:FindFirstChild("NameLabel") :: TextLabel?)
+
+			task.delay(0.6, function()
+				if celebGui.Parent then
+					celebGui:Destroy()
+				end
+			end)
+		end)
 	end)
+end
+
+-- ==================== 소멸 ====================
+
+function CutsceneController:Destroy()
+	-- 아이들 애니메이션 스레드 정지
+	if self._idleAnimHolder.thread then
+		task.cancel(self._idleAnimHolder.thread)
+		self._idleAnimHolder.thread = nil
+	end
+
+	-- 캐시된 캐릭터 모델 정리
+	for _, rig in self._charCache do
+		local cachedModel = (rig :: any).model
+		if cachedModel then
+			cachedModel:Destroy()
+		end
+	end
+	self._charCache = {}
+
+	-- 뷰포트 프레임 정리
+	if self._viewportFrame then
+		self._viewportFrame:Destroy()
+		self._viewportFrame = nil
+	end
+
+	-- 연결 해제
+	for _, conn in self._connections do
+		conn:Disconnect()
+	end
+	self._connections = {}
+
+	-- GUI 제거
+	if self._gui then
+		self._gui:Destroy()
+		self._gui = nil
+	end
 end
 
 return CutsceneController

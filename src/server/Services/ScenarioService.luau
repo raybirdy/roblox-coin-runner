@@ -385,6 +385,31 @@ function ScenarioService:GetUnlockedSkills(player: Player): { string }
 	return playerData.unlockedSkills :: { string }
 end
 
+-- 플레이어의 현재 활성 챕터 ID 반환 (완료하지 않은 첫 번째 해금된 챕터)
+function ScenarioService:GetActiveChapterId(player: Player): string?
+	local playerData = PlayerDataService:GetPlayerData(player)
+	if not playerData then
+		return nil
+	end
+
+	local completedChapters = playerData.completedChapters :: { string }
+	local completedSet: { [string]: boolean } = {}
+	for _, chId in completedChapters do
+		completedSet[chId] = true
+	end
+
+	for _, chapter in ScenarioConstants.CHAPTERS do
+		if completedSet[chapter.id] then
+			continue
+		end
+		if self:_isChapterUnlocked(chapter, completedSet, playerData.highScore) then
+			return chapter.id
+		end
+	end
+
+	return nil
+end
+
 -- ==================== 클라이언트 데이터 요청 처리 ====================
 
 -- 클라이언트가 ScenarioDataRequest 이벤트를 보냈을 때 전체 데이터 반환
