@@ -22,6 +22,7 @@ export type CoinService = typeof(setmetatable(
 		_connections: { RBXScriptConnection },
 		_player: Player,
 		_spawnCount: number, -- 코인 밀도 리듬: Normal/Hard 청크 카운터
+		_luckyCoinsBonus: number, -- lucky_coins 업그레이드 보너스 (Silver 확률 증가)
 	},
 	CoinService
 ))
@@ -32,6 +33,7 @@ function CoinService.new(player: Player): CoinService
 		_connections = {},
 		_player = player,
 		_spawnCount = 0,
+		_luckyCoinsBonus = 0,
 	}, CoinService)
 
 	self:_setupCollisionHandlers()
@@ -231,6 +233,11 @@ local function patternDoubleLine(count: number, halfWidth: number): { { x: numbe
 	return positions
 end
 
+-- lucky_coins 업그레이드 보너스 설정 (GameManager에서 호출)
+function CoinService:SetLuckyCoinsBonus(bonus: number)
+	self._luckyCoinsBonus = bonus
+end
+
 -- =====================================================================
 -- 패턴 선택 (난이도 + 장애물 유무 반영)
 -- =====================================================================
@@ -363,15 +370,17 @@ function CoinService:_getCoinCountForDifficulty(difficulty: string): number
 end
 
 -- 코인 타입 선택 (가중 랜덤)
+-- lucky_coins 업그레이드: Silver 확률 += _luckyCoinsBonus, Bronze에서 차감
 function CoinService:_selectCoinType(difficulty: string): string
 	local rand = math.random()
+	local bonus = math.clamp(self._luckyCoinsBonus, 0, 0.35)
 
 	if difficulty == "Bonus" then
 		if rand < 0.05 then
 			return "Diamond"
 		elseif rand < 0.25 then
 			return "Gold"
-		elseif rand < 0.55 then
+		elseif rand < 0.55 + bonus then
 			return "Silver"
 		else
 			return "Bronze"
@@ -381,7 +390,7 @@ function CoinService:_selectCoinType(difficulty: string): string
 			return "Diamond"
 		elseif rand < 0.10 then
 			return "Gold"
-		elseif rand < 0.30 then
+		elseif rand < 0.30 + bonus then
 			return "Silver"
 		else
 			return "Bronze"
@@ -391,7 +400,7 @@ function CoinService:_selectCoinType(difficulty: string): string
 			return "Diamond"
 		elseif rand < 0.06 then
 			return "Gold"
-		elseif rand < 0.21 then
+		elseif rand < 0.21 + bonus then
 			return "Silver"
 		else
 			return "Bronze"

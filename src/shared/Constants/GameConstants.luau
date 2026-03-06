@@ -196,7 +196,7 @@ GameConstants.SCORE = {
 	COMBO_10_BONUS = 10,
 	COMBO_30_BONUS = 30,
 	COMBO_50_BONUS = 50,
-	COMBO_TIMEOUT = 2, -- 콤보 리셋 시간 (초) - 6~8세 반응속도 고려: 2→3초
+	COMBO_TIMEOUT = 3, -- 콤보 리셋 시간 (초) - 6~8세 반응속도 고려
 }
 
 -- 파워업 (자석, 쉴드, 무적, 2배코인, 미니사이즈)
@@ -943,7 +943,7 @@ GameConstants.NEAR_RECORD = {
 
 -- 피버 모드
 GameConstants.FEVER = {
-	COMBO_THRESHOLD = 45, -- 피버 발동 콤보 수 (50→30, 타깃 연령 도달 가능하게)
+	COMBO_THRESHOLD = 30, -- 피버 발동 콤보 수 (저연령층 친화 조정)
 	DURATION = 6, -- 지속 시간 (초)
 	COIN_MULTIPLIER = 3, -- 코인 가치 배율
 	SPEED_BOOST = 1.5, -- 속도 배율
@@ -954,7 +954,7 @@ GameConstants.FEVER = {
 
 -- 미니 피버 (15 콤보 - 작은 보상으로 어린이도 빠르게 달성 가능)
 GameConstants.MINI_FEVER = {
-	COMBO_THRESHOLD = 25, -- 미니 피버 발동 콤보 수
+	COMBO_THRESHOLD = 15, -- 미니 피버 발동 콤보 수 (저연령층 도달 가능하게 하향)
 	DURATION = 3, -- 지속 시간 (초)
 	COIN_MULTIPLIER = 2, -- 코인 가치 2배
 	MAGNET = true, -- 자석 효과 (기본 반경)
