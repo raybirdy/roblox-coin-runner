@@ -123,21 +123,20 @@ local function patternStepDown(count: number, halfWidth: number): { { x: number,
 end
 
 -- SPREAD: 넓게 퍼진 배치 (Easy 전용, 초보자 친화적)
+-- Y를 고정 지상 높이(2.0)로 유지해 도로 레인과 일정하게 맞춤
 local function patternSpread(count: number, halfWidth: number): { { x: number, y: number } }
 	local positions = {}
 	local rng = Random.new()
 	local usedX: { number } = {}
 	local MIN_SPACING = 5
+	local GROUND_Y = 2.0 -- 도로 표면 기준 일정 높이
 
 	for _ = 1, count do
 		local x = 0
-		local y = 0
 		local valid = false
 		for _attempt = 1, 8 do
 			x = rng:NextNumber(-halfWidth * 0.85, halfWidth * 0.85)
-			y = 2.0 + rng:NextNumber(0, 4.0) -- 낮은 높이 유지
 
-			-- 기존 코인과 너무 가깝지 않은지 체크
 			valid = true
 			for _, ux in usedX do
 				if math.abs(x - ux) < MIN_SPACING then
@@ -150,7 +149,7 @@ local function patternSpread(count: number, halfWidth: number): { { x: number, y
 			end
 		end
 		table.insert(usedX, x)
-		table.insert(positions, { x = x, y = y })
+		table.insert(positions, { x = x, y = GROUND_Y })
 	end
 	return positions
 end
@@ -206,8 +205,8 @@ local function patternCorridor(
 		local spacing = slotW / math.max(n, 1)
 		for i = 0, n - 1 do
 			local x = slot.xMin + i * spacing + spacing * 0.5
-			local y = 2.5 + math.random() * 3.0
-			table.insert(positions, { x = x, y = y })
+			-- Y를 고정 지상 높이로 유지 (랜덤 제거 → 도로 레인과 일정하게)
+			table.insert(positions, { x = x, y = 2.5 })
 		end
 	end
 
@@ -260,12 +259,13 @@ end
 -- =====================================================================
 function CoinService:_generatePatternPositions(
 	chunkCFrame: CFrame,
-	chunkSize: Vector3,
 	pattern: string,
 	coinCount: number,
 	obstaclePositions: { Vector3 }
 ): { Vector3 }
-	local halfWidth = chunkSize.X * 0.45
+	-- GetExtentsSize는 장식 파트에 따라 청크마다 달라지므로
+	-- 고정된 CHUNK.LENGTH로 halfWidth를 계산해 X 배치를 일정하게 유지한다.
+	local halfWidth = GameConstants.CHUNK.LENGTH * 0.45
 	local chunkCenter = chunkCFrame.Position
 
 	-- 장애물 X 좌표 리스트 (청크 중심 기준 상대값)
@@ -312,16 +312,15 @@ function CoinService:SpawnCoinsInChunk(chunk: Model, difficulty: string, obstacl
 	-- 코인 개수 결정
 	local coinCount = self:_getCoinCountForDifficulty(difficulty)
 
-	-- 청크 경계 계산
+	-- 청크 중심 좌표 계산
 	local chunkCFrame = chunk:GetPrimaryPartCFrame()
-	local chunkSize = chunk:GetExtentsSize()
 
 	-- 패턴 선택
 	local pattern = self:_selectPattern(difficulty, obstaclePositions :: { Vector3 })
 
 	-- 패턴 위치 생성
 	local positions =
-		self:_generatePatternPositions(chunkCFrame, chunkSize, pattern, coinCount, obstaclePositions :: { Vector3 })
+		self:_generatePatternPositions(chunkCFrame, pattern, coinCount, obstaclePositions :: { Vector3 })
 
 	-- 장애물 안전 거리 최종 검증
 	local SAFE_DISTANCE = 5
