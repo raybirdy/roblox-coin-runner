@@ -452,6 +452,14 @@ RemoteEvents.RunObjectivesGenerated = getOrCreateRemoteEvent("RunObjectivesGener
 RemoteEvents.RunObjectiveProgress = getOrCreateRemoteEvent("RunObjectiveProgress")
 -- 파라미터: { objectives: { { id, progress, completed } }, allCompleted: boolean, bonus: number? }
 
+-- 런 목표 리롤 요청 (클라이언트 → 서버)
+RemoteEvents.RerollObjective = getOrCreateRemoteEvent("RerollObjective")
+-- 파라미터: { index: number }
+
+-- 런 목표 리롤 결과 (서버 → 클라이언트)
+RemoteEvents.RerollObjectiveResult = getOrCreateRemoteEvent("RerollObjectiveResult")
+-- 파라미터: { success: boolean, index: number, objective: {id, desc, target}?, error: string? }
+
 -- ==================== 펫 시스템 ====================
 
 -- 펫 데이터 (서버 → 클라이언트)
