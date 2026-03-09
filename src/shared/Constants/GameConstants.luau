@@ -996,6 +996,10 @@ GameConstants.ZONE_THEMES = {
 		hillColor = Color3.fromRGB(80, 150, 80),
 		skyAmbient = Color3.fromRGB(135, 206, 235),
 		clockTime = 14,
+		fogColor = Color3.fromRGB(180, 220, 240),
+		fogStart = 800,
+		fogEnd = 1000,
+		decoration = "grass",
 	},
 	{
 		name = "FlowerPath",
@@ -1008,6 +1012,10 @@ GameConstants.ZONE_THEMES = {
 		hillColor = Color3.fromRGB(200, 160, 180),
 		skyAmbient = Color3.fromRGB(255, 200, 220),
 		clockTime = 15,
+		fogColor = Color3.fromRGB(255, 200, 220),
+		fogStart = 200,
+		fogEnd = 420,
+		decoration = "none",
 	},
 	{
 		name = "MushroomWood",
@@ -1020,6 +1028,10 @@ GameConstants.ZONE_THEMES = {
 		hillColor = Color3.fromRGB(100, 80, 60),
 		skyAmbient = Color3.fromRGB(160, 140, 180),
 		clockTime = 17,
+		fogColor = Color3.fromRGB(100, 60, 130),
+		fogStart = 80,
+		fogEnd = 260,
+		decoration = "none",
 	},
 	{
 		name = "Sunset",
@@ -1032,6 +1044,10 @@ GameConstants.ZONE_THEMES = {
 		hillColor = Color3.fromRGB(150, 90, 40),
 		skyAmbient = Color3.fromRGB(255, 140, 50),
 		clockTime = 18.5,
+		fogColor = Color3.fromRGB(220, 100, 30),
+		fogStart = 150,
+		fogEnd = 380,
+		decoration = "none",
 	},
 	{
 		name = "Starlight",
@@ -1044,6 +1060,10 @@ GameConstants.ZONE_THEMES = {
 		hillColor = Color3.fromRGB(20, 20, 40),
 		skyAmbient = Color3.fromRGB(20, 20, 50),
 		clockTime = 22,
+		fogColor = Color3.fromRGB(10, 10, 40),
+		fogStart = 60,
+		fogEnd = 200,
+		decoration = "stars",
 	},
 }
 

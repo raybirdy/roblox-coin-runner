@@ -78,6 +78,9 @@ function BackgroundService:AddBackgroundForChunk(chunkPosition: Vector3, chunkLe
 	if bgConfig.HILLS_ENABLED then
 		self:_spawnHillForChunk(chunkPosition, chunkLength)
 	end
+
+	-- Zone 전용 장식 생성
+	self:_spawnZoneDecorForChunk(chunkPosition, chunkLength)
 end
 
 -- 게임 바닥 생성 (청크별)
@@ -405,6 +408,62 @@ function BackgroundService:_playCrowdAnimation(npcModel: Model, animationType: s
 			end)
 		end
 	end)
+end
+
+-- Zone 전용 장식 생성 (Meadow: 풀밭 패치, Starlight: 별 오브)
+function BackgroundService:_spawnZoneDecorForChunk(chunkPosition: Vector3, chunkLength: number)
+	if not self._backgroundFolder then
+		return
+	end
+	local theme = self._currentTheme
+	if not theme or not theme.decoration or theme.decoration == "none" then
+		return
+	end
+
+	local bgConfig = GameConstants.BACKGROUND
+
+	if theme.decoration == "grass" then
+		-- Meadow: 초록 풀밭 패치 (도로 양옆)
+		for i = 1, 3 do
+			local xOffset = (i - 1) * (chunkLength / 3) + math.random(5, 20)
+			for _, zSign in { -1, 1 } do
+				local patch = Instance.new("Part")
+				patch.Name = "GrassPatch"
+				patch.Size = Vector3.new(math.random(6, 12), 0.3, math.random(4, 8))
+				patch.Position = Vector3.new(
+					chunkPosition.X + xOffset,
+					1.15,
+					bgConfig.SCENERY_Z * 0.3 * zSign + GameConstants.PLAYER.Z_POSITION + zSign * 14
+				)
+				patch.Anchored = true
+				patch.CanCollide = false
+				patch.Color = Color3.fromRGB(50, 160, 60)
+				patch.Material = Enum.Material.Grass
+				patch.Parent = self._backgroundFolder
+				table.insert(self._scenery, patch)
+			end
+		end
+	elseif theme.decoration == "stars" then
+		-- Starlight: 하늘에 떠있는 빛나는 별 오브
+		for i = 1, 4 do
+			local xOffset = (i - 1) * (chunkLength / 4) + math.random(5, 15)
+			local star = Instance.new("Part")
+			star.Name = "StarOrb"
+			star.Shape = Enum.PartType.Ball
+			star.Size = Vector3.new(1.5, 1.5, 1.5)
+			star.Position = Vector3.new(
+				chunkPosition.X + xOffset,
+				12 + math.sin(i * 1.7) * 4,
+				bgConfig.SCENERY_Z * 0.5 + math.cos(i * 2.3) * 8
+			)
+			star.Anchored = true
+			star.CanCollide = false
+			star.Color = Color3.fromRGB(180, 200, 255)
+			star.Material = Enum.Material.Neon
+			star.Parent = self._backgroundFolder
+			table.insert(self._scenery, star)
+		end
+	end
 end
 
 -- 배경 나무 생성

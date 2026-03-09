@@ -468,13 +468,13 @@ function ObstacleService:_spawnObstacle(position: Vector3, obstacleType: string)
 		obstacle.Material = Enum.Material.Neon
 		obstacle:SetAttribute("ObstacleType", obstacleType)
 
-		-- 구역 색상 틴트 적용 (35% 구역 색상 영향)
+		-- 구역 색상 틴트 적용 (60% 구역 색상 영향)
 		local mwZoneColor = self:_getZoneObstacleColor()
 		local mwBaseColor = obstacle.Color
 		obstacle.Color = Color3.new(
-			mwBaseColor.R * 0.65 + mwZoneColor.R * 0.35,
-			mwBaseColor.G * 0.65 + mwZoneColor.G * 0.35,
-			mwBaseColor.B * 0.65 + mwZoneColor.B * 0.35
+			mwBaseColor.R * 0.40 + mwZoneColor.R * 0.60,
+			mwBaseColor.G * 0.40 + mwZoneColor.G * 0.60,
+			mwBaseColor.B * 0.40 + mwZoneColor.B * 0.60
 		)
 
 		obstacle.Parent = workspace
@@ -558,13 +558,13 @@ function ObstacleService:_spawnObstacle(position: Vector3, obstacleType: string)
 		obstacle.CanCollide = false
 		obstacle:SetAttribute("ObstacleType", obstacleType)
 
-		-- 구역 색상 틴트 적용 (35% 구역 색상 영향)
+		-- 구역 색상 틴트 적용 (60% 구역 색상 영향)
 		local ebZoneColor = self:_getZoneObstacleColor()
 		local ebBaseColor = obstacle.Color
 		obstacle.Color = Color3.new(
-			ebBaseColor.R * 0.65 + ebZoneColor.R * 0.35,
-			ebBaseColor.G * 0.65 + ebZoneColor.G * 0.35,
-			ebBaseColor.B * 0.65 + ebZoneColor.B * 0.35
+			ebBaseColor.R * 0.40 + ebZoneColor.R * 0.60,
+			ebBaseColor.G * 0.40 + ebZoneColor.G * 0.60,
+			ebBaseColor.B * 0.40 + ebZoneColor.B * 0.60
 		)
 
 		obstacle.Parent = workspace
@@ -589,13 +589,13 @@ function ObstacleService:_spawnObstacle(position: Vector3, obstacleType: string)
 	obstacle.Material = Enum.Material.SmoothPlastic
 	obstacle:SetAttribute("ObstacleType", obstacleType)
 
-	-- 구역 색상 틴트 적용 (35% 구역 색상 영향)
+	-- 구역 색상 틴트 적용 (60% 구역 색상 영향)
 	local zoneColor = self:_getZoneObstacleColor()
 	local baseColor = obstacle.Color
 	obstacle.Color = Color3.new(
-		baseColor.R * 0.65 + zoneColor.R * 0.35,
-		baseColor.G * 0.65 + zoneColor.G * 0.35,
-		baseColor.B * 0.65 + zoneColor.B * 0.35
+		baseColor.R * 0.40 + zoneColor.R * 0.60,
+		baseColor.G * 0.40 + zoneColor.G * 0.60,
+		baseColor.B * 0.40 + zoneColor.B * 0.60
 	)
 
 	obstacle.Parent = workspace
