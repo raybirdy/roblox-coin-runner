@@ -33,22 +33,26 @@ local function _getEquippedPetData(player: Player, playerDataService: any): any?
 	return petMap[petId]
 end
 
--- 코인 배율 (1.0 + coinBonus)
+-- 코인 배율 (1.0 + coinBonus + 레벨 보너스)
 function PetService:GetCoinMultiplier(player: Player, playerDataService: any): number
 	local pet = _getEquippedPetData(player, playerDataService)
 	if not pet then
 		return 1.0
 	end
-	return 1.0 + (pet.coinBonus or 0)
+	local level = playerDataService:GetPetLevel(player, pet.id)
+	local levelBonus = (level - 1) * GameConstants.PETS.LEVEL_COIN_BONUS
+	return 1.0 + (pet.coinBonus or 0) + levelBonus
 end
 
--- 자석 추가 범위 (stud)
+-- 자석 추가 범위 (stud, 레벨 보너스 포함)
 function PetService:GetMagnetBonus(player: Player, playerDataService: any): number
 	local pet = _getEquippedPetData(player, playerDataService)
 	if not pet then
 		return 0
 	end
-	return pet.magnetBonus or 0
+	local level = playerDataService:GetPetLevel(player, pet.id)
+	local levelBonus = (level - 1) * GameConstants.PETS.LEVEL_MAGNET_BONUS
+	return (pet.magnetBonus or 0) + levelBonus
 end
 
 -- 피버 지속 시간 추가 (초)
@@ -131,6 +135,49 @@ function PetService:SetupRemoteEvents(playerDataService: any)
 			self:SendPetData(player, playerDataService)
 			print(`[PetService] {player.Name} equipped pet: {data.petId}`)
 		end
+	end)
+
+	-- 펫 레벨업 요청
+	RemoteEvents.PetLevelUp.OnServerEvent:Connect(function(player: Player, data: any)
+		if type(data) ~= "table" or type(data.petId) ~= "string" then
+			return
+		end
+		local petId = data.petId
+		if not petMap[petId] then
+			RemoteEvents.PetLevelUpResult:FireClient(player, { success = false, error = "invalid_pet" })
+			return
+		end
+		if not playerDataService:OwnsPet(player, petId) then
+			RemoteEvents.PetLevelUpResult:FireClient(player, { success = false, error = "not_owned" })
+			return
+		end
+		local currentLevel = playerDataService:GetPetLevel(player, petId)
+		local maxLevel = GameConstants.PETS.MAX_PET_LEVEL
+		if currentLevel >= maxLevel then
+			RemoteEvents.PetLevelUpResult:FireClient(player, { success = false, error = "max_level" })
+			return
+		end
+		local cost = GameConstants.PETS.LEVEL_COSTS[currentLevel]
+		if not cost then
+			RemoteEvents.PetLevelUpResult:FireClient(player, { success = false, error = "no_cost_defined" })
+			return
+		end
+		local ok = playerDataService:LevelUpPet(player, petId, cost)
+		if not ok then
+			RemoteEvents.PetLevelUpResult:FireClient(player, { success = false, error = "insufficient_coins" })
+			return
+		end
+		playerDataService:SavePlayerData(player)
+		local playerData = playerDataService:GetPlayerData(player)
+		local newBalance = (playerData and playerData.coins) or 0
+		local newLevel = playerDataService:GetPetLevel(player, petId)
+		RemoteEvents.PetLevelUpResult:FireClient(player, {
+			success = true,
+			petId = petId,
+			newLevel = newLevel,
+			newBalance = newBalance,
+		})
+		print(`[PetService] {player.Name} leveled up pet {petId} to Lv{newLevel}`)
 	end)
 
 	print("[PetService] RemoteEvents connected")

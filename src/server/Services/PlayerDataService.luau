@@ -69,6 +69,10 @@ type PlayerData = {
 	-- 펫 시스템
 	ownedPets: { string },
 	equippedPet: string,
+	-- 펫 레벨 시스템
+	petLevels: { [string]: number }?, -- { [petId]: level } (nil이면 모두 레벨 1)
+	-- 이름표 시스템
+	nametag: { color: string?, font: string?, frame: string? }?,
 	-- Zone Skip Start
 	maxZoneReached: number, -- 이번까지 도달한 최대 Zone 인덱스
 }
@@ -121,6 +125,10 @@ local DEFAULT_DATA: PlayerData = {
 	-- 펫 시스템
 	ownedPets = { "chick" },
 	equippedPet = "chick",
+	-- 펫 레벨
+	petLevels = {},
+	-- 이름표
+	nametag = {},
 	-- Zone Skip Start
 	maxZoneReached = 1,
 }
@@ -770,6 +778,64 @@ function PlayerDataService:GetEquippedPet(player: Player): string
 	return playerData.equippedPet or "chick"
 end
 
+-- 펫 레벨 가져오기 (기본값 1)
+function PlayerDataService:GetPetLevel(player: Player, petId: string): number
+	local playerData = self:GetPlayerData(player)
+	if not playerData or not playerData.petLevels then
+		return 1
+	end
+	return playerData.petLevels[petId] or 1
+end
+
+-- 펫 레벨업 (비용 차감 + 레벨 증가)
+function PlayerDataService:LevelUpPet(player: Player, petId: string, cost: number): boolean
+	local playerData = self:GetPlayerData(player)
+	if not playerData then
+		return false
+	end
+	if playerData.coins < cost then
+		return false
+	end
+	if not playerData.petLevels then
+		playerData.petLevels = {}
+	end
+	local currentLevel = playerData.petLevels[petId] or 1
+	playerData.petLevels[petId] = currentLevel + 1
+	playerData.coins -= cost
+	return true
+end
+
+-- 이름표 아이템 구매
+function PlayerDataService:PurchaseNametagItem(player: Player, itemId: string, cost: number): boolean
+	local playerData = self:GetPlayerData(player)
+	if not playerData then
+		return false
+	end
+	if playerData.coins < cost then
+		return false
+	end
+	if not playerData.nametag then
+		playerData.nametag = {}
+	end
+	-- category를 itemId prefix로 판단
+	local category = string.match(itemId, "^(%a+)_")
+	if not category then
+		return false
+	end
+	playerData.nametag[category] = itemId
+	playerData.coins -= cost
+	return true
+end
+
+-- 이름표 데이터 가져오기
+function PlayerDataService:GetNametag(player: Player): { color: string?, font: string?, frame: string? }
+	local playerData = self:GetPlayerData(player)
+	if not playerData or not playerData.nametag then
+		return {}
+	end
+	return playerData.nametag
+end
+
 -- 런 목표 완료 횟수 증가
 function PlayerDataService:IncrementRunObjectivesCompleted(player: Player)
 	local playerData = playerDataCache[player]
@@ -809,6 +875,8 @@ VALID_KEYS["dailyEventDate"] = true
 VALID_KEYS["ownedPets"] = true
 VALID_KEYS["equippedPet"] = true
 VALID_KEYS["maxZoneReached"] = true
+VALID_KEYS["petLevels"] = true
+VALID_KEYS["nametag"] = true
 
 -- 유틸리티: 기본값 병합
 function PlayerDataService:_mergeWithDefaults(data: any): PlayerData
