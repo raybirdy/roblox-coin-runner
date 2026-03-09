@@ -948,7 +948,7 @@ GameConstants.FEVER = {
 	COIN_MULTIPLIER = 3, -- 코인 가치 배율
 	SPEED_BOOST = 1.5, -- 속도 배율
 	MAGNET_RADIUS = 30, -- 초강력 자석 반경 (studs)
-	COOLDOWN = 15, -- 피버 종료 후 재발동 쿨타임 (초)
+	COOLDOWN = 12, -- 피버 종료 후 재발동 쿨타임 (초) (15→12, 저연령층 피버 경험 빈도 향상)
 	INVINCIBLE = true, -- 무적 여부
 }
 
@@ -959,6 +959,7 @@ GameConstants.MINI_FEVER = {
 	COIN_MULTIPLIER = 2, -- 코인 가치 2배
 	MAGNET = true, -- 자석 효과 (기본 반경)
 	MAGNET_RADIUS = 20, -- 자석 반경 (studs) - 일반 자석보다 약간 큼
+	COOLDOWN = 10, -- 재발동 쿨타임 (초) - 남발 방지
 }
 
 -- 퍼펙트 런 (무피격 보너스)
@@ -1253,7 +1254,7 @@ GameConstants.UPGRADES = {
 			desc = "코인 콤보 유지 시간이 길어집니다",
 			maxLevel = 3,
 			costs = { 400, 1000, 2400 },
-			values = { 1, 2, 3 }, -- COMBO_TIMEOUT에 추가되는 초
+			values = { 1, 2, 2 }, -- COMBO_TIMEOUT에 추가되는 초 (Lv3: 3→2, 최대 5초로 상한)
 		},
 		{
 			id = "start_boost",
