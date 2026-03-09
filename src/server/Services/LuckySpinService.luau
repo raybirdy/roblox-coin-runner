@@ -54,8 +54,12 @@ function LuckySpinService:_onSpinRequest(player: Player, data: any)
 		-- 무료 스핀 사용
 		playerData.lastSpinDate = today
 	elseif useGems then
-		-- 젬으로 추가 스핀
-		local cost = GameConstants.LUCKY_SPIN.EXTRA_SPIN_GEM_COST
+		-- 젬으로 추가 스핀 (VIP 50% 할인 적용)
+		local baseCost = GameConstants.LUCKY_SPIN.EXTRA_SPIN_GEM_COST
+		local discount = if PlayerDataService:HasVIP(player)
+			then GameConstants.MONETIZATION.VIP_BENEFITS.spinDiscount
+			else 0
+		local cost = math.max(1, math.floor(baseCost * (1 - discount)))
 		if not PlayerDataService:SpendGems(player, cost) then
 			-- 젬 부족
 			RemoteEvents.SpinResult:FireClient(player, {

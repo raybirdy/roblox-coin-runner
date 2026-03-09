@@ -17,6 +17,9 @@ local MonetizationService = {}
 -- 메모리 캐시 (서버 내 빠른 중복 체크용, DataStore 영속화와 병행)
 local processedReceiptsCache: { [string]: boolean } = {}
 
+-- VIP 일일 젬 지급 추적 (서버 세션 내 중복 지급 방지)
+local vipDailyGemsAwarded: { [number]: boolean } = {} -- userId → awarded this session
+
 -- 젬 상품 정보 가져오기
 local function getGemProductById(productId: string): { id: string, productId: number, gems: number, bonus: number }?
 	for _, product in GameConstants.MONETIZATION.GEM_PRODUCTS do
@@ -258,6 +261,17 @@ local function onPlayerAdded(player: Player)
 	if hasVIP then
 		print(`[MonetizationService] {player.Name} is a VIP member`)
 		RemoteEvents.VIPStatusChanged:FireClient(player, { hasVIP = true })
+
+		-- VIP 일일 젬 지급 (서버 세션당 1회)
+		if not vipDailyGemsAwarded[player.UserId] then
+			vipDailyGemsAwarded[player.UserId] = true
+			local dailyGems = GameConstants.MONETIZATION.VIP_BENEFITS.dailyGems
+			PlayerDataService:AddGems(player, dailyGems)
+			PlayerDataService:SavePlayerData(player)
+			local currentGems = PlayerDataService:GetGems(player)
+			RemoteEvents.GemsUpdated:FireClient(player, { gems = currentGems })
+			print(`[MonetizationService] {player.Name} received {dailyGems} VIP daily gems`)
+		end
 	end
 end
 
