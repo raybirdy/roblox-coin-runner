@@ -258,6 +258,89 @@ RemoteEvents.ReturnToLobby.OnClientEvent:Connect(function()
 	objectiveHudController:EndGame()
 end)
 
+-- Zone Skip 프롬프트 표시 (선택 후 useZoneSkip과 함께 서버 전송)
+local function _showZoneSkipPrompt(skipZone: number, zoneName: string, callback: (boolean) -> ())
+	local playerGui = player:WaitForChild("PlayerGui") :: PlayerGui
+
+	local gui = Instance.new("ScreenGui")
+	gui.Name = "ZoneSkipPrompt"
+	gui.DisplayOrder = 15
+	gui.ResetOnSpawn = false
+	gui.Parent = playerGui
+
+	local dim = Instance.new("Frame")
+	dim.Size = UDim2.new(1, 0, 1, 0)
+	dim.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	dim.BackgroundTransparency = 0.5
+	dim.BorderSizePixel = 0
+	dim.Parent = gui
+
+	local box = Instance.new("Frame")
+	box.Size = UDim2.new(0, 340, 0, 180)
+	box.AnchorPoint = Vector2.new(0.5, 0.5)
+	box.Position = UDim2.new(0.5, 0, 0.5, 0)
+	box.BackgroundColor3 = Color3.fromRGB(30, 30, 50)
+	box.BorderSizePixel = 0
+	box.Parent = dim
+
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, 12)
+	corner.Parent = box
+
+	local title = Instance.new("TextLabel")
+	title.Size = UDim2.new(1, 0, 0, 50)
+	title.BackgroundTransparency = 1
+	title.Text = `✈️ Zone {skipZone} ({zoneName})부터 시작?`
+	title.TextColor3 = Color3.fromRGB(255, 255, 255)
+	title.TextSize = 18
+	title.Font = Enum.Font.GothamBold
+	title.TextWrapped = true
+	title.Parent = box
+
+	local desc = Instance.new("TextLabel")
+	desc.Size = UDim2.new(1, -20, 0, 40)
+	desc.Position = UDim2.new(0, 10, 0, 50)
+	desc.BackgroundTransparency = 1
+	desc.Text = "이전에 도달한 구역 바로 전부터 시작합니다"
+	desc.TextColor3 = Color3.fromRGB(180, 180, 200)
+	desc.TextSize = 14
+	desc.Font = Enum.Font.Gotham
+	desc.TextWrapped = true
+	desc.Parent = box
+
+	local btnYes = Instance.new("TextButton")
+	btnYes.Size = UDim2.new(0, 140, 0, 44)
+	btnYes.Position = UDim2.new(0, 20, 1, -60)
+	btnYes.BackgroundColor3 = Color3.fromRGB(60, 140, 255)
+	btnYes.Text = "✈️ 스킵해서 시작"
+	btnYes.TextColor3 = Color3.fromRGB(255, 255, 255)
+	btnYes.TextSize = 15
+	btnYes.Font = Enum.Font.GothamBold
+	btnYes.BorderSizePixel = 0
+	btnYes.Parent = box
+	Instance.new("UICorner", btnYes).CornerRadius = UDim.new(0, 8)
+
+	local btnNo = Instance.new("TextButton")
+	btnNo.Size = UDim2.new(0, 140, 0, 44)
+	btnNo.Position = UDim2.new(1, -160, 1, -60)
+	btnNo.BackgroundColor3 = Color3.fromRGB(80, 80, 100)
+	btnNo.Text = "처음부터 시작"
+	btnNo.TextColor3 = Color3.fromRGB(255, 255, 255)
+	btnNo.TextSize = 15
+	btnNo.Font = Enum.Font.GothamBold
+	btnNo.BorderSizePixel = 0
+	btnNo.Parent = box
+	Instance.new("UICorner", btnNo).CornerRadius = UDim.new(0, 8)
+
+	local function closeAndCall(skip: boolean)
+		gui:Destroy()
+		callback(skip)
+	end
+
+	btnYes.Activated:Connect(function() closeAndCall(true) end)
+	btnNo.Activated:Connect(function() closeAndCall(false) end)
+end
+
 -- 포탈 진입 안내 (서버에서 포탈 감지 시)
 RemoteEvents.PortalEnter.OnClientEvent:Connect(function()
 	print("[Client] Portal enter detected, showing powerup selection...")
@@ -265,7 +348,19 @@ RemoteEvents.PortalEnter.OnClientEvent:Connect(function()
 	-- 시작 파워업 선택 UI 표시 (캐시된 플레이어 데이터 사용)
 	startPowerupController:Show(cachedPlayerData, function(selectedPowerups)
 		print(`[Client] Starting game with {#selectedPowerups} powerups`)
-		RemoteEvents.PortalEnter:FireServer({ startPowerups = selectedPowerups })
+
+		-- Zone Skip 조건 확인 (maxZoneReached >= 2)
+		local maxZone = cachedPlayerData and cachedPlayerData.maxZoneReached or 1
+		if maxZone >= GameConstants.ZONE_SKIP.MIN_ZONE_TO_UNLOCK then
+			local skipZone = math.max(1, maxZone - 1)
+			local theme = GameConstants.ZONE_THEMES[skipZone]
+			local zoneName = theme and theme.displayName or `Zone {skipZone}`
+			_showZoneSkipPrompt(skipZone, zoneName, function(useZoneSkip)
+				RemoteEvents.PortalEnter:FireServer({ startPowerups = selectedPowerups, useZoneSkip = useZoneSkip })
+			end)
+		else
+			RemoteEvents.PortalEnter:FireServer({ startPowerups = selectedPowerups })
+		end
 	end)
 end)
 
@@ -433,6 +528,19 @@ RemoteEvents.GameStart.OnClientEvent:Connect(function(data)
 					playerController:SetSpeedMultiplier(1.0)
 				end
 			end)
+		end
+
+		-- Zone Skip: 시작 Zone이 1이 아니면 즉시 ZoneController 전환
+		local startZone = data.startZone or 1
+		if startZone > 1 then
+			local theme = GameConstants.ZONE_THEMES[startZone]
+			if theme then
+				zoneController:TransitionToZone(startZone, theme.displayName)
+				uiController:ShowGameFeedback(
+					`✈️ {theme.displayName}부터 시작!`,
+					Color3.fromRGB(100, 200, 255)
+				)
+			end
 		end
 	end)
 end)

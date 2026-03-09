@@ -147,17 +147,19 @@ function ChunkService:_loadChunkTemplates()
 	end
 end
 
--- 게임 시작
-function ChunkService:StartGame()
+-- 게임 시작 (timeOffset: Zone Skip 시 경과 시간 오프셋 (초), 기본 0)
+function ChunkService:StartGame(timeOffset: number?)
 	print("[ChunkService] StartGame called")
 
-	self._gameStartTime = tick()
+	-- timeOffset 만큼 게임 시작 시간을 앞당겨 경과 시간 계산에 반영
+	local offset = timeOffset or 0
+	self._gameStartTime = tick() - offset
 	self._activeChunks = {}
 	self._chunkCounter = 0
 	self._lastChunkEndHeight = "LOW"
 
-	-- 호흡 패턴 초기화
-	self._breathPhaseStart = tick()
+	-- 호흡 패턴 초기화 (timeOffset >= 60이면 즉시 호흡 패턴 진입)
+	self._breathPhaseStart = tick() - offset
 	self._breathIsHard = true
 	self._nextStarWaveTime = math.random(75, 90)
 	self._starWaveActive = false
