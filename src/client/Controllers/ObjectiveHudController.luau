@@ -12,13 +12,17 @@ local ResponsiveUtil = require(ReplicatedStorage.Shared.Utils.ResponsiveUtil)
 local ObjectiveHudController = {}
 ObjectiveHudController.__index = ObjectiveHudController
 
+local GameConstants = require(ReplicatedStorage.Shared.Constants.GameConstants)
+
 export type ObjectiveHudController = typeof(setmetatable(
 	{} :: {
 		_screenGui: ScreenGui?,
 		_hudFrame: Frame?,
 		_rows: { Frame },
+		_rerollButtons: { TextButton },
 		_targets: { number },
 		_connections: { RBXScriptConnection },
+		_rerollEnabled: boolean,
 	},
 	ObjectiveHudController
 ))
@@ -28,8 +32,10 @@ function ObjectiveHudController.new(): ObjectiveHudController
 		_screenGui = nil,
 		_hudFrame = nil,
 		_rows = {},
+		_rerollButtons = {},
 		_targets = {},
 		_connections = {},
+		_rerollEnabled = true,
 	}, ObjectiveHudController)
 
 	self:_createUI()
@@ -133,7 +139,7 @@ function ObjectiveHudController:_createUI()
 		local progressLabel = Instance.new("TextLabel")
 		progressLabel.Name = "Progress"
 		progressLabel.Size = UDim2.new(0, 36, 1, 0)
-		progressLabel.Position = UDim2.new(1, -38, 0, 0)
+		progressLabel.Position = UDim2.new(1, -80, 0, 0)
 		progressLabel.BackgroundTransparency = 1
 		progressLabel.TextColor3 = Color3.fromRGB(140, 200, 140)
 		progressLabel.TextSize = ResponsiveUtil.scaledTextSize(11, 9)
@@ -142,7 +148,31 @@ function ObjectiveHudController:_createUI()
 		progressLabel.TextXAlignment = Enum.TextXAlignment.Right
 		progressLabel.Parent = row
 
+		-- 리롤 버튼 (🔄 30코인)
+		local rerollBtn = Instance.new("TextButton")
+		rerollBtn.Name = "RerollBtn"
+		rerollBtn.Size = UDim2.new(0, 38, 0.8, 0)
+		rerollBtn.AnchorPoint = Vector2.new(1, 0.5)
+		rerollBtn.Position = UDim2.new(1, -2, 0.5, 0)
+		rerollBtn.BackgroundColor3 = Color3.fromRGB(60, 80, 160)
+		rerollBtn.BorderSizePixel = 0
+		rerollBtn.Text = "🔄"
+		rerollBtn.TextSize = 12
+		rerollBtn.Font = Enum.Font.GothamBold
+		rerollBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+		rerollBtn.Parent = row
+		Instance.new("UICorner", rerollBtn).CornerRadius = UDim.new(0, 4)
+
+		local capturedIndex = i
+		rerollBtn.Activated:Connect(function()
+			if not self._rerollEnabled then return end
+			RemoteEvents.RerollObjective:FireServer({ index = capturedIndex })
+			rerollBtn.BackgroundColor3 = Color3.fromRGB(40, 60, 120)
+			rerollBtn.AutoButtonColor = false
+		end)
+
 		table.insert(self._rows, row)
+		table.insert(self._rerollButtons, rerollBtn)
 	end
 
 	print("[ObjectiveHudController] UI created")
@@ -163,6 +193,44 @@ function ObjectiveHudController:_setupEventHandlers()
 		end
 	end)
 	table.insert(self._connections, progressConn)
+
+	-- Reroll 결과 수신
+	local rerollConn = RemoteEvents.RerollObjectiveResult.OnClientEvent:Connect(function(data)
+		local btn = self._rerollButtons[data.index]
+		if not btn then return end
+
+		if data.success and data.objective then
+			-- 행 갱신
+			local row = self._rows[data.index]
+			if row then
+				local descLabel = row:FindFirstChild("Desc") :: TextLabel?
+				local progressLabel = row:FindFirstChild("Progress") :: TextLabel?
+				local checkLabel = row:FindFirstChild("Check") :: TextLabel?
+				if descLabel then descLabel.Text = data.objective.desc end
+				if progressLabel then progressLabel.Text = `0/{data.objective.target}` end
+				if checkLabel then
+					checkLabel.Text = "○"
+					checkLabel.TextColor3 = Color3.fromRGB(140, 140, 200)
+				end
+				row.BackgroundColor3 = Color3.fromRGB(35, 35, 55)
+				row.BackgroundTransparency = 0.4
+				self._targets[data.index] = data.objective.target
+			end
+			-- 버튼 복구
+			btn.BackgroundColor3 = Color3.fromRGB(60, 80, 160)
+			btn.AutoButtonColor = true
+		else
+			-- 실패 시 버튼 복구 + 에러 컬러
+			btn.BackgroundColor3 = Color3.fromRGB(160, 50, 50)
+			btn.AutoButtonColor = true
+			task.delay(1, function()
+				if btn and btn.Parent then
+					btn.BackgroundColor3 = Color3.fromRGB(60, 80, 160)
+				end
+			end)
+		end
+	end)
+	table.insert(self._connections, rerollConn)
 end
 
 -- Initialize rows with objective descriptions and targets
@@ -273,10 +341,10 @@ function ObjectiveHudController:_showCompletionFlash(bonus: number?)
 	end)
 end
 
--- Show HUD at game start
+-- Show HUD at game start (리롤 버튼 활성 — 카운트다운 중 리롤 허용)
 function ObjectiveHudController:StartGame()
+	self._rerollEnabled = true
 	if self._hudFrame then
-		-- Reset border
 		local stroke = self._hudFrame:FindFirstChildOfClass("UIStroke")
 		if stroke then
 			stroke.Color = Color3.fromRGB(80, 80, 140)
@@ -284,12 +352,32 @@ function ObjectiveHudController:StartGame()
 		end
 		self._hudFrame.Visible = true
 	end
+	for _, btn in self._rerollButtons do
+		btn.Visible = true
+		btn.BackgroundColor3 = Color3.fromRGB(60, 80, 160)
+		btn.AutoButtonColor = true
+	end
+end
+
+-- 실제 게임 진행 중 리롤 비활성화 (카운트다운 끝난 후 호출)
+function ObjectiveHudController:DisableReroll()
+	self._rerollEnabled = false
+	for _, btn in self._rerollButtons do
+		btn.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+		btn.TextColor3 = Color3.fromRGB(100, 100, 100)
+	end
 end
 
 -- Hide HUD on game end or lobby
 function ObjectiveHudController:EndGame()
+	self._rerollEnabled = true
 	if self._hudFrame then
 		self._hudFrame.Visible = false
+	end
+	for _, btn in self._rerollButtons do
+		btn.BackgroundColor3 = Color3.fromRGB(60, 80, 160)
+		btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+		btn.AutoButtonColor = true
 	end
 end
 

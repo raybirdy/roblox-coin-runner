@@ -1272,6 +1272,7 @@ GameConstants.RUN_OBJECTIVES = {
 	COUNT = 3,
 	COMPLETION_BONUS_MIN = 50,
 	COMPLETION_BONUS_MAX = 80,
+	REROLL_COST = 30, -- 목표 리롤 비용 (코인)
 	POOL = {
 		{ id = "collect_coins_15",  desc = "코인 15개 수집",   condition = "coins_collected",  target = 15,   weight = 20, tier = "easy" },
 		{ id = "collect_coins_30",  desc = "코인 30개 수집",   condition = "coins_collected",  target = 30,   weight = 15, tier = "normal" },

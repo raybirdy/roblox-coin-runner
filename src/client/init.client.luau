@@ -495,6 +495,7 @@ RemoteEvents.GameStart.OnClientEvent:Connect(function(data)
 		skillController:SetGameActive(true)
 		dailyEventController:StartGame()
 		petController:StartGame()
+		objectiveHudController:DisableReroll() -- 카운트다운 후 리롤 잠금
 
 		-- 비동기 배틀 HUD (도전 모드인 경우)
 		if data.asyncBattle then

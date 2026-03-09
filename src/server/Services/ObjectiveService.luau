@@ -7,6 +7,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local GameConstants = require(ReplicatedStorage.Shared.Constants.GameConstants)
 local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)
 
+local RateLimiter = require(ReplicatedStorage.Shared.Utils.RateLimiter)
+
 local ObjectiveService = {}
 
 type Objective = {
@@ -226,6 +228,115 @@ function ObjectiveService:ClearObjectives(player: Player)
 	activeObjectives[player] = nil
 	completionBonus[player] = nil
 end
+
+-- 런 목표 리롤 (같은 tier 내 새 목표로 교체, 코인 차감)
+function ObjectiveService:RerollObjective(player: Player, index: number, playerDataService: any): (boolean, string?)
+	local objectives = activeObjectives[player]
+	if not objectives then
+		return false, "no_objectives"
+	end
+
+	local obj = objectives[index]
+	if not obj then
+		return false, "invalid_index"
+	end
+
+	-- 이미 진행 중인 목표는 리롤 불가
+	if obj.progress > 0 or obj.completed then
+		return false, "already_in_progress"
+	end
+
+	-- 코인 차감
+	local cost = GameConstants.RUN_OBJECTIVES.REROLL_COST
+	if not playerDataService:SpendCoins(player, cost) then
+		return false, "insufficient_coins"
+	end
+
+	-- 현재 사용 중인 목표 ID 수집 (리롤 대상 제외)
+	local usedIds: { [string]: boolean } = {}
+	for i, o in objectives do
+		if i ~= index then
+			usedIds[o.id] = true
+		end
+	end
+
+	-- 같은 tier에서 대안 풀 구성
+	local pool = {}
+	for _, def in GameConstants.RUN_OBJECTIVES.POOL do
+		if def.tier == obj.tier and not usedIds[def.id] and def.id ~= obj.id then
+			table.insert(pool, def)
+		end
+	end
+
+	-- fallback: tier 무관하게 사용 가능한 목표
+	if #pool == 0 then
+		for _, def in GameConstants.RUN_OBJECTIVES.POOL do
+			if not usedIds[def.id] and def.id ~= obj.id then
+				table.insert(pool, def)
+			end
+		end
+	end
+
+	if #pool == 0 then
+		-- 대안 없음 — 코인 환불
+		playerDataService:AddCoins(player, cost)
+		return false, "no_alternatives"
+	end
+
+	local pick = pickWeighted(pool)
+	if not pick then
+		playerDataService:AddCoins(player, cost)
+		return false, "no_alternatives"
+	end
+
+	objectives[index] = {
+		id = pick.id,
+		desc = pick.desc,
+		condition = pick.condition,
+		target = pick.target,
+		progress = 0,
+		completed = false,
+		tier = pick.tier,
+	}
+
+	print(`[ObjectiveService] {player.Name} rerolled objective #{index} -> {pick.id} (cost: {cost} coins)`)
+	return true, nil
+end
+
+-- 리롤 요청 핸들러
+RemoteEvents.RerollObjective.OnServerEvent:Connect(function(player: Player, data: { index: number }?)
+	if data == nil or type(data) ~= "table" or type(data.index) ~= "number" then
+		return
+	end
+	if not RateLimiter.Check(player, "RerollObjective", 5) then
+		return
+	end
+
+	local PlayerDataService = require(script.Parent.PlayerDataService)
+	local success, err = ObjectiveService:RerollObjective(player, data.index, PlayerDataService)
+
+	local newObj = nil
+	if success then
+		local objectives = activeObjectives[player]
+		local obj = objectives and objectives[data.index]
+		if obj then
+			newObj = { id = obj.id, desc = obj.desc, target = obj.target }
+		end
+
+		-- 잔액 업데이트 클라이언트 전송
+		local pData = PlayerDataService:GetPlayerData(player)
+		if pData then
+			RemoteEvents.PlayerDataLoaded:FireClient(player, pData)
+		end
+	end
+
+	RemoteEvents.RerollObjectiveResult:FireClient(player, {
+		success = success,
+		index = data.index,
+		objective = newObj,
+		error = err,
+	})
+end)
 
 print("[ObjectiveService] Initialized")
 
