@@ -478,6 +478,28 @@ RemoteEvents.PetPurchaseResult = getOrCreateRemoteEvent("PetPurchaseResult")
 RemoteEvents.EquipPet = getOrCreateRemoteEvent("EquipPet")
 -- 파라미터: { petId: string }
 
+-- 펫 레벨업 요청 (클라이언트 → 서버)
+RemoteEvents.PetLevelUp = getOrCreateRemoteEvent("PetLevelUp")
+-- 파라미터: { petId: string }
+
+-- 펫 레벨업 결과 (서버 → 클라이언트)
+RemoteEvents.PetLevelUpResult = getOrCreateRemoteEvent("PetLevelUpResult")
+-- 파라미터: { success: boolean, petId: string?, newLevel: number?, newBalance: number?, error: string? }
+
+-- ==================== 이름표 ====================
+
+-- 이름표 아이템 구매 (클라이언트 → 서버)
+RemoteEvents.NametagPurchase = getOrCreateRemoteEvent("NametagPurchase")
+-- 파라미터: { itemId: string }
+
+-- 이름표 구매 결과 (서버 → 클라이언트)
+RemoteEvents.NametagPurchaseResult = getOrCreateRemoteEvent("NametagPurchaseResult")
+-- 파라미터: { success: boolean, itemId: string?, newBalance: number?, error: string? }
+
+-- 이름표 데이터 (서버 → 클라이언트)
+RemoteEvents.NametagData = getOrCreateRemoteEvent("NametagData")
+-- 파라미터: { color: string?, font: string?, frame: string? }
+
 -- ==================== 스토리 자막 ====================
 
 -- 런 중 NPC 스토리 자막 표시 (서버 → 클라이언트)

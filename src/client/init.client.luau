@@ -96,6 +96,7 @@ local RealtimeBattleController = require(script.Controllers.RealtimeBattleContro
 local DailyEventController = require(script.Controllers.DailyEventController)
 local ObjectiveHudController = require(script.Controllers.ObjectiveHudController)
 local PetController = require(script.Controllers.PetController)
+local NametagController = require(script.Controllers.NametagController)
 local CoinKingController = require(script.Controllers.CoinKingController)
 local CoinSpinController = require(script.Controllers.CoinSpinController)
 
@@ -132,6 +133,7 @@ local realtimeBattleController = RealtimeBattleController.new(player)
 local dailyEventController = DailyEventController.new(player)
 local objectiveHudController = ObjectiveHudController.new()
 local petController = PetController.new()
+local _nametagController = NametagController.new(player)
 local coinKingController = CoinKingController.new()
 local _coinSpinController = CoinSpinController.new()
 

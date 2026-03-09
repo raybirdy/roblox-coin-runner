@@ -1242,17 +1242,17 @@ GameConstants.UPGRADES = {
 			id = "magnet_range",
 			displayName = "자석 범위",
 			desc = "자석 흡수 범위가 넓어집니다",
-			maxLevel = 5,
-			costs = { 100, 200, 400, 800, 1600 },
-			values = { 2, 4, 6, 8, 10 }, -- 누적 보너스 studs
+			maxLevel = 8,
+			costs = { 100, 200, 400, 800, 1600, 3200, 6400, 12800 },
+			values = { 2, 4, 6, 8, 10, 12, 14, 16 }, -- 누적 보너스 studs
 		},
 		{
 			id = "coin_value",
 			displayName = "코인 가치",
 			desc = "코인 획득 점수가 올라갑니다",
-			maxLevel = 5,
-			costs = { 200, 500, 1200, 2500, 5000 },
-			values = { 5, 10, 15, 22, 30 }, -- 누적 % 증가
+			maxLevel = 8,
+			costs = { 200, 500, 1200, 2500, 5000, 10000, 20000, 40000 },
+			values = { 5, 10, 15, 22, 30, 40, 50, 60 }, -- 누적 % 증가
 		},
 		{
 			id = "easy_start",
@@ -1274,9 +1274,9 @@ GameConstants.UPGRADES = {
 			id = "lucky_coins",
 			displayName = "행운 코인",
 			desc = "실버 코인이 더 자주 등장합니다",
-			maxLevel = 5,
-			costs = { 250, 600, 1400, 3000, 6000 },
-			values = { 5, 10, 15, 22, 30 }, -- 누적 % 확률 증가
+			maxLevel = 8,
+			costs = { 250, 600, 1400, 3000, 6000, 12000, 24000, 48000 },
+			values = { 5, 10, 15, 22, 30, 38, 46, 54 }, -- 누적 % 확률 증가
 		},
 		{
 			id = "combo_buffer",
@@ -1433,5 +1433,24 @@ GameConstants.PETS = {
 		},
 	},
 }
+
+-- 이름표 시스템
+GameConstants.NAMETAG = {
+	ITEMS = {
+		{ id = "color_pink", category = "color", name = "핑크", price = 500, color = Color3.fromRGB(255, 150, 200) },
+		{ id = "color_gold", category = "color", name = "골드", price = 500, color = Color3.fromRGB(255, 215, 0) },
+		{ id = "color_cyan", category = "color", name = "하늘", price = 500, color = Color3.fromRGB(0, 200, 255) },
+		{ id = "font_bold", category = "font", name = "볼드", price = 800 },
+		{ id = "font_retro", category = "font", name = "레트로", price = 800 },
+		{ id = "frame_star", category = "frame", name = "별 프레임", price = 1200 },
+		{ id = "frame_heart", category = "frame", name = "하트 프레임", price = 1200 },
+	},
+}
+
+-- 펫 레벨업 시스템 (레벨 1~5, 기본 레벨 1)
+GameConstants.PETS.LEVEL_COSTS = { 200, 500, 1200, 3000, 7000 } -- Lv1->2, 2->3, ... 4->5
+GameConstants.PETS.MAX_PET_LEVEL = 5
+GameConstants.PETS.LEVEL_COIN_BONUS = 0.02 -- 레벨당 coinBonus +0.02 (누적)
+GameConstants.PETS.LEVEL_MAGNET_BONUS = 0.5 -- 레벨당 magnetBonus +0.5 studs (누적)
 
 return GameConstants
