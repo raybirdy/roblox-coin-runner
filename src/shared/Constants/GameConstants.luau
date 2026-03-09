@@ -148,15 +148,15 @@ GameConstants.OBSTACLE = {
 -- 추격 NPC (Chase Mob) — 60초 이후 Hard 청크에서 등장
 -- 플레이어 뒤에서 따라오며, 피버 속도로 따돌릴 수 있음
 GameConstants.CHASE_MOB = {
-	SPAWN_CHANCE = 0.15, -- Hard 청크에서 15% 확률
-	MIN_TIME = 60, -- 60초 이후부터 등장 가능
+	SPAWN_CHANCE = 0.25, -- Hard 청크에서 25% 확률 (0.15→0.25, 더 자주 등장)
+	MIN_TIME = 40, -- 40초 이후부터 등장 가능 (60→40, 일찍 등장)
 	SPAWN_OFFSET_X = -20, -- 플레이어 뒤 20 studs에서 스폰
-	SPEED_OFFSET = -8, -- 플레이어 추정 속도보다 8 studs/s 느림 (따라잡힐 위협)
+	SPEED_OFFSET = -6, -- 플레이어 추정 속도보다 6 studs/s 느림 (-8→-6, 조금 더 위협적)
 	CATCH_DISTANCE = 3, -- 이 거리 이하 접근 시 피격
 	ESCAPE_DISTANCE = 40, -- 이 거리 이상 벌어지면 사라짐 (피버 탈출)
 	DURATION = 8, -- 최대 8초 후 자동 사라짐
 	COLOR = Color3.fromRGB(220, 60, 60), -- 빨간 미니언 색상
-	SIZE = Vector3.new(2, 2, 2), -- 정육면체 크기
+	SIZE = Vector3.new(3, 4, 3), -- 몸통 크기 (2,2,2→3,4,3, 더 위협적인 외형)
 	UPDATE_INTERVAL = 0.1, -- 위치 업데이트 간격 (초)
 }
 
