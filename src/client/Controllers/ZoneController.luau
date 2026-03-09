@@ -89,6 +89,9 @@ function ZoneController:TransitionToZone(zoneIndex: number, displayName: string)
 	local lightingTween = TweenService:Create(Lighting, tweenInfo, {
 		OutdoorAmbient = theme.skyAmbient,
 		ClockTime = theme.clockTime,
+		FogColor = theme.fogColor,
+		FogStart = theme.fogStart,
+		FogEnd = theme.fogEnd,
 	})
 	lightingTween:Play()
 
@@ -142,6 +145,9 @@ function ZoneController:ResetToDefault()
 	local lightingTween = TweenService:Create(Lighting, tweenInfo, {
 		OutdoorAmbient = defaultTheme.skyAmbient,
 		ClockTime = defaultTheme.clockTime,
+		FogColor = defaultTheme.fogColor,
+		FogStart = defaultTheme.fogStart,
+		FogEnd = defaultTheme.fogEnd,
 	})
 	lightingTween:Play()
 
