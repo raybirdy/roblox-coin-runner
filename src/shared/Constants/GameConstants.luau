@@ -489,25 +489,31 @@ GameConstants.SHOP = {
 			material = "Metal",
 			trail = false,
 		},
-		-- 시즌 한정 스킨 (TODO: 스킨 콘텐츠 준비 후 활성화)
-		-- {
-		-- 	id = "cherry_blossom",
-		-- 	name = "벚꽃",
-		-- 	price = 150,
-		-- 	currency = "gems",
-		-- 	color = Color3.fromRGB(255, 183, 197),
-		-- 	thumbnailId = "rbxassetid://3535936633",
-		-- 	availableUntil = 0, -- 배포 시 실제 날짜로 교체
-		-- },
-		-- {
-		-- 	id = "spring_fairy",
-		-- 	name = "봄 요정",
-		-- 	price = 0,
-		-- 	currency = "pieces",
-		-- 	color = Color3.fromRGB(144, 238, 144),
-		-- 	thumbnailId = "rbxassetid://3535936812",
-		-- 	availableUntil = 0, -- 배포 시 실제 날짜로 교체
-		-- },
+		-- 시즌 한정 스킨 (봄 2026 시즌, ~2026-04-30)
+		{
+			id = "cherry_blossom",
+			name = "벚꽃",
+			price = 150,
+			currency = "gems",
+			color = Color3.fromRGB(255, 183, 197),
+			thumbnailId = "rbxassetid://3535936633",
+			material = "SmoothPlastic",
+			trail = true,
+			trailColor = Color3.fromRGB(255, 160, 200),
+			availableUntil = os.time({ year = 2026, month = 4, day = 30, hour = 23, min = 59, sec = 59 }),
+		},
+		{
+			id = "spring_fairy",
+			name = "봄 요정",
+			price = 0,
+			currency = "pieces",
+			color = Color3.fromRGB(144, 238, 144),
+			thumbnailId = "rbxassetid://3535936812",
+			material = "Neon",
+			trail = true,
+			trailColor = Color3.fromRGB(100, 255, 150),
+			availableUntil = os.time({ year = 2026, month = 4, day = 30, hour = 23, min = 59, sec = 59 }),
+		},
 	},
 	-- 시작 파워업 (코인)
 	START_POWERUPS = {
