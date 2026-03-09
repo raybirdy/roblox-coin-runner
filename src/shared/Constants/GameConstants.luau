@@ -1056,18 +1056,18 @@ GameConstants.ZONE_SKIP = {
 -- 이벤트 청크
 GameConstants.EVENT_CHUNKS = {
 	COIN_RUSH = {
-		MIN_TIME = 90, -- 90초 이후 출현 가능
-		CHANCE = 0.05, -- 청크당 5% 확률
+		MIN_TIME = 45, -- 45초 이후 출현 가능 (90→45, 초보 유저도 경험)
+		CHANCE = 0.10, -- 청크당 10% 확률 (5%→10%)
 		COIN_COUNT = 30, -- 코인 대량 배치
 	},
 	GIANT_COIN = {
-		MIN_TIME = 120, -- 120초 이후
-		CHANCE = 0.03, -- 3% 확률
+		MIN_TIME = 60, -- 60초 이후 (120→60)
+		CHANCE = 0.06, -- 6% 확률 (3%→6%)
 		REWARD = 100, -- 획득 시 100점
 		HEIGHT = 12, -- 높은 위치 (2단 점프 필요)
 		SIZE = 8, -- 일반 코인의 ~4배 크기
 	},
-	COOLDOWN = 30, -- 이벤트 간 최소 간격 (초)
+	COOLDOWN = 20, -- 이벤트 간 최소 간격 (초) (30→20)
 }
 
 -- ==================== 재미 요소 강화 ====================
