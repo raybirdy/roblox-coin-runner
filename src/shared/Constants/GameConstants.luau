@@ -1047,6 +1047,12 @@ GameConstants.ZONE_THEMES = {
 	},
 }
 
+-- Zone Skip Start (챕터 진행 반영)
+GameConstants.ZONE_SKIP = {
+	MIN_ZONE_TO_UNLOCK = 2, -- maxZoneReached >= 2 이상이어야 스킵 옵션 활성화
+	-- skipToZone = math.max(1, maxZoneReached - 1) 로 계산
+}
+
 -- 이벤트 청크
 GameConstants.EVENT_CHUNKS = {
 	COIN_RUSH = {

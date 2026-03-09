@@ -185,12 +185,26 @@ local function setupPortalDetection()
 end
 
 -- 포탈 터치 후 게임 시작 요청
-RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { startPowerups: { string }? }?)
+RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { startPowerups: { string }?, useZoneSkip: boolean? }?)
 	print(`[GameManager] Portal enter confirmed by {player.Name}`)
 
 	-- 입력 검증 (data는 nil 허용)
 	if data ~= nil and type(data) ~= "table" then
 		return
+	end
+
+	-- Zone Skip Start 계산
+	local skipToZone = 1
+	local timeOffset = 0
+	if data and data.useZoneSkip == true then
+		local pData = PlayerDataService:GetPlayerData(player)
+		local maxZone = pData and pData.maxZoneReached or 1
+		if maxZone >= GameConstants.ZONE_SKIP.MIN_ZONE_TO_UNLOCK then
+			skipToZone = math.max(1, maxZone - 1)
+			local theme = GameConstants.ZONE_THEMES[skipToZone]
+			timeOffset = theme and theme.startTime or 0
+			print(`[GameManager] Zone Skip: {player.Name} starting at Zone {skipToZone} (offset {timeOffset}s)`)
+		end
 	end
 
 	-- 시작 파워업 검증 및 사용
@@ -273,7 +287,7 @@ RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { 
 		lastHitDistance = 0,
 		perfectRunAwarded = {},
 		bonusScore = 0,
-		currentZoneIndex = 1,
+		currentZoneIndex = skipToZone,
 		lastEventTime = 0,
 		nearMissCount = 0,
 		maxCombo = 0,
@@ -316,17 +330,17 @@ RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { 
 	-- 배경 서비스 시작
 	backgroundService:StartGame()
 
-	-- 청크 서비스 시작
-	chunkService:StartGame()
+	-- 청크 서비스 시작 (Zone Skip 오프셋 적용)
+	chunkService:StartGame(timeOffset)
 
-	-- 파워업 서비스 시작
-	powerupService:StartGame()
+	-- 파워업 서비스 시작 (Zone Skip 오프셋 적용)
+	powerupService:StartGame(timeOffset)
 
-	-- 장애물 서비스: 게임 시작 시간 설정 (Chase Mob MIN_TIME 판단용)
-	obstacleService:SetGameStartTime(tick())
+	-- 장애물 서비스: 게임 시작 시간 설정 (Zone Skip 오프셋 적용)
+	obstacleService:SetGameStartTime(tick(), timeOffset)
 
-	-- Initial zone setup
-	chunkService:SetCurrentZone(1)
+	-- Zone 설정 (Zone Skip 적용)
+	chunkService:SetCurrentZone(skipToZone)
 
 	-- 시작 파워업 적용
 	for _, powerupId in validPowerups do
@@ -364,9 +378,10 @@ RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { 
 		unlockedSkills = unlockedSkills,
 		dailyEventTheme = DailyEventService:GetTodayTheme(),
 		startBoostSeconds = upgBonuses1.startBoostSeconds,
+		startZone = skipToZone, -- Zone Skip: 클라이언트 ZoneController 즉시 전환용
 	})
 
-	print(`[GameManager] Game started for {player.Name} via portal`)
+	print(`[GameManager] Game started for {player.Name} via portal (zone {skipToZone})`)
 end)
 
 -- 로비 복귀 처리
@@ -698,6 +713,16 @@ function GameManager.EndGame(player: Player)
 		or session.startPosition.X
 	)
 	local distance = math.max(0, math.floor(currentX - session.startPosition.X))
+
+	-- maxZoneReached 업데이트 (저장 전에 갱신)
+	local playerDataForZone = PlayerDataService:GetPlayerData(player)
+	if playerDataForZone then
+		local currentMax = playerDataForZone.maxZoneReached or 1
+		if session.currentZoneIndex > currentMax then
+			playerDataForZone.maxZoneReached = session.currentZoneIndex
+			print(`[GameManager] maxZoneReached updated: {currentMax} -> {session.currentZoneIndex} for {player.Name}`)
+		end
+	end
 
 	-- 플레이어 데이터 업데이트 및 저장
 	PlayerDataService:OnGameEnd(player, finalScore, earnedCoins, distance)

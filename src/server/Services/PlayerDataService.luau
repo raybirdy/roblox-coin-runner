@@ -69,6 +69,8 @@ type PlayerData = {
 	-- 펫 시스템
 	ownedPets: { string },
 	equippedPet: string,
+	-- Zone Skip Start
+	maxZoneReached: number, -- 이번까지 도달한 최대 Zone 인덱스
 }
 
 local DEFAULT_DATA: PlayerData = {
@@ -119,6 +121,8 @@ local DEFAULT_DATA: PlayerData = {
 	-- 펫 시스템
 	ownedPets = { "chick" },
 	equippedPet = "chick",
+	-- Zone Skip Start
+	maxZoneReached = 1,
 }
 
 -- 메모리 캐시 (활성 플레이어)
@@ -804,6 +808,7 @@ VALID_KEYS["skinPieces"] = true
 VALID_KEYS["dailyEventDate"] = true
 VALID_KEYS["ownedPets"] = true
 VALID_KEYS["equippedPet"] = true
+VALID_KEYS["maxZoneReached"] = true
 
 -- 유틸리티: 기본값 병합
 function PlayerDataService:_mergeWithDefaults(data: any): PlayerData

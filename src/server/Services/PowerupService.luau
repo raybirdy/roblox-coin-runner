@@ -56,9 +56,9 @@ function PowerupService.new(player: Player): PowerupService
 	return self
 end
 
--- 게임 시작 시 호출
-function PowerupService:StartGame()
-	self._gameStartTime = tick()
+-- 게임 시작 시 호출 (timeOffset: Zone Skip 오프셋)
+function PowerupService:StartGame(timeOffset: number?)
+	self._gameStartTime = tick() - (timeOffset or 0)
 	self._lastSpawnTime = 0
 end
 

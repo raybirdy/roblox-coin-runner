@@ -54,9 +54,9 @@ function ObstacleService.new(player: Player): ObstacleService
 	return self
 end
 
--- 게임 시작 시간 설정 (GameManager에서 호출)
-function ObstacleService:SetGameStartTime(startTime: number)
-	self._gameStartTime = startTime
+-- 게임 시작 시간 설정 (GameManager에서 호출, timeOffset: Zone Skip 오프셋)
+function ObstacleService:SetGameStartTime(startTime: number, timeOffset: number?)
+	self._gameStartTime = startTime - (timeOffset or 0)
 end
 
 -- 현재 구역 설정 (ChunkService에서 Zone 전환 시 호출)
