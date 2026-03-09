@@ -123,6 +123,8 @@ type GameSession = {
 	upgradeBonuses: UpgradeBonuses,
 	-- 보스 조우 연출
 	_bossDialogueFired: boolean,
+	-- VIP 혜택
+	vipFreeReviveUsed: boolean, -- 이번 런 무료 부활 사용 여부
 }
 
 local activeSessions: { [Player]: GameSession } = {}
@@ -270,7 +272,8 @@ RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { 
 		startPosition = startPosition,
 		score = 0,
 		coins = 0,
-		lives = GameConstants.LIFE.STARTING_LIVES + statBonuses.maxLives,
+		lives = GameConstants.LIFE.STARTING_LIVES + statBonuses.maxLives
+			+ (if PlayerDataService:HasVIP(player) then GameConstants.MONETIZATION.VIP_BENEFITS.extraLife else 0),
 		reviveCount = 0,
 		startPowerups = validPowerups,
 		comboCount = 0,
@@ -309,6 +312,7 @@ RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { 
 		lastEventProgressTime = 0,
 		upgradeBonuses = upgBonuses1,
 		_bossDialogueFired = false,
+		vipFreeReviveUsed = false,
 	}
 
 	activeSessions[player] = session
@@ -520,7 +524,8 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 		startPosition = startPosition,
 		score = 0,
 		coins = 0,
-		lives = GameConstants.LIFE.STARTING_LIVES + statBonuses.maxLives,
+		lives = GameConstants.LIFE.STARTING_LIVES + statBonuses.maxLives
+			+ (if PlayerDataService:HasVIP(player) then GameConstants.MONETIZATION.VIP_BENEFITS.extraLife else 0),
 		reviveCount = 0,
 		comboCount = 0,
 		lastCoinTime = 0,
@@ -559,6 +564,7 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 		lastEventProgressTime = 0,
 		upgradeBonuses = upgBonuses2,
 		_bossDialogueFired = false,
+		vipFreeReviveUsed = false,
 	}
 
 	activeSessions[player] = session
@@ -645,16 +651,26 @@ RemoteEvents.Revive.OnServerEvent:Connect(function(player: Player)
 		return
 	end
 
-	-- 부활 횟수 체크
-	if session.reviveCount >= GameConstants.REVIVE.MAX_REVIVES then
+	-- VIP 무료 부활 체크 (런당 1회, 재화 미소모)
+	local isVIP = PlayerDataService:HasVIP(player)
+	local vipFreeRevive = isVIP
+		and GameConstants.MONETIZATION.VIP_BENEFITS.freeRevive
+		and not session.vipFreeReviveUsed
+
+	-- 부활 횟수 체크 (VIP 무료 부활은 횟수 제한 우회)
+	if session.reviveCount >= GameConstants.REVIVE.MAX_REVIVES and not vipFreeRevive then
 		print(`[GameManager] {player.Name} has no revives left`)
 		RemoteEvents.Revive:FireClient(player, { success = false, reason = "no_revives" })
 		return
 	end
 
-	-- 부활 재화 차감: 부활권 우선 → 젬 차감
+	-- 부활 재화 차감: VIP 무료 → 부활권 → 젬
 	local reviveMethod = "none"
-	if PlayerDataService:UseReviveTicket(player) then
+	if vipFreeRevive then
+		reviveMethod = "vip_free"
+		session.vipFreeReviveUsed = true
+		print(`[GameManager] {player.Name} used VIP free revive`)
+	elseif PlayerDataService:UseReviveTicket(player) then
 		reviveMethod = "ticket"
 		print(`[GameManager] {player.Name} used revive ticket`)
 	elseif PlayerDataService:SpendGems(player, GameConstants.SHOP.REVIVE_GEM_COST) then
