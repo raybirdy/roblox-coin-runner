@@ -5,6 +5,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local GameConstants = require(ReplicatedStorage.Shared.Constants.GameConstants)
+local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)
 
 local ObstacleService = {}
 ObstacleService.__index = ObstacleService
@@ -78,47 +79,114 @@ end
 -- Chase Mob 스폰 (플레이어 위치 기준으로 즉시 생성)
 function ObstacleService:SpawnChaseMob(playerPosition: Vector3)
 	local cfg = GameConstants.CHASE_MOB
-
-	-- Chase Mob 파트 생성
-	local mobPart = Instance.new("Part")
-	mobPart.Name = "Obstacle_ChaseMob"
-	mobPart.Size = cfg.SIZE
-	-- 플레이어 뒤 20 studs, 지면 위
-	mobPart.Position = Vector3.new(
+	local spawnPos = Vector3.new(
 		playerPosition.X + cfg.SPAWN_OFFSET_X,
 		playerPosition.Y,
 		playerPosition.Z
 	)
-	mobPart.Color = cfg.COLOR
-	mobPart.Material = Enum.Material.SmoothPlastic
-	mobPart.Anchored = true
-	mobPart.CanCollide = false
-	mobPart:SetAttribute("ObstacleType", "ChaseMob")
-	mobPart.Parent = workspace
 
-	-- 추격 NPC BillboardGui 라벨
+	-- 몸통 (Anchored = 위치 추적/충돌 기준)
+	local mobBody = Instance.new("Part")
+	mobBody.Name = "Obstacle_ChaseMob"
+	mobBody.Size = cfg.SIZE -- 3×4×3
+	mobBody.Position = spawnPos
+	mobBody.Color = cfg.COLOR
+	mobBody.Material = Enum.Material.SmoothPlastic
+	mobBody.Anchored = true
+	mobBody.CanCollide = false
+	mobBody:SetAttribute("ObstacleType", "ChaseMob")
+	mobBody.Parent = workspace
+
+	-- 머리 (공 모양)
+	local mobHead = Instance.new("Part")
+	mobHead.Name = "ChaseMobHead"
+	mobHead.Shape = Enum.PartType.Ball
+	mobHead.Size = Vector3.new(2.5, 2.5, 2.5)
+	mobHead.Color = cfg.COLOR
+	mobHead.Material = Enum.Material.SmoothPlastic
+	mobHead.Anchored = false
+	mobHead.CanCollide = false
+	mobHead.Position = spawnPos + Vector3.new(0, cfg.SIZE.Y / 2 + 1.25, 0)
+	mobHead.Parent = workspace
+
+	local headWeld = Instance.new("WeldConstraint")
+	headWeld.Part0 = mobBody
+	headWeld.Part1 = mobHead
+	headWeld.Parent = mobBody
+
+	-- 눈 (흰색 구 2개)
+	for _, xOff in { -0.55, 0.55 } do
+		local eye = Instance.new("Part")
+		eye.Name = "ChaseMobEye"
+		eye.Shape = Enum.PartType.Ball
+		eye.Size = Vector3.new(0.5, 0.5, 0.5)
+		eye.Color = Color3.fromRGB(255, 255, 255)
+		eye.Material = Enum.Material.Neon
+		eye.Anchored = false
+		eye.CanCollide = false
+		eye.Position = spawnPos + Vector3.new(xOff, cfg.SIZE.Y / 2 + 1.5, -1.1)
+		eye.Parent = workspace
+
+		local eyeWeld = Instance.new("WeldConstraint")
+		eyeWeld.Part0 = mobBody
+		eyeWeld.Part1 = eye
+		eyeWeld.Parent = mobBody
+	end
+
+	-- PointLight (위협감 강조)
+	local light = Instance.new("PointLight")
+	light.Color = Color3.fromRGB(255, 80, 80)
+	light.Brightness = 3
+	light.Range = 12
+	light.Parent = mobBody
+
+	-- BillboardGui 라벨 (경고 아이콘)
 	local billboard = Instance.new("BillboardGui")
 	billboard.Name = "ChaseMobLabel"
-	billboard.Size = UDim2.new(0, 60, 0, 60)
-	billboard.StudsOffset = Vector3.new(0, 2, 0)
+	billboard.Size = UDim2.new(0, 70, 0, 70)
+	billboard.StudsOffset = Vector3.new(0, cfg.SIZE.Y / 2 + 3.5, 0)
 	billboard.AlwaysOnTop = false
-	billboard.Parent = mobPart
+	billboard.Parent = mobBody
 
 	local icon = Instance.new("TextLabel")
 	icon.Size = UDim2.new(1, 0, 1, 0)
 	icon.BackgroundTransparency = 1
-	icon.Text = "🦊"
+	icon.Text = "😈"
 	icon.TextScaled = true
 	icon.Parent = billboard
 
+	-- 색상 펄스 애니메이션 (빨강 ↔ 어두운 빨강 반복)
+	task.defer(function()
+		local pulseColor = Color3.fromRGB(255, 30, 30)
+		local baseColor = cfg.COLOR
+		while mobBody and mobBody.Parent do
+			TweenService:Create(
+				mobBody,
+				TweenInfo.new(0.35, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+				{ Color = pulseColor }
+			):Play()
+			task.wait(0.35)
+			if not mobBody or not mobBody.Parent then break end
+			TweenService:Create(
+				mobBody,
+				TweenInfo.new(0.35, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+				{ Color = baseColor }
+			):Play()
+			task.wait(0.35)
+		end
+	end)
+
+	-- 클라이언트에 경고 알림 전송
+	RemoteEvents.ChaseMobWarning:FireClient(self._player)
+
 	local mobData: ChaseMobData = {
-		part = mobPart,
+		part = mobBody,
 		label = billboard,
 		spawnTime = tick(),
 		lastUpdateTime = tick(),
 	}
 	table.insert(self._activeChaseMobs, mobData)
-	print(`[ObstacleService] Spawned ChaseMob behind {self._player.Name} at {mobPart.Position}`)
+	print(`[ObstacleService] Spawned ChaseMob behind {self._player.Name} at {mobBody.Position}`)
 end
 
 -- Chase Mob 위치 업데이트 (GameManager Heartbeat에서 호출)

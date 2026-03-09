@@ -743,6 +743,12 @@ RemoteEvents.HitRushStart.OnClientEvent:Connect(function(data)
 	end)
 end)
 
+-- 추격자 등장 경고 (화면 빨간 플래시 + 피드백)
+RemoteEvents.ChaseMobWarning.OnClientEvent:Connect(function()
+	uiController:ShowGameFeedback("⚠️ 추격자 출현!", Color3.fromRGB(255, 60, 60))
+	cameraController:Shake(0.4)
+end)
+
 -- Phase B: 이벤트 청크 알림
 RemoteEvents.EventChunkAlert.OnClientEvent:Connect(function(data)
 	if data.eventType == "CoinRush" then

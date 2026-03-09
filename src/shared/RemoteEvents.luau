@@ -489,4 +489,10 @@ RemoteEvents.StorySubtitle = getOrCreateRemoteEvent("StorySubtitle")
 RemoteEvents.BossDialogue = getOrCreateRemoteEvent("BossDialogue")
 -- 파라미터: { characterId: string, text: string, isVillain: boolean }
 
+-- ==================== 추격자 ====================
+
+-- 추격자 등장 경고 (서버 → 클라이언트)
+RemoteEvents.ChaseMobWarning = getOrCreateRemoteEvent("ChaseMobWarning")
+-- 파라미터: (없음) - 등장 시 경고음/화면 플래시 재생
+
 return RemoteEvents
