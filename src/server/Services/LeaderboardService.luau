@@ -11,6 +11,11 @@ local RateLimiter = require(ReplicatedStorage.Shared.Utils.RateLimiter)
 
 local LeaderboardService = {}
 
+-- 개발자 UserId 목록 (리더보드 기록/표시 제외)
+local DEVELOPER_USER_IDS: { [number]: boolean } = {
+	[10329999799] = true,
+}
+
 -- OrderedDataStore (Studio에서는 사용 불가)
 local highScoreStore = nil
 local dailyScoreStore = nil
@@ -30,6 +35,31 @@ if not initSuccess then
 	warn("[LeaderboardService] OrderedDataStore unavailable (Studio mode): " .. tostring(initErr))
 end
 
+-- 서버 시작 시 개발자 기록을 DataStore에서 제거
+local function removeDeveloperScores()
+	if not highScoreStore then
+		return
+	end
+	for userId in DEVELOPER_USER_IDS do
+		pcall(function()
+			highScoreStore:RemoveAsync(userId)
+		end)
+		if dailyScoreStore then
+			pcall(function()
+				dailyScoreStore:RemoveAsync(userId)
+			end)
+		end
+		if weeklyScoreStore then
+			pcall(function()
+				weeklyScoreStore:RemoveAsync(userId)
+			end)
+		end
+		print(`[LeaderboardService] Removed developer scores for UserId {userId}`)
+	end
+end
+
+task.spawn(removeDeveloperScores)
+
 -- 캐시된 리더보드 데이터 (탭별)
 type LeaderboardEntry = { rank: number, name: string, score: number }
 local cachedLeaderboards: { [string]: { LeaderboardEntry } } = {
@@ -44,6 +74,12 @@ local CACHE_DURATION = 30 -- 30초마다 갱신
 function LeaderboardService:UpdateScore(player: Player, score: number)
 	if not highScoreStore then
 		print("[LeaderboardService] Studio mode - skipping score update")
+		return
+	end
+
+	-- 개발자는 리더보드에 기록하지 않음
+	if DEVELOPER_USER_IDS[player.UserId] then
+		print(`[LeaderboardService] Developer {player.Name} excluded from leaderboard`)
 		return
 	end
 
@@ -135,14 +171,22 @@ function LeaderboardService:GetLeaderboard(count: number?, tab: string?): { Lead
 
 	local data = pages:GetCurrentPage()
 
-	for rank, entry in ipairs(data) do
-		local userId = entry.key
+	local displayRank = 0
+	for _, entry in ipairs(data) do
+		local userId = tonumber(entry.key) or 0
 		local score = entry.value
+
+		-- 개발자 제외
+		if DEVELOPER_USER_IDS[userId] then
+			continue
+		end
+
+		displayRank += 1
 
 		-- 플레이어 이름 가져오기
 		local playerName = "Player"
 		local nameSuccess, name = pcall(function()
-			return Players:GetNameFromUserIdAsync(tonumber(userId) or 0)
+			return Players:GetNameFromUserIdAsync(userId)
 		end)
 
 		if nameSuccess and name then
@@ -150,7 +194,7 @@ function LeaderboardService:GetLeaderboard(count: number?, tab: string?): { Lead
 		end
 
 		table.insert(leaderboard, {
-			rank = rank,
+			rank = displayRank,
 			name = playerName,
 			score = score,
 		})
