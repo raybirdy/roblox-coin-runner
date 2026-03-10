@@ -1177,6 +1177,7 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 						duration = feverDuration,
 						speedBoost = GameConstants.FEVER.SPEED_BOOST,
 					})
+					ProgressionService:AddXP(player, GameConstants.LEVEL.XP_PER_FEVER)
 					print(`[GameManager] FEVER MODE activated for {player.Name}!`)
 				end
 			end

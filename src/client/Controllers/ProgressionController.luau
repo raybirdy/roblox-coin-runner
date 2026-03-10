@@ -682,7 +682,7 @@ function ProgressionController:_setupEventHandlers()
 
 	-- 레벨업
 	local lvlConn = RemoteEvents.LevelUp.OnClientEvent:Connect(function(data)
-		self:_showLevelUpNotification(data.newLevel, data.rewards)
+		self:_showLevelUpNotification(data.newLevel, data.rewards, data.title)
 	end)
 	table.insert(self._connections, lvlConn)
 
@@ -973,12 +973,24 @@ end
 
 -- ==================== 알림 ====================
 
-function ProgressionController:_showLevelUpNotification(level: number, rewards: { coins: number, gems: number? })
+function ProgressionController:_showLevelUpNotification(level: number, rewards: { coins: number, gems: number? }, title: string?)
+	local rewardText = if rewards.gems then `+{rewards.coins} 코인, +{rewards.gems} 💎` else `+{rewards.coins} 코인!`
 	self:_queueNotification({
 		title = `레벨업! Lv.{level}`,
-		desc = if rewards.gems then `+{rewards.coins} 코인, +{rewards.gems} 💎` else `+{rewards.coins} 코인!`,
+		desc = rewardText,
 		color = Color3.fromRGB(100, 200, 255),
 	})
+	-- 칭호 해금 시 추가 알림
+	if title then
+		-- 10레벨 구간 칭호 해금 여부 확인 (minLevel % 10 == 0)
+		if level % 10 == 0 or level == 1 then
+			self:_queueNotification({
+				title = `칭호 해금!`,
+				desc = `"${title}"`,
+				color = Color3.fromRGB(255, 200, 50),
+			})
+		end
+	end
 end
 
 function ProgressionController:_showAchievementNotification(data: { name: string, desc: string, rewardGems: number })

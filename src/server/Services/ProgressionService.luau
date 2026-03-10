@@ -13,13 +13,28 @@ local ProgressionService = {}
 
 -- ==================== 레벨 시스템 ====================
 
--- 다음 레벨까지 필요한 XP 반환
+-- 다음 레벨까지 필요한 XP 반환 (Lv21+는 동적 공식)
 function ProgressionService:GetXPToNextLevel(level: number): number
-	local xpTable = GameConstants.LEVEL.XP_TABLE
 	if level >= GameConstants.LEVEL.MAX_LEVEL then
 		return 0 -- 만렙
 	end
-	return xpTable[level] or xpTable[#xpTable]
+	local xpTable = GameConstants.LEVEL.XP_TABLE
+	if level <= #xpTable then
+		return xpTable[level]
+	end
+	-- Lv21 이상: 동적 공식 (100 * level^1.4)
+	return math.floor(100 * level ^ 1.4)
+end
+
+-- 현재 레벨에 해당하는 칭호 반환
+function ProgressionService:GetTitle(level: number): string
+	local title = "초보 달리기꾼"
+	for _, tier in GameConstants.LEVEL.TITLES do
+		if level >= tier.minLevel then
+			title = tier.title
+		end
+	end
+	return title
 end
 
 -- XP 추가 및 레벨업 처리
@@ -66,28 +81,47 @@ end
 function ProgressionService:_onLevelUp(player: Player, newLevel: number)
 	local coinReward = GameConstants.LEVEL.LEVEL_UP_COIN_REWARD
 	local gemReward = 0
+	local extraCoins = 0
 
-	-- 마일스톤 레벨 보상 (5, 10, 15, 20)
+	-- 마일스톤 레벨 보상 (5단위마다 젬)
 	for _, milestoneLevel in GameConstants.LEVEL.MILESTONE_LEVELS do
 		if newLevel == milestoneLevel then
-			gemReward = GameConstants.LEVEL.MILESTONE_GEM_REWARD
+			gemReward += GameConstants.LEVEL.MILESTONE_GEM_REWARD
 			break
 		end
 	end
 
+	-- 특별 보상 레벨 처리
+	local specialReward = GameConstants.LEVEL.SPECIAL_REWARDS[newLevel]
+	if specialReward then
+		if specialReward.gems then
+			gemReward += specialReward.gems
+		end
+		if specialReward.coins then
+			extraCoins += specialReward.coins
+		end
+	end
+
 	-- 보상 지급
-	PlayerDataService:AddCoins(player, coinReward)
+	PlayerDataService:AddCoins(player, coinReward + extraCoins)
 	if gemReward > 0 then
 		PlayerDataService:AddGems(player, gemReward)
 	end
 
+	-- 칭호 확인
+	local newTitle = self:GetTitle(newLevel)
+
 	-- 클라이언트에 레벨업 알림
 	RemoteEvents.LevelUp:FireClient(player, {
 		newLevel = newLevel,
-		rewards = { coins = coinReward, gems = gemReward > 0 and gemReward or nil },
+		title = newTitle,
+		rewards = {
+			coins = coinReward + extraCoins,
+			gems = gemReward > 0 and gemReward or nil,
+		},
 	})
 
-	print(`[ProgressionService] {player.Name} leveled up to {newLevel}!`)
+	print(`[ProgressionService] {player.Name} leveled up to Lv{newLevel} ({newTitle})`)
 end
 
 -- ==================== 일일 미션 시스템 ====================
