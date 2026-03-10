@@ -924,6 +924,39 @@ GameConstants.ACHIEVEMENTS = {
 			rewardGems = 100,
 			rewardXP = 0,
 		},
+		-- 캐릭터 해금 퀘스트
+		{
+			id = "obstacles_dodged_500",
+			name = "용맹한 기사",
+			desc = "장애물 500개 회피",
+			target = 500,
+			condition = "obstacles_dodged",
+			rewardGems = 0,
+			rewardXP = 0,
+			unlocksCharacter = "knight",
+		},
+	},
+}
+
+-- ==================== v3: 캐릭터 시스템 ====================
+
+GameConstants.CHARACTERS = {
+	-- { id, name, desc, unlockType, unlockRef? }
+	-- unlockType: "default" | "achievement" | "season_pass"
+	LIST = {
+		{
+			id = "default",
+			name = "코인 러너",
+			desc = "기본 캐릭터",
+			unlockType = "default",
+		},
+		{
+			id = "knight",
+			name = "용맹한 기사",
+			desc = "장애물 500개 회피 달성 시 해금",
+			unlockType = "achievement",
+			unlockRef = "obstacles_dodged_500",
+		},
 	},
 }
 
@@ -1472,7 +1505,6 @@ GameConstants.PETS.MAX_PET_LEVEL = 5
 GameConstants.PETS.LEVEL_COIN_BONUS = 0.02 -- 레벨당 coinBonus +0.02 (누적)
 GameConstants.PETS.LEVEL_MAGNET_BONUS = 0.5 -- 레벨당 magnetBonus +0.5 studs (누적)
 
-<<<<<<< HEAD
 -- ==================== 캐릭터 시스템 ====================
 GameConstants.CHARACTERS = {
 	LIST = {

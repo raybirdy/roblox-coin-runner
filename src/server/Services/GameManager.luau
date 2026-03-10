@@ -1472,6 +1472,12 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 			-- 런 XP: 니어미스 +5 XP
 			RunSkillService:AddXP(player, GameConstants.RUN_PROGRESSION.XP_PER_NEAR_MISS)
 
+			-- v3: 누적 회피 횟수 증가 (기사 해금 퀘스트)
+			local totalDodged = PlayerDataService:IncrementObstaclesDodged(player)
+			if totalDodged == 500 then
+				ProgressionService:CheckAchievements(player)
+			end
+
 			print(`[GameManager] Near miss chain {session.nearMissChain}x! +{bonus} ({chainText}) for {player.Name}`)
 		end
 
