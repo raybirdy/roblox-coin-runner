@@ -84,7 +84,7 @@ NametagService:SetupRemoteEvents(PlayerDataService)
 print("[Server] NametagService Loaded")
 
 -- RunSkillService RemoteEvent 연결
-RunSkillService:SetupRemoteEvents()
+RunSkillService:SetupRemoteEvents(PlayerDataService)
 print("[Server] RunSkillService Loaded")
 
 -- 플레이어 참가 처리
@@ -115,6 +115,9 @@ game.Players.PlayerAdded:Connect(function(player: Player)
 
 		-- 이름표 데이터 전송
 		NametagService:SendNametagData(player, PlayerDataService)
+
+		-- 런 스킬 슬롯 데이터 전송
+		RunSkillService:SendPreRunSkillData(player, PlayerDataService)
 		print(`[Server] Sent player data to {player.Name}`)
 	end
 

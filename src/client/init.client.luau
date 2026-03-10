@@ -100,6 +100,7 @@ local NametagController = require(script.Controllers.NametagController)
 local CoinKingController = require(script.Controllers.CoinKingController)
 local CoinSpinController = require(script.Controllers.CoinSpinController)
 local RunSkillHudController = require(script.Controllers.RunSkillHudController)
+local PreRunSkillController = require(script.Controllers.PreRunSkillController)
 
 -- 컨트롤러 인스턴스 생성
 local inputController = InputController.new()
@@ -138,6 +139,7 @@ local _nametagController = NametagController.new(player)
 local coinKingController = CoinKingController.new()
 local _coinSpinController = CoinSpinController.new()
 local runSkillHudController = RunSkillHudController.new()
+local preRunSkillController = PreRunSkillController.new()
 
 -- Fever mode callbacks (speed boost + camera shake + BGM speed + P0: 카메라 줌인)
 feverController:OnFeverStart(function(speedBoost: number, duration: number)
@@ -353,17 +355,36 @@ RemoteEvents.PortalEnter.OnClientEvent:Connect(function()
 	startPowerupController:Show(cachedPlayerData, function(selectedPowerups)
 		print(`[Client] Starting game with {#selectedPowerups} powerups`)
 
-		-- Zone Skip 조건 확인 (maxZoneReached >= 2)
-		local maxZone = cachedPlayerData and cachedPlayerData.maxZoneReached or 1
-		if maxZone >= GameConstants.ZONE_SKIP.MIN_ZONE_TO_UNLOCK then
-			local skipZone = math.max(1, maxZone - 1)
-			local theme = GameConstants.ZONE_THEMES[skipZone]
-			local zoneName = theme and theme.displayName or `Zone {skipZone}`
-			_showZoneSkipPrompt(skipZone, zoneName, function(useZoneSkip)
-				RemoteEvents.PortalEnter:FireServer({ startPowerups = selectedPowerups, useZoneSkip = useZoneSkip })
+		-- 런 스킬 슬롯 선택 (해금된 스킬이 있을 때만 표시)
+		local function _launchWithSkills(preRunSkills: { string })
+			-- Zone Skip 조건 확인 (maxZoneReached >= 2)
+			local maxZone = cachedPlayerData and cachedPlayerData.maxZoneReached or 1
+			if maxZone >= GameConstants.ZONE_SKIP.MIN_ZONE_TO_UNLOCK then
+				local skipZone = math.max(1, maxZone - 1)
+				local theme = GameConstants.ZONE_THEMES[skipZone]
+				local zoneName = theme and theme.displayName or `Zone {skipZone}`
+				_showZoneSkipPrompt(skipZone, zoneName, function(useZoneSkip)
+					RemoteEvents.PortalEnter:FireServer({
+						startPowerups = selectedPowerups,
+						useZoneSkip = useZoneSkip,
+						preRunSkills = preRunSkills,
+					})
+				end)
+			else
+				RemoteEvents.PortalEnter:FireServer({
+					startPowerups = selectedPowerups,
+					preRunSkills = preRunSkills,
+				})
+			end
+		end
+
+		-- 해금된 스킬이 있으면 슬롯 선택 UI 표시
+		if preRunSkillController:HasUnlockedSkills() then
+			preRunSkillController:Show(function(selectedSkills)
+				_launchWithSkills(selectedSkills)
 			end)
 		else
-			RemoteEvents.PortalEnter:FireServer({ startPowerups = selectedPowerups })
+			_launchWithSkills({})
 		end
 	end)
 end)

@@ -188,7 +188,7 @@ local function setupPortalDetection()
 end
 
 -- 포탈 터치 후 게임 시작 요청
-RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { startPowerups: { string }?, useZoneSkip: boolean? }?)
+RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { startPowerups: { string }?, useZoneSkip: boolean?, preRunSkills: { string }? }?)
 	print(`[GameManager] Portal enter confirmed by {player.Name}`)
 
 	-- 입력 검증 (data는 nil 허용)
@@ -323,6 +323,27 @@ RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { 
 
 	-- 런 스킬 세션 초기화
 	RunSkillService:StartSession(player)
+
+	-- 시작 전 장착 스킬 적용 (data.preRunSkills 또는 PlayerData.equippedRunSkills)
+	local preRunSkillIds: { string } = {}
+	if data and type(data.preRunSkills) == "table" then
+		-- 클라이언트가 전송한 슬롯 (서버 보유 스킬과 교차 검증)
+		local ownedSet: { [string]: boolean } = {}
+		for _, id in PlayerDataService:GetUnlockedRunSkills(player) do
+			ownedSet[id] = true
+		end
+		for _, skillId in data.preRunSkills do
+			if ownedSet[skillId] then
+				table.insert(preRunSkillIds, skillId)
+			end
+		end
+	else
+		-- 저장된 장착 슬롯 사용
+		preRunSkillIds = PlayerDataService:GetEquippedRunSkills(player)
+	end
+	if #preRunSkillIds > 0 then
+		RunSkillService:ApplyPreRunSkills(player, preRunSkillIds)
+	end
 
 	-- 업그레이드 보너스 적용
 	chunkService:SetEasyStartTime(upgBonuses1.easyStartTime)

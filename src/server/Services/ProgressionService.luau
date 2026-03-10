@@ -81,6 +81,17 @@ function ProgressionService:_onLevelUp(player: Player, newLevel: number)
 		PlayerDataService:AddGems(player, gemReward)
 	end
 
+	-- 런 스킬 해금 체크 (레벨업 보상)
+	local unlockedSkillId = GameConstants.RUN_SKILL_UNLOCK_LEVELS
+		and GameConstants.RUN_SKILL_UNLOCK_LEVELS[newLevel]
+	if unlockedSkillId then
+		local unlocked = PlayerDataService:UnlockRunSkill(player, unlockedSkillId)
+		if unlocked then
+			RemoteEvents.RunSkillUnlocked:FireClient(player, { skillId = unlockedSkillId })
+			print(`[ProgressionService] {player.Name} unlocked run skill: {unlockedSkillId}`)
+		end
+	end
+
 	-- 클라이언트에 레벨업 알림
 	RemoteEvents.LevelUp:FireClient(player, {
 		newLevel = newLevel,

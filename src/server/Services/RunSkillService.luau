@@ -246,7 +246,29 @@ function RunSkillService:_applySkill(player: Player, skill: any)
 end
 
 -- 스킬 선택 핸들러 (클라이언트 → 서버)
-function RunSkillService:SetupRemoteEvents()
+-- 런 시작 전 장착 스킬 적용 (GameManager에서 호출)
+function RunSkillService:ApplyPreRunSkills(player: Player, skillIds: { string })
+	if #skillIds == 0 then
+		return
+	end
+
+	-- GameConstants.RUN_SKILLS에서 해당 스킬 데이터 조회
+	local skillMap: { [string]: any } = {}
+	for _, skill in GameConstants.RUN_SKILLS do
+		skillMap[skill.id] = skill
+	end
+
+	for _, skillId in skillIds do
+		local skill = skillMap[skillId]
+		if skill then
+			self:_applySkill(player, skill)
+			print(`[RunSkillService] Pre-run skill applied: {skill.name} for {player.Name}`)
+		end
+	end
+end
+
+function RunSkillService:SetupRemoteEvents(playerDataService: any)
+	-- 런 중 스킬 선택
 	RemoteEvents.RunSkillSelect.OnServerEvent:Connect(function(player: Player, data: { skillId: string })
 		if not RateLimiter.Check(player, "RunSkillSelect", 2) then
 			return
@@ -280,6 +302,21 @@ function RunSkillService:SetupRemoteEvents()
 		session.pendingOptions = {}
 
 		self:_applySkill(player, selectedSkill)
+	end)
+
+	-- 런 스킬 슬롯 장착 (로비에서)
+	RemoteEvents.EquipRunSkills.OnServerEvent:Connect(function(player: Player, data: { skillIds: { string } })
+		if not RateLimiter.Check(player, "EquipRunSkills", 2) then
+			return
+		end
+		if type(data) ~= "table" or type(data.skillIds) ~= "table" then
+			return
+		end
+		local success = playerDataService:SetEquippedRunSkills(player, data.skillIds)
+		if success then
+			-- 최신 슬롯 데이터 재전송
+			RunSkillService:SendPreRunSkillData(player, playerDataService)
+		end
 	end)
 end
 
@@ -334,6 +371,37 @@ end
 function RunSkillService:GetRunLevel(player: Player): number
 	local session = runSessions[player]
 	return session and session.runLevel or 1
+end
+
+-- 런 스킬 슬롯 데이터 전송 (PlayerAdded + 슬롯 변경 시)
+function RunSkillService:SendPreRunSkillData(player: Player, playerDataService: any)
+	local unlockedIds = playerDataService:GetUnlockedRunSkills(player)
+	local equippedIds = playerDataService:GetEquippedRunSkills(player)
+
+	-- 스킬 메타데이터 조회
+	local skillMap: { [string]: any } = {}
+	for _, skill in GameConstants.RUN_SKILLS do
+		skillMap[skill.id] = skill
+	end
+
+	local unlockedData: { any } = {}
+	for _, skillId in unlockedIds do
+		local skill = skillMap[skillId]
+		if skill then
+			table.insert(unlockedData, {
+				id = skill.id,
+				name = skill.name,
+				emoji = skill.emoji,
+				desc = skill.desc,
+				rarity = skill.rarity,
+			})
+		end
+	end
+
+	RemoteEvents.PreRunSkillData:FireClient(player, {
+		unlockedSkills = unlockedData,
+		equippedSkills = equippedIds,
+	})
 end
 
 print("[RunSkillService] Initialized")

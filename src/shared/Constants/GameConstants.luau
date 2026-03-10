@@ -1466,6 +1466,19 @@ GameConstants.RUN_PROGRESSION = {
 	AUTO_SELECT_DELAY = 5, -- 자동 선택 대기 시간 (초)
 }
 
+-- 계정 레벨업 시 런 스킬 영구 해금 테이블 (런 시작 전 슬롯에 장착 가능)
+GameConstants.RUN_SKILL_UNLOCK_LEVELS = {
+	[3] = "coin_magnet", -- Lv3: 코인 자석
+	[6] = "speed_boost", -- Lv6: 질주
+	[10] = "double_coins", -- Lv10: 코인 2배
+	[15] = "shield", -- Lv15: 방어막
+	[20] = "fever_charge", -- Lv20: 피버 충전
+	[25] = "lucky_drop", -- Lv25: 럭키 드롭
+	[30] = "coin_shower", -- Lv30: 코인 소나기
+	[40] = "time_slow", -- Lv40: 시간 지연
+	[50] = "super_magnet", -- Lv50: 슈퍼 자석 (만렙 보상)
+}
+
 -- 런 내 XP 요구량 공식: 50 * level^1.2
 -- Lv1→2: 50, Lv2→3: 95, Lv3→4: 147, Lv5→6: 261
 
