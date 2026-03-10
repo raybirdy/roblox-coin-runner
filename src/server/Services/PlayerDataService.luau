@@ -75,6 +75,7 @@ type PlayerData = {
 	nametag: { color: string?, font: string?, frame: string? }?,
 	-- Zone Skip Start
 	maxZoneReached: number, -- 이번까지 도달한 최대 Zone 인덱스
+	obstaclesDodged: number, -- 누적 장애물 회피 횟수 (기사 해금 퀘스트)
 	-- 캐릭터 시스템
 	ownedCharacters: { string },
 	equippedCharacter: string,
@@ -138,6 +139,7 @@ local DEFAULT_DATA: PlayerData = {
 	nametag = {},
 	-- Zone Skip Start
 	maxZoneReached = 1,
+	obstaclesDodged = 0,
 	-- 캐릭터 시스템
 	ownedCharacters = { "runner" },
 	equippedCharacter = "runner",
@@ -938,6 +940,7 @@ VALID_KEYS["dailyEventDate"] = true
 VALID_KEYS["ownedPets"] = true
 VALID_KEYS["equippedPet"] = true
 VALID_KEYS["maxZoneReached"] = true
+VALID_KEYS["obstaclesDodged"] = true
 VALID_KEYS["petLevels"] = true
 VALID_KEYS["nametag"] = true
 VALID_KEYS["ownedCharacters"] = true
@@ -1030,6 +1033,18 @@ end
 function PlayerDataService:GetUnlockedRunSkills(player: Player): { string }
 	local playerData = self:GetPlayerData(player)
 	return (playerData and playerData.unlockedRunSkills) or {}
+end
+
+print("[PlayerDataService] Initialized")
+
+-- 장애물 회피 횟수 증가 (기사 캐릭터 해금 퀘스트)
+function PlayerDataService:IncrementObstaclesDodged(player: Player): number
+	local playerData = playerDataCache[player]
+	if not playerData then
+		return 0
+	end
+	playerData.obstaclesDodged = (playerData.obstaclesDodged or 0) + 1
+	return playerData.obstaclesDodged
 end
 
 print("[PlayerDataService] Initialized")

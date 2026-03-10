@@ -333,7 +333,12 @@ function ProgressionService:_unlockAchievement(player: Player, achievement: any)
 	-- 캐릭터 해금 처리
 	if achievement.unlocksCharacter then
 		local characterId = achievement.unlocksCharacter
-		local unlocked = PlayerDataService:UnlockCharacter(player, characterId)
+		-- 이미 소유 여부 확인 후 추가 (CharacterService의 AddCharacter 사용)
+		local alreadyOwned = PlayerDataService:OwnsCharacter(player, characterId)
+		if not alreadyOwned then
+			PlayerDataService:AddCharacter(player, characterId)
+		end
+		local unlocked = not alreadyOwned
 		if unlocked then
 			-- 캐릭터 이름 조회
 			local characterName = characterId
