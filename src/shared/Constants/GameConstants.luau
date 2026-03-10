@@ -673,7 +673,7 @@ GameConstants.BACKGROUND = {
 
 -- 레벨 시스템
 GameConstants.LEVEL = {
-	-- 레벨별 필요 XP (레벨 1부터 시작, 인덱스 = 다음 레벨로 가기 위한 XP)
+	-- 레벨별 필요 XP (Lv1~20: 하드코딩, Lv21+: 동적 공식 math.floor(100 * level^1.4))
 	XP_TABLE = {
 		100, -- Lv1 → Lv2
 		200, -- Lv2 → Lv3
@@ -694,19 +694,37 @@ GameConstants.LEVEL = {
 		15000, -- Lv17 → Lv18
 		18000, -- Lv18 → Lv19
 		22000, -- Lv19 → Lv20
-		30000, -- Lv20 → Lv21+
+		30000, -- Lv20 → Lv21
 	},
-	MAX_LEVEL = 20,
+	MAX_LEVEL = 50,
 	-- XP 획득량
 	XP_PER_GAME = 10, -- 게임 1회 참여
 	XP_PER_SCORE_100 = 5, -- 점수 100점당 XP
 	XP_PER_MISSION = 30, -- 미션 완료 시 XP
 	XP_PER_ACHIEVEMENT = 50, -- 업적 완료 시 XP
-	-- 레벨업 보상 (레벨당 코인)
+	XP_PER_FEVER = 20, -- 피버 달성 시 XP (신규)
+	-- 레벨업 기본 보상 (레벨당 코인)
 	LEVEL_UP_COIN_REWARD = 50,
-	-- 특별 레벨 보상 (5레벨마다 젬)
-	MILESTONE_LEVELS = { 5, 10, 15, 20 },
+	-- 마일스톤 레벨 (5 단위마다 젬 보상)
+	MILESTONE_LEVELS = { 5, 10, 15, 20, 25, 30, 35, 40, 45, 50 },
 	MILESTONE_GEM_REWARD = 10,
+	-- 특별 보상 레벨 (마일스톤 젬 외 추가 보상)
+	SPECIAL_REWARDS = {
+		[15] = { gems = 30 }, -- 마법사 캐릭터 해금 조건 (CharacterService가 처리)
+		[20] = { coins = 500, gems = 30 },
+		[30] = { coins = 1000, gems = 50 },
+		[40] = { coins = 2000, gems = 80 },
+		[50] = { coins = 5000, gems = 100 },
+	},
+	-- 칭호 (레벨 구간별, minLevel 이상이면 해당 칭호 적용)
+	TITLES = {
+		{ minLevel = 1,  title = "초보 달리기꾼" },
+		{ minLevel = 10, title = "코인 사냥꾼" },
+		{ minLevel = 20, title = "피버 마스터" },
+		{ minLevel = 30, title = "존 탐험가" },
+		{ minLevel = 40, title = "코인 킹" },
+		{ minLevel = 50, title = "전설의 러너" },
+	},
 }
 
 -- 일일 미션 시스템
