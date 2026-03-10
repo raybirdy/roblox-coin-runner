@@ -1472,6 +1472,7 @@ GameConstants.PETS.MAX_PET_LEVEL = 5
 GameConstants.PETS.LEVEL_COIN_BONUS = 0.02 -- 레벨당 coinBonus +0.02 (누적)
 GameConstants.PETS.LEVEL_MAGNET_BONUS = 0.5 -- 레벨당 magnetBonus +0.5 studs (누적)
 
+<<<<<<< HEAD
 -- ==================== 캐릭터 시스템 ====================
 GameConstants.CHARACTERS = {
 	LIST = {
@@ -1593,6 +1594,127 @@ GameConstants.CHARACTERS = {
 	-- 캐릭터 패시브 보너스 상한 (밸런스 보호)
 	MAX_MAGNET_BONUS = 25, -- studs
 	MAX_FEVER_EXTEND = 4, -- 초
+}
+
+-- ==================== 런 내 성장 시스템 ====================
+
+-- 런 내 XP 획득 조건
+GameConstants.RUN_PROGRESSION = {
+	XP_PER_COIN = 1, -- 코인 1개당 런 XP
+	XP_PER_NEAR_MISS = 5, -- 니어미스 1회당 런 XP
+	XP_PER_FEVER = 20, -- 피버 돌입 1회당 런 XP
+	MAX_RUN_LEVEL = 10, -- 런 내 최대 레벨
+	SKILL_CHOICES = 3, -- 스킬 선택 카드 수
+	AUTO_SELECT_DELAY = 5, -- 자동 선택 대기 시간 (초)
+}
+
+-- 런 내 XP 요구량 공식: 50 * level^1.2
+-- Lv1→2: 50, Lv2→3: 95, Lv3→4: 147, Lv5→6: 261
+
+-- 런 내 스킬 풀 (10종)
+GameConstants.RUN_SKILLS = {
+	-- { id, name, emoji, desc, rarity, effect }
+	-- rarity: "common"=일반(50%), "rare"=희귀(35%), "legendary"=전설(15%)
+	{
+		id = "coin_magnet",
+		name = "코인 자석",
+		emoji = "🧲",
+		desc = "자석 반경 +5 studs (런 종료까지)",
+		rarity = "common",
+		effectType = "magnet_bonus",
+		effectValue = 5,
+		duration = -1, -- -1 = 런 종료까지
+	},
+	{
+		id = "speed_boost",
+		name = "질주",
+		emoji = "⚡",
+		desc = "이동 속도 +15% (런 종료까지)",
+		rarity = "common",
+		effectType = "speed_multiplier",
+		effectValue = 0.15,
+		duration = -1,
+	},
+	{
+		id = "double_coins",
+		name = "코인 2배",
+		emoji = "💰",
+		desc = "코인 가치 2배 (30초)",
+		rarity = "common",
+		effectType = "coin_multiplier",
+		effectValue = 2,
+		duration = 30,
+	},
+	{
+		id = "shield",
+		name = "방어막",
+		emoji = "🛡️",
+		desc = "피격 1회 무효",
+		rarity = "rare",
+		effectType = "shield",
+		effectValue = 1,
+		duration = -1,
+	},
+	{
+		id = "fever_charge",
+		name = "피버 충전",
+		emoji = "🔥",
+		desc = "콤보 즉시 +10",
+		rarity = "rare",
+		effectType = "combo_boost",
+		effectValue = 10,
+		duration = 0, -- 즉시 발동
+	},
+	{
+		id = "coin_shower",
+		name = "코인 소나기",
+		emoji = "🌧️",
+		desc = "5초간 코인 밀도 3배",
+		rarity = "rare",
+		effectType = "coin_density",
+		effectValue = 3,
+		duration = 5,
+	},
+	{
+		id = "invincible",
+		name = "무적",
+		emoji = "✨",
+		desc = "5초 무적",
+		rarity = "legendary",
+		effectType = "invincible",
+		effectValue = 1,
+		duration = 5,
+	},
+	{
+		id = "super_magnet",
+		name = "슈퍼 자석",
+		emoji = "💫",
+		desc = "화면 전체 코인 즉시 흡수",
+		rarity = "legendary",
+		effectType = "vacuum",
+		effectValue = 1,
+		duration = 0,
+	},
+	{
+		id = "time_slow",
+		name = "시간 지연",
+		emoji = "⏳",
+		desc = "5초간 장애물 속도 절반",
+		rarity = "legendary",
+		effectType = "time_slow",
+		effectValue = 0.5,
+		duration = 5,
+	},
+	{
+		id = "lucky_drop",
+		name = "럭키 드롭",
+		emoji = "🍀",
+		desc = "다음 5개 코인이 골드 코인",
+		rarity = "rare",
+		effectType = "lucky_coins",
+		effectValue = 5,
+		duration = -1,
+	},
 }
 
 return GameConstants

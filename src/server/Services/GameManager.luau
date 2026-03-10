@@ -30,6 +30,7 @@ local DailyEventService = require(script.Parent.DailyEventService)
 local UpgradeService = require(script.Parent.UpgradeService)
 local ObjectiveService = require(script.Parent.ObjectiveService)
 local PetService = require(script.Parent.PetService)
+local RunSkillService = require(script.Parent.RunSkillService)
 local RateLimiter = require(ReplicatedStorage.Shared.Utils.RateLimiter)
 
 local GameManager = {}
@@ -319,6 +320,9 @@ RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { 
 
 	-- 데일리 이벤트 세션 초기화
 	DailyEventService:InitSession(player)
+
+	-- 런 스킬 세션 초기화
+	RunSkillService:StartSession(player)
 
 	-- 업그레이드 보너스 적용
 	chunkService:SetEasyStartTime(upgBonuses1.easyStartTime)
@@ -719,6 +723,9 @@ function GameManager.EndGame(player: Player)
 
 	session.isPlaying = false
 
+	-- 런 스킬 세션 종료
+	RunSkillService:EndSession(player)
+
 	-- 최종 점수 계산
 	local finalScore = session.score
 	local earnedCoins = session.coins
@@ -1092,6 +1099,8 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 		if #collectedCoins > 0 then
 			session.coinsCollectedCount += #collectedCoins
 			DailyEventService:OnCoinsCollected(player, #collectedCoins)
+			-- 런 XP: 코인 1개당 +1 XP
+			RunSkillService:AddXP(player, #collectedCoins * GameConstants.RUN_PROGRESSION.XP_PER_COIN)
 		end
 
 		-- Phase B: 거인 코인 수집 체크
@@ -1178,6 +1187,8 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 						speedBoost = GameConstants.FEVER.SPEED_BOOST,
 					})
 					ProgressionService:AddXP(player, GameConstants.LEVEL.XP_PER_FEVER)
+					-- 런 XP: 피버 돌입 +20 XP
+					RunSkillService:AddXP(player, GameConstants.RUN_PROGRESSION.XP_PER_FEVER)
 					print(`[GameManager] FEVER MODE activated for {player.Name}!`)
 				end
 			end
@@ -1436,6 +1447,9 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 
 			-- 미션 진행도 업데이트
 			ProgressionService:OnNearMiss(player)
+
+			-- 런 XP: 니어미스 +5 XP
+			RunSkillService:AddXP(player, GameConstants.RUN_PROGRESSION.XP_PER_NEAR_MISS)
 
 			print(`[GameManager] Near miss chain {session.nearMissChain}x! +{bonus} ({chainText}) for {player.Name}`)
 		end
