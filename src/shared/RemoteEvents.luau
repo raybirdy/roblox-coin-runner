@@ -517,4 +517,26 @@ RemoteEvents.BossDialogue = getOrCreateRemoteEvent("BossDialogue")
 RemoteEvents.ChaseMobWarning = getOrCreateRemoteEvent("ChaseMobWarning")
 -- 파라미터: (없음) - 등장 시 경고음/화면 플래시 재생
 
+-- ==================== 캐릭터 시스템 ====================
+
+-- 캐릭터 데이터 (서버 → 클라이언트)
+RemoteEvents.CharacterData = getOrCreateRemoteEvent("CharacterData")
+-- 파라미터: { ownedCharacters: {string}, equippedCharacter: string }
+
+-- 캐릭터 장착 요청 (클라이언트 → 서버)
+RemoteEvents.EquipCharacter = getOrCreateRemoteEvent("EquipCharacter")
+-- 파라미터: { characterId: string }
+
+-- 캐릭터 해금 알림 (서버 → 클라이언트)
+RemoteEvents.CharacterUnlocked = getOrCreateRemoteEvent("CharacterUnlocked")
+-- 파라미터: { characterId: string, characterName: string }
+
+-- 캐릭터 스킬 사용 요청 (클라이언트 → 서버)
+RemoteEvents.CharacterSkillUse = getOrCreateRemoteEvent("CharacterSkillUse")
+-- 파라미터: (없음)
+
+-- 캐릭터 스킬 발동 결과 (서버 → 클라이언트)
+RemoteEvents.CharacterSkillActivated = getOrCreateRemoteEvent("CharacterSkillActivated")
+-- 파라미터: { skillId: string, duration: number, cooldown: number }
+
 return RemoteEvents

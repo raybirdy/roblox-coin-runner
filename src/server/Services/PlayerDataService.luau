@@ -75,6 +75,10 @@ type PlayerData = {
 	nametag: { color: string?, font: string?, frame: string? }?,
 	-- Zone Skip Start
 	maxZoneReached: number, -- 이번까지 도달한 최대 Zone 인덱스
+	-- 캐릭터 시스템
+	ownedCharacters: { string },
+	equippedCharacter: string,
+	characterSkillLastUsed: { [string]: number }?, -- { [characterId]: timestamp }
 }
 
 local DEFAULT_DATA: PlayerData = {
@@ -131,6 +135,10 @@ local DEFAULT_DATA: PlayerData = {
 	nametag = {},
 	-- Zone Skip Start
 	maxZoneReached = 1,
+	-- 캐릭터 시스템
+	ownedCharacters = { "runner" },
+	equippedCharacter = "runner",
+	characterSkillLastUsed = {},
 }
 
 -- 메모리 캐시 (활성 플레이어)
@@ -836,6 +844,55 @@ function PlayerDataService:GetNametag(player: Player): { color: string?, font: s
 	return playerData.nametag
 end
 
+-- 캐릭터 소유 여부
+function PlayerDataService:OwnsCharacter(player: Player, characterId: string): boolean
+	local playerData = self:GetPlayerData(player)
+	if not playerData then
+		return false
+	end
+	for _, id in playerData.ownedCharacters or {} do
+		if id == characterId then
+			return true
+		end
+	end
+	return false
+end
+
+-- 캐릭터 추가
+function PlayerDataService:AddCharacter(player: Player, characterId: string)
+	local playerData = self:GetPlayerData(player)
+	if not playerData then
+		return
+	end
+	if not playerData.ownedCharacters then
+		playerData.ownedCharacters = { "runner" }
+	end
+	table.insert(playerData.ownedCharacters, characterId)
+end
+
+-- 캐릭터 장착
+function PlayerDataService:EquipCharacter(player: Player, characterId: string): boolean
+	local playerData = self:GetPlayerData(player)
+	if not playerData then
+		return false
+	end
+	if not self:OwnsCharacter(player, characterId) then
+		return false
+	end
+	playerData.equippedCharacter = characterId
+	self:SavePlayerData(player)
+	return true
+end
+
+-- 장착 중인 캐릭터 반환
+function PlayerDataService:GetEquippedCharacter(player: Player): string
+	local playerData = self:GetPlayerData(player)
+	if not playerData then
+		return "runner"
+	end
+	return playerData.equippedCharacter or "runner"
+end
+
 -- 런 목표 완료 횟수 증가
 function PlayerDataService:IncrementRunObjectivesCompleted(player: Player)
 	local playerData = playerDataCache[player]
@@ -877,6 +934,9 @@ VALID_KEYS["equippedPet"] = true
 VALID_KEYS["maxZoneReached"] = true
 VALID_KEYS["petLevels"] = true
 VALID_KEYS["nametag"] = true
+VALID_KEYS["ownedCharacters"] = true
+VALID_KEYS["equippedCharacter"] = true
+VALID_KEYS["characterSkillLastUsed"] = true
 
 -- 유틸리티: 기본값 병합
 function PlayerDataService:_mergeWithDefaults(data: any): PlayerData

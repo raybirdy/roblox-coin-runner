@@ -8,6 +8,7 @@ local GameConstants = require(ReplicatedStorage.Shared.Constants.GameConstants)
 local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)
 local PlayerDataService = require(script.Parent.PlayerDataService)
 local RateLimiter = require(ReplicatedStorage.Shared.Utils.RateLimiter)
+local CharacterService = require(script.Parent.CharacterService)
 
 local ProgressionService = {}
 
@@ -120,6 +121,9 @@ function ProgressionService:_onLevelUp(player: Player, newLevel: number)
 			gems = gemReward > 0 and gemReward or nil,
 		},
 	})
+
+	-- 레벨 기반 캐릭터 해금 체크
+	CharacterService:CheckLevelUnlocks(player, newLevel, PlayerDataService)
 
 	print(`[ProgressionService] {player.Name} leveled up to Lv{newLevel} ({newTitle})`)
 end
