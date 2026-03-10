@@ -366,14 +366,14 @@ RemoteEvents.PortalEnter.OnClientEvent:Connect(function()
 				local theme = GameConstants.ZONE_THEMES[skipZone]
 				local zoneName = theme and theme.displayName or `Zone {skipZone}`
 				_showZoneSkipPrompt(skipZone, zoneName, function(useZoneSkip)
-					RemoteEvents.PortalEnter:FireServer({
+							RemoteEvents.PortalEnter:FireServer({
 						startPowerups = selectedPowerups,
 						useZoneSkip = useZoneSkip,
 						preRunSkills = preRunSkills,
 					})
 				end)
 			else
-				RemoteEvents.PortalEnter:FireServer({
+					RemoteEvents.PortalEnter:FireServer({
 					startPowerups = selectedPowerups,
 					preRunSkills = preRunSkills,
 				})
@@ -452,6 +452,11 @@ inputController:OnSlideEnd(function()
 	playerController:SlideEnd()
 end)
 
+-- 캐릭터 선택 버튼 콜백 연결
+uiController:SetCharacterSelectCallback(function()
+	characterSelectController:Open()
+end)
+
 -- UI 모바일 버튼 콜백 연결 (터치) — InputController debounce를 거침
 uiController:OnJump(function()
 	inputController:TriggerJump()
@@ -468,7 +473,6 @@ end)
 -- 서버로부터 게임 시작 응답 수신
 RemoteEvents.GameStart.OnClientEvent:Connect(function(data)
 	print("[Client] Game start confirmed by server")
-
 	-- 1. UI 전환: 로비 UI 숨기고 게임 UI 표시
 	uiController:HideGameOver()
 	uiController:HideLobbyUI()

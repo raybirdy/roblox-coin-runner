@@ -27,11 +27,11 @@ function PreRunSkillController.new()
 	self._panel = nil :: Frame?
 
 	-- 서버에서 받은 데이터
-	self._unlockedSkills: { any } = {}
-	self._equippedSkills: { string } = {}
+	self._unlockedSkills = {} :: { any }
+	self._equippedSkills = {} :: { string }
 
 	-- 콜백 (포탈 플로우에서 완료 시 호출)
-	self._onConfirmCallback: (( { string }) -> ())? = nil
+	self._onConfirmCallback = nil :: (({ string }) -> ())?
 	self._isOpen = false
 
 	self:_buildGui()
