@@ -68,6 +68,11 @@ local cachedLeaderboards: { [string]: { LeaderboardEntry } } = {
 	weekly = {},
 }
 local lastUpdateTimes: { [string]: number } = { all = 0, daily = 0, weekly = 0 }
+
+-- 친구 리더보드 per-player 캐시
+type FriendCacheEntry = { data: { LeaderboardEntry }, updatedAt: number }
+local friendLeaderboardCache: { [number]: FriendCacheEntry } = {}
+local FRIEND_CACHE_DURATION = 60 -- 60초
 local CACHE_DURATION = 30 -- 30초마다 갱신
 
 -- 리더보드 업데이트 (점수 저장)
@@ -259,6 +264,73 @@ function LeaderboardService:GetPlayerRank(player: Player): number?
 	return nil
 end
 
+-- 친구 리더보드 가져오기 (플레이어 본인 + 친구 첫 페이지 기준)
+function LeaderboardService:GetFriendLeaderboard(player: Player): { LeaderboardEntry }
+	-- 캐시 확인
+	local cached = friendLeaderboardCache[player.UserId]
+	if cached and tick() - cached.updatedAt < FRIEND_CACHE_DURATION then
+		return cached.data
+	end
+
+	if not highScoreStore then
+		return self:_getDummyLeaderboard()
+	end
+
+	local entries: { { name: string, score: number } } = {}
+
+	-- 본인 점수 추가
+	local myScore = nil
+	pcall(function()
+		myScore = highScoreStore:GetAsync(player.UserId)
+	end)
+	if myScore and myScore > 0 then
+		table.insert(entries, { name = player.Name, score = myScore })
+	end
+
+	-- 친구 목록 첫 페이지 (최대 25명)
+	local friendSuccess, friendPages = pcall(function()
+		return Players:GetFriendsAsync(player.UserId)
+	end)
+
+	if friendSuccess and friendPages then
+		local pageData = friendPages:GetCurrentPage()
+		for _, friendInfo in pageData do
+			local friendScore = nil
+			pcall(function()
+				friendScore = highScoreStore:GetAsync(friendInfo.Id)
+			end)
+			if friendScore and friendScore > 0 then
+				table.insert(entries, { name = friendInfo.Username, score = friendScore })
+			end
+		end
+	end
+
+	-- 데이터 없을 때 안내 메시지
+	if #entries == 0 then
+		return { { rank = 1, name = "친구를 초대해보세요!", score = 0 } }
+	end
+
+	-- 점수 내림차순 정렬
+	table.sort(entries, function(a, b)
+		return a.score > b.score
+	end)
+
+	-- 상위 10명, rank 부여
+	local result: { LeaderboardEntry } = {}
+	for i, entry in ipairs(entries) do
+		table.insert(result, { rank = i, name = entry.name, score = entry.score })
+		if i >= 10 then
+			break
+		end
+	end
+
+	-- 캐시 저장
+	friendLeaderboardCache[player.UserId] = { data = result, updatedAt = tick() }
+	print(`[LeaderboardService] Friend leaderboard built for {player.Name}: {#result} entries`)
+
+	return result
+end
+
 -- 리더보드 요청 이벤트 핸들러
 RemoteEvents.LeaderboardRequest.OnServerEvent:Connect(function(player: Player, data: { tab: string? }?)
 	-- 입력 검증 (data는 nil 허용)
@@ -272,8 +344,15 @@ RemoteEvents.LeaderboardRequest.OnServerEvent:Connect(function(player: Player, d
 	local tab = (data and type(data.tab) == "string") and data.tab or "all"
 	print(`[LeaderboardService] Leaderboard requested by {player.Name} (tab: {tab})`)
 
-	local leaderboard = LeaderboardService:GetLeaderboard(10, tab)
-	local playerRank = LeaderboardService:GetPlayerRank(player)
+	local leaderboard: { LeaderboardEntry }
+	local playerRank: number? = nil
+
+	if tab == "friends" then
+		leaderboard = LeaderboardService:GetFriendLeaderboard(player)
+	else
+		leaderboard = LeaderboardService:GetLeaderboard(10, tab)
+		playerRank = LeaderboardService:GetPlayerRank(player)
+	end
 
 	RemoteEvents.LeaderboardData:FireClient(player, {
 		leaderboard = leaderboard,

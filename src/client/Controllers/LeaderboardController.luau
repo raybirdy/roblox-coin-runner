@@ -149,9 +149,10 @@ function LeaderboardController:_createPopupGui()
 		{ key = "all", label = "ALL" },
 		{ key = "daily", label = "DAILY" },
 		{ key = "weekly", label = "WEEKLY" },
+		{ key = "friends", label = "👥친구" },
 	}
 
-	local tabWidth = math.floor((370 - 2 * 5) / 3) -- 3개 탭, 간격 5px
+	local tabWidth = math.floor((370 - 3 * 5) / 4) -- 4개 탭, 간격 5px
 	for i, tab in tabs do
 		local tabBtn = Instance.new("TextButton")
 		tabBtn.Name = "Tab_" .. tab.key
@@ -403,9 +404,11 @@ function LeaderboardController:_updatePopupContent(
 		end
 	end
 
-	-- 내 순위 표시
+	-- 내 순위 표시 (친구 탭에서는 숨김)
 	if self._playerRankLabel then
-		if playerRank then
+		if _tab == "friends" then
+			self._playerRankLabel.Text = ""
+		elseif playerRank then
 			self._playerRankLabel.Text = `My Rank: #{playerRank}`
 		else
 			self._playerRankLabel.Text = "My Rank: Not ranked"
