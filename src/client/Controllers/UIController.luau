@@ -37,6 +37,8 @@ export type UIController = typeof(setmetatable(
 		_lobbyGuide: Frame?, -- 로비 안내 텍스트
 		_highScoreDisplay: Frame?, -- 로비 최고 점수 표시
 		_lobbyGuideAnimation: boolean?, -- 로비 안내 펄스 애니메이션 활성 여부
+		_lobbyCharacterBtn: TextButton?, -- 캐릭터 선택 버튼
+		_onCharacterSelectCallback: (() -> ())?, -- 캐릭터 선택 버튼 콜백
 		_multiplierBadge: Frame?, -- 생존 배율 뱃지
 		_gameOverDim: Frame?, -- 게임오버 배경 딤 오버레이
 		_coinLabelBaseSize: number, -- UpdateCoins 인플레이션 방지용 고정 기준 텍스트 크기
@@ -72,6 +74,8 @@ function UIController.new(player: Player): UIController
 		_lobbyGuide = nil,
 		_highScoreDisplay = nil,
 		_lobbyGuideAnimation = false,
+		_lobbyCharacterBtn = nil,
+		_onCharacterSelectCallback = nil,
 		_multiplierBadge = nil,
 		_gameOverDim = nil,
 		_coinLabelBaseSize = 0,
@@ -583,6 +587,34 @@ function UIController:_createUI()
 	guideLabel.TextStrokeTransparency = 0
 	guideLabel.TextStrokeColor3 = Color3.fromRGB(0, 100, 0)
 	guideLabel.Parent = lobbyGuide
+
+	-- 캐릭터 선택 버튼 (로비 우측 하단)
+	local charBtn = Instance.new("TextButton")
+	charBtn.Name = "CharacterSelectBtn"
+	charBtn.Size = UDim2.new(0, ResponsiveUtil.scaledOffset(120), 0, ResponsiveUtil.scaledOffset(44))
+	charBtn.Position = UDim2.new(1, -ResponsiveUtil.scaledOffset(130), 1, -ResponsiveUtil.scaledOffset(120))
+	charBtn.BackgroundColor3 = Color3.fromRGB(60, 80, 160)
+	charBtn.BackgroundTransparency = 0.1
+	charBtn.BorderSizePixel = 0
+	charBtn.Text = "🎭 캐릭터"
+	charBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	charBtn.TextSize = ResponsiveUtil.scaledTextSize(15, 12)
+	charBtn.Font = Enum.Font.GothamBold
+	charBtn.Visible = false
+	charBtn.Parent = screenGui
+	self._lobbyCharacterBtn = charBtn
+
+	Instance.new("UICorner", charBtn).CornerRadius = UDim.new(0, 10)
+	local charBtnStroke = Instance.new("UIStroke")
+	charBtnStroke.Color = Color3.fromRGB(120, 160, 255)
+	charBtnStroke.Thickness = 2
+	charBtnStroke.Parent = charBtn
+
+	charBtn.MouseButton1Click:Connect(function()
+		if self._onCharacterSelectCallback then
+			self._onCharacterSelectCallback()
+		end
+	end)
 
 	-- 로비 최고 점수 표시 (우측 상단 - 이동 방해 안 함)
 	local highScoreDisplay = Instance.new("Frame")
@@ -1369,6 +1401,9 @@ function UIController:ShowLobbyUI()
 	if self._highScoreDisplay then
 		self._highScoreDisplay.Visible = true
 	end
+	if self._lobbyCharacterBtn then
+		self._lobbyCharacterBtn.Visible = true
+	end
 
 	-- 게임 UI 숨기기
 	if self._hudFrame then
@@ -1480,6 +1515,9 @@ function UIController:HideLobbyUI()
 	if self._highScoreDisplay then
 		self._highScoreDisplay.Visible = false
 	end
+	if self._lobbyCharacterBtn then
+		self._lobbyCharacterBtn.Visible = false
+	end
 
 	-- 게임 UI 표시
 	if self._hudFrame then
@@ -1499,6 +1537,11 @@ function UIController:HideLobbyUI()
 	self:UpdateScore(0, 0, 0)
 	self:UpdateCoins(0)
 	self:UpdateLives(GameConstants.LIFE.STARTING_LIVES)
+end
+
+-- 캐릭터 선택 버튼 콜백 등록
+function UIController:SetCharacterSelectCallback(callback: () -> ())
+	self._onCharacterSelectCallback = callback
 end
 
 -- 최고 점수 표시 업데이트

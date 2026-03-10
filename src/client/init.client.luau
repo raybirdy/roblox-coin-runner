@@ -452,6 +452,11 @@ inputController:OnSlideEnd(function()
 	playerController:SlideEnd()
 end)
 
+-- 캐릭터 선택 버튼 콜백 연결
+uiController:SetCharacterSelectCallback(function()
+	characterSelectController:Open()
+end)
+
 -- UI 모바일 버튼 콜백 연결 (터치) — InputController debounce를 거침
 uiController:OnJump(function()
 	inputController:TriggerJump()
