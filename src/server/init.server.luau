@@ -37,6 +37,7 @@ local DailyEventService = require(ServerScriptService.Server.Services.DailyEvent
 local UpgradeService = require(ServerScriptService.Server.Services.UpgradeService)
 local PetService = require(ServerScriptService.Server.Services.PetService)
 local NametagService = require(ServerScriptService.Server.Services.NametagService)
+local RunSkillService = require(ServerScriptService.Server.Services.RunSkillService)
 
 print("[Server] Game Constants Loaded")
 print("[Server] Remote Events Initialized")
@@ -81,6 +82,10 @@ print("[Server] PetService Loaded")
 -- NametagService RemoteEvent 연결
 NametagService:SetupRemoteEvents(PlayerDataService)
 print("[Server] NametagService Loaded")
+
+-- RunSkillService RemoteEvent 연결
+RunSkillService:SetupRemoteEvents()
+print("[Server] RunSkillService Loaded")
 
 -- 플레이어 참가 처리
 game.Players.PlayerAdded:Connect(function(player: Player)

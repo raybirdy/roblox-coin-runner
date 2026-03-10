@@ -99,6 +99,7 @@ local PetController = require(script.Controllers.PetController)
 local NametagController = require(script.Controllers.NametagController)
 local CoinKingController = require(script.Controllers.CoinKingController)
 local CoinSpinController = require(script.Controllers.CoinSpinController)
+local RunSkillHudController = require(script.Controllers.RunSkillHudController)
 
 -- 컨트롤러 인스턴스 생성
 local inputController = InputController.new()
@@ -136,6 +137,7 @@ local petController = PetController.new()
 local _nametagController = NametagController.new(player)
 local coinKingController = CoinKingController.new()
 local _coinSpinController = CoinSpinController.new()
+local runSkillHudController = RunSkillHudController.new()
 
 -- Fever mode callbacks (speed boost + camera shake + BGM speed + P0: 카메라 줌인)
 feverController:OnFeverStart(function(speedBoost: number, duration: number)
@@ -521,6 +523,9 @@ RemoteEvents.GameStart.OnClientEvent:Connect(function(data)
 		-- 코인 킹 추적 연출 시작
 		coinKingController:StartGame()
 
+		-- 런 스킬 HUD 활성화
+		runSkillHudController:StartGame()
+
 		-- start_boost 업그레이드: 게임 시작 시 일시적 속도 부스트
 		local boostSeconds = data.startBoostSeconds or 0
 		if boostSeconds > 0 then
@@ -588,6 +593,9 @@ RemoteEvents.GameOver.OnClientEvent:Connect(function(data)
 
 	-- 코인 킹 연출 종료
 	coinKingController:EndGame()
+
+	-- 런 스킬 HUD 비활성화
+	runSkillHudController:EndGame()
 
 	-- 부활 가능한 경우 게임 일시정지만 (완전 종료 아님)
 	if data.canRevive then

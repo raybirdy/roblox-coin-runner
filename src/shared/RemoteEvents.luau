@@ -517,4 +517,22 @@ RemoteEvents.BossDialogue = getOrCreateRemoteEvent("BossDialogue")
 RemoteEvents.ChaseMobWarning = getOrCreateRemoteEvent("ChaseMobWarning")
 -- 파라미터: (없음) - 등장 시 경고음/화면 플래시 재생
 
+-- ==================== 런 내 성장 시스템 ====================
+
+-- 런 내 XP 업데이트 (서버 → 클라이언트)
+RemoteEvents.RunXPUpdate = getOrCreateRemoteEvent("RunXPUpdate")
+-- 파라미터: { runXP: number, runXPMax: number, runLevel: number }
+
+-- 런 레벨업 스킬 선택 (서버 → 클라이언트)
+RemoteEvents.RunSkillOptions = getOrCreateRemoteEvent("RunSkillOptions")
+-- 파라미터: { skills: { { id, name, emoji, desc, rarity } }, autoSelectDelay: number }
+
+-- 스킬 선택 (클라이언트 → 서버)
+RemoteEvents.RunSkillSelect = getOrCreateRemoteEvent("RunSkillSelect")
+-- 파라미터: { skillId: string }
+
+-- 스킬 발동 확인 (서버 → 클라이언트)
+RemoteEvents.RunSkillActivated = getOrCreateRemoteEvent("RunSkillActivated")
+-- 파라미터: { skillId: string, name: string, emoji: string }
+
 return RemoteEvents
