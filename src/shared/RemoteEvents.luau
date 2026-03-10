@@ -557,4 +557,16 @@ RemoteEvents.RunSkillSelect = getOrCreateRemoteEvent("RunSkillSelect")
 RemoteEvents.RunSkillActivated = getOrCreateRemoteEvent("RunSkillActivated")
 -- 파라미터: { skillId: string, name: string, emoji: string }
 
+-- 런 스킬 영구 해금 알림 (서버 → 클라이언트)
+RemoteEvents.RunSkillUnlocked = getOrCreateRemoteEvent("RunSkillUnlocked")
+-- 파라미터: { skillId: string }
+
+-- 런 스킬 슬롯 데이터 (서버 → 클라이언트)
+RemoteEvents.PreRunSkillData = getOrCreateRemoteEvent("PreRunSkillData")
+-- 파라미터: { unlockedSkills: { { id, name, emoji, desc, rarity } }, equippedSkills: { string } }
+
+-- 런 스킬 슬롯 장착 요청 (클라이언트 → 서버)
+RemoteEvents.EquipRunSkills = getOrCreateRemoteEvent("EquipRunSkills")
+-- 파라미터: { skillIds: { string } } (최대 2개)
+
 return RemoteEvents

@@ -79,6 +79,9 @@ type PlayerData = {
 	ownedCharacters: { string },
 	equippedCharacter: string,
 	characterSkillLastUsed: { [string]: number }?, -- { [characterId]: timestamp }
+	-- 런 스킬 슬롯 (v3)
+	unlockedRunSkills: { string }?, -- 영구 해금된 런 스킬 ID 목록
+	equippedRunSkills: { string }?, -- 시작 전 장착한 스킬 (최대 2개)
 }
 
 local DEFAULT_DATA: PlayerData = {
@@ -139,6 +142,9 @@ local DEFAULT_DATA: PlayerData = {
 	ownedCharacters = { "runner" },
 	equippedCharacter = "runner",
 	characterSkillLastUsed = {},
+	-- 런 스킬 슬롯 (v3)
+	unlockedRunSkills = {},
+	equippedRunSkills = {},
 }
 
 -- 메모리 캐시 (활성 플레이어)
@@ -937,6 +943,8 @@ VALID_KEYS["nametag"] = true
 VALID_KEYS["ownedCharacters"] = true
 VALID_KEYS["equippedCharacter"] = true
 VALID_KEYS["characterSkillLastUsed"] = true
+VALID_KEYS["unlockedRunSkills"] = true
+VALID_KEYS["equippedRunSkills"] = true
 
 -- 유틸리티: 기본값 병합
 function PlayerDataService:_mergeWithDefaults(data: any): PlayerData
@@ -949,6 +957,79 @@ function PlayerDataService:_mergeWithDefaults(data: any): PlayerData
 	end
 
 	return merged
+end
+
+-- ==================== 런 스킬 슬롯 메서드 ====================
+
+-- 런 스킬 해금 여부 확인
+function PlayerDataService:HasRunSkill(player: Player, skillId: string): boolean
+	local playerData = self:GetPlayerData(player)
+	if not playerData then
+		return false
+	end
+	for _, id in (playerData.unlockedRunSkills or {}) do
+		if id == skillId then
+			return true
+		end
+	end
+	return false
+end
+
+-- 런 스킬 영구 해금
+function PlayerDataService:UnlockRunSkill(player: Player, skillId: string): boolean
+	local playerData = self:GetPlayerData(player)
+	if not playerData then
+		return false
+	end
+	if self:HasRunSkill(player, skillId) then
+		return false -- 이미 해금됨
+	end
+	if not playerData.unlockedRunSkills then
+		playerData.unlockedRunSkills = {}
+	end
+	table.insert(playerData.unlockedRunSkills :: { string }, skillId)
+	return true
+end
+
+-- 장착 런 스킬 설정 (클라이언트 요청 시)
+function PlayerDataService:SetEquippedRunSkills(player: Player, skillIds: { string }): boolean
+	local playerData = self:GetPlayerData(player)
+	if not playerData then
+		return false
+	end
+	-- 최대 2개, 보유한 스킬만
+	local valid: { string } = {}
+	for _, skillId in skillIds do
+		if #valid >= 2 then
+			break
+		end
+		if self:HasRunSkill(player, skillId) then
+			local duplicate = false
+			for _, v in valid do
+				if v == skillId then
+					duplicate = true
+					break
+				end
+			end
+			if not duplicate then
+				table.insert(valid, skillId)
+			end
+		end
+	end
+	playerData.equippedRunSkills = valid
+	return true
+end
+
+-- 장착 런 스킬 조회
+function PlayerDataService:GetEquippedRunSkills(player: Player): { string }
+	local playerData = self:GetPlayerData(player)
+	return (playerData and playerData.equippedRunSkills) or {}
+end
+
+-- 해금된 런 스킬 목록 조회
+function PlayerDataService:GetUnlockedRunSkills(player: Player): { string }
+	local playerData = self:GetPlayerData(player)
+	return (playerData and playerData.unlockedRunSkills) or {}
 end
 
 print("[PlayerDataService] Initialized")
