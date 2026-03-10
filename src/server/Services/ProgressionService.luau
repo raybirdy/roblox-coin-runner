@@ -303,6 +303,8 @@ function ProgressionService:_getAchievementValue(playerData: any, condition: str
 		return playerData.totalDistance or 0
 	elseif condition == "level" then
 		return playerData.level or 1
+	elseif condition == "obstacles_dodged" then
+		return playerData.obstaclesDodged or 0
 	end
 	return 0
 end
@@ -326,6 +328,27 @@ function ProgressionService:_unlockAchievement(player: Player, achievement: any)
 	end
 	if achievement.rewardXP > 0 then
 		self:AddXP(player, achievement.rewardXP)
+	end
+
+	-- 캐릭터 해금 처리
+	if achievement.unlocksCharacter then
+		local characterId = achievement.unlocksCharacter
+		local unlocked = PlayerDataService:UnlockCharacter(player, characterId)
+		if unlocked then
+			-- 캐릭터 이름 조회
+			local characterName = characterId
+			for _, char in GameConstants.CHARACTERS.LIST do
+				if char.id == characterId then
+					characterName = char.name
+					break
+				end
+			end
+			RemoteEvents.CharacterUnlocked:FireClient(player, {
+				characterId = characterId,
+				characterName = characterName,
+			})
+			print(`[ProgressionService] {player.Name} unlocked character: {characterId}`)
+		end
 	end
 
 	-- 클라이언트에 알림
