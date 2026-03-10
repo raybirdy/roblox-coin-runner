@@ -1472,4 +1472,127 @@ GameConstants.PETS.MAX_PET_LEVEL = 5
 GameConstants.PETS.LEVEL_COIN_BONUS = 0.02 -- 레벨당 coinBonus +0.02 (누적)
 GameConstants.PETS.LEVEL_MAGNET_BONUS = 0.5 -- 레벨당 magnetBonus +0.5 studs (누적)
 
+-- ==================== 캐릭터 시스템 ====================
+GameConstants.CHARACTERS = {
+	LIST = {
+		{
+			id = "runner",
+			name = "달리기꾼",
+			emoji = "🏃",
+			-- 실루엣: 기본형
+			color = Color3.fromRGB(0, 170, 255),
+			material = "SmoothPlastic",
+			bodySize = Vector3.new(4, 5, 4),
+			headSize = Vector3.new(3, 3, 3),
+			-- 패시브
+			passive = { type = "none", value = 0 },
+			-- 액티브 스킬 없음
+			skill = nil,
+			-- 해금 조건
+			unlockType = "default",
+			unlockValue = 0,
+		},
+		{
+			id = "ninja",
+			name = "닌자",
+			emoji = "🥷",
+			color = Color3.fromRGB(30, 30, 30),
+			material = "SmoothPlastic",
+			bodySize = Vector3.new(3, 5, 3),
+			headSize = Vector3.new(2.5, 2.5, 2.5),
+			passive = { type = "hitbox_reduction", value = 0.10 }, -- 장애물 판정 10% 완화
+			skill = {
+				id = "dash",
+				name = "대시",
+				desc = "전방 돌진, 장애물 1개 통과",
+				cooldown = 8,
+				duration = 0.4,
+			},
+			unlockType = "coins",
+			unlockValue = 800,
+		},
+		{
+			id = "mage",
+			name = "마법사",
+			emoji = "🧙",
+			color = Color3.fromRGB(120, 60, 200),
+			material = "Neon",
+			bodySize = Vector3.new(5, 4, 4),
+			headSize = Vector3.new(3.5, 3.5, 3.5),
+			passive = { type = "magnet_bonus", value = 3 }, -- 수집 반경 +3 studs
+			skill = {
+				id = "vortex",
+				name = "마법 소용돌이",
+				desc = "4초간 주변 코인 전부 흡수",
+				cooldown = 15,
+				duration = 4,
+			},
+			unlockType = "level",
+			unlockValue = 15,
+		},
+		{
+			id = "knight",
+			name = "기사",
+			emoji = "🛡️",
+			color = Color3.fromRGB(160, 160, 180),
+			material = "Metal",
+			bodySize = Vector3.new(6, 5, 4),
+			headSize = Vector3.new(3, 3.5, 3),
+			passive = { type = "hit_resist", value = 0.50 }, -- 피격 50% 확률로 무효
+			skill = {
+				id = "shield",
+				name = "방패",
+				desc = "3초 무적",
+				cooldown = 20,
+				duration = 3,
+			},
+			unlockType = "quest",
+			unlockValue = "obstacles_dodged_500",
+		},
+		{
+			id = "fairy",
+			name = "요정",
+			emoji = "🧚",
+			color = Color3.fromRGB(200, 255, 200),
+			material = "Neon",
+			bodySize = Vector3.new(2.5, 3.5, 2.5),
+			headSize = Vector3.new(2, 2, 2),
+			passive = { type = "fever_extend", value = 2 }, -- 피버 지속 +2초
+			skill = {
+				id = "sparkle",
+				name = "반짝임",
+				desc = "즉시 미니 피버 발동",
+				cooldown = 25,
+				duration = 0,
+			},
+			unlockType = "season",
+			unlockValue = 20, -- 시즌 패스 Lv20
+		},
+		{
+			id = "robot",
+			name = "로봇",
+			emoji = "🤖",
+			color = Color3.fromRGB(100, 180, 220),
+			material = "Metal",
+			bodySize = Vector3.new(4.5, 5.5, 4.5),
+			headSize = Vector3.new(3.5, 3.5, 3.5),
+			passive = { type = "start_magnet", value = 5 }, -- 런 시작 자석 5초 자동 활성화
+			skill = {
+				id = "magnet_field",
+				name = "자기장",
+				desc = "10초간 자석 반경 2배",
+				cooldown = 18,
+				duration = 10,
+			},
+			unlockType = "gems",
+			unlockValue = 150,
+		},
+	},
+	-- 스킬 쿨다운 상한
+	MAX_SKILL_COOLDOWN = 30,
+	-- 캐릭터 패시브 보너스 상한 (밸런스 보호)
+	MAX_MAGNET_BONUS = 25, -- studs
+	MAX_FEVER_EXTEND = 4, -- 초
+}
+
 return GameConstants
