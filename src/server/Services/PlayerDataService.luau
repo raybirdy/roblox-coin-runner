@@ -83,6 +83,9 @@ type PlayerData = {
 	-- 런 스킬 슬롯 (v3)
 	unlockedRunSkills: { string }?, -- 영구 해금된 런 스킬 ID 목록
 	equippedRunSkills: { string }?, -- 시작 전 장착한 스킬 (최대 2개)
+	-- 초대 보상 시스템
+	hasBeenReferred: boolean, -- 초대 보상을 이미 받은 적 있는지 (중복 방지)
+	referralCount: number, -- 내가 초대해서 가입한 친구 수
 }
 
 local DEFAULT_DATA: PlayerData = {
@@ -147,6 +150,9 @@ local DEFAULT_DATA: PlayerData = {
 	-- 런 스킬 슬롯 (v3)
 	unlockedRunSkills = {},
 	equippedRunSkills = {},
+	-- 초대 보상 시스템
+	hasBeenReferred = false,
+	referralCount = 0,
 }
 
 -- 메모리 캐시 (활성 플레이어)

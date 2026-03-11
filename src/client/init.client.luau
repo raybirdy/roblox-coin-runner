@@ -102,6 +102,7 @@ local CoinKingController = require(script.Controllers.CoinKingController)
 local CoinSpinController = require(script.Controllers.CoinSpinController)
 local RunSkillHudController = require(script.Controllers.RunSkillHudController)
 local PreRunSkillController = require(script.Controllers.PreRunSkillController)
+local ReferralController = require(script.Controllers.ReferralController)
 
 -- 컨트롤러 인스턴스 생성
 local inputController = InputController.new()
@@ -142,6 +143,7 @@ local coinKingController = CoinKingController.new()
 local _coinSpinController = CoinSpinController.new()
 local runSkillHudController = RunSkillHudController.new()
 local preRunSkillController = PreRunSkillController.new()
+local referralController = ReferralController.new(player)
 
 -- Fever mode callbacks (speed boost + camera shake + BGM speed + P0: 카메라 줌인)
 feverController:OnFeverStart(function(speedBoost: number, duration: number)
@@ -455,6 +457,11 @@ end)
 -- 캐릭터 선택 버튼 콜백 연결
 uiController:SetCharacterSelectCallback(function()
 	characterSelectController:Open()
+end)
+
+-- 친구 초대 버튼 콜백 연결
+uiController:SetInviteCallback(function()
+	referralController:PromptInvite()
 end)
 
 -- UI 모바일 버튼 콜백 연결 (터치) — InputController debounce를 거침

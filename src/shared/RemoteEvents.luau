@@ -569,4 +569,13 @@ RemoteEvents.PreRunSkillData = getOrCreateRemoteEvent("PreRunSkillData")
 RemoteEvents.EquipRunSkills = getOrCreateRemoteEvent("EquipRunSkills")
 -- 파라미터: { skillIds: { string } } (최대 2개)
 
+-- ==================== 초대 보상 시스템 ====================
+
+-- 초대 다이얼로그 열기 요청 (클라이언트 → 서버)
+RemoteEvents.InviteFriend = getOrCreateRemoteEvent("InviteFriend")
+
+-- 초대 보상 알림 (서버 → 클라이언트)
+RemoteEvents.ReferralReward = getOrCreateRemoteEvent("ReferralReward")
+-- 파라미터: { type: "referrer"|"referee", coins: number, referrerName: string? }
+
 return RemoteEvents
