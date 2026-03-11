@@ -39,6 +39,7 @@ local PetService = require(ServerScriptService.Server.Services.PetService)
 local NametagService = require(ServerScriptService.Server.Services.NametagService)
 local CharacterService = require(ServerScriptService.Server.Services.CharacterService)
 local RunSkillService = require(ServerScriptService.Server.Services.RunSkillService)
+local ReferralService = require(ServerScriptService.Server.Services.ReferralService)
 
 print("[Server] Game Constants Loaded")
 print("[Server] Remote Events Initialized")
@@ -127,6 +128,10 @@ game.Players.PlayerAdded:Connect(function(player: Player)
 
 		-- 런 스킬 슬롯 데이터 전송
 		RunSkillService:SendPreRunSkillData(player, PlayerDataService)
+
+		-- 초대 보상 체크
+		ReferralService:OnPlayerJoin(player)
+
 		print(`[Server] Sent player data to {player.Name}`)
 	end
 

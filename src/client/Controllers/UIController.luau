@@ -39,6 +39,8 @@ export type UIController = typeof(setmetatable(
 		_lobbyGuideAnimation: boolean?, -- 로비 안내 펄스 애니메이션 활성 여부
 		_lobbyCharacterBtn: TextButton?, -- 캐릭터 선택 버튼
 		_onCharacterSelectCallback: (() -> ())?, -- 캐릭터 선택 버튼 콜백
+		_lobbyInviteBtn: TextButton?, -- 친구 초대 버튼
+		_onInviteCallback: (() -> ())?, -- 친구 초대 콜백
 		_multiplierBadge: Frame?, -- 생존 배율 뱃지
 		_gameOverDim: Frame?, -- 게임오버 배경 딤 오버레이
 		_coinLabelBaseSize: number, -- UpdateCoins 인플레이션 방지용 고정 기준 텍스트 크기
@@ -76,6 +78,8 @@ function UIController.new(player: Player): UIController
 		_lobbyGuideAnimation = false,
 		_lobbyCharacterBtn = nil,
 		_onCharacterSelectCallback = nil,
+		_lobbyInviteBtn = nil,
+		_onInviteCallback = nil,
 		_multiplierBadge = nil,
 		_gameOverDim = nil,
 		_coinLabelBaseSize = 0,
@@ -613,6 +617,34 @@ function UIController:_createUI()
 	charBtn.MouseButton1Click:Connect(function()
 		if self._onCharacterSelectCallback then
 			self._onCharacterSelectCallback()
+		end
+	end)
+
+	-- 친구 초대 버튼 (캐릭터 버튼 왼쪽)
+	local inviteBtn = Instance.new("TextButton")
+	inviteBtn.Name = "InviteBtn"
+	inviteBtn.Size = UDim2.new(0, ResponsiveUtil.scaledOffset(120), 0, ResponsiveUtil.scaledOffset(44))
+	inviteBtn.Position = UDim2.new(1, -ResponsiveUtil.scaledOffset(260), 1, -ResponsiveUtil.scaledOffset(120))
+	inviteBtn.BackgroundColor3 = Color3.fromRGB(50, 140, 80)
+	inviteBtn.BackgroundTransparency = 0.1
+	inviteBtn.BorderSizePixel = 0
+	inviteBtn.Text = "👥 친구초대"
+	inviteBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	inviteBtn.TextSize = ResponsiveUtil.scaledTextSize(15, 12)
+	inviteBtn.Font = Enum.Font.GothamBold
+	inviteBtn.Visible = false
+	inviteBtn.Parent = screenGui
+	self._lobbyInviteBtn = inviteBtn
+
+	Instance.new("UICorner", inviteBtn).CornerRadius = UDim.new(0, 10)
+	local inviteBtnStroke = Instance.new("UIStroke")
+	inviteBtnStroke.Color = Color3.fromRGB(100, 220, 130)
+	inviteBtnStroke.Thickness = 2
+	inviteBtnStroke.Parent = inviteBtn
+
+	inviteBtn.MouseButton1Click:Connect(function()
+		if self._onInviteCallback then
+			self._onInviteCallback()
 		end
 	end)
 
@@ -1404,6 +1436,9 @@ function UIController:ShowLobbyUI()
 	if self._lobbyCharacterBtn then
 		self._lobbyCharacterBtn.Visible = true
 	end
+	if self._lobbyInviteBtn then
+		self._lobbyInviteBtn.Visible = true
+	end
 
 	-- 게임 UI 숨기기
 	if self._hudFrame then
@@ -1518,6 +1553,9 @@ function UIController:HideLobbyUI()
 	if self._lobbyCharacterBtn then
 		self._lobbyCharacterBtn.Visible = false
 	end
+	if self._lobbyInviteBtn then
+		self._lobbyInviteBtn.Visible = false
+	end
 
 	-- 게임 UI 표시
 	if self._hudFrame then
@@ -1542,6 +1580,11 @@ end
 -- 캐릭터 선택 버튼 콜백 등록
 function UIController:SetCharacterSelectCallback(callback: () -> ())
 	self._onCharacterSelectCallback = callback
+end
+
+-- 친구 초대 버튼 콜백 등록
+function UIController:SetInviteCallback(callback: () -> ())
+	self._onInviteCallback = callback
 end
 
 -- 최고 점수 표시 업데이트
