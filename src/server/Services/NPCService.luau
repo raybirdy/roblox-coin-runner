@@ -1,165 +1,193 @@
 --!strict
--- NpcService
--- 로비 NPC 생성 및 상호작용 처리
+-- NPC Service
+-- NPC 생성 및 관리 (응원 NPC, 가이드 NPC)
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local GameConstants = require(ReplicatedStorage.Shared.Constants.GameConstants)
 local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)
 
-local NpcService = {}
+local NPCService = {}
+NPCService.__index = NPCService
 
--- NPC 설정
-local NPC_DEFS = {
-	{
-		id = "quest_npc",
-		name = "📜 퀘스트 도우미",
-		desc = "퀘스트 확인하기",
-		-- 로비 기준 위치 (Studio에서 배치 후 조정 가능)
-		position = Vector3.new(0, 3, -20),
-		bodyColor = Color3.fromRGB(255, 200, 100),
-		headColor = Color3.fromRGB(255, 220, 150),
-		accentColor = Color3.fromRGB(255, 160, 40),
+export type NPCService = typeof(setmetatable(
+	{} :: {
+		_player: Player,
+		_npcs: { Model },
 	},
-}
+	NPCService
+))
 
--- ==================== NPC 모델 생성 ====================
+function NPCService.new(player: Player): NPCService
+	local self = setmetatable({
+		_player = player,
+		_npcs = {},
+	}, NPCService)
 
-local function createNpcModel(def: any): Model
-	local model = Instance.new("Model")
-	model.Name = def.id
+	return self
+end
+
+-- NPC 모델 생성
+function NPCService:_createNPCModel(npcType: string, position: Vector3): Model?
+	local npcConfig = GameConstants.NPC.TYPES[npcType]
+	if not npcConfig then
+		warn(`[NPCService] Unknown NPC type: {npcType}`)
+		return nil
+	end
+
+	-- NPC 모델 생성 (간단한 블록 형태)
+	local npcModel = Instance.new("Model")
+	npcModel.Name = `NPC_{npcType}`
 
 	-- 몸통
-	local torso = Instance.new("Part")
-	torso.Name = "Torso"
-	torso.Size = Vector3.new(2.2, 2.8, 1.2)
-	torso.Position = def.position
-	torso.Anchored = true
-	torso.CanCollide = false
-	torso.Color = def.bodyColor
-	torso.Material = Enum.Material.SmoothPlastic
-	torso.Parent = model
+	local body = Instance.new("Part")
+	body.Name = "Body"
+	body.Size = Vector3.new(3, 4, 2)
+	body.Position = position
+	body.Anchored = true
+	body.CanCollide = false -- NPC는 충돌하지 않음
+	body.Color = npcConfig.color
+	body.Parent = npcModel
 
-	-- 머리
+	-- 머리 (몸보다 큰 귀여운 비율)
 	local head = Instance.new("Part")
 	head.Name = "Head"
-	head.Shape = Enum.PartType.Ball
-	head.Size = Vector3.new(2, 2, 2)
-	head.Position = def.position + Vector3.new(0, 2.8, 0)
+	head.Size = Vector3.new(4, 4, 2.5)
+	head.Position = position + Vector3.new(0, 4.5, 0)
 	head.Anchored = true
 	head.CanCollide = false
-	head.Color = def.headColor
-	head.Material = Enum.Material.SmoothPlastic
-	head.Parent = model
+	head.Color = npcConfig.color
+	head.Shape = Enum.PartType.Ball -- 둥근 머리
+	head.Parent = npcModel
 
-	-- 모자 테두리
-	local hat = Instance.new("Part")
-	hat.Name = "Hat"
-	hat.Size = Vector3.new(2.4, 0.5, 2.4)
-	hat.Position = def.position + Vector3.new(0, 4, 0)
-	hat.Anchored = true
-	hat.CanCollide = false
-	hat.Color = def.accentColor
-	hat.Material = Enum.Material.SmoothPlastic
-	hat.Parent = model
+	-- 얼굴 (간단한 텍스처)
+	local face = Instance.new("Decal")
+	face.Name = "Face"
+	face.Face = Enum.NormalId.Front
+	face.Texture = "rbxasset://textures/face.png" -- 기본 웃는 얼굴
+	face.Parent = head
 
-	-- 모자 윗부분
-	local hatTop = Instance.new("Part")
-	hatTop.Name = "HatTop"
-	hatTop.Size = Vector3.new(1.4, 1.2, 1.4)
-	hatTop.Position = def.position + Vector3.new(0, 4.85, 0)
-	hatTop.Anchored = true
-	hatTop.CanCollide = false
-	hatTop.Color = def.accentColor
-	hatTop.Material = Enum.Material.SmoothPlastic
-	hatTop.Parent = model
+	-- PrimaryPart 설정
+	npcModel.PrimaryPart = body
 
-	-- 눈 (왼쪽)
-	local eyeL = Instance.new("Part")
-	eyeL.Name = "EyeL"
-	eyeL.Shape = Enum.PartType.Ball
-	eyeL.Size = Vector3.new(0.4, 0.4, 0.4)
-	eyeL.Position = def.position + Vector3.new(-0.45, 3.1, -0.9)
-	eyeL.Anchored = true
-	eyeL.CanCollide = false
-	eyeL.Color = Color3.fromRGB(30, 30, 30)
-	eyeL.Material = Enum.Material.Neon
-	eyeL.Parent = model
+	-- 위치 설정
+	npcModel:MoveTo(position)
 
-	-- 눈 (오른쪽)
-	local eyeR = Instance.new("Part")
-	eyeR.Name = "EyeR"
-	eyeR.Shape = Enum.PartType.Ball
-	eyeR.Size = Vector3.new(0.4, 0.4, 0.4)
-	eyeR.Position = def.position + Vector3.new(0.45, 3.1, -0.9)
-	eyeR.Anchored = true
-	eyeR.CanCollide = false
-	eyeR.Color = Color3.fromRGB(30, 30, 30)
-	eyeR.Material = Enum.Material.Neon
-	eyeR.Parent = model
-
-	model.PrimaryPart = torso
-
-	-- 이름 BillboardGui
-	local billboard = Instance.new("BillboardGui")
-	billboard.Name = "NameBillboard"
-	billboard.Size = UDim2.new(0, 180, 0, 50)
-	billboard.StudsOffset = Vector3.new(0, 3.5, 0)
-	billboard.AlwaysOnTop = false
-	billboard.Parent = head
-
-	local nameLabel = Instance.new("TextLabel")
-	nameLabel.Size = UDim2.new(1, 0, 0.6, 0)
-	nameLabel.Position = UDim2.new(0, 0, 0, 0)
-	nameLabel.BackgroundTransparency = 1
-	nameLabel.Text = def.name
-	nameLabel.TextColor3 = Color3.fromRGB(255, 240, 180)
-	nameLabel.TextSize = 15
-	nameLabel.Font = Enum.Font.GothamBold
-	nameLabel.TextStrokeTransparency = 0.4
-	nameLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-	nameLabel.Parent = billboard
-
-	local hintLabel = Instance.new("TextLabel")
-	hintLabel.Size = UDim2.new(1, 0, 0.4, 0)
-	hintLabel.Position = UDim2.new(0, 0, 0.6, 0)
-	hintLabel.BackgroundTransparency = 1
-	hintLabel.Text = "[ E ] 대화하기"
-	hintLabel.TextColor3 = Color3.fromRGB(200, 230, 255)
-	hintLabel.TextSize = 12
-	hintLabel.Font = Enum.Font.Gotham
-	hintLabel.TextStrokeTransparency = 0.5
-	hintLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-	hintLabel.Parent = billboard
-
-	-- ProximityPrompt (가까이 가면 E 키 아이콘 자동 표시)
-	local prompt = Instance.new("ProximityPrompt")
-	prompt.Name = "QuestPrompt"
-	prompt.ActionText = def.desc
-	prompt.ObjectText = def.name
-	prompt.HoldDuration = 0
-	prompt.MaxActivationDistance = 8
-	prompt.RequiresLineOfSight = false
-	prompt.Parent = torso
-
-	prompt.Triggered:Connect(function(player: Player)
-		RemoteEvents.NpcInteract:FireClient(player, { npcId = def.id })
-		print(`[NpcService] {player.Name} interacted with {def.id}`)
-	end)
-
-	return model
+	return npcModel
 end
 
--- ==================== 초기화 ====================
-
-function NpcService:Init()
-	for _, def in NPC_DEFS do
-		local model = createNpcModel(def)
-		model.Parent = workspace
-		print(`[NpcService] Spawned NPC: {def.id} at {def.position}`)
+-- NPC를 청크에 스폰
+function NPCService:SpawnNPCInChunk(chunk: Model, difficulty: string): Model?
+	-- NPC는 NPC 청크에만 등장
+	if difficulty ~= "NPC" then
+		return nil
 	end
-	print("[NpcService] All NPCs initialized")
+
+	-- 랜덤 NPC 선택 (Rabbit 50%, Bear 50%)
+	local npcType = math.random() < 0.5 and "Rabbit" or "Bear"
+
+	-- 청크 내 랜덤 위치
+	local chunkPosition = chunk:GetPivot().Position
+	local spawnX = chunkPosition.X + math.random(10, 70) -- 청크 내 랜덤 X 위치
+	local spawnY = GameConstants.NPC.SPAWN_HEIGHT
+	local spawnZ = chunkPosition.Z + GameConstants.NPC.Z_POSITION -- 배경 레이어
+
+	local spawnPosition = Vector3.new(spawnX, spawnY, spawnZ)
+
+	-- NPC 모델 생성
+	local npcModel = self:_createNPCModel(npcType, spawnPosition)
+	if not npcModel then
+		return nil
+	end
+
+	-- 청크의 자식으로 추가
+	npcModel.Parent = chunk
+
+	-- NPC 목록에 추가
+	table.insert(self._npcs, npcModel)
+
+	-- 클라이언트에 NPC 등장 알림
+	RemoteEvents.NPCAppeared:FireClient(self._player, {
+		npcType = npcType,
+		position = spawnPosition,
+		npcInstance = npcModel,
+	})
+
+	print(`[NPCService] Spawned {npcType} NPC at {spawnPosition}`)
+
+	-- NPC 손흔들기 애니메이션 (간단한 회전)
+	self:_playWaveAnimation(npcModel)
+
+	return npcModel
 end
 
-print("[NpcService] Loaded")
+-- 손흔들기 애니메이션 (간단한 회전)
+function NPCService:_playWaveAnimation(npcModel: Model)
+	local head = npcModel:FindFirstChild("Head") :: BasePart?
+	if not head then
+		return
+	end
 
-return NpcService
+	-- TweenService로 좌우 회전 애니메이션
+	local TweenService = game:GetService("TweenService")
+	local tweenInfo = TweenInfo.new(
+		0.5, -- 지속 시간
+		Enum.EasingStyle.Sine,
+		Enum.EasingDirection.InOut,
+		-1, -- 무한 반복
+		true, -- 역방향 재생
+		0
+	)
+
+	local goal = { CFrame = head.CFrame * CFrame.Angles(0, math.rad(15), 0) }
+	local tween = TweenService:Create(head, tweenInfo, goal)
+	tween:Play()
+
+	-- 일정 시간 후 애니메이션 정지
+	task.delay(GameConstants.NPC.WAVE_ANIMATION_DURATION, function()
+		tween:Cancel()
+		if head and head.Parent then
+			head.CFrame = npcModel:GetPivot() * CFrame.new(0, 4.5, 0)
+		end
+	end)
+end
+
+-- 튜토리얼용 부엉이 NPC 생성
+function NPCService:SpawnTutorialOwl(position: Vector3, messageIndex: number): Model?
+	local npcModel = self:_createNPCModel("Owl", position)
+	if not npcModel then
+		return nil
+	end
+
+	-- 워크스페이스에 직접 추가 (청크가 아닌)
+	npcModel.Parent = workspace
+
+	-- NPC 목록에 추가
+	table.insert(self._npcs, npcModel)
+
+	-- 클라이언트에 NPC 등장 알림 (튜토리얼용 메시지 인덱스 포함)
+	RemoteEvents.NPCAppeared:FireClient(self._player, {
+		npcType = "Owl",
+		position = position,
+		npcInstance = npcModel,
+		messageIndex = messageIndex,
+	})
+
+	print(`[NPCService] Spawned tutorial Owl NPC with message #{messageIndex}`)
+
+	return npcModel
+end
+
+-- 정리
+function NPCService:Destroy()
+	for _, npc in self._npcs do
+		if npc and npc.Parent then
+			npc:Destroy()
+		end
+	end
+	self._npcs = {}
+end
+
+print("[NPCService] Initialized")
+
+return NPCService

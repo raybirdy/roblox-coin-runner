@@ -40,7 +40,7 @@ local NametagService = require(ServerScriptService.Server.Services.NametagServic
 local CharacterService = require(ServerScriptService.Server.Services.CharacterService)
 local RunSkillService = require(ServerScriptService.Server.Services.RunSkillService)
 local ReferralService = require(ServerScriptService.Server.Services.ReferralService)
-local NpcService = require(ServerScriptService.Server.Services.NpcService)
+local LobbyNpcService = require(ServerScriptService.Server.Services.LobbyNpcService)
 
 print("[Server] Game Constants Loaded")
 print("[Server] Remote Events Initialized")
@@ -94,9 +94,9 @@ print("[Server] CharacterService Loaded")
 RunSkillService:SetupRemoteEvents(PlayerDataService)
 print("[Server] RunSkillService Loaded")
 
--- NPC 초기화
-NpcService:Init()
-print("[Server] NpcService Loaded")
+-- 로비 NPC 초기화
+LobbyNpcService:Init()
+print("[Server] LobbyNpcService Loaded")
 
 -- 플레이어 참가 처리
 game.Players.PlayerAdded:Connect(function(player: Player)
