@@ -14,8 +14,8 @@ local NPC_DEFS = {
 		id = "quest_npc",
 		name = "📜 퀘스트 도우미",
 		desc = "퀘스트 확인하기",
-		-- 로비 기준 위치 (Studio에서 배치 후 조정 가능)
-		position = Vector3.new(0, 3, -20),
+		-- 로비 플로어 기준: X=-110, 포탈 근처 옆에 배치
+		position = Vector3.new(-55, 3, -18),
 		bodyColor = Color3.fromRGB(255, 200, 100),
 		headColor = Color3.fromRGB(255, 220, 150),
 		accentColor = Color3.fromRGB(255, 160, 40),

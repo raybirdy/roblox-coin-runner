@@ -12,7 +12,8 @@ local HapticService = game:GetService("HapticService")
 local InputController = {}
 InputController.__index = InputController
 
-local ACTION_DEBOUNCE_TIME = 0.08 -- 80ms debounce to prevent double triggers
+local SWIPE_DEBOUNCE_TIME = 0.08  -- 스와이프 디바운스 (버튼과 분리)
+local BUTTON_DEBOUNCE_TIME = 0.03 -- 버튼 디바운스 (30ms, 더 빠른 반응)
 
 export type InputController = typeof(setmetatable(
 	{} :: {
@@ -23,7 +24,8 @@ export type InputController = typeof(setmetatable(
 		_touchStartPos: Vector2?,
 		_touchStartTime: number,
 		_isGameActive: boolean,
-		_lastActionTime: number,
+		_lastSwipeTime: number,
+		_lastButtonTime: number,
 	},
 	InputController
 ))
@@ -37,7 +39,8 @@ function InputController.new(): InputController
 		_touchStartPos = nil,
 		_touchStartTime = 0,
 		_isGameActive = false,
-		_lastActionTime = 0,
+		_lastSwipeTime = 0,
+		_lastButtonTime = 0,
 	}, InputController)
 
 	self:_setupKeyboardInput()
@@ -152,13 +155,13 @@ function InputController:_setupTouchInput()
 		-- 수직 스와이프가 수평보다 큰 경우만 처리
 		if math.abs(delta.Y) > math.abs(delta.X) and math.abs(delta.Y) >= dynamicThreshold then
 			if delta.Y < 0 then
-				-- 위로 스와이프 = 점프 (debounce 적용)
-				if self:_canTriggerAction() and self._jumpCallback then
+				-- 위로 스와이프 = 점프
+				if self:_canSwipe() and self._jumpCallback then
 					self._jumpCallback()
 				end
 			else
-				-- 아래로 스와이프 = 슬라이드 (debounce 적용)
-				if self:_canTriggerAction() and self._slideCallback then
+				-- 아래로 스와이프 = 슬라이드
+				if self:_canSwipe() and self._slideCallback then
 					self._slideCallback()
 				end
 			end
@@ -171,13 +174,23 @@ function InputController:_setupTouchInput()
 	print("[InputController] Touch swipe input enabled")
 end
 
--- Debounce check for shared action timing (prevents swipe + button double trigger)
-function InputController:_canTriggerAction(): boolean
+-- 스와이프 디바운스 (스와이프 간격 보호)
+function InputController:_canSwipe(): boolean
 	local now = os.clock()
-	if now - self._lastActionTime < ACTION_DEBOUNCE_TIME then
+	if now - self._lastSwipeTime < SWIPE_DEBOUNCE_TIME then
 		return false
 	end
-	self._lastActionTime = now
+	self._lastSwipeTime = now
+	return true
+end
+
+-- 버튼 디바운스 (빠른 반응, 짧은 간격)
+function InputController:_canButton(): boolean
+	local now = os.clock()
+	if now - self._lastButtonTime < BUTTON_DEBOUNCE_TIME then
+		return false
+	end
+	self._lastButtonTime = now
 	return true
 end
 
@@ -197,7 +210,7 @@ end
 
 -- 점프 트리거 (UI 버튼용 public 메서드)
 function InputController:TriggerJump()
-	if not self:_canTriggerAction() then
+	if not self:_canButton() then
 		return
 	end
 	if self._jumpCallback then
@@ -208,7 +221,7 @@ end
 
 -- 슬라이드 트리거 (UI 버튼용 public 메서드)
 function InputController:TriggerSlide()
-	if not self:_canTriggerAction() then
+	if not self:_canButton() then
 		return
 	end
 	if self._slideCallback then
