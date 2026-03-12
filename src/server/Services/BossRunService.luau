@@ -167,6 +167,11 @@ function BossRunService:_endBossRun(player: Player, success: boolean)
 			end
 			playerData.bossRunCompleted[chapterId] = true
 
+			-- highScore 갱신 (챕터 잠금 해제 minScore 조건 충족을 위해)
+			if session.playerScore > (playerData.highScore or 0) then
+				playerData.highScore = session.playerScore
+			end
+
 			RemoteEvents.GemsUpdated:FireClient(player, { gems = playerData.gems })
 		end
 
