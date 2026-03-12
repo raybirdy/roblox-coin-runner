@@ -222,10 +222,19 @@ function CharacterService:SetupRemoteEvents(playerDataService: any)
 		self:_onSkillUse(player, playerDataService)
 	end)
 
-	-- 캐릭터 스폰 시 비주얼 적용
+	-- 캐릭터 스폰 시 비주얼 적용 (리스폰 포함)
 	Players.PlayerAdded:Connect(function(p: Player)
 		p.CharacterAdded:Connect(function()
-			task.wait(0.5)
+			-- 데이터 로드 대기 (최대 10초)
+			local waited = 0
+			while waited < 10 do
+				local data = playerDataService:GetPlayerData(p)
+				if data then
+					break
+				end
+				task.wait(0.5)
+				waited += 0.5
+			end
 			local equippedChar = playerDataService:GetEquippedCharacter(p)
 			if equippedChar and equippedChar ~= "runner" then
 				self:ApplyCharacterModel(p, equippedChar)
