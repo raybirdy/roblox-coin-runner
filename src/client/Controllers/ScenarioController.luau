@@ -1639,9 +1639,14 @@ function ScenarioController:_setupEventHandlers()
 	end)
 	table.insert(self._connections, playerDataConn)
 
-	-- 챕터 완료 보상 팝업
+	-- 챕터 완료 보상 팝업 / 다음 챕터 해금 알림
 	local chapterConn = RemoteEvents.ChapterUnlocked.OnClientEvent:Connect(function(data)
-		if not data.isOpening and not data.bossRunReady then
+		if data.isOpening then
+			-- 다음 챕터 해금 알림 (ex: 보스 클리어 → ch2 오픈)
+			task.delay(1.5, function()
+				self:_showChapterUnlockedBanner(data.chapterId)
+			end)
+		elseif not data.bossRunReady then
 			if data.chapterReward or data.skillUnlocked or data.statBonus then
 				local cutsceneLen = if data.cutscene then #data.cutscene else 0
 				task.delay(cutsceneLen * 3 + 5, function()
@@ -2324,6 +2329,96 @@ function ScenarioController:_showIntroPopup()
 	end)
 	laterBtn.MouseButton1Click:Connect(function()
 		closeIntro(false)
+	end)
+end
+
+-- ==================== 챕터 해금 배너 ====================
+
+-- 새 챕터 해금 알림 배너 (isOpening = true 시 표시)
+function ScenarioController:_showChapterUnlockedBanner(chapterId: string?)
+	local playerGui = self._player:WaitForChild("PlayerGui")
+
+	-- 중복 방지
+	if playerGui:FindFirstChild("ChapterUnlockedBanner") then
+		return
+	end
+
+	local bannerGui = Instance.new("ScreenGui")
+	bannerGui.Name = "ChapterUnlockedBanner"
+	bannerGui.ResetOnSpawn = false
+	bannerGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+	bannerGui.Parent = playerGui
+
+	local frame = Instance.new("Frame")
+	frame.Name = "Banner"
+	frame.Size = UDim2.new(0, 340, 0, 76)
+	frame.Position = UDim2.new(0.5, -170, 0, -80)
+	frame.BackgroundColor3 = Color3.fromRGB(20, 40, 90)
+	frame.BorderSizePixel = 0
+	frame.ZIndex = 20
+	frame.Parent = bannerGui
+
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, 14)
+	corner.Parent = frame
+
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = Color3.fromRGB(100, 200, 255)
+	stroke.Thickness = 2
+	stroke.Parent = frame
+
+	local icon = Instance.new("TextLabel")
+	icon.Size = UDim2.new(0, 48, 1, 0)
+	icon.Position = UDim2.new(0, 8, 0, 0)
+	icon.BackgroundTransparency = 1
+	icon.Text = "🔓"
+	icon.TextSize = 28
+	icon.Font = Enum.Font.GothamBold
+	icon.ZIndex = 21
+	icon.Parent = frame
+
+	local titleLabel = Instance.new("TextLabel")
+	titleLabel.Size = UDim2.new(1, -60, 0, 36)
+	titleLabel.Position = UDim2.new(0, 56, 0, 8)
+	titleLabel.BackgroundTransparency = 1
+	titleLabel.Text = "새 챕터 해금!"
+	titleLabel.TextColor3 = Color3.fromRGB(100, 220, 255)
+	titleLabel.TextSize = 20
+	titleLabel.Font = Enum.Font.GothamBold
+	titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+	titleLabel.TextStrokeTransparency = 0.5
+	titleLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+	titleLabel.ZIndex = 21
+	titleLabel.Parent = frame
+
+	local subLabel = Instance.new("TextLabel")
+	subLabel.Size = UDim2.new(1, -60, 0, 24)
+	subLabel.Position = UDim2.new(0, 56, 0, 42)
+	subLabel.BackgroundTransparency = 1
+	subLabel.Text = if chapterId then (chapterId .. " 스토리를 시작하세요!") else "퀘스트 패널에서 확인하세요!"
+	subLabel.TextColor3 = Color3.fromRGB(200, 230, 255)
+	subLabel.TextSize = 13
+	subLabel.Font = Enum.Font.Gotham
+	subLabel.TextXAlignment = Enum.TextXAlignment.Left
+	subLabel.ZIndex = 21
+	subLabel.Parent = frame
+
+	-- 슬라이드 인
+	local tweenIn = TweenService:Create(frame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+		Position = UDim2.new(0.5, -170, 0, 20),
+	})
+	tweenIn:Play()
+
+	-- 3초 후 슬라이드 아웃
+	task.delay(3.5, function()
+		if not bannerGui.Parent then return end
+		local tweenOut = TweenService:Create(frame, TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+			Position = UDim2.new(0.5, -170, 0, -80),
+		})
+		tweenOut:Play()
+		tweenOut.Completed:Connect(function()
+			bannerGui:Destroy()
+		end)
 	end)
 end
 

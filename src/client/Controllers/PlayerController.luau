@@ -154,6 +154,7 @@ function PlayerController:StartGame()
 	self.verticalVelocity = 0
 	self._slideSessionId += 1 -- invalidate any pending slide task.delay
 	self._lastJumpTime = 0
+	self._lastGroundedTime = os.clock() -- 코요테 타임 초기화
 
 	-- Anchored 해제 (Play Again 버그 방지)
 	self.humanoidRootPart.Anchored = false
@@ -561,10 +562,10 @@ function PlayerController:_checkGrounded()
 	local timeSinceJump = os.clock() - self._lastJumpTime
 	if result then
 		local distanceToGround = result.Distance
-		self.isGrounded = timeSinceJump > 0.1 and distanceToGround < 3.2
+		self.isGrounded = timeSinceJump > 0.1 and distanceToGround < GROUND_RAYCAST_DISTANCE
 	else
 		-- Raycast 실패 시 Y 위치로 판정
-		self.isGrounded = timeSinceJump > 0.1 and currentY <= GROUND_HEIGHT + 1.2
+		self.isGrounded = timeSinceJump > 0.1 and currentY <= GROUND_HEIGHT + 2.0
 	end
 
 	-- 착지 시각 기록 (코요테 타임용)
