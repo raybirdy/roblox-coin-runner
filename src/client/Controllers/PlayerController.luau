@@ -23,6 +23,7 @@ type State = "Idle" | "Running" | "Jumping" | "Sliding" | "Falling"
 -- 상수
 local GROUND_RAYCAST_DISTANCE = 3.5 -- 바닥 감지 레이캐스트 거리
 local GROUND_HEIGHT = 2.5 -- 캐릭터 중심 높이 (바닥에 서 있을 때)
+local COYOTE_TIME = 0.12 -- 착지 직후 점프 유예 시간 (초)
 
 export type PlayerController = typeof(setmetatable(
 	{} :: {
@@ -74,6 +75,7 @@ export type PlayerController = typeof(setmetatable(
 
 		-- 디버그
 		_lastJumpTime: number,
+		_lastGroundedTime: number, -- 코요테 타임용 마지막 착지 시각
 	},
 	PlayerController
 ))
@@ -114,6 +116,7 @@ function PlayerController.new(player: Player, character: Model): PlayerControlle
 		_jumpSound = nil,
 		_landSound = nil,
 		_lastJumpTime = 0,
+		_lastGroundedTime = 0,
 		_dashLeanAngle = 0,
 	}, PlayerController)
 
@@ -553,15 +556,20 @@ function PlayerController:_checkGrounded()
 	local currentY = self.humanoidRootPart.Position.Y
 	local currentVelY = self.humanoidRootPart.AssemblyLinearVelocity.Y
 
-	-- 바닥 감지: Raycast 히트 또는 Y 위치가 충분히 낮음
-	-- Y 속도 조건 완화: 위로 강하게 올라가는 중이 아니면 바닥 판정
+	-- 바닥 감지: Raycast 히트 또는 Y 위치 기반
+	-- 점프 시작 직후 0.1s 이내에는 grounded 판정 억제 (점프 직후 재판정 방지)
+	local timeSinceJump = os.clock() - self._lastJumpTime
 	if result then
-		-- Raycast로 바닥 감지 (거리 3.0 이하이고 위로 빠르게 올라가지 않으면)
 		local distanceToGround = result.Distance
-		self.isGrounded = distanceToGround < 3.0 and currentVelY < 5.0
+		self.isGrounded = timeSinceJump > 0.1 and distanceToGround < 3.2
 	else
-		-- Raycast 실패 시 Y 위치로 판정 (조건 완화)
-		self.isGrounded = currentY <= GROUND_HEIGHT + 1.0 and currentVelY < 5.0
+		-- Raycast 실패 시 Y 위치로 판정
+		self.isGrounded = timeSinceJump > 0.1 and currentY <= GROUND_HEIGHT + 1.2
+	end
+
+	-- 착지 시각 기록 (코요테 타임용)
+	if self.isGrounded then
+		self._lastGroundedTime = os.clock()
 	end
 
 	-- 착지 시
@@ -626,18 +634,19 @@ function PlayerController:Jump()
 		return
 	end
 
-	-- 점프 쿨다운 (연타 방지) - 0.1초로 단축
+	-- 점프 쿨다운 (연타 방지)
 	local now = os.clock()
 	if now - self._lastJumpTime < 0.1 then
 		return
 	end
 
-	-- 1단 점프 (바닥에 있을 때)
-	if self.isGrounded then
+	-- 1단 점프: 바닥에 있거나 코요테 타임 이내 (막 공중에 뜬 직후)
+	local inCoyoteTime = not self.isGrounded and (now - self._lastGroundedTime) < COYOTE_TIME
+	if self.isGrounded or inCoyoteTime then
 		self:_performJump(GameConstants.PHYSICS.JUMP_HEIGHT_FIRST)
-		self.canDoubleJump = self._skillDoubleJump -- 2단 점프 스킬 보유 시만 허용
+		self.canDoubleJump = self._skillDoubleJump
 		self._lastJumpTime = now
-		print(`[PlayerController] First jump - Y: {self.humanoidRootPart.Position.Y}`)
+		self._lastGroundedTime = 0 -- 코요테 타임 소진
 		return
 	end
 
