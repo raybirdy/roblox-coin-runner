@@ -23,7 +23,7 @@ type State = "Idle" | "Running" | "Jumping" | "Sliding" | "Falling"
 -- 상수
 local GROUND_RAYCAST_DISTANCE = 3.5 -- 바닥 감지 레이캐스트 거리
 local GROUND_HEIGHT = 2.5 -- 캐릭터 중심 높이 (바닥에 서 있을 때)
-local COYOTE_TIME = 0.12 -- 착지 직후 점프 유예 시간 (초)
+local COYOTE_TIME = 0.25 -- 착지 직후 점프 유예 시간 (초)
 
 export type PlayerController = typeof(setmetatable(
 	{} :: {
@@ -558,9 +558,12 @@ function PlayerController:_checkGrounded()
 	local currentVelY = self.humanoidRootPart.AssemblyLinearVelocity.Y
 
 	-- 바닥 감지: Raycast 히트 또는 Y 위치 기반
-	-- 점프 시작 직후 0.1s 이내에는 grounded 판정 억제 (점프 직후 재판정 방지)
 	local timeSinceJump = os.clock() - self._lastJumpTime
-	if result then
+
+	-- Y 속도가 양수(위로 이동 중)이면 공중으로 확정
+	if currentVelY > 2 then
+		self.isGrounded = false
+	elseif result then
 		local distanceToGround = result.Distance
 		self.isGrounded = timeSinceJump > 0.1 and distanceToGround < GROUND_RAYCAST_DISTANCE
 	else
@@ -578,6 +581,8 @@ function PlayerController:_checkGrounded()
 		if self.state == "Jumping" or self.state == "Falling" then
 			self.state = "Running"
 			self.canDoubleJump = false
+			-- Humanoid를 Running으로 복원 (Freefall에서 복귀)
+			self.humanoid:ChangeState(Enum.HumanoidStateType.Running)
 			-- Y 속도 리셋 (착지 시 바운스 방지)
 			local vel = self.humanoidRootPart.AssemblyLinearVelocity
 			self.humanoidRootPart.AssemblyLinearVelocity = Vector3.new(vel.X, 0, vel.Z)
@@ -669,6 +674,9 @@ function PlayerController:_performJump(jumpHeight: number)
 	self.state = "Jumping"
 	self.isGrounded = false
 
+	-- Humanoid를 Freefall로 전환 (Running 상태의 지면 고착력 제거)
+	self.humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
+
 	-- 점프 초기 속도 계산 (v = sqrt(2 * g * h))
 	local gravity = GameConstants.PHYSICS.GRAVITY
 	local jumpVelocity = math.sqrt(2 * gravity * jumpHeight)
@@ -702,8 +710,9 @@ function PlayerController:Slide()
 		return
 	end
 
-	-- 공중에서는 슬라이드 불가
-	if not self.isGrounded then
+	-- 공중에서는 슬라이드 불가 (단, 최근 0.3초 내 땅에 있었으면 허용)
+	local recentlyGrounded = (os.clock() - self._lastGroundedTime) < 0.3
+	if not self.isGrounded and not recentlyGrounded then
 		return
 	end
 

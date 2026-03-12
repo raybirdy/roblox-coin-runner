@@ -72,7 +72,13 @@ end
 -- 키보드 입력 설정
 function InputController:_setupKeyboardInput()
 	local connection = UserInputService.InputBegan:Connect(function(input: InputObject, gameProcessed: boolean)
-		if gameProcessed then
+		-- 게임 중일 때는 gameProcessed 무시 (Studio UI 포커스로 인한 입력 차단 방지)
+		-- TextBox 등 실제 텍스트 입력이 아닌 경우에만 허용
+		if gameProcessed and not self._isGameActive then
+			return
+		end
+		-- TextBox에 포커스 중인 경우는 항상 무시
+		if UserInputService:GetFocusedTextBox() then
 			return
 		end
 
@@ -98,7 +104,10 @@ function InputController:_setupKeyboardInput()
 
 	-- 키보드 릴리즈 (슬라이드 종료)
 	local releaseConn = UserInputService.InputEnded:Connect(function(input: InputObject, gameProcessed: boolean)
-		if gameProcessed then
+		if gameProcessed and not self._isGameActive then
+			return
+		end
+		if UserInputService:GetFocusedTextBox() then
 			return
 		end
 		if input.KeyCode == Enum.KeyCode.S or input.KeyCode == Enum.KeyCode.Down then
