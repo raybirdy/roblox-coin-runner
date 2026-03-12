@@ -126,6 +126,12 @@ game.Players.PlayerAdded:Connect(function(player: Player)
 		-- 캐릭터 데이터 전송
 		CharacterService:SendCharacterData(player, PlayerDataService)
 
+		-- 캐릭터 비주얼 즉시 적용 (데이터 로드 완료 후)
+		local equippedChar = playerData.equippedCharacter or "runner"
+		if equippedChar ~= "runner" and player.Character then
+			CharacterService:ApplyCharacterModel(player, equippedChar)
+		end
+
 		-- 런 스킬 슬롯 데이터 전송
 		RunSkillService:SendPreRunSkillData(player, PlayerDataService)
 
