@@ -547,6 +547,10 @@ RemoteEvents.BuyCharacter = getOrCreateRemoteEvent("BuyCharacter")
 RemoteEvents.BuyCharacterResult = getOrCreateRemoteEvent("BuyCharacterResult")
 -- 파라미터: { success: boolean, characterId: string, reason: string? }
 
+-- NPC 상호작용 (서버 → 클라이언트)
+RemoteEvents.NpcInteract = getOrCreateRemoteEvent("NpcInteract")
+-- 파라미터: { npcId: string }
+
 -- ==================== 런 내 성장 시스템 ====================
 
 -- 런 내 XP 업데이트 (서버 → 클라이언트)

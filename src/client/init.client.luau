@@ -464,6 +464,14 @@ uiController:SetInviteCallback(function()
 	referralController:PromptInvite()
 end)
 
+-- NPC 상호작용 → 퀘스트 UI 오픈
+RemoteEvents.NpcInteract.OnClientEvent:Connect(function(data: any)
+	if type(data) ~= "table" then return end
+	if data.npcId == "quest_npc" then
+		scenarioController:OpenPanel()
+	end
+end)
+
 -- UI 모바일 버튼 콜백 연결 (터치) — InputController debounce를 거침
 uiController:OnJump(function()
 	inputController:TriggerJump()
