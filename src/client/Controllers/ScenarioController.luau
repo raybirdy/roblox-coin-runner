@@ -1739,7 +1739,7 @@ function ScenarioController:_showStorySubtitle(speaker: string, emoji: string, t
 
 	-- 이전 스레드 취소
 	if self._subtitleThread then
-		task.cancel(self._subtitleThread)
+		pcall(task.cancel, self._subtitleThread)
 		self._subtitleThread = nil
 	end
 
@@ -1773,7 +1773,7 @@ function ScenarioController:_showBossDialogue(characterId: string, text: string)
 
 	-- 이전 스레드 취소
 	if self._bossDialogueThread then
-		task.cancel(self._bossDialogueThread)
+		pcall(task.cancel, self._bossDialogueThread)
 		self._bossDialogueThread = nil
 	end
 
@@ -1874,7 +1874,7 @@ end
 function ScenarioController:_startSubtitleLoop()
 	-- 이전 루프 취소
 	if self._subtitleThread then
-		task.cancel(self._subtitleThread)
+		pcall(task.cancel, self._subtitleThread)
 		self._subtitleThread = nil
 	end
 
@@ -1911,7 +1911,7 @@ end
 -- 자막 루프 중단 (게임 종료 시 호출)
 function ScenarioController:_stopSubtitleLoop()
 	if self._subtitleThread then
-		task.cancel(self._subtitleThread)
+		pcall(task.cancel, self._subtitleThread)
 		self._subtitleThread = nil
 	end
 
@@ -2781,7 +2781,7 @@ function ScenarioController:Destroy()
 
 	-- 보스 다이얼로그 스레드/GUI 정리
 	if self._bossDialogueThread then
-		task.cancel(self._bossDialogueThread)
+		pcall(task.cancel, self._bossDialogueThread)
 		self._bossDialogueThread = nil
 	end
 	if self._bossDialogueGui and self._bossDialogueGui.Parent then
@@ -2791,7 +2791,7 @@ function ScenarioController:Destroy()
 
 	-- 스토리 자막 스레드/GUI 정리
 	if self._subtitleThread then
-		task.cancel(self._subtitleThread)
+		pcall(task.cancel, self._subtitleThread)
 		self._subtitleThread = nil
 	end
 
