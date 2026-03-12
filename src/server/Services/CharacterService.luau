@@ -196,6 +196,49 @@ end
 -- ==================== RemoteEvent 연결 ====================
 
 function CharacterService:SetupRemoteEvents(playerDataService: any)
+	-- 캐릭터 구매 요청
+	RemoteEvents.BuyCharacter.OnServerEvent:Connect(function(player: Player, data: any)
+		if type(data) ~= "table" or type(data.characterId) ~= "string" then
+			return
+		end
+		if not RateLimiter.Check(player, "BuyCharacter", 2) then
+			return
+		end
+
+		local characterId = data.characterId
+		local charData = characterMap[characterId]
+		if not charData then
+			RemoteEvents.BuyCharacterResult:FireClient(player, { success = false, characterId = characterId, reason = "unknown_character" })
+			return
+		end
+
+		-- 이미 보유 중
+		if playerDataService:OwnsCharacter(player, characterId) then
+			RemoteEvents.BuyCharacterResult:FireClient(player, { success = false, characterId = characterId, reason = "already_owned" })
+			return
+		end
+
+		-- 구매 가능 타입만 허용
+		local ok = false
+		if charData.unlockType == "coins" then
+			ok = playerDataService:SpendCoins(player, charData.unlockValue)
+		elseif charData.unlockType == "gems" then
+			ok = playerDataService:SpendGems(player, charData.unlockValue)
+		end
+
+		if not ok then
+			RemoteEvents.BuyCharacterResult:FireClient(player, { success = false, characterId = characterId, reason = "insufficient_funds" })
+			return
+		end
+
+		playerDataService:AddCharacter(player, characterId)
+		playerDataService:SavePlayerData(player)
+		self:SendCharacterData(player, playerDataService)
+
+		RemoteEvents.BuyCharacterResult:FireClient(player, { success = true, characterId = characterId })
+		print(`[CharacterService] {player.Name} purchased character: {characterId}`)
+	end)
+
 	-- 캐릭터 장착 요청
 	RemoteEvents.EquipCharacter.OnServerEvent:Connect(function(player: Player, data: any)
 		if type(data) ~= "table" or type(data.characterId) ~= "string" then

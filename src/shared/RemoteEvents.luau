@@ -539,6 +539,14 @@ RemoteEvents.CharacterSkillUse = getOrCreateRemoteEvent("CharacterSkillUse")
 RemoteEvents.CharacterSkillActivated = getOrCreateRemoteEvent("CharacterSkillActivated")
 -- 파라미터: { skillId: string, duration: number, cooldown: number }
 
+-- 캐릭터 구매 요청 (클라이언트 → 서버)
+RemoteEvents.BuyCharacter = getOrCreateRemoteEvent("BuyCharacter")
+-- 파라미터: { characterId: string }
+
+-- 캐릭터 구매 결과 (서버 → 클라이언트)
+RemoteEvents.BuyCharacterResult = getOrCreateRemoteEvent("BuyCharacterResult")
+-- 파라미터: { success: boolean, characterId: string, reason: string? }
+
 -- ==================== 런 내 성장 시스템 ====================
 
 -- 런 내 XP 업데이트 (서버 → 클라이언트)
