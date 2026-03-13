@@ -562,11 +562,9 @@ function PlayerController:_checkGrounded()
 	-- 바닥 감지: Raycast 히트 또는 Y 위치 기반
 	local timeSinceJump = os.clock() - self._lastJumpTime
 
-	-- 슬라이드 중엔 Y 속도 체크 생략 (CFrame 낮추기 시 물리 반발로 오판정 방지)
-	-- Y 속도가 양수(위로 이동 중)이면 공중으로 확정 (슬라이드 제외)
-	if currentVelY > 2 and not self.isSliding then
-		self.isGrounded = false
-	elseif result then
+	-- 바닥 감지: Raycast 히트 또는 Y 위치 기반
+	-- 점프 직후 0.1s 이내엔 isGrounded=false 유지 (재판정 방지)
+	if result then
 		local distanceToGround = result.Distance
 		self.isGrounded = timeSinceJump > 0.1 and distanceToGround < GROUND_RAYCAST_DISTANCE
 	else
@@ -584,9 +582,9 @@ function PlayerController:_checkGrounded()
 		if self.state == "Jumping" or self.state == "Falling" then
 			self.state = "Running"
 			self.canDoubleJump = false
-			-- Humanoid를 Running으로 복원 (Freefall에서 복귀)
-			self.humanoid:ChangeState(Enum.HumanoidStateType.Running)
 			-- Y 속도 리셋 (착지 시 바운스 방지)
+			-- humanoid:ChangeState(Running) 제거 — 호출 시 물리 settle 반발로 velY>0 발생,
+			-- 이후 Running→Falling 즉시 전환되는 버그 유발
 			local vel = self.humanoidRootPart.AssemblyLinearVelocity
 			self.humanoidRootPart.AssemblyLinearVelocity = Vector3.new(vel.X, 0, vel.Z)
 
