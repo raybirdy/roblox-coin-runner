@@ -23,7 +23,7 @@ type State = "Idle" | "Running" | "Jumping" | "Sliding" | "Falling"
 -- 상수
 local GROUND_RAYCAST_DISTANCE = 3.5 -- 바닥 감지 레이캐스트 거리
 local GROUND_HEIGHT = 2.5 -- 캐릭터 중심 높이 (바닥에 서 있을 때)
-local COYOTE_TIME = 0.12 -- 착지 직후 점프 유예 시간 (초)
+local COYOTE_TIME = 0.25 -- 착지 직후 점프 유예 시간 (초)
 
 export type PlayerController = typeof(setmetatable(
 	{} :: {
@@ -76,6 +76,7 @@ export type PlayerController = typeof(setmetatable(
 		-- 디버그
 		_lastJumpTime: number,
 		_lastGroundedTime: number, -- 코요테 타임용 마지막 착지 시각
+		_slideStartTime: number, -- 슬라이드 시작 시각 (즉시 종료 방지)
 	},
 	PlayerController
 ))
@@ -117,6 +118,7 @@ function PlayerController.new(player: Player, character: Model): PlayerControlle
 		_landSound = nil,
 		_lastJumpTime = 0,
 		_lastGroundedTime = 0,
+		_slideStartTime = 0,
 		_dashLeanAngle = 0,
 	}, PlayerController)
 
@@ -154,6 +156,7 @@ function PlayerController:StartGame()
 	self.verticalVelocity = 0
 	self._slideSessionId += 1 -- invalidate any pending slide task.delay
 	self._lastJumpTime = 0
+	self._lastGroundedTime = os.clock() -- 코요테 타임 초기화
 
 	-- Anchored 해제 (Play Again 버그 방지)
 	self.humanoidRootPart.Anchored = false
@@ -388,7 +391,7 @@ end
 function PlayerController:_createSounds()
 	local jumpSound = Instance.new("Sound")
 	jumpSound.Name = "JumpSound"
-	jumpSound.SoundId = "rbxassetid://539919907" -- Jump whoosh SFX
+	jumpSound.SoundId = "" -- TODO: 점프음 에셋 ID 교체 필요 (rbxassetid://XXXXXXX)
 	jumpSound.Volume = 0.4
 	jumpSound.PlaybackSpeed = 1.2
 	jumpSound.Parent = SoundService
@@ -396,7 +399,7 @@ function PlayerController:_createSounds()
 
 	local landSound = Instance.new("Sound")
 	landSound.Name = "LandSound"
-	landSound.SoundId = "rbxassetid://2963418461" -- Landing thud SFX
+	landSound.SoundId = "" -- TODO: 착지음 에셋 ID 교체 필요 (rbxassetid://XXXXXXX)
 	landSound.Volume = 0.3
 	landSound.PlaybackSpeed = 1.0
 	landSound.Parent = SoundService
@@ -469,6 +472,15 @@ function PlayerController:_update(deltaTime: number)
 
 	if self.state == "Idle" then
 		return
+	end
+
+	-- 안전망: Jumping 상태가 1.5초 이상 지속되면 강제 Running 복귀
+	-- (착지 감지 실패 시 state stuck 방지)
+	if self.state == "Jumping" and (now - self._lastJumpTime) > 1.5 then
+		self.state = "Running"
+		self.isGrounded = true
+		self._lastGroundedTime = now
+		print("[PlayerController] Jump state timeout → forced Running")
 	end
 
 	-- 속도 업데이트 (시간에 따라 증가)
@@ -557,14 +569,16 @@ function PlayerController:_checkGrounded()
 	local currentVelY = self.humanoidRootPart.AssemblyLinearVelocity.Y
 
 	-- 바닥 감지: Raycast 히트 또는 Y 위치 기반
-	-- 점프 시작 직후 0.1s 이내에는 grounded 판정 억제 (점프 직후 재판정 방지)
 	local timeSinceJump = os.clock() - self._lastJumpTime
+
+	-- 바닥 감지: Raycast 히트 또는 Y 위치 기반
+	-- 점프 직후 0.1s 이내엔 isGrounded=false 유지 (재판정 방지)
 	if result then
 		local distanceToGround = result.Distance
-		self.isGrounded = timeSinceJump > 0.1 and distanceToGround < 3.2
+		self.isGrounded = timeSinceJump > 0.1 and distanceToGround < GROUND_RAYCAST_DISTANCE
 	else
 		-- Raycast 실패 시 Y 위치로 판정
-		self.isGrounded = timeSinceJump > 0.1 and currentY <= GROUND_HEIGHT + 1.2
+		self.isGrounded = timeSinceJump > 0.1 and currentY <= GROUND_HEIGHT + 2.0
 	end
 
 	-- 착지 시각 기록 (코요테 타임용)
@@ -578,6 +592,8 @@ function PlayerController:_checkGrounded()
 			self.state = "Running"
 			self.canDoubleJump = false
 			-- Y 속도 리셋 (착지 시 바운스 방지)
+			-- humanoid:ChangeState(Running) 제거 — 호출 시 물리 settle 반발로 velY>0 발생,
+			-- 이후 Running→Falling 즉시 전환되는 버그 유발
 			local vel = self.humanoidRootPart.AssemblyLinearVelocity
 			self.humanoidRootPart.AssemblyLinearVelocity = Vector3.new(vel.X, 0, vel.Z)
 
@@ -630,37 +646,42 @@ function PlayerController:Jump()
 
 	-- 슬라이드 중에는 점프 불가
 	if self.isSliding then
-		print("[PlayerController] Cannot jump while sliding")
 		return
 	end
 
 	-- 점프 쿨다운 (연타 방지)
 	local now = os.clock()
-	if now - self._lastJumpTime < 0.1 then
+	if now - self._lastJumpTime < 0.15 then
 		return
 	end
 
-	-- 1단 점프: 바닥에 있거나 코요테 타임 이내 (막 공중에 뜬 직후)
-	local inCoyoteTime = not self.isGrounded and (now - self._lastGroundedTime) < COYOTE_TIME
-	if self.isGrounded or inCoyoteTime then
+	-- 1단 점프: Running 상태이면 무조건 허용
+	if self.state == "Running" then
 		self:_performJump(GameConstants.PHYSICS.JUMP_HEIGHT_FIRST)
 		self.canDoubleJump = self._skillDoubleJump
 		self._lastJumpTime = now
-		self._lastGroundedTime = 0 -- 코요테 타임 소진
 		return
 	end
 
-	-- 2단 점프 (공중에서)
+	-- Falling 상태 + 코요테 타임: 발판 끝에서 막 떨어진 직후 점프 허용
+	if self.state == "Falling" then
+		local inCoyoteTime = (now - self._lastGroundedTime) < COYOTE_TIME
+		if inCoyoteTime then
+			self:_performJump(GameConstants.PHYSICS.JUMP_HEIGHT_FIRST)
+			self.canDoubleJump = self._skillDoubleJump
+			self._lastJumpTime = now
+			self._lastGroundedTime = 0
+			return
+		end
+	end
+
+	-- 2단 점프 (공중에서, 더블점프 스킬 보유 시)
 	if self.canDoubleJump then
 		self:_performJump(GameConstants.PHYSICS.JUMP_HEIGHT_SECOND)
 		self.canDoubleJump = false
 		self._lastJumpTime = now
-		print(`[PlayerController] Second jump - Y: {self.humanoidRootPart.Position.Y}`)
 		return
 	end
-
-	-- 점프 불가 상태 (로그 빈도 줄이기)
-	-- print(`[PlayerController] Cannot jump - Grounded: {self.isGrounded}, CanDoubleJump: {self.canDoubleJump}, State: {self.state}`)
 end
 
 -- 점프 실행 (AssemblyLinearVelocity 사용)
@@ -669,6 +690,8 @@ function PlayerController:_performJump(jumpHeight: number)
 	self.isGrounded = false
 
 	-- 점프 초기 속도 계산 (v = sqrt(2 * g * h))
+	-- NOTE: humanoid:ChangeState(Freefall) 제거 — CFrame 이동과 충돌하여
+	--       Humanoid 물리 접촉 감지 파괴 → isGrounded 영구 false 버그 유발
 	local gravity = GameConstants.PHYSICS.GRAVITY
 	local jumpVelocity = math.sqrt(2 * gravity * jumpHeight)
 
@@ -701,13 +724,14 @@ function PlayerController:Slide()
 		return
 	end
 
-	-- 공중에서는 슬라이드 불가
-	if not self.isGrounded then
+	-- Running 상태에서만 슬라이드 허용 (점프와 동일 기준)
+	if self.state ~= "Running" then
 		return
 	end
 
 	self.isSliding = true
 	self.state = "Sliding"
+	self._slideStartTime = os.clock()
 
 	-- 서버에 슬라이딩 상태 전달 (Attribute 사용)
 	self.humanoidRootPart:SetAttribute("IsSliding", true)
@@ -751,6 +775,10 @@ end
 
 -- 슬라이드 업데이트
 function PlayerController:_updateSlide(_deltaTime: number)
+	-- 슬라이드 시작 직후 0.2초는 강제 종료 안 함 (CFrame 낮추기 반발 처리 시간)
+	if os.clock() - self._slideStartTime < 0.2 then
+		return
+	end
 	-- 슬라이드 중 바닥을 벗어나면 즉시 종료
 	if not self.isGrounded then
 		self:_endSlide()

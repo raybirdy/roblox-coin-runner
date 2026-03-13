@@ -178,6 +178,13 @@ function CharacterService:ApplyCharacterModel(player: Player, characterId: strin
 		skinMaterial = Enum.Material.Neon
 	end
 
+	-- Shirt/Pants/ShirtGraphic 제거 (아바타 의상이 BasePart 색상을 덮어쓰는 현상 방지)
+	for _, item in character:GetChildren() do
+		if item:IsA("Shirt") or item:IsA("Pants") or item:IsA("ShirtGraphic") then
+			item:Destroy()
+		end
+	end
+
 	-- BodyPart 색상 + 재질 변경
 	for _, part in character:GetChildren() do
 		if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
