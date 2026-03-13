@@ -634,33 +634,37 @@ end
 function PlayerController:Jump()
 	-- 게임이 시작되지 않았으면 무시
 	if self.state == "Idle" then
+		print("[Jump] BLOCKED: Idle")
 		return
 	end
 
 	-- 슬라이드 중에는 점프 불가
 	if self.isSliding then
+		print("[Jump] BLOCKED: isSliding")
 		return
 	end
 
 	-- 점프 쿨다운 (연타 방지)
 	local now = os.clock()
 	if now - self._lastJumpTime < 0.15 then
+		print(`[Jump] BLOCKED: cooldown ({string.format("%.2f", now - self._lastJumpTime)}s < 0.15s)`)
 		return
 	end
 
-	-- 1단 점프: Running 상태이면 무조건 허용 (isGrounded 판정 불필요)
-	-- 러너 게임에서 Running = 땅 위에 있음을 보장하므로 isGrounded 체크 생략
+	-- 1단 점프: Running 상태이면 무조건 허용
 	if self.state == "Running" then
+		print("[Jump] OK: Running → 1st jump")
 		self:_performJump(GameConstants.PHYSICS.JUMP_HEIGHT_FIRST)
 		self.canDoubleJump = self._skillDoubleJump
 		self._lastJumpTime = now
 		return
 	end
 
-	-- Falling 상태 + 코요테 타임: 막 발판 끝에서 떨어진 직후 점프 허용
+	-- Falling 상태 + 코요테 타임
 	if self.state == "Falling" then
 		local inCoyoteTime = (now - self._lastGroundedTime) < COYOTE_TIME
 		if inCoyoteTime then
+			print("[Jump] OK: Falling coyote → 1st jump")
 			self:_performJump(GameConstants.PHYSICS.JUMP_HEIGHT_FIRST)
 			self.canDoubleJump = self._skillDoubleJump
 			self._lastJumpTime = now
@@ -669,13 +673,16 @@ function PlayerController:Jump()
 		end
 	end
 
-	-- 2단 점프 (Jumping/Falling 상태에서 공중 점프)
+	-- 2단 점프
 	if self.canDoubleJump then
+		print("[Jump] OK: double jump")
 		self:_performJump(GameConstants.PHYSICS.JUMP_HEIGHT_SECOND)
 		self.canDoubleJump = false
 		self._lastJumpTime = now
 		return
 	end
+
+	print(`[Jump] BLOCKED: state={self.state}, isGrounded={self.isGrounded}, canDoubleJump={self.canDoubleJump}`)
 end
 
 -- 점프 실행 (AssemblyLinearVelocity 사용)
