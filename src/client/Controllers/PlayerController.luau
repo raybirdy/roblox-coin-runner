@@ -391,7 +391,7 @@ end
 function PlayerController:_createSounds()
 	local jumpSound = Instance.new("Sound")
 	jumpSound.Name = "JumpSound"
-	jumpSound.SoundId = "rbxassetid://539919907" -- Jump whoosh SFX
+	jumpSound.SoundId = "" -- TODO: 점프음 에셋 ID 교체 필요 (rbxassetid://XXXXXXX)
 	jumpSound.Volume = 0.4
 	jumpSound.PlaybackSpeed = 1.2
 	jumpSound.Parent = SoundService
@@ -399,7 +399,7 @@ function PlayerController:_createSounds()
 
 	local landSound = Instance.new("Sound")
 	landSound.Name = "LandSound"
-	landSound.SoundId = "rbxassetid://2963418461" -- Landing thud SFX
+	landSound.SoundId = "" -- TODO: 착지음 에셋 ID 교체 필요 (rbxassetid://XXXXXXX)
 	landSound.Volume = 0.3
 	landSound.PlaybackSpeed = 1.0
 	landSound.Parent = SoundService
@@ -639,37 +639,43 @@ function PlayerController:Jump()
 
 	-- 슬라이드 중에는 점프 불가
 	if self.isSliding then
-		print("[PlayerController] Cannot jump while sliding")
 		return
 	end
 
 	-- 점프 쿨다운 (연타 방지)
 	local now = os.clock()
-	if now - self._lastJumpTime < 0.1 then
+	if now - self._lastJumpTime < 0.15 then
 		return
 	end
 
-	-- 1단 점프: 바닥에 있거나 코요테 타임 이내 (막 공중에 뜬 직후)
-	local inCoyoteTime = not self.isGrounded and (now - self._lastGroundedTime) < COYOTE_TIME
-	if self.isGrounded or inCoyoteTime then
+	-- 1단 점프: Running 상태이면 무조건 허용 (isGrounded 판정 불필요)
+	-- 러너 게임에서 Running = 땅 위에 있음을 보장하므로 isGrounded 체크 생략
+	if self.state == "Running" then
 		self:_performJump(GameConstants.PHYSICS.JUMP_HEIGHT_FIRST)
 		self.canDoubleJump = self._skillDoubleJump
 		self._lastJumpTime = now
-		self._lastGroundedTime = 0 -- 코요테 타임 소진
 		return
 	end
 
-	-- 2단 점프 (공중에서)
+	-- Falling 상태 + 코요테 타임: 막 발판 끝에서 떨어진 직후 점프 허용
+	if self.state == "Falling" then
+		local inCoyoteTime = (now - self._lastGroundedTime) < COYOTE_TIME
+		if inCoyoteTime then
+			self:_performJump(GameConstants.PHYSICS.JUMP_HEIGHT_FIRST)
+			self.canDoubleJump = self._skillDoubleJump
+			self._lastJumpTime = now
+			self._lastGroundedTime = 0
+			return
+		end
+	end
+
+	-- 2단 점프 (Jumping/Falling 상태에서 공중 점프)
 	if self.canDoubleJump then
 		self:_performJump(GameConstants.PHYSICS.JUMP_HEIGHT_SECOND)
 		self.canDoubleJump = false
 		self._lastJumpTime = now
-		print(`[PlayerController] Second jump - Y: {self.humanoidRootPart.Position.Y}`)
 		return
 	end
-
-	-- 점프 불가 상태 (로그 빈도 줄이기)
-	-- print(`[PlayerController] Cannot jump - Grounded: {self.isGrounded}, CanDoubleJump: {self.canDoubleJump}, State: {self.state}`)
 end
 
 -- 점프 실행 (AssemblyLinearVelocity 사용)
@@ -713,9 +719,8 @@ function PlayerController:Slide()
 		return
 	end
 
-	-- 공중에서는 슬라이드 불가 (단, 최근 0.3초 내 땅에 있었으면 허용)
-	local recentlyGrounded = (os.clock() - self._lastGroundedTime) < 0.3
-	if not self.isGrounded and not recentlyGrounded then
+	-- Running 상태에서만 슬라이드 허용 (점프와 동일 기준)
+	if self.state ~= "Running" then
 		return
 	end
 
