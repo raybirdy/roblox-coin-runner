@@ -474,6 +474,15 @@ function PlayerController:_update(deltaTime: number)
 		return
 	end
 
+	-- 안전망: Jumping 상태가 1.5초 이상 지속되면 강제 Running 복귀
+	-- (착지 감지 실패 시 state stuck 방지)
+	if self.state == "Jumping" and (now - self._lastJumpTime) > 1.5 then
+		self.state = "Running"
+		self.isGrounded = true
+		self._lastGroundedTime = now
+		print("[PlayerController] Jump state timeout → forced Running")
+	end
+
 	-- 속도 업데이트 (시간에 따라 증가)
 	self:_updateSpeed()
 
@@ -688,10 +697,9 @@ function PlayerController:_performJump(jumpHeight: number)
 	self.state = "Jumping"
 	self.isGrounded = false
 
-	-- Humanoid를 Freefall로 전환 (Running 상태의 지면 고착력 제거)
-	self.humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
-
 	-- 점프 초기 속도 계산 (v = sqrt(2 * g * h))
+	-- NOTE: humanoid:ChangeState(Freefall) 제거 — CFrame 이동과 충돌하여
+	--       Humanoid 물리 접촉 감지 파괴 → isGrounded 영구 false 버그 유발
 	local gravity = GameConstants.PHYSICS.GRAVITY
 	local jumpVelocity = math.sqrt(2 * gravity * jumpHeight)
 
