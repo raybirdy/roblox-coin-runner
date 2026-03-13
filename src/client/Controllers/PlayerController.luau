@@ -76,6 +76,7 @@ export type PlayerController = typeof(setmetatable(
 		-- 디버그
 		_lastJumpTime: number,
 		_lastGroundedTime: number, -- 코요테 타임용 마지막 착지 시각
+		_slideStartTime: number, -- 슬라이드 시작 시각 (즉시 종료 방지)
 	},
 	PlayerController
 ))
@@ -117,6 +118,7 @@ function PlayerController.new(player: Player, character: Model): PlayerControlle
 		_landSound = nil,
 		_lastJumpTime = 0,
 		_lastGroundedTime = 0,
+		_slideStartTime = 0,
 		_dashLeanAngle = 0,
 	}, PlayerController)
 
@@ -560,8 +562,9 @@ function PlayerController:_checkGrounded()
 	-- 바닥 감지: Raycast 히트 또는 Y 위치 기반
 	local timeSinceJump = os.clock() - self._lastJumpTime
 
-	-- Y 속도가 양수(위로 이동 중)이면 공중으로 확정
-	if currentVelY > 2 then
+	-- 슬라이드 중엔 Y 속도 체크 생략 (CFrame 낮추기 시 물리 반발로 오판정 방지)
+	-- Y 속도가 양수(위로 이동 중)이면 공중으로 확정 (슬라이드 제외)
+	if currentVelY > 2 and not self.isSliding then
 		self.isGrounded = false
 	elseif result then
 		local distanceToGround = result.Distance
@@ -718,6 +721,7 @@ function PlayerController:Slide()
 
 	self.isSliding = true
 	self.state = "Sliding"
+	self._slideStartTime = os.clock()
 
 	-- 서버에 슬라이딩 상태 전달 (Attribute 사용)
 	self.humanoidRootPart:SetAttribute("IsSliding", true)
@@ -761,6 +765,10 @@ end
 
 -- 슬라이드 업데이트
 function PlayerController:_updateSlide(_deltaTime: number)
+	-- 슬라이드 시작 직후 0.2초는 강제 종료 안 함 (CFrame 낮추기 반발 처리 시간)
+	if os.clock() - self._slideStartTime < 0.2 then
+		return
+	end
 	-- 슬라이드 중 바닥을 벗어나면 즉시 종료
 	if not self.isGrounded then
 		self:_endSlide()
