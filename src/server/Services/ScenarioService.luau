@@ -168,6 +168,7 @@ function ScenarioService:_checkChapterCompletion(player: Player, playerData: any
 			local progress = questProgress[questId] or 0
 			if progress < quest.target then
 				allDone = false
+				print(`[ScenarioService] {player.Name} {chapter.id} 미완료 퀘스트: {questId} ({progress}/{quest.target})`)
 				break
 			end
 		end
@@ -176,6 +177,8 @@ function ScenarioService:_checkChapterCompletion(player: Player, playerData: any
 			-- 보스 런 클리어 여부 확인
 			local bossRunCompleted = playerData.bossRunCompleted :: { [string]: boolean }?
 			local bossCleared = bossRunCompleted and bossRunCompleted[chapter.id]
+
+			print(`[ScenarioService] {player.Name} {chapter.id}: 모든 퀘스트 완료! 보스런 클리어={tostring(bossCleared)}`)
 
 			if bossCleared then
 				-- 보스 런 이미 완료 → 챕터 완료 처리
