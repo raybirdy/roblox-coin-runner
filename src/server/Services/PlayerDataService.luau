@@ -161,6 +161,11 @@ local playerDataCache: { [Player]: PlayerData } = {}
 -- 스튜디오 디버그: "기존 유저" 시뮬레이션 (true → 인트로 팝업 건너뛰고 ch1 컷씬 테스트)
 local STUDIO_SIMULATE_EXISTING_USER = false
 
+-- 개발자 계정 데이터 강제 초기화 (true → 다음 접속 시 데이터 삭제 후 기본값으로 시작)
+-- 사용법: true로 설정 → 게임 실행 → 로그 확인 → false로 되돌리기
+local FORCE_RESET_DEVELOPER_DATA = true
+local DEVELOPER_USER_ID = 10329999799
+
 -- 플레이어 데이터 로드
 function PlayerDataService:LoadPlayerData(player: Player): PlayerData?
 	-- DataStore 사용 불가 시 기본값 사용 (Studio 모드)
@@ -177,6 +182,18 @@ function PlayerDataService:LoadPlayerData(player: Player): PlayerData?
 	end
 
 	local userId = player.UserId
+
+	-- 개발자 계정 강제 초기화
+	if FORCE_RESET_DEVELOPER_DATA and userId == DEVELOPER_USER_ID then
+		pcall(function()
+			playerDataStore:RemoveAsync("Player_" .. userId)
+		end)
+		print(`[PlayerDataService] ⚠️ 개발자 계정 데이터 초기화 완료 ({userId}) — FORCE_RESET_DEVELOPER_DATA를 false로 되돌리세요`)
+		local newData = self:_copyTable(DEFAULT_DATA)
+		playerDataCache[player] = newData
+		return newData
+	end
+
 	local success, data = pcall(function()
 		return playerDataStore:GetAsync("Player_" .. userId)
 	end)
