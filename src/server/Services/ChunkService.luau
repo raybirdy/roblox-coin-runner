@@ -379,6 +379,18 @@ function ChunkService:SpawnNextChunk(): Model?
 		end
 	end
 
+	-- Zone 고유 코인 패턴 생성 (coinPattern이 정의된 Zone에서만)
+	if self._coinService and not isInSafeZone and not eventType then
+		local zoneMechForCoin = GameConstants.ZONE_MECHANICS[self._currentZoneIndex]
+		if zoneMechForCoin and zoneMechForCoin.coinPattern then
+			-- 기존 패턴 대신 Zone 패턴 오버라이드는 하지 않음
+			-- 별도 추가 호출로 Zone 고유 코인 생성 (MushroomPad/GravityZone 특수 배치)
+			if difficulty == "Hard" then
+				self._coinService:SpawnCoinPattern(chunk, zoneMechForCoin.coinPattern, {})
+			end
+		end
+	end
+
 	-- 스킬 루트 코인 생성 (Normal/Hard 청크, 장애물 있을 때만)
 	if self._coinService and #obstacleInfos > 0 and not isInSafeZone and not eventType then
 		if difficulty == "Normal" or difficulty == "Hard" then

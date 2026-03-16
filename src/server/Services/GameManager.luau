@@ -1308,6 +1308,19 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 		end
 		local chaseMobHit = obstacleService:UpdateChaseMobs(hrp.Position, _estimatedSpeed, session.isFever or session.isSuperFever)
 
+		-- MushroomPad 밟기 판정 (Zone 3 전용)
+		if obstacleService:CheckMushroomPad(hrp.Position) then
+			RemoteEvents.MushroomBounce:FireClient(player)
+		end
+
+		-- GravityZone 진입/퇴장 판정 (Zone 5 전용)
+		local gravityState = obstacleService:CheckGravityZone(hrp.Position)
+		if gravityState == "enter" then
+			RemoteEvents.GravityZoneEnter:FireClient(player)
+		elseif gravityState == "exit" then
+			RemoteEvents.GravityZoneExit:FireClient(player)
+		end
+
 		-- 장애물 충돌 체크
 		local isSliding = hrp:GetAttribute("IsSliding") or false
 		local isMini = powerupService:IsMiniSizeActive()

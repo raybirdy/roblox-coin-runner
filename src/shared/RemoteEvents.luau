@@ -583,6 +583,17 @@ RemoteEvents.EquipRunSkills = getOrCreateRemoteEvent("EquipRunSkills")
 
 -- ==================== 초대 보상 시스템 ====================
 
+-- ==================== Zone 고유 메커닉 ====================
+
+-- 버섯 트램폴린 밟기 (서버 → 클라이언트): 점프력 일시 증폭
+RemoteEvents.MushroomBounce = getOrCreateRemoteEvent("MushroomBounce")
+-- 파라미터: 없음 (클라이언트는 수신 즉시 점프력 배율 적용)
+
+-- 저중력 구간 진입/퇴장 (서버 → 클라이언트)
+RemoteEvents.GravityZoneEnter = getOrCreateRemoteEvent("GravityZoneEnter")
+RemoteEvents.GravityZoneExit = getOrCreateRemoteEvent("GravityZoneExit")
+-- 파라미터: 없음
+
 -- 초대 다이얼로그 열기 요청 (클라이언트 → 서버)
 RemoteEvents.InviteFriend = getOrCreateRemoteEvent("InviteFriend")
 
