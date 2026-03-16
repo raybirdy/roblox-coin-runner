@@ -334,29 +334,35 @@ function ChunkService:SpawnNextChunk(): Model?
 	self._lastChunkEndHeight = endHeight
 
 	-- 청크 내 장애물 생성 (안전 구역 이후부터, 이벤트 청크에는 장애물 없음)
-	local obstaclePositions: { Vector3 } = {}
+	local obstacleInfos: { any } = {} -- { { position: Vector3, obstacleType: string } }
 	local isInSafeZone = self._chunkCounter <= GameConstants.CHUNK.SAFE_ZONE_CHUNKS
 	if self._obstacleService and not isInSafeZone and not eventType then
-		obstaclePositions = self._obstacleService:SpawnObstaclesInChunk(chunk, difficulty)
+		obstacleInfos = self._obstacleService:SpawnObstaclesInChunk(chunk, difficulty)
 		-- Hard 청크: Chase Mob 등장 확률 체크 (60초 이후, 15% 확률)
 		self._obstacleService:TrySpawnChaseMobForChunk(difficulty)
 	elseif isInSafeZone then
 		print(`[ChunkService] Chunk #{self._chunkCounter} is in safe zone - no obstacles`)
 	end
 
-	-- 청크 내 코인 생성 (장애물 위치를 전달하여 겹침 방지)
+	-- CoinService 호환용 positions 추출
+	local obstaclePositions: { Vector3 } = {}
+	for _, info in obstacleInfos do
+		table.insert(obstaclePositions, info.position)
+	end
+
+	-- 청크 내 코인 생성 (장애물 정보를 전달하여 ActionHint 패턴 적용)
 	if self._coinService then
 		if eventType == "CoinRush" then
 			-- 코인 러시: 대량 코인 (3회 호출)
-			self._coinService:SpawnCoinsInChunk(chunk, "Bonus", obstaclePositions)
-			self._coinService:SpawnCoinsInChunk(chunk, "Bonus", obstaclePositions)
-			self._coinService:SpawnCoinsInChunk(chunk, "Bonus", obstaclePositions)
+			self._coinService:SpawnCoinsInChunk(chunk, "Bonus", obstaclePositions, obstacleInfos)
+			self._coinService:SpawnCoinsInChunk(chunk, "Bonus", obstaclePositions, obstacleInfos)
+			self._coinService:SpawnCoinsInChunk(chunk, "Bonus", obstaclePositions, obstacleInfos)
 		elseif eventType == "GiantCoin" then
 			-- 일반 코인 + 거인 코인
-			self._coinService:SpawnCoinsInChunk(chunk, difficulty, obstaclePositions)
+			self._coinService:SpawnCoinsInChunk(chunk, difficulty, obstaclePositions, obstacleInfos)
 			self._coinService:SpawnGiantCoin(chunk, spawnPosition)
 		else
-			self._coinService:SpawnCoinsInChunk(chunk, difficulty, obstaclePositions)
+			self._coinService:SpawnCoinsInChunk(chunk, difficulty, obstaclePositions, obstacleInfos)
 		end
 	end
 
