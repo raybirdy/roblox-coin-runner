@@ -403,6 +403,22 @@ local function patternConstellation(count: number, _halfWidth: number): { { x: n
 	return positions
 end
 
+-- WATERFALL: 위에서 아래로 대각선 폭포 (Coin Waterfall 이벤트 전용)
+local function patternWaterfall(count: number, halfWidth: number): { { x: number, y: number } }
+	local positions = {}
+	local span = halfWidth * 1.6
+	local startX = -halfWidth * 0.8
+	local startY = GameConstants.COIN_WATERFALL.START_Y
+	local endY   = GameConstants.COIN_WATERFALL.END_Y
+	for i = 0, count - 1 do
+		local t = i / math.max(count - 1, 1)
+		local x = startX + t * span
+		local y = startY - t * (startY - endY) -- 위에서 아래로 선형 하강
+		table.insert(positions, { x = x, y = y })
+	end
+	return positions
+end
+
 -- DOUBLE_LINE: 두 줄 수평선 (Bonus 전용, 대량 수집)
 local function patternDoubleLine(count: number, halfWidth: number): { { x: number, y: number } }
 	local positions = {}
@@ -557,6 +573,8 @@ function CoinService:_generatePatternPositions(
 		offsets = patternWave(coinCount, halfWidth)
 	elseif pattern == "swoop" then
 		offsets = patternSwoop(coinCount, halfWidth)
+	elseif pattern == "waterfall" then
+		offsets = patternWaterfall(coinCount, halfWidth)
 	elseif pattern == "high_float" then
 		offsets = patternHighFloat(coinCount, halfWidth)
 	elseif pattern == "constellation" then
