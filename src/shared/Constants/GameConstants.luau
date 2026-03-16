@@ -1490,6 +1490,70 @@ GameConstants.SKILL_ROUTE_CHANCE = {
 	Hard   = 0.50,
 }
 
+-- Zone별 고유 메커닉 정의
+GameConstants.ZONE_MECHANICS = {
+	[1] = { -- Meadow (0~60s): 튜토리얼 존 — 고유 장애물 없음
+		specialObstacle = nil,
+		coinPattern     = nil,    -- nil = 기존 패턴 사용
+	},
+	[2] = { -- FlowerPath (60~120s): 꽃잎 바람
+		specialObstacle = "FlowerWind", -- LowWall 변형: 좌우로 흔들리는 꽃잎 장애물
+		specialChance   = 0.35,   -- FlowerWind 등장 확률 (Normal/Hard 청크에서)
+		coinPattern     = nil,
+	},
+	[3] = { -- MushroomWood (120~180s): 버섯 트램폴린
+		specialObstacle = "MushroomPad", -- 밟으면 점프력 2배 (유익 오브젝트)
+		specialChance   = 0.40,   -- MushroomPad 등장 확률
+		coinPattern     = "high_float", -- 버섯 위 높은 위치에 코인 배치
+	},
+	[4] = { -- Sunset (180~240s): 그림자 장애물
+		specialObstacle = "ShadowWall", -- 서서히 나타나는 반투명 장애물
+		specialChance   = 0.30,   -- ShadowWall 등장 확률
+		coinPattern     = nil,
+	},
+	[5] = { -- Starlight (240s+): 저중력 구간
+		specialObstacle = "GravityZone", -- 저중력 마커 (청크 단위 적용)
+		specialChance   = 0.40,   -- 저중력 청크 비율 (Hard 청크)
+		coinPattern     = "constellation", -- 별자리 형태 높은 코인
+	},
+}
+
+-- FlowerWind 상수
+GameConstants.FLOWER_WIND = {
+	SWAY_AMPLITUDE = 2.5,  -- 좌우 흔들림 폭 (studs)
+	SWAY_CYCLE     = 1.8,  -- 흔들림 주기 (초)
+	COLOR          = Color3.fromRGB(255, 160, 200), -- 분홍색
+	SIZE           = Vector3.new(2, 4, 10), -- LowWall과 동일한 높이
+}
+
+-- ShadowWall 상수
+GameConstants.SHADOW_WALL = {
+	FADE_TIME      = 1.2,  -- 투명도 0.9→0.2 전환 시간 (초)
+	ALPHA_START    = 0.9,  -- 초기 투명도 (거의 안 보임)
+	ALPHA_END      = 0.2,  -- 최종 투명도 (선명히 보임)
+	COLOR          = Color3.fromRGB(20, 20, 30), -- 어두운 검정
+	SIZE           = Vector3.new(2, 4, 10), -- LowWall과 동일
+}
+
+-- MushroomPad 상수 (Zone 3 전용, 유익 오브젝트)
+GameConstants.MUSHROOM_PAD = {
+	SIZE              = Vector3.new(6, 2, 6),          -- 버섯 패드 크기
+	COLOR             = Color3.fromRGB(160, 80, 200),  -- 보라색 버섯
+	BOUNCE_MULTIPLIER = 2.0,                           -- 점프력 배율
+	EFFECT_DURATION   = 0.8,                           -- 배율 적용 시간 (초)
+	DETECT_RADIUS     = 4,                             -- 밟기 판정 반경 (studs)
+	COOLDOWN          = 2.0,                           -- 동일 패드 재사용 쿨다운
+}
+
+-- GravityZone 상수 (Zone 5 전용)
+GameConstants.GRAVITY_ZONE = {
+	AIRTIME_MULTIPLIER = 1.5, -- 체공 시간 1.5배
+	JUMP_MULTIPLIER    = 1.4, -- 점프력 1.4배
+	EFFECT_DURATION    = 8.0, -- 저중력 지속 시간 (초, 청크 통과 시간보다 길게)
+	MARKER_COLOR       = Color3.fromRGB(80, 120, 255), -- 파란 네온 마커
+	MARKER_SIZE        = Vector3.new(80, 0.5, 12),     -- 청크 폭 전체 얇은 바닥 마커
+}
+
 -- 구역별 장애물 색상 (ObstacleService에서 참조)
 GameConstants.ZONE_OBSTACLE_COLORS = {
 	[1] = Color3.fromRGB(110, 75,  40),  -- Meadow: 나무색

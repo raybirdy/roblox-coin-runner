@@ -24,10 +24,18 @@ type ChaseMobData = {
 	lastUpdateTime: number,
 }
 
+-- MushroomPad 전용 데이터 (유익 오브젝트 — 밟으면 점프력 증폭)
+type MushroomPadData = {
+	part: BasePart,
+	spawnTime: number,
+	lastBounceTime: number, -- 마지막 bounce 시각 (쿨다운용)
+}
+
 export type ObstacleService = typeof(setmetatable(
 	{} :: {
 		_activeObstacles: { ObstacleData },
 		_activeChaseMobs: { ChaseMobData }, -- 활성 추격 NPC 목록
+		_activeMushroomPads: { MushroomPadData }, -- 활성 버섯 패드 목록
 		_player: Player,
 		_lastHitTime: number,
 		_isInvincible: boolean,
@@ -35,6 +43,7 @@ export type ObstacleService = typeof(setmetatable(
 		_gameStartTime: number, -- 게임 시작 시간 (Chase Mob MIN_TIME 판단용)
 		_lastPlayerPosition: Vector3, -- 가장 최근의 플레이어 위치 (Chase Mob 스폰용)
 		_currentZoneIndex: number, -- 현재 구역 인덱스 (장애물 색상 테마용)
+		_gravityZoneActive: boolean, -- 저중력 구간 활성 여부
 	},
 	ObstacleService
 ))
@@ -43,6 +52,7 @@ function ObstacleService.new(player: Player): ObstacleService
 	local self = setmetatable({
 		_activeObstacles = {},
 		_activeChaseMobs = {},
+		_activeMushroomPads = {},
 		_player = player,
 		_lastHitTime = 0,
 		_isInvincible = false,
@@ -50,6 +60,7 @@ function ObstacleService.new(player: Player): ObstacleService
 		_gameStartTime = 0,
 		_lastPlayerPosition = Vector3.zero,
 		_currentZoneIndex = 1,
+		_gravityZoneActive = false,
 	}, ObstacleService)
 
 	return self
@@ -638,6 +649,156 @@ function ObstacleService:_spawnObstacle(position: Vector3, obstacleType: string)
 		table.insert(self._activeObstacles, obstacleData)
 		print(`[ObstacleService] Spawned MovingWall at {position} (startHigh: {startHigh})`)
 		return
+	elseif obstacleType == "MushroomPad" then
+		-- 버섯 트램폴린 (Zone 3 전용, 유익 오브젝트 — 밟으면 점프력 2배)
+		local pad = Instance.new("Part")
+		pad.Name = "MushroomPad"
+		pad.Size = GameConstants.MUSHROOM_PAD.SIZE
+		pad.Position = position + Vector3.new(0, GameConstants.MUSHROOM_PAD.SIZE.Y / 2, 0)
+		pad.Color = GameConstants.MUSHROOM_PAD.COLOR
+		pad.Material = Enum.Material.SmoothPlastic
+		pad.Transparency = 0.1
+		pad.Anchored = true
+		pad.CanCollide = false
+		pad:SetAttribute("ObstacleType", "MushroomPad")
+
+		-- 버섯 라벨
+		local bb2 = Instance.new("BillboardGui")
+		bb2.Name = "MushroomLabel"
+		bb2.Size = UDim2.new(0, 50, 0, 50)
+		bb2.StudsOffset = Vector3.new(0, 2, 0)
+		bb2.AlwaysOnTop = false
+		bb2.Parent = pad
+
+		local lbl2 = Instance.new("TextLabel")
+		lbl2.Size = UDim2.new(1, 0, 1, 0)
+		lbl2.BackgroundTransparency = 1
+		lbl2.Text = "🍄"
+		lbl2.TextScaled = true
+		lbl2.Parent = bb2
+
+		pad.Parent = workspace
+
+		local padData: MushroomPadData = {
+			part = pad,
+			spawnTime = tick(),
+			lastBounceTime = 0,
+		}
+		table.insert(self._activeMushroomPads, padData)
+		print(`[ObstacleService] Spawned MushroomPad at {position}`)
+		return
+
+	elseif obstacleType == "GravityZone" then
+		-- 저중력 구간 마커 (Zone 5 전용, 플레이어가 통과 시 RemoteEvent 발송)
+		-- 비주얼 마커: 파란 네온 얇은 바닥 판
+		local marker = Instance.new("Part")
+		marker.Name = "GravityZoneMarker"
+		marker.Size = GameConstants.GRAVITY_ZONE.MARKER_SIZE
+		marker.Position = position + Vector3.new(0, 0.3, 0) -- 바닥 살짝 위
+		marker.Color = GameConstants.GRAVITY_ZONE.MARKER_COLOR
+		marker.Material = Enum.Material.Neon
+		marker.Transparency = 0.5
+		marker.Anchored = true
+		marker.CanCollide = false
+		marker:SetAttribute("ObstacleType", "GravityZone")
+		marker.Parent = workspace
+
+		-- GravityZone은 장애물이 아닌 구간 표시자 — _activeObstacles에 넣지 않음
+		-- 대신 _gravityZoneActive 플래그로 관리 (GameManager가 CheckGravityZone으로 판정)
+		local zoneData: ObstacleData = {
+			part = marker,
+			obstacleType = "GravityZone",
+			spawnTime = tick(),
+		}
+		table.insert(self._activeObstacles, zoneData)
+		print(`[ObstacleService] Spawned GravityZone marker at {position}`)
+		return
+
+	elseif obstacleType == "FlowerWind" then
+		-- 꽃잎 바람 (Zone 2 전용, LowWall과 동일한 회피 동작 — 점프)
+		obstacle = Instance.new("Part")
+		obstacle.Name = "Obstacle_FlowerWind"
+		obstacle.Size = GameConstants.FLOWER_WIND.SIZE
+		obstacle.Position = position + Vector3.new(0, GameConstants.FLOWER_WIND.SIZE.Y / 2, 0)
+		obstacle.Color = GameConstants.FLOWER_WIND.COLOR
+		obstacle.Material = Enum.Material.SmoothPlastic
+		obstacle.Transparency = 0.3
+
+		-- 꽃잎 파티클 BillboardGui
+		local bb = Instance.new("BillboardGui")
+		bb.Name = "FlowerLabel"
+		bb.Size = UDim2.new(0, 40, 0, 40)
+		bb.StudsOffset = Vector3.new(0, 3, 0)
+		bb.AlwaysOnTop = false
+		bb.Parent = obstacle
+
+		local lbl = Instance.new("TextLabel")
+		lbl.Size = UDim2.new(1, 0, 1, 0)
+		lbl.BackgroundTransparency = 1
+		lbl.Text = "🌸"
+		lbl.TextScaled = true
+		lbl.Parent = bb
+
+		obstacle.Anchored = true
+		obstacle.CanCollide = false
+		obstacle:SetAttribute("ObstacleType", obstacleType)
+		obstacle.Parent = workspace
+
+		-- 좌우 흔들림 트윈 (Sine 무한 반복)
+		task.defer(function()
+			if not obstacle or not obstacle.Parent then return end
+			local baseX = obstacle.Position.X
+			local amp = GameConstants.FLOWER_WIND.SWAY_AMPLITUDE
+			local halfCycle = GameConstants.FLOWER_WIND.SWAY_CYCLE / 2
+			local tweenInfo = TweenInfo.new(halfCycle, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
+			TweenService:Create(obstacle, tweenInfo, {
+				Position = Vector3.new(baseX + amp, obstacle.Position.Y, obstacle.Position.Z),
+			}):Play()
+		end)
+
+		local fwData: ObstacleData = {
+			part = obstacle,
+			obstacleType = obstacleType,
+			spawnTime = tick(),
+		}
+		table.insert(self._activeObstacles, fwData)
+		print(`[ObstacleService] Spawned FlowerWind at {position}`)
+		return
+
+	elseif obstacleType == "ShadowWall" then
+		-- 그림자 벽 (Zone 4 전용, LowWall과 동일한 회피 — 점프, 단 서서히 나타남)
+		obstacle = Instance.new("Part")
+		obstacle.Name = "Obstacle_ShadowWall"
+		obstacle.Size = GameConstants.SHADOW_WALL.SIZE
+		obstacle.Position = position + Vector3.new(0, GameConstants.SHADOW_WALL.SIZE.Y / 2, 0)
+		obstacle.Color = GameConstants.SHADOW_WALL.COLOR
+		obstacle.Material = Enum.Material.SmoothPlastic
+		obstacle.Transparency = GameConstants.SHADOW_WALL.ALPHA_START -- 처음엔 거의 투명
+
+		obstacle.Anchored = true
+		obstacle.CanCollide = false
+		obstacle:SetAttribute("ObstacleType", obstacleType)
+		obstacle.Parent = workspace
+
+		-- 서서히 나타나는 페이드인 트윈
+		task.defer(function()
+			if not obstacle or not obstacle.Parent then return end
+			local tweenInfo = TweenInfo.new(
+				GameConstants.SHADOW_WALL.FADE_TIME, Enum.EasingStyle.Linear, Enum.EasingDirection.Out
+			)
+			TweenService:Create(obstacle, tweenInfo, {
+				Transparency = GameConstants.SHADOW_WALL.ALPHA_END,
+			}):Play()
+		end)
+
+		local swData: ObstacleData = {
+			part = obstacle,
+			obstacleType = obstacleType,
+			spawnTime = tick(),
+		}
+		table.insert(self._activeObstacles, swData)
+		print(`[ObstacleService] Spawned ShadowWall at {position}`)
+		return
 	elseif obstacleType == "ExplodingBarrel" then
 		-- 폭발 배럴 (Normal/Hard 전용, 범위 피해)
 		obstacle = Instance.new("Part")
@@ -745,6 +906,62 @@ function ObstacleService:_spawnObstacle(position: Vector3, obstacleType: string)
 		spawnTime = tick(),
 	}
 	table.insert(self._activeObstacles, obstacleData)
+end
+
+-- 버섯 패드 밟기 판정 (GameManager Heartbeat에서 호출)
+-- 반환: true이면 이번 프레임에 밟힘 (GameManager가 RemoteEvent 전송)
+function ObstacleService:CheckMushroomPad(playerPosition: Vector3): boolean
+	local now = tick()
+	local DETECT = GameConstants.MUSHROOM_PAD.DETECT_RADIUS
+	local COOLDOWN = GameConstants.MUSHROOM_PAD.COOLDOWN
+
+	for _, padData in self._activeMushroomPads do
+		if not padData.part or not padData.part.Parent then
+			continue
+		end
+		-- 쿨다운 체크
+		if now - padData.lastBounceTime < COOLDOWN then
+			continue
+		end
+		local padPos = padData.part.Position
+		local dx = math.abs(playerPosition.X - padPos.X)
+		local dy = playerPosition.Y - padPos.Y -- 플레이어가 패드 위에 있어야 함
+		if dx < DETECT and dy > 0 and dy < DETECT then
+			padData.lastBounceTime = now
+			return true
+		end
+	end
+	return false
+end
+
+-- GravityZone 마커 판정 (GameManager Heartbeat에서 호출)
+-- 반환: "enter" | "exit" | nil
+function ObstacleService:CheckGravityZone(playerPosition: Vector3): string?
+	local inZone = false
+	local HALF = GameConstants.GRAVITY_ZONE.MARKER_SIZE.X / 2
+
+	for _, obstacleData in self._activeObstacles do
+		if obstacleData.obstacleType ~= "GravityZone" then
+			continue
+		end
+		if not obstacleData.part or not obstacleData.part.Parent then
+			continue
+		end
+		local markerPos = obstacleData.part.Position
+		if math.abs(playerPosition.X - markerPos.X) < HALF then
+			inZone = true
+			break
+		end
+	end
+
+	if inZone and not self._gravityZoneActive then
+		self._gravityZoneActive = true
+		return "enter"
+	elseif not inZone and self._gravityZoneActive then
+		self._gravityZoneActive = false
+		return "exit"
+	end
+	return nil
 end
 
 -- 충돌 체크 (GameManager에서 호출)
@@ -995,6 +1212,17 @@ function ObstacleService:CleanupObstaclesInChunk(chunkPosition: Vector3, chunkSi
 			table.remove(self._activeObstacles, i)
 		end
 	end
+
+	-- MushroomPad도 청크 범위 내 정리
+	for i = #self._activeMushroomPads, 1, -1 do
+		local padData = self._activeMushroomPads[i]
+		local padPos = padData.part.Position
+		local isInChunk = math.abs(padPos.X - chunkPosition.X) < chunkSize.X / 2
+		if isInChunk then
+			padData.part:Destroy()
+			table.remove(self._activeMushroomPads, i)
+		end
+	end
 end
 
 -- 모든 장애물 정리 (게임 종료 시)
@@ -1006,6 +1234,15 @@ function ObstacleService:Destroy()
 	end
 	self._activeObstacles = {}
 	self._collidedObstacles = {}
+
+	-- MushroomPad 정리
+	for _, padData in self._activeMushroomPads do
+		if padData.part then
+			padData.part:Destroy()
+		end
+	end
+	self._activeMushroomPads = {}
+	self._gravityZoneActive = false
 
 	-- Chase Mob 정리
 	for _, mobData in self._activeChaseMobs do

@@ -73,6 +73,10 @@ export type PlayerController = typeof(setmetatable(
 		-- 애니메이션 보조 변수
 		_dashLeanAngle: number,
 
+		-- Zone 고유 효과 배율
+		_jumpBoostMultiplier: number,   -- MushroomBounce: 점프력 일시 배율 (기본 1.0)
+		_gravityMultiplier: number,     -- GravityZone: 저중력 배율 (기본 1.0)
+
 		-- 디버그
 		_lastJumpTime: number,
 		_lastGroundedTime: number, -- 코요테 타임용 마지막 착지 시각
@@ -120,6 +124,8 @@ function PlayerController.new(player: Player, character: Model): PlayerControlle
 		_lastGroundedTime = 0,
 		_slideStartTime = 0,
 		_dashLeanAngle = 0,
+		_jumpBoostMultiplier = 1.0,
+		_gravityMultiplier = 1.0,
 	}, PlayerController)
 
 	self:_createSounds()
@@ -339,6 +345,39 @@ end
 -- 현재 유효 속도 반환 (SpeedEffectController용)
 function PlayerController:GetEffectiveSpeed(): number
 	return self.currentSpeed * self.speedMultiplier
+end
+
+-- MushroomBounce: 점프력 일시 2배 증폭 (RemoteEvents.MushroomBounce 수신 시 호출)
+function PlayerController:ApplyMushroomBounce()
+	local mult = GameConstants.MUSHROOM_PAD.BOUNCE_MULTIPLIER
+	local duration = GameConstants.MUSHROOM_PAD.EFFECT_DURATION
+	self._jumpBoostMultiplier = mult
+	-- 즉시 점프 발동 (버섯을 밟으면 자동으로 튀어오름)
+	if self.state == "Running" or self.state == "Falling" then
+		self:Jump()
+	end
+	task.delay(duration, function()
+		self._jumpBoostMultiplier = 1.0
+	end)
+end
+
+-- GravityZone 진입: 체공 시간 1.5배 (저중력)
+function PlayerController:EnterGravityZone()
+	self._gravityMultiplier = GameConstants.GRAVITY_ZONE.JUMP_MULTIPLIER
+	-- 시각 효과: 화면 살짝 파란 틴트 (선택사항 — 여기서는 로그만)
+	print("[PlayerController] GravityZone ENTER — jump multiplier:", self._gravityMultiplier)
+	-- 안전망: 최대 EFFECT_DURATION 후 자동 해제
+	task.delay(GameConstants.GRAVITY_ZONE.EFFECT_DURATION, function()
+		if self._gravityMultiplier ~= 1.0 then
+			self:ExitGravityZone()
+		end
+	end)
+end
+
+-- GravityZone 퇴장: 정상 중력 복귀
+function PlayerController:ExitGravityZone()
+	self._gravityMultiplier = 1.0
+	print("[PlayerController] GravityZone EXIT — gravity normal")
 end
 
 -- 게임 중인지 확인
@@ -693,7 +732,9 @@ function PlayerController:_performJump(jumpHeight: number)
 	-- NOTE: humanoid:ChangeState(Freefall) 제거 — CFrame 이동과 충돌하여
 	--       Humanoid 물리 접촉 감지 파괴 → isGrounded 영구 false 버그 유발
 	local gravity = GameConstants.PHYSICS.GRAVITY
-	local jumpVelocity = math.sqrt(2 * gravity * jumpHeight)
+	-- Zone 효과 배율 적용 (_jumpBoostMultiplier: MushroomBounce, _gravityMultiplier: GravityZone)
+	local effectiveHeight = jumpHeight * self._jumpBoostMultiplier * self._gravityMultiplier
+	local jumpVelocity = math.sqrt(2 * gravity * effectiveHeight)
 
 	-- AssemblyLinearVelocity로 점프 (X 속도 유지, Y 설정)
 	local currentVel = self.humanoidRootPart.AssemblyLinearVelocity

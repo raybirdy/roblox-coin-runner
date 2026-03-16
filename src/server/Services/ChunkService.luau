@@ -340,6 +340,19 @@ function ChunkService:SpawnNextChunk(): Model?
 		obstacleInfos = self._obstacleService:SpawnObstaclesInChunk(chunk, difficulty)
 		-- Hard 청크: Chase Mob 등장 확률 체크 (60초 이후, 15% 확률)
 		self._obstacleService:TrySpawnChaseMobForChunk(difficulty)
+		-- Zone 고유 장애물: 현재 Zone 메커닉 설정에 따라 특수 장애물 추가 생성
+		if difficulty == "Normal" or difficulty == "Hard" then
+			local zoneMech = GameConstants.ZONE_MECHANICS[self._currentZoneIndex]
+			if zoneMech and zoneMech.specialObstacle and math.random() < (zoneMech.specialChance or 0) then
+				local chunkCF = chunk:GetPrimaryPartCFrame()
+				local halfX = chunk:GetExtentsSize().X / 2
+				-- 청크 중앙 근처에 특수 장애물 1개 추가 배치
+				local specialX = (math.random() - 0.5) * halfX * 0.6
+				local specialPos = chunkCF.Position + Vector3.new(specialX, 0, 0)
+				self._obstacleService:_spawnObstacle(specialPos, zoneMech.specialObstacle)
+				table.insert(obstacleInfos, { position = specialPos, obstacleType = zoneMech.specialObstacle })
+			end
+		end
 	elseif isInSafeZone then
 		print(`[ChunkService] Chunk #{self._chunkCounter} is in safe zone - no obstacles`)
 	end
@@ -363,6 +376,18 @@ function ChunkService:SpawnNextChunk(): Model?
 			self._coinService:SpawnGiantCoin(chunk, spawnPosition)
 		else
 			self._coinService:SpawnCoinsInChunk(chunk, difficulty, obstaclePositions, obstacleInfos)
+		end
+	end
+
+	-- Zone 고유 코인 패턴 생성 (coinPattern이 정의된 Zone에서만)
+	if self._coinService and not isInSafeZone and not eventType then
+		local zoneMechForCoin = GameConstants.ZONE_MECHANICS[self._currentZoneIndex]
+		if zoneMechForCoin and zoneMechForCoin.coinPattern then
+			-- 기존 패턴 대신 Zone 패턴 오버라이드는 하지 않음
+			-- 별도 추가 호출로 Zone 고유 코인 생성 (MushroomPad/GravityZone 특수 배치)
+			if difficulty == "Hard" then
+				self._coinService:SpawnCoinPattern(chunk, zoneMechForCoin.coinPattern, {})
+			end
 		end
 	end
 

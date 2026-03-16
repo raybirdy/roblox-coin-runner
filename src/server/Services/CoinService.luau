@@ -368,6 +368,41 @@ local function patternSwoop(count: number, halfWidth: number): { { x: number, y:
 	return positions
 end
 
+-- HIGH_FLOAT: 높은 위치 부유 코인 (Zone 3 MushroomBounce 위, y=10~14)
+local function patternHighFloat(count: number, halfWidth: number): { { x: number, y: number } }
+	local positions = {}
+	local span = halfWidth * 1.4
+	local startX = -halfWidth * 0.7
+	for i = 0, count - 1 do
+		local t = i / math.max(count - 1, 1)
+		local x = startX + t * span
+		local y = 11.0 + math.sin(t * math.pi) * 3.0 -- y=10~14 아치
+		table.insert(positions, { x = x, y = y })
+	end
+	return positions
+end
+
+-- CONSTELLATION: 별자리 형태 코인 (Zone 5 저중력 전용, y=8~16)
+local CONSTELLATION_TEMPLATES: { { { x: number, y: number } } } = {
+	-- 북두칠성
+	{ { x=-25, y=10 }, { x=-18, y=11 }, { x=-11, y=12 }, { x=-4, y=11.5 },
+	  { x=4, y=13 }, { x=11, y=14 }, { x=16, y=12.5 } },
+	-- 카시오페이아 (W자형)
+	{ { x=-20, y=10 }, { x=-12, y=14 }, { x=-4, y=10 }, { x=4, y=14 }, { x=12, y=10 } },
+	-- 오리온 벨트
+	{ { x=-10, y=12 }, { x=0, y=12 }, { x=10, y=12 },
+	  { x=-15, y=9 }, { x=15, y=9 }, { x=-8, y=15 }, { x=8, y=15 } },
+}
+
+local function patternConstellation(count: number, _halfWidth: number): { { x: number, y: number } }
+	local template = CONSTELLATION_TEMPLATES[math.random(1, #CONSTELLATION_TEMPLATES)]
+	local positions: { { x: number, y: number } } = {}
+	for i = 1, math.min(count, #template) do
+		table.insert(positions, { x = template[i].x, y = template[i].y })
+	end
+	return positions
+end
+
 -- DOUBLE_LINE: 두 줄 수평선 (Bonus 전용, 대량 수집)
 local function patternDoubleLine(count: number, halfWidth: number): { { x: number, y: number } }
 	local positions = {}
@@ -389,6 +424,17 @@ end
 -- lucky_coins 업그레이드 보너스 설정 (GameManager에서 호출)
 function CoinService:SetLuckyCoinsBonus(bonus: number)
 	self._luckyCoinsBonus = bonus
+end
+
+-- 특정 패턴으로 코인 생성 (Zone 고유 패턴 강제 적용용)
+function CoinService:SpawnCoinPattern(chunk: Model, pattern: string, obstaclePositions: { Vector3 })
+	local chunkCFrame = chunk:GetPrimaryPartCFrame()
+	local coinCount = math.random(5, 8)
+	local positions = self:_generatePatternPositions(chunkCFrame, pattern, coinCount, obstaclePositions)
+	for _, coinPosition in positions do
+		local coinType = self:_selectCoinType("Hard") -- Zone 고유 패턴은 Hard 기준 고가치
+		self:_spawnCoin(coinPosition, coinType)
+	end
 end
 
 -- =====================================================================
@@ -434,6 +480,8 @@ local ACTION_HINT_MAP: { [string]: string } = {
 	DoubleWall = "action_double_arc",
 	ExplodingBarrel = "action_avoid_side",
 	MovingWall = "action_timing_cluster",
+	FlowerWind = "action_jump_arc",  -- FlowerWind도 LowWall처럼 점프 유도
+	ShadowWall = "action_jump_arc",  -- ShadowWall도 점프 유도 (리딩 코인 중요!)
 }
 
 function CoinService:_selectPattern(difficulty: string, obstaclePositions: { Vector3 }, obstacleInfos: { any }?): string
@@ -509,6 +557,10 @@ function CoinService:_generatePatternPositions(
 		offsets = patternWave(coinCount, halfWidth)
 	elseif pattern == "swoop" then
 		offsets = patternSwoop(coinCount, halfWidth)
+	elseif pattern == "high_float" then
+		offsets = patternHighFloat(coinCount, halfWidth)
+	elseif pattern == "constellation" then
+		offsets = patternConstellation(coinCount, halfWidth)
 	elseif pattern == "action_jump_arc" then
 		offsets = patternActionJumpArc(coinCount, halfWidth, firstObsRelX)
 	elseif pattern == "action_slide_down" then

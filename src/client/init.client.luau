@@ -889,6 +889,29 @@ cutsceneController:OnPlayEnd(function()
 	end
 end)
 
+-- =====================================================================
+-- Zone 고유 메커닉 이벤트 처리
+-- =====================================================================
+
+-- MushroomBounce: 버섯 밟기 → 점프력 일시 2배
+RemoteEvents.MushroomBounce.OnClientEvent:Connect(function()
+	if playerController:IsPlaying() then
+		playerController:ApplyMushroomBounce()
+	end
+end)
+
+-- GravityZone 진입: 저중력 시작
+RemoteEvents.GravityZoneEnter.OnClientEvent:Connect(function()
+	if playerController:IsPlaying() then
+		playerController:EnterGravityZone()
+	end
+end)
+
+-- GravityZone 퇴장: 정상 중력 복귀
+RemoteEvents.GravityZoneExit.OnClientEvent:Connect(function()
+	playerController:ExitGravityZone()
+end)
+
 print("[Client] Coin Runner Client Ready")
 print(
 	"[Client] Controllers initialized: Input, Player, Coin, Life, UI, Powerup, Camera, NPC, Tutorial, Music, Shop, SpeedEffect, Leaderboard, Progression, Scenario, Cutscene, WorldMap"
