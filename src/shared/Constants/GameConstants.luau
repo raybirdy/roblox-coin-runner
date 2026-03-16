@@ -1490,6 +1490,49 @@ GameConstants.SKILL_ROUTE_CHANCE = {
 	Hard   = 0.50,
 }
 
+-- Zone별 고유 메커닉 정의
+GameConstants.ZONE_MECHANICS = {
+	[1] = { -- Meadow (0~60s): 튜토리얼 존 — 고유 장애물 없음
+		specialObstacle = nil,
+		coinPattern     = nil,    -- nil = 기존 패턴 사용
+	},
+	[2] = { -- FlowerPath (60~120s): 꽃잎 바람
+		specialObstacle = "FlowerWind", -- LowWall 변형: 좌우로 흔들리는 꽃잎 장애물
+		specialChance   = 0.35,   -- FlowerWind 등장 확률 (Normal/Hard 청크에서)
+		coinPattern     = nil,
+	},
+	[3] = { -- MushroomWood (120~180s): 버섯 트램폴린 (Phase 3 PR #6)
+		specialObstacle = nil,    -- PR #6에서 추가
+		coinPattern     = nil,
+	},
+	[4] = { -- Sunset (180~240s): 그림자 장애물
+		specialObstacle = "ShadowWall", -- 서서히 나타나는 반투명 장애물
+		specialChance   = 0.30,   -- ShadowWall 등장 확률
+		coinPattern     = nil,
+	},
+	[5] = { -- Starlight (240s+): 중력 변화 (Phase 3 PR #7)
+		specialObstacle = nil,    -- PR #7에서 추가
+		coinPattern     = nil,
+	},
+}
+
+-- FlowerWind 상수
+GameConstants.FLOWER_WIND = {
+	SWAY_AMPLITUDE = 2.5,  -- 좌우 흔들림 폭 (studs)
+	SWAY_CYCLE     = 1.8,  -- 흔들림 주기 (초)
+	COLOR          = Color3.fromRGB(255, 160, 200), -- 분홍색
+	SIZE           = Vector3.new(2, 4, 10), -- LowWall과 동일한 높이
+}
+
+-- ShadowWall 상수
+GameConstants.SHADOW_WALL = {
+	FADE_TIME      = 1.2,  -- 투명도 0.9→0.2 전환 시간 (초)
+	ALPHA_START    = 0.9,  -- 초기 투명도 (거의 안 보임)
+	ALPHA_END      = 0.2,  -- 최종 투명도 (선명히 보임)
+	COLOR          = Color3.fromRGB(20, 20, 30), -- 어두운 검정
+	SIZE           = Vector3.new(2, 4, 10), -- LowWall과 동일
+}
+
 -- 구역별 장애물 색상 (ObstacleService에서 참조)
 GameConstants.ZONE_OBSTACLE_COLORS = {
 	[1] = Color3.fromRGB(110, 75,  40),  -- Meadow: 나무색

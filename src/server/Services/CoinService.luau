@@ -434,6 +434,8 @@ local ACTION_HINT_MAP: { [string]: string } = {
 	DoubleWall = "action_double_arc",
 	ExplodingBarrel = "action_avoid_side",
 	MovingWall = "action_timing_cluster",
+	FlowerWind = "action_jump_arc",  -- FlowerWind도 LowWall처럼 점프 유도
+	ShadowWall = "action_jump_arc",  -- ShadowWall도 점프 유도 (리딩 코인 중요!)
 }
 
 function CoinService:_selectPattern(difficulty: string, obstaclePositions: { Vector3 }, obstacleInfos: { any }?): string

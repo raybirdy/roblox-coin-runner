@@ -638,6 +638,91 @@ function ObstacleService:_spawnObstacle(position: Vector3, obstacleType: string)
 		table.insert(self._activeObstacles, obstacleData)
 		print(`[ObstacleService] Spawned MovingWall at {position} (startHigh: {startHigh})`)
 		return
+	elseif obstacleType == "FlowerWind" then
+		-- 꽃잎 바람 (Zone 2 전용, LowWall과 동일한 회피 동작 — 점프)
+		obstacle = Instance.new("Part")
+		obstacle.Name = "Obstacle_FlowerWind"
+		obstacle.Size = GameConstants.FLOWER_WIND.SIZE
+		obstacle.Position = position + Vector3.new(0, GameConstants.FLOWER_WIND.SIZE.Y / 2, 0)
+		obstacle.Color = GameConstants.FLOWER_WIND.COLOR
+		obstacle.Material = Enum.Material.SmoothPlastic
+		obstacle.Transparency = 0.3
+
+		-- 꽃잎 파티클 BillboardGui
+		local bb = Instance.new("BillboardGui")
+		bb.Name = "FlowerLabel"
+		bb.Size = UDim2.new(0, 40, 0, 40)
+		bb.StudsOffset = Vector3.new(0, 3, 0)
+		bb.AlwaysOnTop = false
+		bb.Parent = obstacle
+
+		local lbl = Instance.new("TextLabel")
+		lbl.Size = UDim2.new(1, 0, 1, 0)
+		lbl.BackgroundTransparency = 1
+		lbl.Text = "🌸"
+		lbl.TextScaled = true
+		lbl.Parent = bb
+
+		obstacle.Anchored = true
+		obstacle.CanCollide = false
+		obstacle:SetAttribute("ObstacleType", obstacleType)
+		obstacle.Parent = workspace
+
+		-- 좌우 흔들림 트윈 (Sine 무한 반복)
+		task.defer(function()
+			if not obstacle or not obstacle.Parent then return end
+			local baseX = obstacle.Position.X
+			local amp = GameConstants.FLOWER_WIND.SWAY_AMPLITUDE
+			local halfCycle = GameConstants.FLOWER_WIND.SWAY_CYCLE / 2
+			local tweenInfo = TweenInfo.new(halfCycle, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
+			TweenService:Create(obstacle, tweenInfo, {
+				Position = Vector3.new(baseX + amp, obstacle.Position.Y, obstacle.Position.Z),
+			}):Play()
+		end)
+
+		local fwData: ObstacleData = {
+			part = obstacle,
+			obstacleType = obstacleType,
+			spawnTime = tick(),
+		}
+		table.insert(self._activeObstacles, fwData)
+		print(`[ObstacleService] Spawned FlowerWind at {position}`)
+		return
+
+	elseif obstacleType == "ShadowWall" then
+		-- 그림자 벽 (Zone 4 전용, LowWall과 동일한 회피 — 점프, 단 서서히 나타남)
+		obstacle = Instance.new("Part")
+		obstacle.Name = "Obstacle_ShadowWall"
+		obstacle.Size = GameConstants.SHADOW_WALL.SIZE
+		obstacle.Position = position + Vector3.new(0, GameConstants.SHADOW_WALL.SIZE.Y / 2, 0)
+		obstacle.Color = GameConstants.SHADOW_WALL.COLOR
+		obstacle.Material = Enum.Material.SmoothPlastic
+		obstacle.Transparency = GameConstants.SHADOW_WALL.ALPHA_START -- 처음엔 거의 투명
+
+		obstacle.Anchored = true
+		obstacle.CanCollide = false
+		obstacle:SetAttribute("ObstacleType", obstacleType)
+		obstacle.Parent = workspace
+
+		-- 서서히 나타나는 페이드인 트윈
+		task.defer(function()
+			if not obstacle or not obstacle.Parent then return end
+			local tweenInfo = TweenInfo.new(
+				GameConstants.SHADOW_WALL.FADE_TIME, Enum.EasingStyle.Linear, Enum.EasingDirection.Out
+			)
+			TweenService:Create(obstacle, tweenInfo, {
+				Transparency = GameConstants.SHADOW_WALL.ALPHA_END,
+			}):Play()
+		end)
+
+		local swData: ObstacleData = {
+			part = obstacle,
+			obstacleType = obstacleType,
+			spawnTime = tick(),
+		}
+		table.insert(self._activeObstacles, swData)
+		print(`[ObstacleService] Spawned ShadowWall at {position}`)
+		return
 	elseif obstacleType == "ExplodingBarrel" then
 		-- 폭발 배럴 (Normal/Hard 전용, 범위 피해)
 		obstacle = Instance.new("Part")
