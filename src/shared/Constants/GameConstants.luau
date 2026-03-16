@@ -1464,6 +1464,32 @@ GameConstants.RHYTHM_CHANCE = {
 -- 반응 시간 검증 최소 간격 (SPEED_MAX * 반응시간)
 GameConstants.RHYTHM_MIN_GAP = GameConstants.PHYSICS.SPEED_MAX * 0.35 -- ~18.2 studs
 
+-- 스킬 루트 (Risk-Reward Path)
+-- 장애물 타입별로 "위험하지만 고보상" 코인 위치를 정의
+-- xOffset: 장애물 월드X 기준 상대 오프셋 (studs)
+-- y: 월드 Y 절대 높이 (studs, 지면=0)
+-- coinType: "Silver" | "Gold" | "Diamond"
+GameConstants.SKILL_ROUTES = {
+	-- LowWall 꼭대기 — 벽을 아슬아슬하게 스치며 점프 (니어미스 위치)
+	LowWall = { { xOffset = 0, y = 5.5, coinType = "Gold" } },
+	-- SpikeTrap 위 — 스파이크 정점을 아슬하게 점프
+	SpikeTrap = { { xOffset = 0, y = 5.0, coinType = "Gold" } },
+	-- Gap 공중 — 구덩이 중앙 공중, 2단 점프로만 도달
+	Gap = { { xOffset = 0, y = 9.0, coinType = "Diamond" } },
+	-- Tunnel 통과 직후 즉시 점프해야 닿는 위치
+	Tunnel = { { xOffset = 8, y = 7.0, coinType = "Gold" } },
+	-- DoubleWall 위 — 2단 점프 정점
+	DoubleWall = { { xOffset = 0, y = 8.0, coinType = "Silver" }, { xOffset = 4, y = 9.5, coinType = "Gold" } },
+	-- ExplodingBarrel 폭발 직전 순간 이동 — 배럴 옆을 스치면 Silver 코인
+	ExplodingBarrel = { { xOffset = -6, y = 6.0, coinType = "Silver" }, { xOffset = 6, y = 6.0, coinType = "Silver" } },
+}
+
+-- 스킬 루트 코인 출현 확률 (난이도별)
+GameConstants.SKILL_ROUTE_CHANCE = {
+	Normal = 0.30,
+	Hard   = 0.50,
+}
+
 -- 구역별 장애물 색상 (ObstacleService에서 참조)
 GameConstants.ZONE_OBSTACLE_COLORS = {
 	[1] = Color3.fromRGB(110, 75,  40),  -- Meadow: 나무색

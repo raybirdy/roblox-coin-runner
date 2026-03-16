@@ -366,6 +366,13 @@ function ChunkService:SpawnNextChunk(): Model?
 		end
 	end
 
+	-- 스킬 루트 코인 생성 (Normal/Hard 청크, 장애물 있을 때만)
+	if self._coinService and #obstacleInfos > 0 and not isInSafeZone and not eventType then
+		if difficulty == "Normal" or difficulty == "Hard" then
+			self._coinService:SpawnSkillRouteCoins(obstacleInfos, difficulty)
+		end
+	end
+
 	-- 청크 내 파워업 생성 (확률적, 안전 구역 이후부터)
 	if self._powerupService and not isInSafeZone and not eventType then
 		self._powerupService:TrySpawnPowerupInChunk(chunk, difficulty)
