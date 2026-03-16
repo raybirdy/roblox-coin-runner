@@ -104,10 +104,11 @@ GameConstants.COIN = {
 }
 
 -- 코인 패턴 (난이도별 사용 가능한 배치 패턴 목록)
+-- ActionHint 패턴(action_*)은 장애물 타입 감지 시 _selectPattern에서 직접 주입되며 여기서는 제외
 GameConstants.COIN_PATTERNS = {
 	EASY = { "line", "arc", "spread" },
-	NORMAL = { "line", "arc", "zigzag", "step_up", "step_down" },
-	HARD = { "zigzag", "step_up", "step_down", "corridor" },
+	NORMAL = { "line", "arc", "zigzag", "step_up", "step_down", "wave" },
+	HARD = { "zigzag", "step_up", "step_down", "corridor", "wave", "swoop" },
 	BONUS = { "line", "arc", "double_line", "spread" },
 	NPC = { "line", "spread" },
 }

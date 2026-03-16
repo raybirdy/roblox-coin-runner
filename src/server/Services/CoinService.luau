@@ -333,6 +333,41 @@ local function patternActionTimingCluster(
 	return positions
 end
 
+-- WAVE: 사인파 코인 경로 (Normal 리듬감, 점프+달리기 반복)
+local function patternWave(count: number, halfWidth: number): { { x: number, y: number } }
+	local positions = {}
+	local span = halfWidth * 1.6
+	local startX = -halfWidth * 0.8
+	local midY = 4.5
+	local amplitude = 3.5 -- 중앙에서 위아래 진폭
+	local cycles = 1.5 -- 전체 사인 파형 수
+	for i = 0, count - 1 do
+		local t = i / math.max(count - 1, 1)
+		local x = startX + t * span
+		local y = midY + amplitude * math.sin(t * cycles * 2 * math.pi)
+		table.insert(positions, { x = x, y = y })
+	end
+	return positions
+end
+
+-- SWOOP: 급하강 후 급상승 (V자형, 타이밍 수집 챌린지)
+local function patternSwoop(count: number, halfWidth: number): { { x: number, y: number } }
+	local positions = {}
+	local span = halfWidth * 1.6
+	local startX = -halfWidth * 0.8
+	local highY = 8.0
+	local lowY = 1.5
+	for i = 0, count - 1 do
+		local t = i / math.max(count - 1, 1)
+		local x = startX + t * span
+		-- V 곡선: 0에서 내려가다 0.5에서 최저, 다시 올라감
+		local v = math.abs(t - 0.5) * 2 -- 0→1 (0.5에서 0, 양 끝에서 1)
+		local y = lowY + v * (highY - lowY)
+		table.insert(positions, { x = x, y = y })
+	end
+	return positions
+end
+
 -- DOUBLE_LINE: 두 줄 수평선 (Bonus 전용, 대량 수집)
 local function patternDoubleLine(count: number, halfWidth: number): { { x: number, y: number } }
 	local positions = {}
@@ -441,6 +476,10 @@ function CoinService:_generatePatternPositions(
 		offsets = patternSpread(coinCount, halfWidth)
 	elseif pattern == "corridor" then
 		offsets = patternCorridor(coinCount, halfWidth, obstacleXList)
+	elseif pattern == "wave" then
+		offsets = patternWave(coinCount, halfWidth)
+	elseif pattern == "swoop" then
+		offsets = patternSwoop(coinCount, halfWidth)
 	elseif pattern == "action_jump_arc" then
 		offsets = patternActionJumpArc(coinCount, halfWidth, firstObsRelX)
 	elseif pattern == "action_slide_down" then
@@ -506,6 +545,25 @@ function CoinService:SpawnCoinsInChunk(
 		if not overlaps then
 			local coinType = self:_selectCoinType(difficulty)
 			self:_spawnCoin(coinPosition, coinType)
+		end
+	end
+
+	-- Leading Coins: 일반 패턴일 때 장애물 앞 8~12 studs에 예고 코인 2~3개 생성
+	-- ActionHint 패턴은 이미 유도 코인을 포함하므로 중복 생성 안 함
+	if not isActionHint and #(obstaclePositions :: { Vector3 }) > 0 then
+		local chunkCFrame2 = chunk:GetPrimaryPartCFrame()
+		local LEAD_OFFSET = 10 -- 장애물 앞 10 studs
+		local LEAD_SPACING = 3.5
+		local LEAD_COUNT = 2
+		local LEAD_Y = 5.5 -- 눈에 잘 띄는 중간 높이
+
+		for _, obsPos in obstaclePositions :: { Vector3 } do
+			for i = 1, LEAD_COUNT do
+				local lx = obsPos.X - LEAD_OFFSET - (i - 1) * LEAD_SPACING
+				local ly = chunkCFrame2.Position.Y + LEAD_Y
+				local lz = chunkCFrame2.Position.Z
+				self:_spawnCoin(Vector3.new(lx, ly, lz), "Bronze")
+			end
 		end
 	end
 end
