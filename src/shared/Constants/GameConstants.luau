@@ -1406,6 +1406,90 @@ GameConstants.OBSTACLE_COMBOS = {
 	},
 }
 
+-- 장애물 리듬 패턴 (박자 기반 시퀀스 — OBSTACLE_COMBOS보다 체계적)
+-- 각 beat의 xOffset 단위: studs (청크 진입점 기준 상대값)
+-- minSpeed 기준 반응 시간: PHYSICS.SPEED_MAX(52) * 0.35s = 18.2 studs 최소 간격 보장
+GameConstants.OBSTACLE_RHYTHMS = {
+	-- ===================== Normal 리듬 =====================
+	normal = {
+		-- 뛰뛰뛰 (3연속 점프, 균등 20studs 간격)
+		{ name = "triple_jump",
+		  beats = { { type = "LowWall", xOffset = 0 }, { type = "LowWall", xOffset = 20 }, { type = "LowWall", xOffset = 40 } } },
+		-- 뛰-숙-뛰 (점프-슬라이드-점프)
+		{ name = "jump_slide_jump",
+		  beats = { { type = "LowWall", xOffset = 0 }, { type = "Tunnel", xOffset = 22 }, { type = "LowWall", xOffset = 46 } } },
+		-- 숙-뛰-숙 (슬라이드-점프-슬라이드)
+		{ name = "slide_jump_slide",
+		  beats = { { type = "Tunnel", xOffset = 0 }, { type = "LowWall", xOffset = 22 }, { type = "Tunnel", xOffset = 46 } } },
+		-- 스파이크-점프-스파이크
+		{ name = "spike_jump_spike",
+		  beats = { { type = "SpikeTrap", xOffset = 0 }, { type = "LowWall", xOffset = 22 }, { type = "SpikeTrap", xOffset = 44 } } },
+		-- 2연속 슬라이드 (터널 2개)
+		{ name = "double_slide",
+		  beats = { { type = "Tunnel", xOffset = 0 }, { type = "Tunnel", xOffset = 24 } } },
+		-- 점프-갭 (낮은 벽 넘고 구덩이 점프)
+		{ name = "wall_then_gap",
+		  beats = { { type = "LowWall", xOffset = 0 }, { type = "Gap", xOffset = 22 } } },
+	},
+	-- ===================== Hard 리듬 =====================
+	hard = {
+		-- 가속 리듬 (간격이 좁아지는 3연속: 24→20→16)
+		{ name = "accelerating",
+		  beats = { { type = "LowWall", xOffset = 0 }, { type = "SpikeTrap", xOffset = 24 }, { type = "Gap", xOffset = 44 } } },
+		-- 배럴-슬라이드-배럴 (폭발 사이 슬라이드)
+		{ name = "barrel_slide_barrel",
+		  beats = { { type = "ExplodingBarrel", xOffset = 0 }, { type = "Tunnel", xOffset = 20 }, { type = "ExplodingBarrel", xOffset = 40 } } },
+		-- 더블점프 + 배럴 (2단 점프 후 폭발 회피)
+		{ name = "double_barrel",
+		  beats = { { type = "DoubleWall", xOffset = 0 }, { type = "ExplodingBarrel", xOffset = 22 } } },
+		-- 움직이는 벽 + 스파이크 (타이밍 후 점프)
+		{ name = "moving_spike",
+		  beats = { { type = "MovingWall", xOffset = 0 }, { type = "SpikeTrap", xOffset = 22 } } },
+		-- 점프-슬라이드-배럴 (3액션 콤비)
+		{ name = "jump_slide_barrel",
+		  beats = { { type = "LowWall", xOffset = 0 }, { type = "Tunnel", xOffset = 20 }, { type = "ExplodingBarrel", xOffset = 40 } } },
+		-- 갭-더블점프-갭 (연속 공중 이동)
+		{ name = "gap_double_gap",
+		  beats = { { type = "Gap", xOffset = 0 }, { type = "DoubleWall", xOffset = 22 }, { type = "Gap", xOffset = 44 } } },
+	},
+}
+
+-- 리듬 패턴 선택 확률 (일반 랜덤 배치 대신 리듬을 선택할 확률)
+-- OBSTACLE_COMBOS는 하위호환 유지, RHYTHMS가 우선 적용
+GameConstants.RHYTHM_CHANCE = {
+	Normal = 0.40, -- Normal 청크 40% 확률로 리듬 패턴
+	Hard   = 0.60, -- Hard 청크 60% 확률로 리듬 패턴
+}
+
+-- 반응 시간 검증 최소 간격 (SPEED_MAX * 반응시간)
+GameConstants.RHYTHM_MIN_GAP = GameConstants.PHYSICS.SPEED_MAX * 0.35 -- ~18.2 studs
+
+-- 스킬 루트 (Risk-Reward Path)
+-- 장애물 타입별로 "위험하지만 고보상" 코인 위치를 정의
+-- xOffset: 장애물 월드X 기준 상대 오프셋 (studs)
+-- y: 월드 Y 절대 높이 (studs, 지면=0)
+-- coinType: "Silver" | "Gold" | "Diamond"
+GameConstants.SKILL_ROUTES = {
+	-- LowWall 꼭대기 — 벽을 아슬아슬하게 스치며 점프 (니어미스 위치)
+	LowWall = { { xOffset = 0, y = 5.5, coinType = "Gold" } },
+	-- SpikeTrap 위 — 스파이크 정점을 아슬하게 점프
+	SpikeTrap = { { xOffset = 0, y = 5.0, coinType = "Gold" } },
+	-- Gap 공중 — 구덩이 중앙 공중, 2단 점프로만 도달
+	Gap = { { xOffset = 0, y = 9.0, coinType = "Diamond" } },
+	-- Tunnel 통과 직후 즉시 점프해야 닿는 위치
+	Tunnel = { { xOffset = 8, y = 7.0, coinType = "Gold" } },
+	-- DoubleWall 위 — 2단 점프 정점
+	DoubleWall = { { xOffset = 0, y = 8.0, coinType = "Silver" }, { xOffset = 4, y = 9.5, coinType = "Gold" } },
+	-- ExplodingBarrel 폭발 직전 순간 이동 — 배럴 옆을 스치면 Silver 코인
+	ExplodingBarrel = { { xOffset = -6, y = 6.0, coinType = "Silver" }, { xOffset = 6, y = 6.0, coinType = "Silver" } },
+}
+
+-- 스킬 루트 코인 출현 확률 (난이도별)
+GameConstants.SKILL_ROUTE_CHANCE = {
+	Normal = 0.30,
+	Hard   = 0.50,
+}
+
 -- 구역별 장애물 색상 (ObstacleService에서 참조)
 GameConstants.ZONE_OBSTACLE_COLORS = {
 	[1] = Color3.fromRGB(110, 75,  40),  -- Meadow: 나무색

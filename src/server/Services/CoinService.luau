@@ -392,6 +392,35 @@ function CoinService:SetLuckyCoinsBonus(bonus: number)
 end
 
 -- =====================================================================
+-- 스킬 루트 코인 생성 (Risk-Reward Path)
+-- obstacleInfos: { { position: Vector3, obstacleType: string } }
+-- difficulty: "Normal" | "Hard" (Easy는 스킬 루트 없음)
+-- =====================================================================
+function CoinService:SpawnSkillRouteCoins(obstacleInfos: { any }, difficulty: string)
+	local chance = GameConstants.SKILL_ROUTE_CHANCE[difficulty] or 0
+	if chance <= 0 then
+		return
+	end
+
+	for _, info in obstacleInfos do
+		local route = GameConstants.SKILL_ROUTES[info.obstacleType]
+		if not route then
+			continue
+		end
+		-- 확률 체크 (장애물마다 독립 판정)
+		if math.random() > chance then
+			continue
+		end
+		for _, slot in route do
+			local wx = info.position.X + slot.xOffset
+			local wy = slot.y -- GameConstants에 절대 높이로 정의 (지면=0 기준)
+			local wz = info.position.Z
+			self:_spawnCoin(Vector3.new(wx, wy, wz), slot.coinType)
+		end
+	end
+end
+
+-- =====================================================================
 -- 패턴 선택 (난이도 + 장애물 타입 반영)
 -- obstacleInfos: { { position: Vector3, obstacleType: string } }
 -- =====================================================================
