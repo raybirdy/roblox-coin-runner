@@ -275,6 +275,55 @@ export type ObstacleInfo = {
 	obstacleType: string,
 }
 
+-- 리듬 패턴 생성 (OBSTACLE_RHYTHMS 기반)
+-- startX: 청크 중심 기준 로컬 X — 리듬 시작 위치
+-- 반응 시간 검증: 각 beat 간격이 RHYTHM_MIN_GAP 미만이면 자동 확장
+function ObstacleService:_spawnObstacleRhythm(
+	difficulty: string,
+	startX: number,
+	chunkCFrame: CFrame,
+	chunkHalfX: number
+): { ObstacleInfo }
+	local rhythmPool = if difficulty == "Hard"
+		then GameConstants.OBSTACLE_RHYTHMS.hard
+		else GameConstants.OBSTACLE_RHYTHMS.normal
+	if not rhythmPool or #rhythmPool == 0 then
+		return {}
+	end
+
+	local rhythm = rhythmPool[math.random(1, #rhythmPool)]
+	local spawnedInfos: { ObstacleInfo } = {}
+	local MIN_GAP = GameConstants.RHYTHM_MIN_GAP
+
+	-- 반응 시간 검증: beat 간격이 MIN_GAP 미만이면 확장
+	local adjustedBeats: { { type: string, xOffset: number } } = {}
+	local prevOffset = -math.huge
+	for _, beat in rhythm.beats do
+		local offset = beat.xOffset
+		-- 이전 beat와의 간격이 MIN_GAP 미만이면 밀어냄
+		if prevOffset ~= -math.huge and offset - prevOffset < MIN_GAP then
+			offset = prevOffset + MIN_GAP
+		end
+		table.insert(adjustedBeats, { type = beat.type, xOffset = offset })
+		prevOffset = offset
+	end
+
+	for _, beat in adjustedBeats do
+		local localX = startX + beat.xOffset
+		if localX > chunkHalfX - 5 then
+			break
+		end
+		local worldPos = chunkCFrame.Position + Vector3.new(localX, 0, 0)
+		self:_spawnObstacle(worldPos, beat.type)
+		table.insert(spawnedInfos, { position = worldPos, obstacleType = beat.type })
+	end
+
+	if #spawnedInfos > 0 then
+		print(`[ObstacleService] Spawned rhythm '{rhythm.name}' difficulty={difficulty} startX={startX}`)
+	end
+	return spawnedInfos
+end
+
 -- 콤보 패턴 생성 (청크 로컬 X 오프셋 기준으로 월드 위치 계산)
 -- baseX: 청크 중심 기준 로컬 X 오프셋 (obstacleX와 동일 좌표계)
 function ObstacleService:_spawnObstacleCombo(
@@ -336,11 +385,26 @@ function ObstacleService:SpawnObstaclesInChunk(chunk: Model, difficulty: string)
 		end
 	end
 
-	-- 이번 청크에 콤보 패턴 사용 여부 결정 (Normal 20%, Hard 35%)
-	local comboChance = if difficulty == "Hard" then 0.35 elseif difficulty == "Normal" then 0.20 else 0
-	local useCombo = comboChance > 0 and math.random() < comboChance
-
 	local chunkHalfX = chunkSize.X / 2
+	-- 청크 시작 기준 로컬 X (왼쪽 끝 + 안전 진입 구간)
+	local startX = -chunkHalfX + ENTRY_SAFE
+
+	-- 리듬 패턴 우선 시도 (Normal 40%, Hard 60%)
+	local rhythmChance = GameConstants.RHYTHM_CHANCE[difficulty] or 0
+	if rhythmChance > 0 and math.random() < rhythmChance then
+		local rhythmInfos = self:_spawnObstacleRhythm(difficulty, startX, chunkCFrame, chunkHalfX)
+		if #rhythmInfos > 0 then
+			-- 리듬이 청크를 채우므로 전체 obstacleInfos에 복사 후 반환
+			for _, info in rhythmInfos do
+				table.insert(obstacleInfos, info)
+			end
+			return obstacleInfos
+		end
+	end
+
+	-- 리듬 미적용 시: 기존 콤보 → 단독 랜덤 배치 (하위호환)
+	local comboChance = if difficulty == "Hard" then 0.25 elseif difficulty == "Normal" then 0.15 else 0
+	local useCombo = comboChance > 0 and math.random() < comboChance
 
 	for i = 1, obstacleCount do
 		-- 장애물 위치 계산 (균등 배치 + 약간의 랜덤)
