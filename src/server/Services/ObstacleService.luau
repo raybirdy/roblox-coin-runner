@@ -269,6 +269,12 @@ function ObstacleService:TrySpawnChaseMobForChunk(difficulty: string)
 	self:SpawnChaseMob(self._lastPlayerPosition)
 end
 
+-- 장애물 정보 타입 (위치 + 타입)
+export type ObstacleInfo = {
+	position: Vector3,
+	obstacleType: string,
+}
+
 -- 콤보 패턴 생성 (청크 로컬 X 오프셋 기준으로 월드 위치 계산)
 -- baseX: 청크 중심 기준 로컬 X 오프셋 (obstacleX와 동일 좌표계)
 function ObstacleService:_spawnObstacleCombo(
@@ -276,7 +282,7 @@ function ObstacleService:_spawnObstacleCombo(
 	baseX: number,
 	chunkCFrame: CFrame,
 	chunkHalfX: number
-): { Vector3 }
+): { ObstacleInfo }
 	local comboPool = if difficulty == "Hard"
 		then GameConstants.OBSTACLE_COMBOS.hard
 		else GameConstants.OBSTACLE_COMBOS.normal
@@ -285,7 +291,7 @@ function ObstacleService:_spawnObstacleCombo(
 	end
 
 	local combo = comboPool[math.random(1, #comboPool)]
-	local spawnedPositions: { Vector3 } = {}
+	local spawnedInfos: { ObstacleInfo } = {}
 
 	for _, entry in combo.obstacles do
 		local localX = baseX + entry.xOffset
@@ -295,18 +301,18 @@ function ObstacleService:_spawnObstacleCombo(
 		end
 		local worldPos = chunkCFrame.Position + Vector3.new(localX, 0, 0)
 		self:_spawnObstacle(worldPos, entry.type)
-		table.insert(spawnedPositions, worldPos)
+		table.insert(spawnedInfos, { position = worldPos, obstacleType = entry.type })
 	end
 
-	if #spawnedPositions > 0 then
+	if #spawnedInfos > 0 then
 		print(`[ObstacleService] Spawned combo '{combo.name}' difficulty={difficulty} baseX={baseX}`)
 	end
-	return spawnedPositions
+	return spawnedInfos
 end
 
--- 청크 내 장애물 생성 (생성된 장애물 위치 목록 반환)
-function ObstacleService:SpawnObstaclesInChunk(chunk: Model, difficulty: string): { Vector3 }
-	local obstaclePositions: { Vector3 } = {}
+-- 청크 내 장애물 생성 (생성된 장애물 정보 목록 반환 — 위치 + 타입)
+function ObstacleService:SpawnObstaclesInChunk(chunk: Model, difficulty: string): { ObstacleInfo }
+	local obstacleInfos: { ObstacleInfo } = {}
 
 	-- 난이도별 장애물 개수 결정
 	local obstacleCount = self:_getObstacleCountForDifficulty(difficulty)
@@ -345,9 +351,9 @@ function ObstacleService:SpawnObstaclesInChunk(chunk: Model, difficulty: string)
 
 		-- 첫 번째 슬롯에서 콤보 시도
 		if i == 1 and useCombo then
-			local comboPositions = self:_spawnObstacleCombo(difficulty, obstacleX, chunkCFrame, chunkHalfX)
-			if #comboPositions > 0 then
-				table.insert(obstaclePositions, comboPositions[1])
+			local comboInfos = self:_spawnObstacleCombo(difficulty, obstacleX, chunkCFrame, chunkHalfX)
+			if #comboInfos > 0 then
+				table.insert(obstacleInfos, comboInfos[1])
 				-- 콤보가 청크 공간을 채우므로 나머지 단독 장애물은 스킵
 				break
 			end
@@ -362,10 +368,10 @@ function ObstacleService:SpawnObstaclesInChunk(chunk: Model, difficulty: string)
 		-- 장애물 생성
 		self:_spawnObstacle(obstaclePosition, obstacleType)
 
-		table.insert(obstaclePositions, obstaclePosition)
+		table.insert(obstacleInfos, { position = obstaclePosition, obstacleType = obstacleType })
 	end
 
-	return obstaclePositions
+	return obstacleInfos
 end
 
 -- 난이도별 장애물 개수 결정

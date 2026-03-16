@@ -215,6 +215,159 @@ local function patternCorridor(
 	return positions
 end
 
+-- =====================================================================
+-- ActionHint 패턴 (장애물 타입 → 올바른 액션을 코인으로 안내)
+-- obsRelX: 청크 중심 기준 장애물 상대 X (코인 배치 기준점으로 사용)
+-- =====================================================================
+
+-- JUMP_ARC: LowWall/SpikeTrap/Gap 직전 포물선 아치 → 점프 유도
+-- 장애물 앞 ~10studs에서 아치가 시작해 장애물 위를 넘어가도록 배치
+local function patternActionJumpArc(count: number, halfWidth: number, obsRelX: number): { { x: number, y: number } }
+	local positions = {}
+	local arcSpan = halfWidth * 1.0 -- 아치 전체 폭
+	local startX = obsRelX - arcSpan * 0.65 -- 장애물 앞 65%에서 시작
+	local arcHeight = 8.0
+	local baseHeight = 2.5
+	for i = 0, count - 1 do
+		local t = i / math.max(count - 1, 1)
+		local x = startX + t * arcSpan
+		-- quadratic bezier peak at t=0.5
+		local y = (1 - t) ^ 2 * baseHeight + 2 * t * (1 - t) * arcHeight + t ^ 2 * baseHeight
+		x = math.clamp(x, -halfWidth * 0.9, halfWidth * 0.9)
+		table.insert(positions, { x = x, y = y })
+	end
+	return positions
+end
+
+-- SLIDE_DOWN: Tunnel 직전 하강선 → 슬라이드 유도
+-- 장애물 앞에서 점점 낮아져 지상에 붙는 코인 경로
+local function patternActionSlideDown(count: number, halfWidth: number, obsRelX: number): { { x: number, y: number } }
+	local positions = {}
+	local slideSpan = halfWidth * 0.9
+	local startX = obsRelX - slideSpan * 0.8
+	local highY = 5.5
+	local lowY = 1.5 -- 지면 바짝, 슬라이드 자세 유도
+	for i = 0, count - 1 do
+		local t = i / math.max(count - 1, 1)
+		local x = startX + t * slideSpan
+		local y = highY - t * (highY - lowY)
+		x = math.clamp(x, -halfWidth * 0.9, halfWidth * 0.9)
+		table.insert(positions, { x = x, y = y })
+	end
+	return positions
+end
+
+-- DOUBLE_ARC: DoubleWall 직전 두 개의 연속 아치 → 연속 점프 유도
+local function patternActionDoubleArc(count: number, halfWidth: number, obsRelX: number): { { x: number, y: number } }
+	local positions = {}
+	local half = math.ceil(count / 2)
+	local arcSpan = halfWidth * 0.65
+	local arcHeight = 7.5
+	local baseHeight = 2.5
+	-- 첫 번째 아치 (장애물 앞)
+	local start1 = obsRelX - arcSpan * 1.2
+	for i = 0, half - 1 do
+		local t = i / math.max(half - 1, 1)
+		local x = start1 + t * arcSpan
+		local y = (1 - t) ^ 2 * baseHeight + 2 * t * (1 - t) * arcHeight + t ^ 2 * baseHeight
+		x = math.clamp(x, -halfWidth * 0.9, halfWidth * 0.9)
+		table.insert(positions, { x = x, y = y })
+	end
+	-- 두 번째 아치 (장애물 직후)
+	local start2 = obsRelX + arcSpan * 0.1
+	local remaining = count - half
+	for i = 0, remaining - 1 do
+		local t = i / math.max(remaining - 1, 1)
+		local x = start2 + t * arcSpan
+		local y = (1 - t) ^ 2 * baseHeight + 2 * t * (1 - t) * arcHeight + t ^ 2 * baseHeight
+		x = math.clamp(x, -halfWidth * 0.9, halfWidth * 0.9)
+		table.insert(positions, { x = x, y = y })
+	end
+	return positions
+end
+
+-- AVOID_SIDE: ExplodingBarrel 폭발 후 안전 구간 코인 → 측면 회피 안내
+-- 장애물 뒤쪽에 넉넉한 지상 코인 (폭발 반경 벗어난 위치)
+local function patternActionAvoidSide(count: number, halfWidth: number, obsRelX: number): { { x: number, y: number } }
+	local positions = {}
+	local safeOffset = 10 -- 폭발 반경 넘어선 위치
+	local span = halfWidth * 0.9
+	local startX = obsRelX + safeOffset
+	local groundY = 2.5
+	for i = 0, count - 1 do
+		local t = i / math.max(count - 1, 1)
+		local x = startX + t * span * 0.5
+		x = math.clamp(x, -halfWidth * 0.9, halfWidth * 0.9)
+		table.insert(positions, { x = x, y = groundY })
+	end
+	return positions
+end
+
+-- TIMING_CLUSTER: MovingWall 주변 타이밍 코인 → 안전 창문 통과 유도
+-- 벽 이동 주기(2s) 기준으로 안전 구간 앞뒤에 코인 군집
+local function patternActionTimingCluster(
+	count: number,
+	halfWidth: number,
+	obsRelX: number
+): { { x: number, y: number } }
+	local positions = {}
+	local clusterA = count -- 장애물 직전 클러스터
+	local beforeX = obsRelX - 8
+	local spacing = 3.5
+	local groundY = 2.5
+	local highY = 9.0 -- 벽 위 코인 (높이 점프 유도)
+	local n = math.ceil(clusterA / 2)
+	for i = 0, n - 1 do
+		local x = beforeX - i * spacing
+		x = math.clamp(x, -halfWidth * 0.9, halfWidth * 0.9)
+		table.insert(positions, { x = x, y = groundY })
+	end
+	for i = 0, n - 1 do
+		local x = beforeX - i * spacing
+		x = math.clamp(x, -halfWidth * 0.9, halfWidth * 0.9)
+		table.insert(positions, { x = x, y = highY })
+		if #positions >= count then
+			break
+		end
+	end
+	return positions
+end
+
+-- WAVE: 사인파 코인 경로 (Normal 리듬감, 점프+달리기 반복)
+local function patternWave(count: number, halfWidth: number): { { x: number, y: number } }
+	local positions = {}
+	local span = halfWidth * 1.6
+	local startX = -halfWidth * 0.8
+	local midY = 4.5
+	local amplitude = 3.5 -- 중앙에서 위아래 진폭
+	local cycles = 1.5 -- 전체 사인 파형 수
+	for i = 0, count - 1 do
+		local t = i / math.max(count - 1, 1)
+		local x = startX + t * span
+		local y = midY + amplitude * math.sin(t * cycles * 2 * math.pi)
+		table.insert(positions, { x = x, y = y })
+	end
+	return positions
+end
+
+-- SWOOP: 급하강 후 급상승 (V자형, 타이밍 수집 챌린지)
+local function patternSwoop(count: number, halfWidth: number): { { x: number, y: number } }
+	local positions = {}
+	local span = halfWidth * 1.6
+	local startX = -halfWidth * 0.8
+	local highY = 8.0
+	local lowY = 1.5
+	for i = 0, count - 1 do
+		local t = i / math.max(count - 1, 1)
+		local x = startX + t * span
+		-- V 곡선: 0에서 내려가다 0.5에서 최저, 다시 올라감
+		local v = math.abs(t - 0.5) * 2 -- 0→1 (0.5에서 0, 양 끝에서 1)
+		local y = lowY + v * (highY - lowY)
+		table.insert(positions, { x = x, y = y })
+	end
+	return positions
+end
+
 -- DOUBLE_LINE: 두 줄 수평선 (Bonus 전용, 대량 수집)
 local function patternDoubleLine(count: number, halfWidth: number): { { x: number, y: number } }
 	local positions = {}
@@ -239,9 +392,31 @@ function CoinService:SetLuckyCoinsBonus(bonus: number)
 end
 
 -- =====================================================================
--- 패턴 선택 (난이도 + 장애물 유무 반영)
+-- 패턴 선택 (난이도 + 장애물 타입 반영)
+-- obstacleInfos: { { position: Vector3, obstacleType: string } }
 -- =====================================================================
-function CoinService:_selectPattern(difficulty: string, obstaclePositions: { Vector3 }): string
+
+-- ActionHint 장애물 타입 → 패턴 이름 매핑
+local ACTION_HINT_MAP: { [string]: string } = {
+	LowWall = "action_jump_arc",
+	SpikeTrap = "action_jump_arc",
+	Gap = "action_jump_arc",
+	Tunnel = "action_slide_down",
+	DoubleWall = "action_double_arc",
+	ExplodingBarrel = "action_avoid_side",
+	MovingWall = "action_timing_cluster",
+}
+
+function CoinService:_selectPattern(difficulty: string, obstaclePositions: { Vector3 }, obstacleInfos: { any }?): string
+	-- ActionHint: 장애물 타입이 있으면 70% 확률로 ActionHint 패턴 사용
+	if obstacleInfos and #obstacleInfos > 0 then
+		local firstInfo = obstacleInfos[1]
+		local hintPattern = ACTION_HINT_MAP[firstInfo.obstacleType]
+		if hintPattern and math.random() < 0.70 then
+			return hintPattern
+		end
+	end
+
 	local patterns = GameConstants.COIN_PATTERNS[difficulty:upper()] or GameConstants.COIN_PATTERNS.NORMAL
 
 	-- Hard에서 장애물이 있으면 corridor 우선
@@ -263,6 +438,7 @@ end
 
 -- =====================================================================
 -- 패턴별 위치 생성 (청크 절대 좌표로 변환)
+-- obstacleInfos: { { position: Vector3, obstacleType: string } } (선택)
 -- =====================================================================
 function CoinService:_generatePatternPositions(
 	chunkCFrame: CFrame,
@@ -281,6 +457,9 @@ function CoinService:_generatePatternPositions(
 		table.insert(obstacleXList, obsPos.X - chunkCenter.X)
 	end
 
+	-- ActionHint 패턴: 첫 번째 장애물 상대 X 기준으로 코인 배치
+	local firstObsRelX = if #obstacleXList > 0 then obstacleXList[1] else 0
+
 	-- 패턴별 상대 오프셋 생성
 	local offsets: { { x: number, y: number } }
 	if pattern == "line" then
@@ -297,6 +476,20 @@ function CoinService:_generatePatternPositions(
 		offsets = patternSpread(coinCount, halfWidth)
 	elseif pattern == "corridor" then
 		offsets = patternCorridor(coinCount, halfWidth, obstacleXList)
+	elseif pattern == "wave" then
+		offsets = patternWave(coinCount, halfWidth)
+	elseif pattern == "swoop" then
+		offsets = patternSwoop(coinCount, halfWidth)
+	elseif pattern == "action_jump_arc" then
+		offsets = patternActionJumpArc(coinCount, halfWidth, firstObsRelX)
+	elseif pattern == "action_slide_down" then
+		offsets = patternActionSlideDown(coinCount, halfWidth, firstObsRelX)
+	elseif pattern == "action_double_arc" then
+		offsets = patternActionDoubleArc(coinCount, halfWidth, firstObsRelX)
+	elseif pattern == "action_avoid_side" then
+		offsets = patternActionAvoidSide(coinCount, halfWidth, firstObsRelX)
+	elseif pattern == "action_timing_cluster" then
+		offsets = patternActionTimingCluster(coinCount, halfWidth, firstObsRelX)
 	else
 		offsets = patternDoubleLine(coinCount, halfWidth)
 	end
@@ -312,9 +505,16 @@ end
 
 -- =====================================================================
 -- 청크 내 코인 생성 (패턴 기반)
+-- obstacleInfos: { { position: Vector3, obstacleType: string } } (선택)
 -- =====================================================================
-function CoinService:SpawnCoinsInChunk(chunk: Model, difficulty: string, obstaclePositions: { Vector3 }?)
+function CoinService:SpawnCoinsInChunk(
+	chunk: Model,
+	difficulty: string,
+	obstaclePositions: { Vector3 }?,
+	obstacleInfos: { any }?
+)
 	obstaclePositions = obstaclePositions or {}
+	obstacleInfos = obstacleInfos or {}
 
 	-- 코인 개수 결정
 	local coinCount = self:_getCoinCountForDifficulty(difficulty)
@@ -322,15 +522,17 @@ function CoinService:SpawnCoinsInChunk(chunk: Model, difficulty: string, obstacl
 	-- 청크 중심 좌표 계산
 	local chunkCFrame = chunk:GetPrimaryPartCFrame()
 
-	-- 패턴 선택
-	local pattern = self:_selectPattern(difficulty, obstaclePositions :: { Vector3 })
+	-- 패턴 선택 (장애물 타입 기반 ActionHint 패턴 포함)
+	local pattern =
+		self:_selectPattern(difficulty, obstaclePositions :: { Vector3 }, obstacleInfos :: { any })
 
 	-- 패턴 위치 생성
 	local positions =
 		self:_generatePatternPositions(chunkCFrame, pattern, coinCount, obstaclePositions :: { Vector3 })
 
-	-- 장애물 안전 거리 최종 검증
-	local SAFE_DISTANCE = 5
+	-- ActionHint 패턴은 안전 거리 검증 완화 (코인이 장애물 앞에 의도적으로 배치)
+	local isActionHint = pattern:sub(1, 7) == "action_"
+	local SAFE_DISTANCE = if isActionHint then 3 else 5
 
 	for _, coinPosition in positions do
 		local overlaps = false
@@ -343,6 +545,25 @@ function CoinService:SpawnCoinsInChunk(chunk: Model, difficulty: string, obstacl
 		if not overlaps then
 			local coinType = self:_selectCoinType(difficulty)
 			self:_spawnCoin(coinPosition, coinType)
+		end
+	end
+
+	-- Leading Coins: 일반 패턴일 때 장애물 앞 8~12 studs에 예고 코인 2~3개 생성
+	-- ActionHint 패턴은 이미 유도 코인을 포함하므로 중복 생성 안 함
+	if not isActionHint and #(obstaclePositions :: { Vector3 }) > 0 then
+		local chunkCFrame2 = chunk:GetPrimaryPartCFrame()
+		local LEAD_OFFSET = 10 -- 장애물 앞 10 studs
+		local LEAD_SPACING = 3.5
+		local LEAD_COUNT = 2
+		local LEAD_Y = 5.5 -- 눈에 잘 띄는 중간 높이
+
+		for _, obsPos in obstaclePositions :: { Vector3 } do
+			for i = 1, LEAD_COUNT do
+				local lx = obsPos.X - LEAD_OFFSET - (i - 1) * LEAD_SPACING
+				local ly = chunkCFrame2.Position.Y + LEAD_Y
+				local lz = chunkCFrame2.Position.Z
+				self:_spawnCoin(Vector3.new(lx, ly, lz), "Bronze")
+			end
 		end
 	end
 end
