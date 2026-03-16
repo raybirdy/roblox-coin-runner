@@ -472,17 +472,21 @@ RemoteEvents.NpcInteract.OnClientEvent:Connect(function(data: any)
 	end
 end)
 
--- UI 모바일 버튼 콜백 연결 (터치) — InputController debounce를 거침
+-- UI 모바일 버튼 콜백 연결 (터치) — InputController debounce 우회, PlayerController 직접 호출
 uiController:OnJump(function()
-	inputController:TriggerJump()
+	playerController:Jump()
+	tutorialController:OnPlayerAction("jump")
+	inputController:TriggerHaptic(0.3)
 end)
 
 uiController:OnSlide(function()
-	inputController:TriggerSlide()
+	playerController:Slide()
+	tutorialController:OnPlayerAction("slide")
+	inputController:TriggerHaptic(0.2)
 end)
 
 uiController:OnSlideEnd(function()
-	inputController:TriggerSlideEnd()
+	playerController:SlideEnd()
 end)
 
 -- 서버로부터 게임 시작 응답 수신

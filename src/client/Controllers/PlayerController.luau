@@ -811,8 +811,8 @@ function PlayerController:_endSlide()
 	self.humanoidRootPart.CFrame = CFrame.new(pos.X, pos.Y, GameConstants.PLAYER.Z_POSITION)
 		* CFrame.Angles(0, math.rad(-90), 0)
 
-	-- Humanoid 상태를 Running으로 강제 전환
-	self.humanoid:ChangeState(Enum.HumanoidStateType.Running)
+	-- NOTE: humanoid:ChangeState(Running) 제거 — CFrame 이동과 충돌하여
+	-- 물리 settle 반발(velY bounce) → 캐릭터 공중 부상 → state=Falling → 점프 차단 버그 유발
 
 	-- 바닥에 있으면 Running, 아니면 Falling
 	if self.isGrounded then
