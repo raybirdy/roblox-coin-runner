@@ -296,6 +296,29 @@ function ChunkService:SpawnNextChunk(): Model?
 		difficulty = self:_selectDifficulty()
 	end
 
+	-- Coin Waterfall 이벤트 (120초 이후 5% 확률, CoinRush가 아닐 때만)
+	local elapsedForWaterfall = tick() - self._gameStartTime
+	if not eventType
+		and elapsedForWaterfall >= GameConstants.COIN_WATERFALL.MIN_TIME
+		and math.random() < GameConstants.COIN_WATERFALL.CHANCE
+	then
+		eventType = "CoinWaterfall"
+		difficulty = "Bonus"
+	end
+
+	-- Zone Climax: Zone 전환 직전 15초 — 현재 zone 마지막 구간 감지
+	local isZoneClimax = false
+	if not eventType then
+		local zoneThresholds = GameConstants.ZONE_THRESHOLDS
+		if zoneThresholds then
+			local currentThreshold = zoneThresholds[self._currentZoneIndex] or math.huge
+			local timeToTransition = currentThreshold - elapsedForWaterfall
+			if timeToTransition > 0 and timeToTransition <= GameConstants.ZONE_CLIMAX.PRE_TRANSITION_TIME then
+				isZoneClimax = true
+			end
+		end
+	end
+
 	local spawnPosition = self:_calculateSpawnPosition()
 
 	-- Phase B: 현재 zone 테마
@@ -343,7 +366,9 @@ function ChunkService:SpawnNextChunk(): Model?
 		-- Zone 고유 장애물: 현재 Zone 메커닉 설정에 따라 특수 장애물 추가 생성
 		if difficulty == "Normal" or difficulty == "Hard" then
 			local zoneMech = GameConstants.ZONE_MECHANICS[self._currentZoneIndex]
-			if zoneMech and zoneMech.specialObstacle and math.random() < (zoneMech.specialChance or 0) then
+			local specialChance = (zoneMech and zoneMech.specialChance or 0)
+				* (isZoneClimax and GameConstants.ZONE_CLIMAX.SPECIAL_CHANCE_MULT or 1.0)
+			if zoneMech and zoneMech.specialObstacle and math.random() < specialChance then
 				local chunkCF = chunk:GetPrimaryPartCFrame()
 				local halfX = chunk:GetExtentsSize().X / 2
 				-- 청크 중앙 근처에 특수 장애물 1개 추가 배치
@@ -374,8 +399,17 @@ function ChunkService:SpawnNextChunk(): Model?
 			-- 일반 코인 + 거인 코인
 			self._coinService:SpawnCoinsInChunk(chunk, difficulty, obstaclePositions, obstacleInfos)
 			self._coinService:SpawnGiantCoin(chunk, spawnPosition)
+		elseif eventType == "CoinWaterfall" then
+			-- 코인 폭포: WATERFALL 패턴으로 대각선 24개 + Bonus 추가
+			self._coinService:SpawnCoinPattern(chunk, "waterfall", {})
+			self._coinService:SpawnCoinsInChunk(chunk, "Bonus", {}, {})
+			print(`[ChunkService] Coin Waterfall event at chunk #{self._chunkCounter}!`)
 		else
 			self._coinService:SpawnCoinsInChunk(chunk, difficulty, obstaclePositions, obstacleInfos)
+			-- Zone Climax: 코인 밀도 2배 (추가 호출)
+			if isZoneClimax then
+				self._coinService:SpawnCoinsInChunk(chunk, difficulty, obstaclePositions, obstacleInfos)
+			end
 		end
 	end
 

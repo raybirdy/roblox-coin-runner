@@ -113,13 +113,14 @@ GameConstants.COIN_PATTERNS = {
 	NPC = { "line", "spread" },
 }
 
--- 코인 개수 (난이도별, 패턴 완성을 위한 적정 수로 조정)
+-- 코인 개수 (난이도별, ActionHint + Leading Coins + 스킬루트 코인 추가분 반영 후 조정)
+-- Phase 4 밸런스 패스: 기본 패턴 소폭 감소, 총 코인량은 이전 대비 +5~15% 유지
 GameConstants.COIN_COUNTS = {
-	EASY = { min = 8, max = 12 }, -- 초반 풍성함: 6~8 → 8~12
-	NORMAL = { min = 5, max = 7 },
-	HARD = { min = 4, max = 6 },
-	BONUS = { min = 12, max = 18 },
-	NPC = { min = 3, max = 4 },
+	EASY   = { min = 7, max = 10 }, -- 8~12 → 7~10 (Easy에는 힌트코인 없으므로 소폭만 감소)
+	NORMAL = { min = 4, max = 6 },  -- 5~7  → 4~6  (ActionHint 3~5개 + 리딩코인 2개 추가)
+	HARD   = { min = 3, max = 5 },  -- 4~6  → 3~5  (ActionHint + 스킬루트 + 리딩코인 포함)
+	BONUS  = { min = 12, max = 18 }, -- 변경 없음
+	NPC    = { min = 3, max = 4 },   -- 변경 없음
 }
 
 -- 코인 밀도 리듬 (긴장-이완 구조: N번째 청크마다 코인 폭발)
@@ -1552,6 +1553,36 @@ GameConstants.GRAVITY_ZONE = {
 	EFFECT_DURATION    = 8.0, -- 저중력 지속 시간 (초, 청크 통과 시간보다 길게)
 	MARKER_COLOR       = Color3.fromRGB(80, 120, 255), -- 파란 네온 마커
 	MARKER_SIZE        = Vector3.new(80, 0.5, 12),     -- 청크 폭 전체 얇은 바닥 마커
+}
+
+-- =====================================================================
+-- Phase 4: 피크 모먼트 + 밸런스 패스
+-- =====================================================================
+
+-- Coin Waterfall 이벤트
+GameConstants.COIN_WATERFALL = {
+	MIN_TIME     = 120,  -- 120초 이후부터 등장 가능
+	CHANCE       = 0.05, -- 청크당 5% 확률
+	COIN_COUNT   = 24,   -- 대각선 폭포 코인 수
+	START_Y      = 12,   -- 폭포 시작 높이
+	END_Y        = 2.5,  -- 폭포 끝 높이
+}
+
+-- Zone Climax: Zone 마지막 15초 고밀도 구간
+GameConstants.ZONE_CLIMAX = {
+	PRE_TRANSITION_TIME = 15, -- Zone 전환 X초 전
+	DENSITY_MULTIPLIER  = 2.0, -- 코인/장애물 밀도 2배
+	SPECIAL_CHANCE_MULT = 2.0, -- Zone 고유 요소 확률도 2배
+}
+
+-- Zone 전환 시간 임계값 (초): [zoneIndex] = 해당 zone이 끝나는 시각
+-- ZONE_THEMES[i+1].startTime 에서 파생
+GameConstants.ZONE_THRESHOLDS = {
+	[1] = 60,        -- Meadow     → FlowerPath  at 60s
+	[2] = 120,       -- FlowerPath → MushroomWood at 120s
+	[3] = 180,       -- MushroomWood → Sunset    at 180s
+	[4] = 240,       -- Sunset     → Starlight   at 240s
+	[5] = math.huge, -- Starlight: 마지막 Zone, 전환 없음
 }
 
 -- 구역별 장애물 색상 (ObstacleService에서 참조)
