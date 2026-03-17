@@ -491,6 +491,29 @@ GameConstants.SHOP = {
 			material = "Metal",
 			trail = false,
 		},
+		-- 번들 전용 스킨 (MEGA/ULTRA BUNDLE에서만 획득 가능)
+		{
+			id = "galaxy_runner",
+			name = "갤럭시 러너",
+			price = 0,
+			currency = "bundle", -- bundle-only: obtainable via mega_bundle purchase
+			color = Color3.fromRGB(80, 0, 180),
+			thumbnailId = "rbxassetid://3535936432",
+			material = "Neon",
+			trail = true,
+			trailColor = Color3.fromRGB(150, 0, 255),
+		},
+		{
+			id = "cosmic_king",
+			name = "코스믹 킹",
+			price = 0,
+			currency = "bundle", -- bundle-only: obtainable via ultra_bundle purchase
+			color = Color3.fromRGB(10, 10, 40),
+			thumbnailId = "rbxassetid://3535937245",
+			material = "Neon",
+			trail = true,
+			trailColor = Color3.fromRGB(200, 50, 255),
+		},
 		-- 시즌 한정 스킨 (봄 2026 시즌, ~2026-04-30)
 		{
 			id = "cherry_blossom",
@@ -542,6 +565,31 @@ GameConstants.MONETIZATION = {
 		{ id = "gems_200", productId = 3540343177, gems = 200, robux = 75, bonus = 50 },
 		{ id = "gems_500", productId = 3540343329, gems = 500, robux = 149, bonus = 150 },
 		{ id = "starter_pack", productId = 3540343511, gems = 150, robux = 49, bonus = 0, bundlePet = "hamster" },
+		{
+			id = "mega_bundle",
+			productId = 0, -- TODO: Create 499 R$ product on Roblox Developer Dashboard and replace with real ID
+			gems = 1500,
+			robux = 499,
+			bonus = 500, -- display: "2000 gems = 1500 + 500 bonus"
+			bundlePet = "phoenix",
+			bundleSkin = "galaxy_runner",
+			bundleNametag = "frame_diamond",
+			label = "MEGA BUNDLE",
+			highlight = "BEST VALUE",
+		},
+		{
+			id = "ultra_bundle",
+			productId = 0, -- TODO: Create 999 R$ product on Roblox Developer Dashboard and replace with real ID
+			gems = 4000,
+			robux = 999,
+			bonus = 1500, -- display: "5500 gems = 4000 + 1500 bonus"
+			bundlePet = "dragon",
+			bundleSkin = "cosmic_king",
+			bundleNametag = "frame_rainbow",
+			bundleCharacter = "robot",
+			label = "ULTRA BUNDLE",
+			highlight = "ULTIMATE",
+		},
 	},
 	-- GamePass (VIP)
 	VIP_GAMEPASS_ID = 1720352633,

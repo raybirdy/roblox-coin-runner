@@ -907,20 +907,52 @@ function ShopController:_createGemProductFrame(
 		robux: number,
 		bonus: number,
 		bundlePet: string?,
+		bundleSkin: string?,
+		bundleNametag: string?,
+		bundleCharacter: string?,
+		label: string?,
+		highlight: string?,
 	}
 ): Frame
-	-- starter_pack은 번들 텍스트 공간 확보를 위해 높이 확장
 	local isStarterPack = product.id == "starter_pack"
-	local frameHeight = if isStarterPack then 120 else 100
+	local isMegaBundle = product.id == "mega_bundle"
+	local isUltraBundle = product.id == "ultra_bundle"
+	local isHighlightBundle = isMegaBundle or isUltraBundle
+
+	-- Height: highlight bundles need extra space for content list
+	local frameHeight = 100
+	if isStarterPack then
+		frameHeight = 120
+	elseif isHighlightBundle then
+		frameHeight = 160
+	end
 
 	local frame = Instance.new("Frame")
 	frame.Name = product.id
 	frame.Size = UDim2.new(0, 130, 0, frameHeight)
-	frame.BackgroundColor3 = Color3.fromRGB(60, 40, 80)
 	frame.Parent = container
 
-	-- starter_pack은 골드 테두리로 강조
-	if isStarterPack then
+	-- Background color: ultra bundle gets a dark cosmic tint, mega gets purple
+	if isUltraBundle then
+		frame.BackgroundColor3 = Color3.fromRGB(10, 10, 40)
+	elseif isMegaBundle then
+		frame.BackgroundColor3 = Color3.fromRGB(40, 20, 70)
+	else
+		frame.BackgroundColor3 = Color3.fromRGB(60, 40, 80)
+	end
+
+	-- Highlight bundles get a glowing golden stroke; starter_pack gets a softer gold
+	if isUltraBundle then
+		local stroke = Instance.new("UIStroke")
+		stroke.Color = Color3.fromRGB(200, 80, 255) -- cosmic purple
+		stroke.Thickness = 3
+		stroke.Parent = frame
+	elseif isMegaBundle then
+		local stroke = Instance.new("UIStroke")
+		stroke.Color = Color3.fromRGB(255, 200, 50) -- golden
+		stroke.Thickness = 3
+		stroke.Parent = frame
+	elseif isStarterPack then
 		local stroke = Instance.new("UIStroke")
 		stroke.Color = Color3.fromRGB(255, 200, 50)
 		stroke.Thickness = 2
@@ -931,52 +963,118 @@ function ShopController:_createGemProductFrame(
 	frameCorner.CornerRadius = UDim.new(0, 8)
 	frameCorner.Parent = frame
 
+	-- Highlight badge ("BEST VALUE" / "ULTIMATE") in top-right corner
+	if product.highlight then
+		local badgeColor = if isUltraBundle then Color3.fromRGB(180, 50, 255) else Color3.fromRGB(220, 160, 0)
+		local badge = Instance.new("TextLabel")
+		badge.Name = "HighlightBadge"
+		badge.Size = UDim2.new(1, -4, 0, 16)
+		badge.Position = UDim2.new(0, 2, 0, 2)
+		badge.BackgroundColor3 = badgeColor
+		badge.BackgroundTransparency = 0
+		badge.TextColor3 = Color3.fromRGB(255, 255, 255)
+		badge.TextSize = ResponsiveUtil.scaledTextSize(10, 9)
+		badge.Font = Enum.Font.GothamBold
+		badge.Text = product.highlight
+		badge.ZIndex = 2
+		badge.Parent = frame
+
+		local badgeCorner = Instance.new("UICorner")
+		badgeCorner.CornerRadius = UDim.new(0, 4)
+		badgeCorner.Parent = badge
+	end
+
 	-- 상품명
+	local nameYOffset = if product.highlight then 20 else 5
 	local nameLabel = Instance.new("TextLabel")
 	nameLabel.Name = "Name"
 	nameLabel.Size = UDim2.new(1, 0, 0, 22)
-	nameLabel.Position = UDim2.new(0, 0, 0, 5)
+	nameLabel.Position = UDim2.new(0, 0, 0, nameYOffset)
 	nameLabel.BackgroundTransparency = 1
-	nameLabel.TextColor3 = Color3.fromRGB(170, 100, 255)
+	nameLabel.TextColor3 = if isUltraBundle
+		then Color3.fromRGB(220, 120, 255)
+		elseif isMegaBundle then Color3.fromRGB(255, 215, 0)
+		else Color3.fromRGB(170, 100, 255)
 	nameLabel.TextSize = ResponsiveUtil.scaledTextSize(14, 11)
 	nameLabel.Font = Enum.Font.GothamBold
-	nameLabel.Text = `💎 {product.gems} 젬`
+	nameLabel.Text = if isHighlightBundle
+		then `💎 {product.gems + product.bonus} 젬`
+		else `💎 {product.gems} 젬`
 	nameLabel.Parent = frame
 
-	-- 보너스 / 번들 펫 텍스트
-	local subText = ""
-	if isStarterPack and product.bundlePet == "hamster" then
-		-- 플레이어 데이터에서 hamster 보유 여부 확인
-		local ownedPets: { string } = (self._playerData and self._playerData.ownedPets) or {}
-		local hasHamster = false
-		for _, petId in ownedPets do
-			if petId == "hamster" then
-				hasHamster = true
-				break
-			end
+	-- Bundle contents list (mega/ultra bundles)
+	if isHighlightBundle then
+		local contentsLines: { string } = {}
+		if product.bonus > 0 then
+			table.insert(contentsLines, `+{product.bonus} 보너스 젬`)
 		end
-		subText = if hasHamster then "150젬 (펫 보유 중)" else "150젬 + 🐹 햄스터 펫"
-	elseif product.bonus > 0 then
-		subText = `+{product.bonus} 보너스`
+		if product.bundlePet then
+			table.insert(contentsLines, `+ {product.bundlePet} 펫`)
+		end
+		if product.bundleSkin then
+			table.insert(contentsLines, `+ {product.bundleSkin} 스킨`)
+		end
+		if product.bundleNametag then
+			table.insert(contentsLines, `+ {product.bundleNametag}`)
+		end
+		if product.bundleCharacter then
+			table.insert(contentsLines, `+ {product.bundleCharacter} 캐릭터`)
+		end
+
+		local contentsLabel = Instance.new("TextLabel")
+		contentsLabel.Name = "BundleContents"
+		contentsLabel.Size = UDim2.new(1, -8, 0, 56)
+		contentsLabel.Position = UDim2.new(0, 4, 0, nameYOffset + 24)
+		contentsLabel.BackgroundTransparency = 1
+		contentsLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
+		contentsLabel.TextSize = ResponsiveUtil.scaledTextSize(11, 9)
+		contentsLabel.Font = Enum.Font.Gotham
+		contentsLabel.Text = table.concat(contentsLines, "\n")
+		contentsLabel.TextWrapped = true
+		contentsLabel.TextYAlignment = Enum.TextYAlignment.Top
+		contentsLabel.TextXAlignment = Enum.TextXAlignment.Left
+		contentsLabel.Parent = frame
 	end
 
-	if subText ~= "" then
-		local bonusLabel = Instance.new("TextLabel")
-		bonusLabel.Name = "Bonus"
-		bonusLabel.Size = UDim2.new(1, -4, 0, 28)
-		bonusLabel.Position = UDim2.new(0, 2, 0, 27)
-		bonusLabel.BackgroundTransparency = 1
-		bonusLabel.TextColor3 = Color3.fromRGB(255, 200, 100)
-		bonusLabel.TextSize = ResponsiveUtil.scaledTextSize(13, 10)
-		bonusLabel.Font = Enum.Font.GothamBold
-		bonusLabel.TextWrapped = true
-		bonusLabel.Text = subText
-		bonusLabel.Parent = frame
+	-- 보너스 / 번들 펫 텍스트 (starter_pack 전용 및 일반 상품)
+	if not isHighlightBundle then
+		local subText = ""
+		if isStarterPack and product.bundlePet == "hamster" then
+			local ownedPets: { string } = (self._playerData and self._playerData.ownedPets) or {}
+			local hasHamster = false
+			for _, petId in ownedPets do
+				if petId == "hamster" then
+					hasHamster = true
+					break
+				end
+			end
+			subText = if hasHamster then "150젬 (펫 보유 중)" else "150젬 + 🐹 햄스터 펫"
+		elseif product.bonus > 0 then
+			subText = `+{product.bonus} 보너스`
+		end
+
+		if subText ~= "" then
+			local bonusLabel = Instance.new("TextLabel")
+			bonusLabel.Name = "Bonus"
+			bonusLabel.Size = UDim2.new(1, -4, 0, 28)
+			bonusLabel.Position = UDim2.new(0, 2, 0, 27)
+			bonusLabel.BackgroundTransparency = 1
+			bonusLabel.TextColor3 = Color3.fromRGB(255, 200, 100)
+			bonusLabel.TextSize = ResponsiveUtil.scaledTextSize(13, 10)
+			bonusLabel.Font = Enum.Font.GothamBold
+			bonusLabel.TextWrapped = true
+			bonusLabel.Text = subText
+			bonusLabel.Parent = frame
+		end
 	end
 
 	-- 구매 확인 팝업 텍스트 결정
 	local confirmText: string
-	if isStarterPack and product.bundlePet == "hamster" then
+	if isHighlightBundle then
+		local totalGems = product.gems + (product.bonus or 0)
+		local bundleLabel = product.label or product.id
+		confirmText = `{bundleLabel}\n💎 {totalGems}젬 + 번들 아이템을\nR$ {product.robux}에 구매하시겠습니까?`
+	elseif isStarterPack and product.bundlePet == "hamster" then
 		local ownedPets: { string } = (self._playerData and self._playerData.ownedPets) or {}
 		local hasHamster = false
 		for _, petId in ownedPets do
@@ -997,12 +1095,20 @@ function ShopController:_createGemProductFrame(
 	button.Name = "Button"
 	button.Size = UDim2.new(1, -20, 0, 30)
 	button.Position = UDim2.new(0, 10, 1, -38)
-	button.BackgroundColor3 = Color3.fromRGB(0, 150, 50)
 	button.TextColor3 = Color3.fromRGB(255, 255, 255)
 	button.TextSize = ResponsiveUtil.scaledTextSize(14, 11)
 	button.Font = Enum.Font.GothamBold
 	button.Text = `R$ {product.robux}`
 	button.Parent = frame
+
+	-- Button color: ultra bundle gets cosmic purple, mega gets golden green
+	if isUltraBundle then
+		button.BackgroundColor3 = Color3.fromRGB(140, 40, 200)
+	elseif isMegaBundle then
+		button.BackgroundColor3 = Color3.fromRGB(180, 130, 0)
+	else
+		button.BackgroundColor3 = Color3.fromRGB(0, 150, 50)
+	end
 
 	local buttonCorner = Instance.new("UICorner")
 	buttonCorner.CornerRadius = UDim.new(0, 6)
