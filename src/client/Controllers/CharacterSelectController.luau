@@ -562,10 +562,18 @@ function CharacterSelectController:_refresh()
 					btn.TextColor3 = Color3.fromRGB(140, 150, 180)
 					btn.Active = false
 				elseif char.unlockType == "season" then
-					btn.Text = "시즌 패스"
-					btn.BackgroundColor3 = Color3.fromRGB(40, 40, 65)
-					btn.TextColor3 = Color3.fromRGB(140, 150, 180)
-					btn.Active = false
+					-- 임시 해금 경로가 있으면 우선 표시 (배틀패스 출시 전)
+					if char.tempUnlockType == "level" and char.tempUnlockValue then
+						btn.Text = `Lv.{char.tempUnlockValue} 해금`
+						btn.BackgroundColor3 = Color3.fromRGB(40, 40, 65)
+						btn.TextColor3 = Color3.fromRGB(140, 150, 180)
+						btn.Active = false
+					else
+						btn.Text = "시즌 패스"
+						btn.BackgroundColor3 = Color3.fromRGB(40, 40, 65)
+						btn.TextColor3 = Color3.fromRGB(140, 150, 180)
+						btn.Active = false
+					end
 				else
 					btn.Text = "🔒 잠금"
 					btn.BackgroundColor3 = Color3.fromRGB(40, 40, 65)

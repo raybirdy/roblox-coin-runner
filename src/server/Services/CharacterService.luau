@@ -53,7 +53,14 @@ end
 -- 레벨 기반 캐릭터 해금 체크 (ProgressionService가 레벨업 시 호출)
 function CharacterService:CheckLevelUnlocks(player: Player, newLevel: number, playerDataService: any)
 	for _, char in GameConstants.CHARACTERS.LIST do
+		-- 일반 레벨 해금
 		if char.unlockType == "level" and char.unlockValue <= newLevel then
+			if not playerDataService:OwnsCharacter(player, char.id) then
+				self:UnlockCharacter(player, char.id, playerDataService)
+			end
+		end
+		-- 임시 해금 경로 (배틀패스 등 출시 전 임시 레벨 해금)
+		if char.tempUnlockType == "level" and char.tempUnlockValue and char.tempUnlockValue <= newLevel then
 			if not playerDataService:OwnsCharacter(player, char.id) then
 				self:UnlockCharacter(player, char.id, playerDataService)
 			end
