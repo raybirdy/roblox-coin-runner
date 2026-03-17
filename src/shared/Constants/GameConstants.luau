@@ -550,7 +550,7 @@ GameConstants.MONETIZATION = {
 		badge = "VIP",
 		extraLife = 1, -- 런 시작 시 추가 라이프 1개
 		freeRevive = true, -- 런당 무료 부활 1회
-		dailyGems = 5, -- 매일 로그인 시 젬 5개 지급
+		dailyGems = 15, -- 매일 로그인 시 젬 15개 지급
 		exclusiveSkin = "vip_crown", -- VIP 전용 스킨 ID
 		spinDiscount = 0.5, -- 럭키 스핀 추가 구매 50% 할인
 	},
