@@ -615,4 +615,26 @@ RemoteEvents.InviteFriend = getOrCreateRemoteEvent("InviteFriend")
 RemoteEvents.ReferralReward = getOrCreateRemoteEvent("ReferralReward")
 -- 파라미터: { type: "referrer"|"referee", coins: number, referrerName: string? }
 
+-- ==================== 배틀패스 시스템 ====================
+
+-- 배틀패스 데이터 동기화 (서버 → 클라이언트)
+RemoteEvents.BattlePassData = getOrCreateRemoteEvent("BattlePassData")
+-- 파라미터: { seasonId, level, xp, isPremium, claimedFree, claimedPremium }
+
+-- 보상 수령 요청 (클라이언트 → 서버)
+RemoteEvents.BattlePassClaim = getOrCreateRemoteEvent("BattlePassClaim")
+-- 파라미터: (level: number, isPremium: boolean)
+
+-- 보상 수령 결과 (서버 → 클라이언트)
+RemoteEvents.BattlePassClaimResult = getOrCreateRemoteEvent("BattlePassClaimResult")
+-- 파라미터: { success: boolean, reward: any?, reason: string? }
+
+-- 배틀패스 구매 결과 (서버 → 클라이언트)
+RemoteEvents.BattlePassPurchaseResult = getOrCreateRemoteEvent("BattlePassPurchaseResult")
+-- 파라미터: { success: boolean }
+
+-- XP 획득 알림 (서버 → 클라이언트)
+RemoteEvents.BattlePassXPGained = getOrCreateRemoteEvent("BattlePassXPGained")
+-- 파라미터: { xpGained: number, newLevel: number, newXp: number, leveled: boolean }
+
 return RemoteEvents

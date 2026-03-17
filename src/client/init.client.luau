@@ -103,6 +103,7 @@ local CoinSpinController = require(script.Controllers.CoinSpinController)
 local RunSkillHudController = require(script.Controllers.RunSkillHudController)
 local PreRunSkillController = require(script.Controllers.PreRunSkillController)
 local ReferralController = require(script.Controllers.ReferralController)
+local BattlePassController = require(script.Controllers.BattlePassController)
 
 -- 컨트롤러 인스턴스 생성
 local inputController = InputController.new()
@@ -144,6 +145,10 @@ local _coinSpinController = CoinSpinController.new()
 local runSkillHudController = RunSkillHudController.new()
 local preRunSkillController = PreRunSkillController.new()
 local referralController = ReferralController.new(player)
+local battlePassController = BattlePassController.new()
+
+-- 배틀패스 컨트롤러 초기화
+battlePassController:Init()
 
 -- Fever mode callbacks (speed boost + camera shake + BGM speed + P0: 카메라 줌인)
 feverController:OnFeverStart(function(speedBoost: number, duration: number)

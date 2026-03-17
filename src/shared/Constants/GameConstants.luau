@@ -1995,4 +1995,62 @@ GameConstants.CONSUMABLE_POWERUPS = {
 	{ id = "slow_start",  name = "슬로우 스타트", desc = "시작 15초 속도 70%",     coinCost = 40 },
 }
 
+GameConstants.BATTLE_PASS = {
+	SEASON_DURATION_DAYS = 28,
+	PRICE_ROBUX = 149,
+	GAME_PASS_ID = 0, -- TODO: Roblox에서 GamePass 생성 후 ID 입력
+	MAX_LEVEL = 30,
+	-- 레벨별 필요 XP (레벨 1→2에 100XP, 레벨 2→3에 150XP, ...)
+	XP_PER_LEVEL = {
+		[1] = 100, [2] = 150, [3] = 200, [4] = 200, [5] = 250,
+		[6] = 250, [7] = 300, [8] = 300, [9] = 350, [10] = 350,
+		[11] = 400, [12] = 400, [13] = 450, [14] = 450, [15] = 500,
+		[16] = 500, [17] = 550, [18] = 550, [19] = 600, [20] = 600,
+		[21] = 650, [22] = 650, [23] = 700, [24] = 700, [25] = 750,
+		[26] = 750, [27] = 800, [28] = 800, [29] = 900, [30] = 1000,
+	},
+	-- 레벨별 무료 보상 (모든 플레이어)
+	FREE_REWARDS = {
+		[1]  = { type = "coins",   amount = 100 },
+		[3]  = { type = "coins",   amount = 200 },
+		[5]  = { type = "nametag", id = "color_gold" },
+		[7]  = { type = "coins",   amount = 300 },
+		[10] = { type = "gems",    amount = 10 },
+		[12] = { type = "coins",   amount = 500 },
+		[15] = { type = "nametag", id = "frame_star" },
+		[17] = { type = "coins",   amount = 500 },
+		[20] = { type = "gems",    amount = 20 },
+		[22] = { type = "coins",   amount = 800 },
+		[25] = { type = "character", id = "fairy" },
+		[27] = { type = "coins",   amount = 800 },
+		[30] = { type = "gems",    amount = 50 },
+	},
+	-- 레벨별 프리미엄 보상 (149R$ 구매자)
+	PREMIUM_REWARDS = {
+		[1]  = { type = "gems",    amount = 10 },
+		[2]  = { type = "coins",   amount = 200 },
+		[3]  = { type = "gems",    amount = 15 },
+		[5]  = { type = "skin",    id = "season_spring" },
+		[7]  = { type = "gems",    amount = 20 },
+		[10] = { type = "pet",     id = "cat" },
+		[12] = { type = "gems",    amount = 25 },
+		[15] = { type = "nametag", id = "frame_crown" },
+		[17] = { type = "gems",    amount = 30 },
+		[20] = { type = "skin",    id = "season_summer" },
+		[22] = { type = "gems",    amount = 35 },
+		[25] = { type = "nametag", id = "badge_combo_master" },
+		[27] = { type = "gems",    amount = 40 },
+		[30] = { type = "skin",    id = "season_finale" },
+	},
+	-- XP 획득 소스
+	XP_SOURCES = {
+		COIN_COLLECTED_PER_10 = 1,   -- 코인 10개당 1 XP
+		COMBO_10 = 5,                 -- 콤보 10회 달성 시 5 XP
+		FEVER = 20,                   -- 피버 발동 시 20 XP
+		MISSION_COMPLETE = 50,        -- 미션 완료 시 50 XP
+		DAILY_LOGIN = 30,             -- 일일 로그인 시 30 XP
+		RUN_COMPLETE = 10,            -- 런 완료 시 10 XP (거리 무관)
+	},
+}
+
 return GameConstants
