@@ -34,6 +34,7 @@ local RunSkillService = require(script.Parent.RunSkillService)
 local BattlePassService = require(script.Parent.BattlePassService)
 local GhostService = require(script.Parent.GhostService)
 local TeamService = require(script.Parent.TeamService)
+local CoopMatchService = require(script.Parent.CoopMatchService)
 local RateLimiter = require(ReplicatedStorage.Shared.Utils.RateLimiter)
 
 -- BattlePassService: Init registers the PlayerDataService dependency
@@ -45,6 +46,9 @@ _ghostService:Init(PlayerDataService)
 
 -- TeamService: Init registers RemoteEvent handlers and PlayerDataService dependency
 TeamService:Init(PlayerDataService)
+
+-- CoopMatchService: manages matchmaking queue and co-op sessions
+CoopMatchService:Init()
 
 local GameManager = {}
 
@@ -146,6 +150,10 @@ type GameSession = {
 	coinBoostMultiplier: number,
 	slowStartActive: boolean,
 	slowStartEnd: number,
+	-- Co-op
+	coopSessionId: string?,    -- nil if solo run
+	coopLaneZ: number,         -- Z offset for this player's lane (0 for solo)
+	coopSharedLives: number,   -- shared lives in co-op (mirrors session)
 }
 
 local activeSessions: { [Player]: GameSession } = {}
@@ -344,6 +352,9 @@ RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { 
 		coinBoostMultiplier = 1.0,
 		slowStartActive = false,
 		slowStartEnd = 0,
+		coopSessionId = nil,
+		coopLaneZ = 0,
+		coopSharedLives = 0,
 	}
 
 	-- 소모형 런 파워업 적용
@@ -748,6 +759,9 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 		coinBoostMultiplier = 1.0,
 		slowStartActive = false,
 		slowStartEnd = 0,
+		coopSessionId = nil,
+		coopLaneZ = 0,
+		coopSharedLives = 0,
 	}
 
 	-- 소모형 런 파워업 적용
@@ -984,6 +998,11 @@ function GameManager.EndGame(player: Player)
 	-- 팀 주간 코인 집계
 	TeamService:AddWeeklyCoins(player, math.floor(earnedCoins))
 
+	-- co-op: end session
+	if session.coopSessionId then
+		CoopMatchService:EndSession(player, math.floor(session.score))
+	end
+
 	-- 비동기 배틀 결과 처리
 	AsyncBattleService:ProcessGameEnd(player, finalScore, session.asyncBattleTarget)
 
@@ -1144,6 +1163,7 @@ Players.PlayerRemoving:Connect(function(player: Player)
 		GameManager.EndGame(player)
 	end
 	_ghostService:OnPlayerRemoving(player)
+	CoopMatchService:OnPlayerRemoving(player)
 	DailyEventService:OnPlayerLeave(player)
 	ObjectiveService:ClearObjectives(player)
 	BossRunService:OnPlayerRemoving(player)

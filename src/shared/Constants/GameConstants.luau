@@ -2125,4 +2125,16 @@ GameConstants.TEAM = {
 	RANKING_STORE_KEY = "TeamWeeklyRanking",
 }
 
+-- Co-op Mode
+GameConstants.COOP = {
+	MAX_PLAYERS = 2,
+	LANES = { Z_LEFT = -4, Z_RIGHT = 4 }, -- Z-axis lane positions
+	SHARED_LIVES = 5,          -- shared life pool
+	COMBO_SHARE = true,        -- combos are aggregated across both players
+	REVIVE_PARTNER = true,     -- downed partner can be revived
+	MATCHMAKING_TIMEOUT = 30,  -- seconds before bot partner is inserted
+	BOT_NAME = "CoopBot",
+	SESSION_ID_PREFIX = "coop_",
+}
+
 return GameConstants

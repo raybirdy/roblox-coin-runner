@@ -685,4 +685,26 @@ RemoteEvents.TeamRankData = getOrCreateRemoteEvent("TeamRankData")
 RemoteEvents.RequestTeamRanking = getOrCreateRemoteEvent("RequestTeamRanking")
 -- 파라미터: 없음
 
+-- ==================== Co-op 모드 ====================
+
+-- 매칭 큐 참가 (클라이언트 → 서버)
+RemoteEvents.CoopQueue = getOrCreateRemoteEvent("CoopQueue")
+-- 파라미터: 없음
+
+-- 매칭 큐 취소 (클라이언트 → 서버)
+RemoteEvents.CoopQueueCancel = getOrCreateRemoteEvent("CoopQueueCancel")
+-- 파라미터: 없음
+
+-- 매칭 완료 (서버 → 클라이언트)
+RemoteEvents.CoopMatchFound = getOrCreateRemoteEvent("CoopMatchFound")
+-- 파라미터: { sessionId: string, partnerName: string, partnerUserId: number, myLane: string }
+
+-- 파트너 상태 업데이트 (서버 → 클라이언트)
+RemoteEvents.CoopPartnerState = getOrCreateRemoteEvent("CoopPartnerState")
+-- 파라미터: { lives: number, combo: number, isAlive: boolean }
+
+-- Co-op 세션 종료 (서버 → 클라이언트)
+RemoteEvents.CoopGameOver = getOrCreateRemoteEvent("CoopGameOver")
+-- 파라미터: { reason: string, score: number, partnerScore: number }
+
 return RemoteEvents
