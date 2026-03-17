@@ -72,7 +72,7 @@ type PlayerData = {
 	-- 펫 레벨 시스템
 	petLevels: { [string]: number }?, -- { [petId]: level } (nil이면 모두 레벨 1)
 	-- 이름표 시스템
-	nametag: { color: string?, font: string?, frame: string? }?,
+	nametag: { color: string?, font: string?, frame: string?, badge: string? }?,
 	-- Zone Skip Start
 	maxZoneReached: number, -- 이번까지 도달한 최대 Zone 인덱스
 	obstaclesDodged: number, -- 누적 장애물 회피 횟수 (기사 해금 퀘스트)
@@ -850,7 +850,7 @@ function PlayerDataService:PurchaseNametagItem(player: Player, itemId: string, c
 end
 
 -- 이름표 데이터 가져오기
-function PlayerDataService:GetNametag(player: Player): { color: string?, font: string?, frame: string? }
+function PlayerDataService:GetNametag(player: Player): { color: string?, font: string?, frame: string?, badge: string? }
 	local playerData = self:GetPlayerData(player)
 	if not playerData or not playerData.nametag then
 		return {}

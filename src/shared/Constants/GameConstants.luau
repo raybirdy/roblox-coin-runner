@@ -1679,13 +1679,44 @@ GameConstants.PETS = {
 -- 이름표 시스템
 GameConstants.NAMETAG = {
 	ITEMS = {
-		{ id = "color_pink", category = "color", name = "핑크", price = 500, color = Color3.fromRGB(255, 150, 200) },
-		{ id = "color_gold", category = "color", name = "골드", price = 500, color = Color3.fromRGB(255, 215, 0) },
-		{ id = "color_cyan", category = "color", name = "하늘", price = 500, color = Color3.fromRGB(0, 200, 255) },
-		{ id = "font_bold", category = "font", name = "볼드", price = 800 },
-		{ id = "font_retro", category = "font", name = "레트로", price = 800 },
-		{ id = "frame_star", category = "frame", name = "별 프레임", price = 1200 },
-		{ id = "frame_heart", category = "frame", name = "하트 프레임", price = 1200 },
+		-- ── 색상 (10종) ──────────────────────────────────────────────────────────
+		{ id = "color_pink",     category = "color", name = "핑크",    price = 500, color = Color3.fromRGB(255, 150, 200) },
+		{ id = "color_gold",     category = "color", name = "골드",    price = 500, color = Color3.fromRGB(255, 215, 0) },
+		{ id = "color_cyan",     category = "color", name = "하늘",    price = 500, color = Color3.fromRGB(0, 200, 255) },
+		{ id = "color_lavender", category = "color", name = "라벤더",  price = 600, color = Color3.fromRGB(180, 140, 255) },
+		{ id = "color_mint",     category = "color", name = "민트",    price = 600, color = Color3.fromRGB(100, 230, 180) },
+		{ id = "color_coral",    category = "color", name = "코랄",    price = 600, color = Color3.fromRGB(255, 120, 100) },
+		{ id = "color_sky",      category = "color", name = "스카이",  price = 700, color = Color3.fromRGB(135, 206, 250) },
+		{ id = "color_lime",     category = "color", name = "라임",    price = 700, color = Color3.fromRGB(160, 240, 60) },
+		{ id = "color_peach",    category = "color", name = "피치",    price = 700, color = Color3.fromRGB(255, 200, 150) },
+		{ id = "color_violet",   category = "color", name = "바이올렛", price = 800, color = Color3.fromRGB(138, 43, 226) },
+
+		-- ── 폰트 (5종) ──────────────────────────────────────────────────────────
+		{ id = "font_bold",      category = "font", name = "볼드",     price = 800 },
+		{ id = "font_retro",     category = "font", name = "레트로",   price = 800 },
+		{ id = "font_pixel",     category = "font", name = "픽셀",     price = 900 },
+		{ id = "font_bubble",    category = "font", name = "버블",     price = 900 },
+		{ id = "font_elegant",   category = "font", name = "엘레강스", price = 1000 },
+
+		-- ── 프레임 (10종) ────────────────────────────────────────────────────────
+		{ id = "frame_star",     category = "frame", name = "별 프레임",   price = 1200 },
+		{ id = "frame_heart",    category = "frame", name = "하트 프레임", price = 1200 },
+		{ id = "frame_crown",    category = "frame", name = "왕관 프레임", price = 1400 },
+		{ id = "frame_cloud",    category = "frame", name = "구름 프레임", price = 1400 },
+		{ id = "frame_lightning",category = "frame", name = "번개 프레임", price = 1500 },
+		{ id = "frame_diamond",  category = "frame", name = "다이아 프레임", price = 1600 },
+		{ id = "frame_fire",     category = "frame", name = "불꽃 프레임", price = 1800 },
+		{ id = "frame_galaxy",   category = "frame", name = "우주 프레임", price = 2000 },
+		{ id = "frame_sakura",   category = "frame", name = "벚꽃 프레임", price = 1600 },
+		{ id = "frame_rainbow",  category = "frame", name = "무지개 프레임", price = 2000 },
+
+		-- ── 뱃지 (5종) — 업적 조건 달성 시 구매 가능 ──────────────────────────
+		-- unlockStat: PlayerData 필드명, unlockValue: 요구 수치
+		{ id = "badge_speedstar",   category = "badge", name = "스피드 스타",  price = 1200, unlockStat = "highScore",            unlockValue = 5000,  unlockDesc = "최고 점수 5,000 달성" },
+		{ id = "badge_coinmaster",  category = "badge", name = "코인 마스터",  price = 1500, unlockStat = "totalCoinsCollected",  unlockValue = 10000, unlockDesc = "코인 10,000개 수집" },
+		{ id = "badge_feverking",   category = "badge", name = "피버 킹",      price = 2000, unlockStat = "gamesPlayed",          unlockValue = 50,    unlockDesc = "게임 50회 플레이" },
+		{ id = "badge_coinhunter",  category = "badge", name = "코인 헌터",    price = 2500, unlockStat = "totalCoinsCollected",  unlockValue = 50000, unlockDesc = "코인 50,000개 수집" },
+		{ id = "badge_survivor",    category = "badge", name = "서바이버",     price = 3000, unlockStat = "gamesPlayed",          unlockValue = 100,   unlockDesc = "게임 100회 플레이" },
 	},
 }
 
@@ -1950,6 +1981,16 @@ GameConstants.RUN_SKILLS = {
 		effectValue = 5,
 		duration = -1,
 	},
+}
+
+-- ==================== 소모형 런 파워업 (코인 소비) ====================
+-- 런 시작 전 로비에서 코인을 소모하여 1회성 효과를 구매
+-- 영속적 코인 싱크 역할 (loot box 규제 회피: 코인으로만 구매)
+GameConstants.CONSUMABLE_POWERUPS = {
+	{ id = "head_start",  name = "헤드스타트",   desc = "시작 10초 무적+자석",    coinCost = 50 },
+	{ id = "coin_boost",  name = "코인 부스트",  desc = "런 전체 코인 수집 1.5배", coinCost = 80 },
+	{ id = "extra_life",  name = "추가 라이프",  desc = "시작 라이프 +1",          coinCost = 60 },
+	{ id = "slow_start",  name = "슬로우 스타트", desc = "시작 15초 속도 70%",     coinCost = 40 },
 }
 
 return GameConstants

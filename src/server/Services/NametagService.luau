@@ -42,6 +42,26 @@ function NametagService:SetupRemoteEvents(playerDataService: any)
 			return
 		end
 
+		-- 뱃지 카테고리: 업적 조건 검증
+		if item.category == "badge" then
+			local playerData = playerDataService:GetPlayerData(player)
+			if not playerData then
+				RemoteEvents.NametagPurchaseResult:FireClient(player, {
+					success = false,
+					error = "no_data",
+				})
+				return
+			end
+			local statValue = playerData[item.unlockStat]
+			if type(statValue) ~= "number" or statValue < item.unlockValue then
+				RemoteEvents.NametagPurchaseResult:FireClient(player, {
+					success = false,
+					error = "badge_locked",
+				})
+				return
+			end
+		end
+
 		local ok = playerDataService:PurchaseNametagItem(player, itemId, item.price)
 		if not ok then
 			RemoteEvents.NametagPurchaseResult:FireClient(player, {
