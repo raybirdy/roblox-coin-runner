@@ -45,6 +45,8 @@ local LobbyNpcService = require(ServerScriptService.Server.Services.LobbyNpcServ
 local BattlePassService = require(ServerScriptService.Server.Services.BattlePassService)
 -- GhostService is required and initialised inside GameManager (requires PlayerDataService dep)
 local _GhostService = require(ServerScriptService.Server.Services.GhostService)
+-- TeamService is required here to call CheckWeeklyReset; Init is handled by GameManager
+local TeamService = require(ServerScriptService.Server.Services.TeamService)
 
 print("[Server] Game Constants Loaded")
 print("[Server] Remote Events Initialized")
@@ -151,6 +153,9 @@ game.Players.PlayerAdded:Connect(function(player: Player)
 
 		-- 배틀패스 일일 XP 지급 및 데이터 전송
 		BattlePassService:OnPlayerJoined(player)
+
+		-- 팀 주간 리셋 체크 (매주 리셋 + 팀 데이터 클라이언트 전송)
+		TeamService:CheckWeeklyReset(player)
 
 		print(`[Server] Sent player data to {player.Name}`)
 	end

@@ -105,6 +105,7 @@ local PreRunSkillController = require(script.Controllers.PreRunSkillController)
 local ReferralController = require(script.Controllers.ReferralController)
 local BattlePassController = require(script.Controllers.BattlePassController)
 local GhostController = require(script.Controllers.GhostController)
+local TeamController = require(script.Controllers.TeamController)
 
 -- 컨트롤러 인스턴스 생성
 local inputController = InputController.new()
@@ -148,12 +149,16 @@ local preRunSkillController = PreRunSkillController.new()
 local referralController = ReferralController.new(player)
 local battlePassController = BattlePassController.new()
 local ghostController = GhostController.new()
+local teamController = TeamController.new()
 
 -- 배틀패스 컨트롤러 초기화
 battlePassController:Init()
 
 -- 고스트 컨트롤러 초기화
 ghostController:Init()
+
+-- 팀 컨트롤러 초기화
+teamController:Init()
 
 -- Fever mode callbacks (speed boost + camera shake + BGM speed + P0: 카메라 줌인)
 feverController:OnFeverStart(function(speedBoost: number, duration: number)

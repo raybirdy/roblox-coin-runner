@@ -102,6 +102,14 @@ type PlayerData = {
 		actions: { { time: number, action: string } },
 		runDuration: number,
 	}?,
+	-- 팀 시스템
+	team: {
+		teamId: string,
+		teamName: string,
+		joinedAt: number,
+		weeklyCoins: number,
+		lastWeekReset: number,
+	}?,
 }
 
 local DEFAULT_DATA: PlayerData = {
@@ -184,6 +192,14 @@ local DEFAULT_DATA: PlayerData = {
 		bestRunScore = 0,
 		actions = {},
 		runDuration = 0,
+	},
+	-- 팀 시스템
+	team = {
+		teamId = "",
+		teamName = "",
+		joinedAt = 0,
+		weeklyCoins = 0,
+		lastWeekReset = 0,
 	},
 }
 
