@@ -2101,4 +2101,13 @@ GameConstants.BATTLE_PASS = {
 	},
 }
 
+-- Ghost Racing
+GameConstants.GHOST = {
+	MAX_ACTIONS = 500,        -- maximum stored actions (jump/slide events) per run
+	TRANSPARENCY = 0.5,       -- ghost body transparency
+	SYNC_DELAY = 0.1,         -- client interpolation delay (seconds)
+	FRIEND_LIMIT = 1,         -- max simultaneous ghost display count
+	RUN_DURATION_LIMIT = 300, -- max run duration to record (seconds)
+}
+
 return GameConstants

@@ -96,6 +96,12 @@ type PlayerData = {
 		claimedPremium: { [string]: boolean },
 		lastLoginDate: number,
 	}?,
+	-- 고스트 레이싱
+	ghostData: {
+		bestRunScore: number,
+		actions: { { time: number, action: string } },
+		runDuration: number,
+	}?,
 }
 
 local DEFAULT_DATA: PlayerData = {
@@ -172,6 +178,12 @@ local DEFAULT_DATA: PlayerData = {
 		claimedFree = {},
 		claimedPremium = {},
 		lastLoginDate = 0,
+	},
+	-- 고스트 레이싱
+	ghostData = {
+		bestRunScore = 0,
+		actions = {},
+		runDuration = 0,
 	},
 }
 

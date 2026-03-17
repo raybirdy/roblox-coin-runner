@@ -104,6 +104,7 @@ local RunSkillHudController = require(script.Controllers.RunSkillHudController)
 local PreRunSkillController = require(script.Controllers.PreRunSkillController)
 local ReferralController = require(script.Controllers.ReferralController)
 local BattlePassController = require(script.Controllers.BattlePassController)
+local GhostController = require(script.Controllers.GhostController)
 
 -- 컨트롤러 인스턴스 생성
 local inputController = InputController.new()
@@ -146,9 +147,13 @@ local runSkillHudController = RunSkillHudController.new()
 local preRunSkillController = PreRunSkillController.new()
 local referralController = ReferralController.new(player)
 local battlePassController = BattlePassController.new()
+local ghostController = GhostController.new()
 
 -- 배틀패스 컨트롤러 초기화
 battlePassController:Init()
+
+-- 고스트 컨트롤러 초기화
+ghostController:Init()
 
 -- Fever mode callbacks (speed boost + camera shake + BGM speed + P0: 카메라 줌인)
 feverController:OnFeverStart(function(speedBoost: number, duration: number)
@@ -446,13 +451,29 @@ end)
 
 -- 입력 콜백 연결 (키보드)
 inputController:OnJump(function()
+	-- Determine jump type for ghost recording before the state changes
+	local isDoubleJump = playerController.canDoubleJump
+		and playerController.state ~= "Running"
+		and playerController.state ~= "Idle"
 	playerController:Jump()
 	tutorialController:OnPlayerAction("jump")
+	-- 고스트 레이싱: 점프 액션 기록
+	if playerController:IsPlaying() then
+		if isDoubleJump then
+			ghostController:RecordAction("double_jump")
+		else
+			ghostController:RecordAction("jump")
+		end
+	end
 end)
 
 inputController:OnSlide(function()
 	playerController:Slide()
 	tutorialController:OnPlayerAction("slide")
+	-- 고스트 레이싱: 슬라이드 액션 기록
+	if playerController:IsPlaying() then
+		ghostController:RecordAction("slide")
+	end
 end)
 
 inputController:OnSlideEnd(function()
@@ -547,6 +568,9 @@ RemoteEvents.GameStart.OnClientEvent:Connect(function(data)
 		dailyEventController:StartGame()
 		petController:StartGame()
 		objectiveHudController:DisableReroll() -- 카운트다운 후 리롤 잠금
+
+		-- 고스트 레이싱: 런 시작 알림 (친구 고스트 요청 + 로컬 기록 시작)
+		ghostController:OnRunStart()
 
 		-- 비동기 배틀 HUD (도전 모드인 경우)
 		if data.asyncBattle then
@@ -643,6 +667,9 @@ RemoteEvents.GameOver.OnClientEvent:Connect(function(data)
 
 	-- 런 스킬 HUD 비활성화
 	runSkillHudController:EndGame()
+
+	-- 고스트 레이싱: 런 종료 알림
+	ghostController:OnRunEnd()
 
 	-- 부활 가능한 경우 게임 일시정지만 (완전 종료 아님)
 	if data.canRevive then
