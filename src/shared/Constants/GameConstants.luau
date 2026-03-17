@@ -1585,6 +1585,16 @@ GameConstants.ZONE_THRESHOLDS = {
 	[5] = math.huge, -- Starlight: 마지막 Zone, 전환 없음
 }
 
+-- Zone별 ActionHint 발동 확률: Zone 1(100%) → Zone 5(35%)
+-- Zone 1은 신규 유저 온보딩 구간이므로 항상 힌트 제공
+GameConstants.ACTION_HINT_RATES = {
+	[1] = 1.00, -- Meadow: 100% — 신규 유저 온보딩, 모든 장애물에 힌트
+	[2] = 0.85, -- FlowerPath: 85%
+	[3] = 0.70, -- MushroomWood: 70% (기존 기본값)
+	[4] = 0.50, -- Sunset: 50%
+	[5] = 0.35, -- Starlight: 35% — 숙련 유저, 도전감 유지
+}
+
 -- 구역별 장애물 색상 (ObstacleService에서 참조)
 GameConstants.ZONE_OBSTACLE_COLORS = {
 	[1] = Color3.fromRGB(110, 75,  40),  -- Meadow: 나무색
