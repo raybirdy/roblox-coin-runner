@@ -106,6 +106,7 @@ local ReferralController = require(script.Controllers.ReferralController)
 local BattlePassController = require(script.Controllers.BattlePassController)
 local GhostController = require(script.Controllers.GhostController)
 local TeamController = require(script.Controllers.TeamController)
+local CoopController = require(script.Controllers.CoopController)
 
 -- 컨트롤러 인스턴스 생성
 local inputController = InputController.new()
@@ -150,6 +151,7 @@ local referralController = ReferralController.new(player)
 local battlePassController = BattlePassController.new()
 local ghostController = GhostController.new()
 local teamController = TeamController.new()
+local coopController = CoopController.new()
 
 -- 배틀패스 컨트롤러 초기화
 battlePassController:Init()
@@ -159,6 +161,9 @@ ghostController:Init()
 
 -- 팀 컨트롤러 초기화
 teamController:Init()
+
+-- 코업 컨트롤러 초기화
+coopController:Init()
 
 -- Fever mode callbacks (speed boost + camera shake + BGM speed + P0: 카메라 줌인)
 feverController:OnFeverStart(function(speedBoost: number, duration: number)
@@ -577,6 +582,12 @@ RemoteEvents.GameStart.OnClientEvent:Connect(function(data)
 		-- 고스트 레이싱: 런 시작 알림 (친구 고스트 요청 + 로컬 기록 시작)
 		ghostController:OnRunStart()
 
+		-- co-op camera mode
+		local coopState = coopController:GetState()
+		if coopState then
+			cameraController:SetCoopMode(true)
+		end
+
 		-- 비동기 배틀 HUD (도전 모드인 경우)
 		if data.asyncBattle then
 			asyncBattleController:StartBattle(data.asyncBattle)
@@ -675,6 +686,7 @@ RemoteEvents.GameOver.OnClientEvent:Connect(function(data)
 
 	-- 고스트 레이싱: 런 종료 알림
 	ghostController:OnRunEnd()
+	cameraController:SetCoopMode(false)
 
 	-- 부활 가능한 경우 게임 일시정지만 (완전 종료 아님)
 	if data.canRevive then
