@@ -31,7 +31,11 @@ local UpgradeService = require(script.Parent.UpgradeService)
 local ObjectiveService = require(script.Parent.ObjectiveService)
 local PetService = require(script.Parent.PetService)
 local RunSkillService = require(script.Parent.RunSkillService)
+local BattlePassService = require(script.Parent.BattlePassService)
 local RateLimiter = require(ReplicatedStorage.Shared.Utils.RateLimiter)
+
+-- BattlePassService: Init registers the PlayerDataService dependency
+BattlePassService:Init(PlayerDataService)
 
 local GameManager = {}
 
@@ -955,6 +959,15 @@ function GameManager.EndGame(player: Player)
 
 	-- 진행도 업데이트 (레벨, 미션, 업적)
 	ProgressionService:OnGameEnd(player, finalScore, earnedCoins, distance)
+
+	-- 배틀패스 XP 적립
+	local bpXP = 0
+	bpXP = bpXP + GameConstants.BATTLE_PASS.XP_SOURCES.RUN_COMPLETE
+	bpXP = bpXP + math.floor(session.coins / 10) * GameConstants.BATTLE_PASS.XP_SOURCES.COIN_COLLECTED_PER_10
+	if session.feverCount and session.feverCount > 0 then
+		bpXP = bpXP + session.feverCount * GameConstants.BATTLE_PASS.XP_SOURCES.FEVER
+	end
+	BattlePassService:AddXP(player, bpXP)
 
 	-- 비동기 배틀 결과 처리
 	AsyncBattleService:ProcessGameEnd(player, finalScore, session.asyncBattleTarget)

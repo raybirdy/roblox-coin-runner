@@ -41,6 +41,8 @@ local CharacterService = require(ServerScriptService.Server.Services.CharacterSe
 local RunSkillService = require(ServerScriptService.Server.Services.RunSkillService)
 local ReferralService = require(ServerScriptService.Server.Services.ReferralService)
 local LobbyNpcService = require(ServerScriptService.Server.Services.LobbyNpcService)
+-- BattlePassService is required here to call OnPlayerJoined; Init is handled by GameManager
+local BattlePassService = require(ServerScriptService.Server.Services.BattlePassService)
 
 print("[Server] Game Constants Loaded")
 print("[Server] Remote Events Initialized")
@@ -98,6 +100,8 @@ print("[Server] RunSkillService Loaded")
 LobbyNpcService:Init()
 print("[Server] LobbyNpcService Loaded")
 
+print("[Server] BattlePassService Loaded")
+
 -- 플레이어 참가 처리
 game.Players.PlayerAdded:Connect(function(player: Player)
 	print(`[Server] Player {player.Name} joined`)
@@ -142,6 +146,9 @@ game.Players.PlayerAdded:Connect(function(player: Player)
 
 		-- 초대 보상 체크
 		ReferralService:OnPlayerJoin(player)
+
+		-- 배틀패스 일일 XP 지급 및 데이터 전송
+		BattlePassService:OnPlayerJoined(player)
 
 		print(`[Server] Sent player data to {player.Name}`)
 	end

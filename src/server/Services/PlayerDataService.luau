@@ -86,6 +86,16 @@ type PlayerData = {
 	-- 초대 보상 시스템
 	hasBeenReferred: boolean, -- 초대 보상을 이미 받은 적 있는지 (중복 방지)
 	referralCount: number, -- 내가 초대해서 가입한 친구 수
+	-- 배틀패스 시스템
+	battlePass: {
+		seasonId: number,
+		level: number,
+		xp: number,
+		isPremium: boolean,
+		claimedFree: { [string]: boolean },
+		claimedPremium: { [string]: boolean },
+		lastLoginDate: number,
+	}?,
 }
 
 local DEFAULT_DATA: PlayerData = {
@@ -153,6 +163,16 @@ local DEFAULT_DATA: PlayerData = {
 	-- 초대 보상 시스템
 	hasBeenReferred = false,
 	referralCount = 0,
+	-- 배틀패스 시스템
+	battlePass = {
+		seasonId = 1,
+		level = 1,
+		xp = 0,
+		isPremium = false,
+		claimedFree = {},
+		claimedPremium = {},
+		lastLoginDate = 0,
+	},
 }
 
 -- 메모리 캐시 (활성 플레이어)
