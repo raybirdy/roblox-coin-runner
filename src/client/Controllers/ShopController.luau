@@ -906,13 +906,26 @@ function ShopController:_createGemProductFrame(
 		gems: number,
 		robux: number,
 		bonus: number,
+		bundlePet: string?,
 	}
 ): Frame
+	-- starter_pack은 번들 텍스트 공간 확보를 위해 높이 확장
+	local isStarterPack = product.id == "starter_pack"
+	local frameHeight = if isStarterPack then 120 else 100
+
 	local frame = Instance.new("Frame")
 	frame.Name = product.id
-	frame.Size = UDim2.new(0, 130, 0, 100)
+	frame.Size = UDim2.new(0, 130, 0, frameHeight)
 	frame.BackgroundColor3 = Color3.fromRGB(60, 40, 80)
 	frame.Parent = container
+
+	-- starter_pack은 골드 테두리로 강조
+	if isStarterPack then
+		local stroke = Instance.new("UIStroke")
+		stroke.Color = Color3.fromRGB(255, 200, 50)
+		stroke.Thickness = 2
+		stroke.Parent = frame
+	end
 
 	local frameCorner = Instance.new("UICorner")
 	frameCorner.CornerRadius = UDim.new(0, 8)
@@ -930,30 +943,60 @@ function ShopController:_createGemProductFrame(
 	nameLabel.Text = `💎 {product.gems} 젬`
 	nameLabel.Parent = frame
 
-	-- 보너스 텍스트
+	-- 보너스 / 번들 펫 텍스트
 	local subText = ""
-	if product.bonus > 0 then
+	if isStarterPack and product.bundlePet == "hamster" then
+		-- 플레이어 데이터에서 hamster 보유 여부 확인
+		local ownedPets: { string } = (self._playerData and self._playerData.ownedPets) or {}
+		local hasHamster = false
+		for _, petId in ownedPets do
+			if petId == "hamster" then
+				hasHamster = true
+				break
+			end
+		end
+		subText = if hasHamster then "150젬 (펫 보유 중)" else "150젬 + 🐹 햄스터 펫"
+	elseif product.bonus > 0 then
 		subText = `+{product.bonus} 보너스`
 	end
 
 	if subText ~= "" then
 		local bonusLabel = Instance.new("TextLabel")
 		bonusLabel.Name = "Bonus"
-		bonusLabel.Size = UDim2.new(1, 0, 0, 18)
-		bonusLabel.Position = UDim2.new(0, 0, 0, 27)
+		bonusLabel.Size = UDim2.new(1, -4, 0, 28)
+		bonusLabel.Position = UDim2.new(0, 2, 0, 27)
 		bonusLabel.BackgroundTransparency = 1
 		bonusLabel.TextColor3 = Color3.fromRGB(255, 200, 100)
-		bonusLabel.TextSize = ResponsiveUtil.scaledTextSize(14, 12)
+		bonusLabel.TextSize = ResponsiveUtil.scaledTextSize(13, 10)
 		bonusLabel.Font = Enum.Font.GothamBold
+		bonusLabel.TextWrapped = true
 		bonusLabel.Text = subText
 		bonusLabel.Parent = frame
+	end
+
+	-- 구매 확인 팝업 텍스트 결정
+	local confirmText: string
+	if isStarterPack and product.bundlePet == "hamster" then
+		local ownedPets: { string } = (self._playerData and self._playerData.ownedPets) or {}
+		local hasHamster = false
+		for _, petId in ownedPets do
+			if petId == "hamster" then
+				hasHamster = true
+				break
+			end
+		end
+		confirmText = if hasHamster
+			then `💎 150젬을 R$ {product.robux}에 구매하시겠습니까?\n(햄스터 펫은 이미 보유 중)`
+			else `💎 150젬 + 🐹 햄스터 펫을\nR$ {product.robux}에 구매하시겠습니까?`
+	else
+		confirmText = `💎 {product.gems} 젬을 R$ {product.robux}에\n구매하시겠습니까?`
 	end
 
 	-- 구매 버튼
 	local button = Instance.new("TextButton")
 	button.Name = "Button"
-	button.Size = UDim2.new(1, -20, 0, 44)
-	button.Position = UDim2.new(0, 10, 1, -52)
+	button.Size = UDim2.new(1, -20, 0, 30)
+	button.Position = UDim2.new(0, 10, 1, -38)
 	button.BackgroundColor3 = Color3.fromRGB(0, 150, 50)
 	button.TextColor3 = Color3.fromRGB(255, 255, 255)
 	button.TextSize = ResponsiveUtil.scaledTextSize(14, 11)
@@ -966,7 +1009,7 @@ function ShopController:_createGemProductFrame(
 	buttonCorner.Parent = button
 
 	button.MouseButton1Click:Connect(function()
-		self:_showConfirmPopup(`💎 {product.gems} 젬을 R$ {product.robux}에\n구매하시겠습니까?`, function()
+		self:_showConfirmPopup(confirmText, function()
 			RemoteEvents.PurchaseGems:FireServer({ productId = product.id })
 		end)
 	end)
