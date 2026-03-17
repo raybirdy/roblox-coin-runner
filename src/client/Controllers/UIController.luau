@@ -1810,6 +1810,56 @@ function UIController:ShowGameFeedback(text: string, color: Color3)
 	end)
 end
 
+-- Co-op result screen showing both players' scores
+function UIController:ShowCoopResult(myScore: number, partnerName: string, partnerScore: number)
+	-- Find or create the result frame
+	local resultFrame = self._screenGui and self._screenGui:FindFirstChild("GameOverFrame")
+	if not resultFrame then return end
+
+	-- Add co-op score section below existing result
+	local existingCoopFrame = resultFrame:FindFirstChild("CoopScoreFrame")
+	if existingCoopFrame then existingCoopFrame:Destroy() end
+
+	local coopFrame = Instance.new("Frame")
+	coopFrame.Name = "CoopScoreFrame"
+	coopFrame.Size = UDim2.new(0.9, 0, 0, 80)
+	coopFrame.Position = UDim2.new(0.05, 0, 0.72, 0)
+	coopFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 60)
+	coopFrame.BackgroundTransparency = 0.2
+	coopFrame.BorderSizePixel = 0
+	coopFrame.Parent = resultFrame
+	Instance.new("UICorner", coopFrame).CornerRadius = UDim.new(0, 8)
+
+	local title = Instance.new("TextLabel")
+	title.Size = UDim2.new(1, 0, 0.35, 0)
+	title.BackgroundTransparency = 1
+	title.Text = "🤝 Co-op 결과"
+	title.TextColor3 = Color3.fromRGB(255, 220, 100)
+	title.TextScaled = true
+	title.Font = Enum.Font.GothamBold
+	title.Parent = coopFrame
+
+	local myLabel = Instance.new("TextLabel")
+	myLabel.Size = UDim2.new(0.5, 0, 0.6, 0)
+	myLabel.Position = UDim2.new(0, 0, 0.38, 0)
+	myLabel.BackgroundTransparency = 1
+	myLabel.Text = "나: " .. tostring(myScore)
+	myLabel.TextColor3 = Color3.fromRGB(200, 255, 200)
+	myLabel.TextScaled = true
+	myLabel.Font = Enum.Font.Gotham
+	myLabel.Parent = coopFrame
+
+	local partnerLabel = Instance.new("TextLabel")
+	partnerLabel.Size = UDim2.new(0.5, 0, 0.6, 0)
+	partnerLabel.Position = UDim2.new(0.5, 0, 0.38, 0)
+	partnerLabel.BackgroundTransparency = 1
+	partnerLabel.Text = partnerName .. ": " .. tostring(partnerScore)
+	partnerLabel.TextColor3 = Color3.fromRGB(200, 220, 255)
+	partnerLabel.TextScaled = true
+	partnerLabel.Font = Enum.Font.Gotham
+	partnerLabel.Parent = coopFrame
+end
+
 -- 정리
 function UIController:Destroy()
 	if self._screenGui then
