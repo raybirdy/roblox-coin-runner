@@ -651,4 +651,38 @@ RemoteEvents.RequestGhostData = getOrCreateRemoteEvent("RequestGhostData")
 RemoteEvents.RecordGhostAction = getOrCreateRemoteEvent("RecordGhostAction")
 -- 파라미터: (action: string, runTime: number)  action: "jump" | "double_jump" | "slide"
 
+-- ==================== 팀 시스템 ====================
+
+-- 팀 생성 요청 (클라이언트 → 서버)
+RemoteEvents.TeamCreate = getOrCreateRemoteEvent("TeamCreate")
+-- 파라미터: (teamName: string)
+
+-- 팀 생성 결과 (서버 → 클라이언트)
+RemoteEvents.TeamCreateResult = getOrCreateRemoteEvent("TeamCreateResult")
+-- 파라미터: { success: boolean, teamId: string?, teamName: string?, reason: string? }
+
+-- 팀 가입 요청 (클라이언트 → 서버)
+RemoteEvents.TeamJoin = getOrCreateRemoteEvent("TeamJoin")
+-- 파라미터: (teamId: string)
+
+-- 팀 가입 결과 (서버 → 클라이언트)
+RemoteEvents.TeamJoinResult = getOrCreateRemoteEvent("TeamJoinResult")
+-- 파라미터: { success: boolean, teamId: string?, teamName: string?, reason: string? }
+
+-- 팀 탈퇴 (클라이언트 → 서버)
+RemoteEvents.TeamLeave = getOrCreateRemoteEvent("TeamLeave")
+-- 파라미터: 없음
+
+-- 팀 데이터 동기화 (서버 → 클라이언트)
+RemoteEvents.TeamData = getOrCreateRemoteEvent("TeamData")
+-- 파라미터: { teamId, teamName, joinedAt, weeklyCoins, lastWeekReset }
+
+-- 팀 주간 랭킹 데이터 (서버 → 클라이언트)
+RemoteEvents.TeamRankData = getOrCreateRemoteEvent("TeamRankData")
+-- 파라미터: { { rank, teamId, teamName, weeklyCoins } }
+
+-- 팀 랭킹 요청 (클라이언트 → 서버)
+RemoteEvents.RequestTeamRanking = getOrCreateRemoteEvent("RequestTeamRanking")
+-- 파라미터: 없음
+
 return RemoteEvents

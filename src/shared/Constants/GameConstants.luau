@@ -2110,4 +2110,19 @@ GameConstants.GHOST = {
 	RUN_DURATION_LIMIT = 300, -- max run duration to record (seconds)
 }
 
+-- Team Weekly Ranking
+GameConstants.TEAM = {
+	MAX_MEMBERS = 5,
+	CREATE_COST = 500,
+	MIN_MEMBERSHIP_HOURS = 24,
+	WEEKLY_REWARD_TIERS = {
+		{ maxRank = 1,  gems = 100 },
+		{ maxRank = 3,  gems = 50 },
+		{ maxRank = 10, gems = 25 },
+		{ maxRank = 50, gems = 10 },
+	},
+	MAX_TEAM_NAME_LENGTH = 20,
+	RANKING_STORE_KEY = "TeamWeeklyRanking",
+}
+
 return GameConstants

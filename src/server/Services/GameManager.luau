@@ -33,6 +33,7 @@ local PetService = require(script.Parent.PetService)
 local RunSkillService = require(script.Parent.RunSkillService)
 local BattlePassService = require(script.Parent.BattlePassService)
 local GhostService = require(script.Parent.GhostService)
+local TeamService = require(script.Parent.TeamService)
 local RateLimiter = require(ReplicatedStorage.Shared.Utils.RateLimiter)
 
 -- BattlePassService: Init registers the PlayerDataService dependency
@@ -41,6 +42,9 @@ BattlePassService:Init(PlayerDataService)
 -- GhostService: Init registers RemoteEvent handlers and PlayerDataService dependency
 local _ghostService = GhostService.new()
 _ghostService:Init(PlayerDataService)
+
+-- TeamService: Init registers RemoteEvent handlers and PlayerDataService dependency
+TeamService:Init(PlayerDataService)
 
 local GameManager = {}
 
@@ -976,6 +980,9 @@ function GameManager.EndGame(player: Player)
 		bpXP = bpXP + session.feverCount * GameConstants.BATTLE_PASS.XP_SOURCES.FEVER
 	end
 	BattlePassService:AddXP(player, bpXP)
+
+	-- 팀 주간 코인 집계
+	TeamService:AddWeeklyCoins(player, math.floor(earnedCoins))
 
 	-- 비동기 배틀 결과 처리
 	AsyncBattleService:ProcessGameEnd(player, finalScore, session.asyncBattleTarget)
