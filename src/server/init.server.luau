@@ -43,6 +43,8 @@ local ReferralService = require(ServerScriptService.Server.Services.ReferralServ
 local LobbyNpcService = require(ServerScriptService.Server.Services.LobbyNpcService)
 -- BattlePassService is required here to call OnPlayerJoined; Init is handled by GameManager
 local BattlePassService = require(ServerScriptService.Server.Services.BattlePassService)
+-- GhostService is required and initialised inside GameManager (requires PlayerDataService dep)
+local _GhostService = require(ServerScriptService.Server.Services.GhostService)
 
 print("[Server] Game Constants Loaded")
 print("[Server] Remote Events Initialized")

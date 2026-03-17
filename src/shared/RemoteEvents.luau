@@ -637,4 +637,18 @@ RemoteEvents.BattlePassPurchaseResult = getOrCreateRemoteEvent("BattlePassPurcha
 RemoteEvents.BattlePassXPGained = getOrCreateRemoteEvent("BattlePassXPGained")
 -- 파라미터: { xpGained: number, newLevel: number, newXp: number, leveled: boolean }
 
+-- ==================== 고스트 레이싱 ====================
+
+-- 고스트 데이터 전송 (서버 → 클라이언트)
+RemoteEvents.GhostData = getOrCreateRemoteEvent("GhostData")
+-- 파라미터: { name: string, score: number, actions: {{time,action}}, runDuration: number }? (nil if no friend ghost)
+
+-- 고스트 데이터 요청 (클라이언트 → 서버)
+RemoteEvents.RequestGhostData = getOrCreateRemoteEvent("RequestGhostData")
+-- 파라미터: 없음 - 런 시작 시 서버에 친구 고스트 데이터 요청
+
+-- 고스트 액션 기록 (클라이언트 → 서버)
+RemoteEvents.RecordGhostAction = getOrCreateRemoteEvent("RecordGhostAction")
+-- 파라미터: (action: string, runTime: number)  action: "jump" | "double_jump" | "slide"
+
 return RemoteEvents

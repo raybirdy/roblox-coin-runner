@@ -32,10 +32,15 @@ local ObjectiveService = require(script.Parent.ObjectiveService)
 local PetService = require(script.Parent.PetService)
 local RunSkillService = require(script.Parent.RunSkillService)
 local BattlePassService = require(script.Parent.BattlePassService)
+local GhostService = require(script.Parent.GhostService)
 local RateLimiter = require(ReplicatedStorage.Shared.Utils.RateLimiter)
 
 -- BattlePassService: Init registers the PlayerDataService dependency
 BattlePassService:Init(PlayerDataService)
+
+-- GhostService: Init registers RemoteEvent handlers and PlayerDataService dependency
+local _ghostService = GhostService.new()
+_ghostService:Init(PlayerDataService)
 
 local GameManager = {}
 
@@ -444,6 +449,9 @@ RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { 
 
 	-- 튜토리얼 필요 여부 확인
 	local needsTutorial = globalTutorialService:NeedsTutorial(player)
+
+	-- 고스트 레이싱: 새 런 기록 시작
+	_ghostService:StartRecording(player)
 
 	-- 클라이언트에 게임 시작 알림
 	-- 소모형 파워업 목록 클라이언트에 전송 (UI 피드백용)
@@ -1113,6 +1121,9 @@ function GameManager.EndGame(player: Player)
 	end
 	ObjectiveService:ClearObjectives(player)
 
+	-- 고스트 레이싱: 런 기록 종료 및 저장 (신기록 시 갱신)
+	_ghostService:FinishRecording(player, finalScore)
+
 	-- 세션 제거
 	activeSessions[player] = nil
 
@@ -1125,6 +1136,7 @@ Players.PlayerRemoving:Connect(function(player: Player)
 	if activeSessions[player] then
 		GameManager.EndGame(player)
 	end
+	_ghostService:OnPlayerRemoving(player)
 	DailyEventService:OnPlayerLeave(player)
 	ObjectiveService:ClearObjectives(player)
 	BossRunService:OnPlayerRemoving(player)
