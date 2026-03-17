@@ -23,6 +23,7 @@ export type CoinService = typeof(setmetatable(
 		_player: Player,
 		_spawnCount: number, -- 코인 밀도 리듬: Normal/Hard 청크 카운터
 		_luckyCoinsBonus: number, -- lucky_coins 업그레이드 보너스 (Silver 확률 증가)
+		_currentZoneIndex: number, -- 현재 Zone 인덱스 (ActionHint 확률 결정용)
 	},
 	CoinService
 ))
@@ -34,6 +35,7 @@ function CoinService.new(player: Player): CoinService
 		_player = player,
 		_spawnCount = 0,
 		_luckyCoinsBonus = 0,
+		_currentZoneIndex = 1,
 	}, CoinService)
 
 	self:_setupCollisionHandlers()
@@ -501,11 +503,13 @@ local ACTION_HINT_MAP: { [string]: string } = {
 }
 
 function CoinService:_selectPattern(difficulty: string, obstaclePositions: { Vector3 }, obstacleInfos: { any }?): string
-	-- ActionHint: 장애물 타입이 있으면 70% 확률로 ActionHint 패턴 사용
+	-- ActionHint: Zone별 차등 확률로 장애물 행동 유도 패턴 사용
+	-- Zone 1(100%) → Zone 2(85%) → Zone 3(70%) → Zone 4(50%) → Zone 5(35%)
 	if obstacleInfos and #obstacleInfos > 0 then
 		local firstInfo = obstacleInfos[1]
 		local hintPattern = ACTION_HINT_MAP[firstInfo.obstacleType]
-		if hintPattern and math.random() < 0.70 then
+		local hintRate = GameConstants.ACTION_HINT_RATES[self._currentZoneIndex] or 0.70
+		if hintPattern and math.random() < hintRate then
 			return hintPattern
 		end
 	end
@@ -994,6 +998,11 @@ function CoinService:CheckGiantCoinCollection(playerPosition: Vector3): boolean
 		end
 	end
 	return false
+end
+
+-- 현재 Zone 인덱스 업데이트 (GameManager → Zone 전환 시 호출)
+function CoinService:SetCurrentZone(zoneIndex: number)
+	self._currentZoneIndex = zoneIndex
 end
 
 -- 모든 코인 정리 (게임 종료 시)

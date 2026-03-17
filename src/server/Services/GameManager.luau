@@ -991,6 +991,7 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 		if newZoneIndex ~= session.currentZoneIndex then
 			session.currentZoneIndex = newZoneIndex
 			chunkService:SetCurrentZone(session.currentZoneIndex)
+			coinService:SetCurrentZone(session.currentZoneIndex)
 			local theme = GameConstants.ZONE_THEMES[newZoneIndex]
 			RemoteEvents.ZoneTransition:FireClient(player, {
 				zoneIndex = newZoneIndex,
