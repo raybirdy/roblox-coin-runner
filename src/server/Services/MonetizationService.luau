@@ -20,37 +20,54 @@ local processedReceiptsCache: { [string]: boolean } = {}
 -- VIP 일일 젬 지급 추적 (서버 세션 내 중복 지급 방지)
 local vipDailyGemsAwarded: { [number]: boolean } = {} -- userId → awarded this session
 
+-- 젬 상품 타입 정의
+type GemProduct = {
+	id: string,
+	productId: number,
+	gems: number,
+	bonus: number,
+	bundlePet: string?,
+}
+
 -- 젬 상품 정보 가져오기
-local function getGemProductById(productId: string): { id: string, productId: number, gems: number, bonus: number }?
+local function getGemProductById(productId: string): GemProduct?
 	for _, product in GameConstants.MONETIZATION.GEM_PRODUCTS do
 		if product.id == productId then
-			return product
+			return product :: GemProduct
 		end
 	end
 	return nil
 end
 
 -- DevProduct ID로 상품 정보 가져오기
-local function getGemProductByDevProductId(
-	devProductId: number
-): { id: string, productId: number, gems: number, bonus: number }?
+local function getGemProductByDevProductId(devProductId: number): GemProduct?
 	for _, product in GameConstants.MONETIZATION.GEM_PRODUCTS do
 		if product.productId == devProductId then
-			return product
+			return product :: GemProduct
 		end
 	end
 	return nil
 end
 
 -- 젬 구매 처리 (DevProduct)
-local function processGemPurchase(
-	player: Player,
-	product: { id: string, productId: number, gems: number, bonus: number }
-): boolean
+local function processGemPurchase(player: Player, product: GemProduct): boolean
 	local totalGems = product.gems + (product.bonus or 0)
 
 	-- 젬 지급
 	PlayerDataService:AddGems(player, totalGems)
+
+	-- 번들 펫 지급 (중복 방지: 이미 보유한 경우 스킵)
+	local petGranted = false
+	if product.bundlePet then
+		if not PlayerDataService:HasPet(player, product.bundlePet) then
+			PlayerDataService:AddPet(player, product.bundlePet)
+			petGranted = true
+			print(`[MonetizationService] {player.Name} received bundle pet: {product.bundlePet}`)
+		else
+			print(`[MonetizationService] {player.Name} already owns bundle pet: {product.bundlePet} — skipping`)
+		end
+	end
+
 	PlayerDataService:SavePlayerData(player)
 
 	-- 클라이언트에 알림
@@ -58,6 +75,7 @@ local function processGemPurchase(
 		success = true,
 		gems = totalGems,
 		productId = product.id,
+		bundlePet = if petGranted then product.bundlePet else nil,
 	})
 
 	-- 젬 잔액 업데이트 알림

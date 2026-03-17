@@ -541,7 +541,7 @@ GameConstants.MONETIZATION = {
 		{ id = "gems_50", productId = 3540343000, gems = 50, robux = 25, bonus = 0 },
 		{ id = "gems_200", productId = 3540343177, gems = 200, robux = 75, bonus = 50 },
 		{ id = "gems_500", productId = 3540343329, gems = 500, robux = 149, bonus = 150 },
-		{ id = "starter_pack", productId = 3540343511, gems = 100, robux = 49, bonus = 0 },
+		{ id = "starter_pack", productId = 3540343511, gems = 150, robux = 49, bonus = 0, bundlePet = "hamster" },
 	},
 	-- GamePass (VIP)
 	VIP_GAMEPASS_ID = 1720352633,
