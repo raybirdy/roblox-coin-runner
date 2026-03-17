@@ -10,6 +10,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local GameConstants = require(ReplicatedStorage.Shared.Constants.GameConstants)
 local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)
 local PlayerDataService = require(script.Parent.PlayerDataService)
+local BattlePassService = require(script.Parent.BattlePassService)
 local RateLimiter = require(ReplicatedStorage.Shared.Utils.RateLimiter)
 
 local MonetizationService = {}
@@ -27,6 +28,11 @@ type GemProduct = {
 	gems: number,
 	bonus: number,
 	bundlePet: string?,
+	bundleSkin: string?,
+	bundleNametag: string?,
+	bundleCharacter: string?,
+	label: string?,
+	highlight: string?,
 }
 
 -- 젬 상품 정보 가져오기
@@ -49,40 +55,117 @@ local function getGemProductByDevProductId(devProductId: number): GemProduct?
 	return nil
 end
 
+-- Grant all bundle items (pet, skin, nametag, character) for a product.
+-- Duplicate items are replaced with 30 gems as compensation.
+local function grantBundleItems(player: Player, product: GemProduct): { string }
+	local grantedItems: { string } = {}
+
+	-- Pet
+	if product.bundlePet then
+		if not PlayerDataService:OwnsPet(player, product.bundlePet) then
+			PlayerDataService:AddPet(player, product.bundlePet)
+			table.insert(grantedItems, "pet:" .. product.bundlePet)
+			print(`[MonetizationService] {player.Name} received bundle pet: {product.bundlePet}`)
+		else
+			-- Already owned: compensate with 30 gems
+			PlayerDataService:AddGems(player, 30)
+			table.insert(grantedItems, "pet_duplicate_gems:30")
+			print(`[MonetizationService] {player.Name} already owns pet {product.bundlePet} — compensated 30 gems`)
+		end
+	end
+
+	-- Skin: use PurchaseSkin with price=0 (skips payment, adds to ownedSkins)
+	-- If already owned, compensate with 30 gems
+	if product.bundleSkin then
+		if not PlayerDataService:OwnsSkin(player, product.bundleSkin) then
+			PlayerDataService:PurchaseSkin(player, product.bundleSkin, 0, "bundle")
+			table.insert(grantedItems, "skin:" .. product.bundleSkin)
+			print(`[MonetizationService] {player.Name} received bundle skin: {product.bundleSkin}`)
+		else
+			PlayerDataService:AddGems(player, 30)
+			table.insert(grantedItems, "skin_duplicate_gems:30")
+			print(`[MonetizationService] {player.Name} already owns skin {product.bundleSkin} — compensated 30 gems`)
+		end
+	end
+
+	-- Nametag item: stored as playerData.nametag[category] = itemId.
+	-- The category is derived from the prefix before the first underscore (e.g. "frame_diamond" → "frame").
+	-- We overwrite the slot unconditionally (equipping a better nametag is always a gain);
+	-- if the player already has a nametag in that slot, compensate with 30 gems instead.
+	if product.bundleNametag then
+		local nametag = PlayerDataService:GetNametag(player)
+		local category = string.match(product.bundleNametag, "^(%a+)_")
+		if category then
+			if nametag[category] and nametag[category] ~= "" then
+				-- Already has a nametag in this slot — compensate
+				PlayerDataService:AddGems(player, 30)
+				table.insert(grantedItems, "nametag_duplicate_gems:30")
+				print(
+					`[MonetizationService] {player.Name} already has nametag slot '{category}' — compensated 30 gems`
+				)
+			else
+				-- Grant for free by using PurchaseNametagItem with cost=0
+				PlayerDataService:PurchaseNametagItem(player, product.bundleNametag, 0)
+				table.insert(grantedItems, "nametag:" .. product.bundleNametag)
+				print(`[MonetizationService] {player.Name} received bundle nametag: {product.bundleNametag}`)
+			end
+		end
+	end
+
+	-- Character
+	if product.bundleCharacter then
+		if not PlayerDataService:OwnsCharacter(player, product.bundleCharacter) then
+			PlayerDataService:AddCharacter(player, product.bundleCharacter)
+			table.insert(grantedItems, "character:" .. product.bundleCharacter)
+			print(`[MonetizationService] {player.Name} received bundle character: {product.bundleCharacter}`)
+		else
+			PlayerDataService:AddGems(player, 30)
+			table.insert(grantedItems, "character_duplicate_gems:30")
+			print(
+				`[MonetizationService] {player.Name} already owns character {product.bundleCharacter} — compensated 30 gems`
+			)
+		end
+	end
+
+	return grantedItems
+end
+
 -- 젬 구매 처리 (DevProduct)
 local function processGemPurchase(player: Player, product: GemProduct): boolean
 	local totalGems = product.gems + (product.bonus or 0)
 
-	-- 젬 지급
+	-- Grant gems
 	PlayerDataService:AddGems(player, totalGems)
 
-	-- 번들 펫 지급 (중복 방지: 이미 보유한 경우 스킵)
-	local petGranted = false
-	if product.bundlePet then
-		if not PlayerDataService:HasPet(player, product.bundlePet) then
-			PlayerDataService:AddPet(player, product.bundlePet)
-			petGranted = true
-			print(`[MonetizationService] {player.Name} received bundle pet: {product.bundlePet}`)
-		else
-			print(`[MonetizationService] {player.Name} already owns bundle pet: {product.bundlePet} — skipping`)
-		end
-	end
+	-- Grant all bundle items (pet, skin, nametag, character)
+	-- Legacy path: starter_pack only had bundlePet, handled by grantBundleItems too
+	local grantedItems = grantBundleItems(player, product)
 
 	PlayerDataService:SavePlayerData(player)
 
-	-- 클라이언트에 알림
+	-- Determine bundlePet for legacy notification field (backward compat)
+	local petGranted: string? = nil
+	for _, entry in grantedItems do
+		if entry:sub(1, 4) == "pet:" then
+			petGranted = entry:sub(5)
+			break
+		end
+	end
+
+	-- Notify client
 	RemoteEvents.PurchaseGemsResult:FireClient(player, {
 		success = true,
 		gems = totalGems,
 		productId = product.id,
-		bundlePet = if petGranted then product.bundlePet else nil,
+		bundlePet = petGranted,
+		grantedItems = grantedItems,
 	})
 
-	-- 젬 잔액 업데이트 알림
+	-- Gems balance update
 	local currentGems = PlayerDataService:GetGems(player)
 	RemoteEvents.GemsUpdated:FireClient(player, { gems = currentGems })
 
-	-- 플레이어 데이터 전체 업데이트
+	-- Full player data refresh
 	local playerData = PlayerDataService:GetPlayerData(player)
 	if playerData then
 		RemoteEvents.PlayerDataLoaded:FireClient(player, playerData)
@@ -184,6 +267,51 @@ RemoteEvents.PurchaseGems.OnServerEvent:Connect(function(player: Player, data: {
 	local productId = data.productId
 
 	print(`[MonetizationService] Purchase request from {player.Name}: {productId}`)
+
+	-- 배틀패스 GamePass 구매 요청
+	if productId == "battle_pass" then
+		local bpPassId = GameConstants.BATTLE_PASS.GAME_PASS_ID
+		local bpData = BattlePassService:GetData(player)
+
+		-- 이미 보유 중
+		if bpData and bpData.isPremium then
+			RemoteEvents.PurchaseGemsResult:FireClient(player, {
+				success = false,
+				error = "already_owned",
+			})
+			return
+		end
+
+		-- GamePass ID가 설정되지 않은 경우 (Studio 테스트 모드)
+		if bpPassId == 0 then
+			if RunService:IsStudio() then
+				print(`[MonetizationService] Studio test mode - granting Battle Pass for free`)
+				BattlePassService:UnlockPremium(player)
+				PlayerDataService:SavePlayerData(player)
+			else
+				warn(`[MonetizationService] Battle Pass GamePass ID not configured! Rejecting purchase.`)
+				RemoteEvents.PurchaseGemsResult:FireClient(player, {
+					success = false,
+					error = "not_configured",
+				})
+			end
+			return
+		end
+
+		-- MarketplaceService로 GamePass 구매 프롬프트 표시
+		local success, err = pcall(function()
+			MarketplaceService:PromptGamePassPurchase(player, bpPassId)
+		end)
+
+		if not success then
+			warn(`[MonetizationService] Failed to prompt Battle Pass purchase: {err}`)
+			RemoteEvents.PurchaseGemsResult:FireClient(player, {
+				success = false,
+				error = "purchase_failed",
+			})
+		end
+		return
+	end
 
 	-- VIP GamePass 구매 요청
 	if productId == "vip_gamepass" then
@@ -313,6 +441,14 @@ MarketplaceService.PromptGamePassPurchaseFinished:Connect(
 			print(`[MonetizationService] {player.Name} purchased VIP GamePass!`)
 			PlayerDataService:SetVIP(player, true)
 			RemoteEvents.VIPStatusChanged:FireClient(player, { hasVIP = true })
+		end
+
+		-- 배틀패스 GamePass 구매 처리
+		local bpPassId = GameConstants.BATTLE_PASS.GAME_PASS_ID
+		if bpPassId ~= 0 and gamePassId == bpPassId and wasPurchased then
+			print(`[MonetizationService] {player.Name} purchased Battle Pass!`)
+			BattlePassService:UnlockPremium(player)
+			PlayerDataService:SavePlayerData(player)
 		end
 	end
 )
