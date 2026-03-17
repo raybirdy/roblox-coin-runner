@@ -110,6 +110,12 @@ type PlayerData = {
 		weeklyCoins: number,
 		lastWeekReset: number,
 	}?,
+	-- Co-op 통계
+	coopStats: {
+		totalCoopRuns: number,
+		totalCoopWins: number,
+		bestCoopScore: number,
+	},
 }
 
 local DEFAULT_DATA: PlayerData = {
@@ -200,6 +206,12 @@ local DEFAULT_DATA: PlayerData = {
 		joinedAt = 0,
 		weeklyCoins = 0,
 		lastWeekReset = 0,
+	},
+	-- Co-op 통계
+	coopStats = {
+		totalCoopRuns = 0,
+		totalCoopWins = 0,
+		bestCoopScore = 0,
 	},
 }
 

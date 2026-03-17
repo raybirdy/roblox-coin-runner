@@ -47,6 +47,7 @@ local BattlePassService = require(ServerScriptService.Server.Services.BattlePass
 local _GhostService = require(ServerScriptService.Server.Services.GhostService)
 -- TeamService is required here to call CheckWeeklyReset; Init is handled by GameManager
 local TeamService = require(ServerScriptService.Server.Services.TeamService)
+local CoopMatchService = require(ServerScriptService.Server.Services.CoopMatchService)
 
 print("[Server] Game Constants Loaded")
 print("[Server] Remote Events Initialized")
@@ -103,6 +104,8 @@ print("[Server] RunSkillService Loaded")
 -- 로비 NPC 초기화
 LobbyNpcService:Init()
 print("[Server] LobbyNpcService Loaded")
+
+print("[Server] CoopMatchService Loaded")
 
 print("[Server] BattlePassService Loaded")
 
