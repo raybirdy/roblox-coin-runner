@@ -1375,20 +1375,10 @@ end
 function UIController:OnRestartButtonClicked()
 	print("[UIController] Play Again clicked - restarting game")
 
-	-- 버튼 비활성화 (서버 응답 대기 중 이중 클릭 방지)
-	if self._gameOverFrame then
-		local restartBtn = self._gameOverFrame:FindFirstChild("RestartButton") :: TextButton?
-		local lobbyBtn = self._gameOverFrame:FindFirstChild("LobbyButton") :: TextButton?
-		if restartBtn then
-			restartBtn.Active = false
-			restartBtn.Text = "..."
-		end
-		if lobbyBtn then
-			lobbyBtn.Active = false
-		end
-	end
+	-- 즉시 GameOver 화면 숨기기 (서버 응답 대기 없이 체감 반응속도 0으로)
+	self:HideGameOver()
 
-	-- 서버에 게임 시작 요청 (HideGameOver는 GameStart.OnClientEvent에서 처리)
+	-- 서버에 게임 시작 요청
 	RemoteEvents.GameStart:FireServer()
 end
 
