@@ -551,6 +551,20 @@ RemoteEvents.BuyCharacterResult = getOrCreateRemoteEvent("BuyCharacterResult")
 RemoteEvents.NpcInteract = getOrCreateRemoteEvent("NpcInteract")
 -- 파라미터: { npcId: string }
 
+-- ==================== 소모형 런 파워업 ====================
+
+-- 소모형 파워업 구매 요청 (클라이언트 → 서버)
+RemoteEvents.BuyConsumable = getOrCreateRemoteEvent("BuyConsumable")
+-- 파라미터: (powerupId: string)
+
+-- 소모형 파워업 구매 결과 (서버 → 클라이언트)
+RemoteEvents.BuyConsumableResult = getOrCreateRemoteEvent("BuyConsumableResult")
+-- 파라미터: { success: boolean, powerupId: string, remainingCoins: number, error: string? }
+
+-- 활성화된 소모형 파워업 목록 (서버 → 클라이언트, 게임 시작 시)
+RemoteEvents.ActiveConsumables = getOrCreateRemoteEvent("ActiveConsumables")
+-- 파라미터: { powerupIds: { string } }
+
 -- ==================== 런 내 성장 시스템 ====================
 
 -- 런 내 XP 업데이트 (서버 → 클라이언트)

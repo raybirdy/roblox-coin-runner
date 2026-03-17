@@ -126,9 +126,19 @@ type GameSession = {
 	_bossDialogueFired: boolean,
 	-- VIP 혜택
 	vipFreeReviveUsed: boolean, -- 이번 런 무료 부활 사용 여부
+	-- 소모형 런 파워업 (런 시작 전 코인 소비)
+	headStartActive: boolean,
+	headStartEnd: number,
+	coinBoostActive: boolean,
+	coinBoostMultiplier: number,
+	slowStartActive: boolean,
+	slowStartEnd: number,
 }
 
 local activeSessions: { [Player]: GameSession } = {}
+
+-- 로비 대기 중 소모형 파워업 (gameStart 전 구매 목록, player별)
+local pendingConsumables: { [Player]: { [string]: boolean } } = {}
 
 -- 현재 점수 조회 (RealtimeBattleService에서 사용)
 function GameManager.GetCurrentScore(player: Player): number?
@@ -314,7 +324,42 @@ RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { 
 		upgradeBonuses = upgBonuses1,
 		_bossDialogueFired = false,
 		vipFreeReviveUsed = false,
+		-- 소모형 런 파워업 기본값 (아래에서 갱신)
+		headStartActive = false,
+		headStartEnd = 0,
+		coinBoostActive = false,
+		coinBoostMultiplier = 1.0,
+		slowStartActive = false,
+		slowStartEnd = 0,
 	}
+
+	-- 소모형 런 파워업 적용
+	local consumables1 = pendingConsumables[player]
+	local activeConsumableIds1: { string } = {}
+	if consumables1 then
+		local now1 = tick()
+		if consumables1["head_start"] then
+			session.headStartActive = true
+			session.headStartEnd = now1 + 10
+			table.insert(activeConsumableIds1, "head_start")
+		end
+		if consumables1["coin_boost"] then
+			session.coinBoostActive = true
+			session.coinBoostMultiplier = 1.5
+			table.insert(activeConsumableIds1, "coin_boost")
+		end
+		if consumables1["extra_life"] then
+			session.lives += 1
+			table.insert(activeConsumableIds1, "extra_life")
+		end
+		if consumables1["slow_start"] then
+			session.slowStartActive = true
+			session.slowStartEnd = now1 + 15
+			table.insert(activeConsumableIds1, "slow_start")
+		end
+		pendingConsumables[player] = nil
+		print(`[GameManager] Applied {#activeConsumableIds1} consumable(s) for {player.Name}: {table.concat(activeConsumableIds1, ", ")}`)
+	end
 
 	activeSessions[player] = session
 
@@ -397,6 +442,11 @@ RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { 
 	local needsTutorial = globalTutorialService:NeedsTutorial(player)
 
 	-- 클라이언트에 게임 시작 알림
+	-- 소모형 파워업 목록 클라이언트에 전송 (UI 피드백용)
+	if #activeConsumableIds1 > 0 then
+		RemoteEvents.ActiveConsumables:FireClient(player, { powerupIds = activeConsumableIds1 })
+	end
+
 	RemoteEvents.GameStart:FireClient(player, {
 		startTime = session.startTime,
 		lives = session.lives,
@@ -482,6 +532,91 @@ end
 task.defer(function()
 	setupPortalDetection()
 	setupShopDetection()
+end)
+
+-- 소모형 런 파워업 구매 처리 (로비 상태에서만 허용)
+RemoteEvents.BuyConsumable.OnServerEvent:Connect(function(player: Player, powerupId: unknown)
+	-- 입력 검증
+	if type(powerupId) ~= "string" then
+		RemoteEvents.BuyConsumableResult:FireClient(player, {
+			success = false,
+			powerupId = "",
+			remainingCoins = 0,
+			error = "invalid_input",
+		})
+		return
+	end
+
+	-- 게임 진행 중에는 구매 불가
+	if activeSessions[player] then
+		RemoteEvents.BuyConsumableResult:FireClient(player, {
+			success = false,
+			powerupId = powerupId,
+			remainingCoins = 0,
+			error = "game_in_progress",
+		})
+		return
+	end
+
+	-- 유효한 파워업 ID인지 확인
+	local powerupDef: { id: string, name: string, desc: string, coinCost: number }? = nil
+	for _, def in GameConstants.CONSUMABLE_POWERUPS do
+		if def.id == powerupId then
+			powerupDef = def
+			break
+		end
+	end
+
+	if not powerupDef then
+		RemoteEvents.BuyConsumableResult:FireClient(player, {
+			success = false,
+			powerupId = powerupId,
+			remainingCoins = 0,
+			error = "invalid_powerup",
+		})
+		return
+	end
+
+	-- 중복 구매 방지 (한 런 대기 중 동일 파워업 1회만)
+	if not pendingConsumables[player] then
+		pendingConsumables[player] = {}
+	end
+	if pendingConsumables[player][powerupId] then
+		local pData = PlayerDataService:GetPlayerData(player)
+		RemoteEvents.BuyConsumableResult:FireClient(player, {
+			success = false,
+			powerupId = powerupId,
+			remainingCoins = pData and pData.coins or 0,
+			error = "already_purchased",
+		})
+		return
+	end
+
+	-- 코인 차감 (서버에서 검증)
+	local didSpend = PlayerDataService:SpendCoins(player, powerupDef.coinCost)
+	if not didSpend then
+		local pData = PlayerDataService:GetPlayerData(player)
+		RemoteEvents.BuyConsumableResult:FireClient(player, {
+			success = false,
+			powerupId = powerupId,
+			remainingCoins = pData and pData.coins or 0,
+			error = "insufficient_coins",
+		})
+		return
+	end
+
+	-- 구매 성공: 대기 목록에 추가
+	pendingConsumables[player][powerupId] = true
+
+	local pData = PlayerDataService:GetPlayerData(player)
+	local remaining = pData and pData.coins or 0
+	print(`[GameManager] {player.Name} bought consumable powerup: {powerupId} (-{powerupDef.coinCost} coins, remaining: {remaining})`)
+
+	RemoteEvents.BuyConsumableResult:FireClient(player, {
+		success = true,
+		powerupId = powerupId,
+		remainingCoins = remaining,
+	})
 end)
 
 -- 게임 시작 요청 처리
@@ -590,7 +725,42 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 		upgradeBonuses = upgBonuses2,
 		_bossDialogueFired = false,
 		vipFreeReviveUsed = false,
+		-- 소모형 런 파워업 기본값 (아래에서 갱신)
+		headStartActive = false,
+		headStartEnd = 0,
+		coinBoostActive = false,
+		coinBoostMultiplier = 1.0,
+		slowStartActive = false,
+		slowStartEnd = 0,
 	}
+
+	-- 소모형 런 파워업 적용
+	local consumables2 = pendingConsumables[player]
+	local activeConsumableIds2: { string } = {}
+	if consumables2 then
+		local now2 = tick()
+		if consumables2["head_start"] then
+			session.headStartActive = true
+			session.headStartEnd = now2 + 10
+			table.insert(activeConsumableIds2, "head_start")
+		end
+		if consumables2["coin_boost"] then
+			session.coinBoostActive = true
+			session.coinBoostMultiplier = 1.5
+			table.insert(activeConsumableIds2, "coin_boost")
+		end
+		if consumables2["extra_life"] then
+			session.lives += 1
+			table.insert(activeConsumableIds2, "extra_life")
+		end
+		if consumables2["slow_start"] then
+			session.slowStartActive = true
+			session.slowStartEnd = now2 + 15
+			table.insert(activeConsumableIds2, "slow_start")
+		end
+		pendingConsumables[player] = nil
+		print(`[GameManager] Applied {#activeConsumableIds2} consumable(s) for {player.Name}: {table.concat(activeConsumableIds2, ", ")}`)
+	end
 
 	activeSessions[player] = session
 
@@ -636,6 +806,11 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 
 	-- 튜토리얼 필요 여부 확인
 	local needsTutorial = globalTutorialService:NeedsTutorial(player)
+
+	-- 소모형 파워업 목록 클라이언트에 전송 (UI 피드백용)
+	if #activeConsumableIds2 > 0 then
+		RemoteEvents.ActiveConsumables:FireClient(player, { powerupIds = activeConsumableIds2 })
+	end
 
 	-- 클라이언트에 게임 시작 알림
 	RemoteEvents.GameStart:FireClient(player, {
@@ -943,6 +1118,7 @@ Players.PlayerRemoving:Connect(function(player: Player)
 	shopDebounce[player] = nil
 	portalDebounce[player] = nil
 	consolationTracker[player] = nil
+	pendingConsumables[player] = nil
 	RateLimiter.CleanupPlayer(player)
 end)
 
@@ -1075,6 +1251,10 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 
 		-- 코인 수집 체크 (자석 효과 적용, 피버/슈퍼피버 시 초강력 자석)
 		local magnetRadius = powerupService:GetMagnetRadius() + session.scenarioStatBonuses.magnetRadius + session.upgradeBonuses.magnetBonus + PetService:GetMagnetBonus(player, PlayerDataService)
+		-- 헤드스타트 자석 효과 (일반 자석 반경과 동등)
+		if session.headStartActive then
+			magnetRadius = math.max(magnetRadius, GameConstants.MINI_FEVER.MAGNET_RADIUS)
+		end
 		if session.isSuperFever then
 			magnetRadius = math.max(magnetRadius, GameConstants.SUPER_FEVER.MAGNET_RADIUS)
 		elseif session.isFever then
@@ -1088,6 +1268,10 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 			* (1 + session.scenarioStatBonuses.coinValue)
 			* (1 + session.upgradeBonuses.coinValueBonus)
 			* PetService:GetCoinMultiplier(player, PlayerDataService)
+		-- 소모형 코인 부스트 적용
+		if session.coinBoostActive then
+			coinMultiplier *= session.coinBoostMultiplier
+		end
 		if session.isSuperFever then
 			coinMultiplier *= GameConstants.SUPER_FEVER.COIN_MULTIPLIER
 		elseif session.isFever then
@@ -1328,11 +1512,20 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 		local hitObstacle = obstacleService:CheckObstacleCollision(hrp.Position, isSliding, isMini)
 			or chaseMobHit
 
+		-- 헤드스타트 만료 체크 (10초 후 비활성화)
+		if session.headStartActive and tick() >= session.headStartEnd then
+			session.headStartActive = false
+		end
+
 		if hitObstacle and session.lives > 0 then
 			-- 피버 모드 무적 체크
 			if session.isFever and GameConstants.FEVER.INVINCIBLE then
 				-- 피버 무적으로 통과
 				print(`[GameManager] Player {player.Name} passed through obstacle (FEVER)!`)
+			-- 헤드스타트 무적 체크
+			elseif session.headStartActive then
+				-- 헤드스타트 무적으로 통과
+				print(`[GameManager] Player {player.Name} passed through obstacle (HeadStart)!`)
 			-- 무적 상태 체크
 			elseif powerupService:IsInvincible() then
 				-- 무적으로 통과
