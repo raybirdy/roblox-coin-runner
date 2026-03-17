@@ -40,6 +40,7 @@ export type FeverController = typeof(setmetatable(
 		_onFeverEnd: (() -> ())?,
 		_feverBloom: BloomEffect?,        -- 피버 포스트 프로세싱
 		_feverColorCorrection: ColorCorrectionEffect?, -- 피버 색조 보정
+		_coopFeverActive: boolean, -- co-op fever: enhanced effect for both lanes
 	},
 	FeverController
 ))
@@ -70,6 +71,7 @@ function FeverController.new(): FeverController
 		_onFeverEnd = nil,
 		_feverBloom = nil,
 		_feverColorCorrection = nil,
+		_coopFeverActive = false,
 	}, FeverController)
 
 	self:_createGaugeUI()
@@ -269,15 +271,30 @@ function FeverController:_onFeverStarted(data: { duration: number, speedBoost: n
 		self._feverSound:Play()
 	end
 
-	-- Screen overlay flash
+	-- Screen overlay flash (co-op: more intense double flash)
 	if self._feverFrame then
-		self._feverFrame.BackgroundTransparency = 0.5
+		local flashTransparency = self._coopFeverActive and 0.2 or 0.5
+		local fadeTransparency = self._coopFeverActive and 0.7 or 0.85
+		self._feverFrame.BackgroundTransparency = flashTransparency
 		local fadeTween = TweenService:Create(
 			self._feverFrame,
 			TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-			{ BackgroundTransparency = 0.85 }
+			{ BackgroundTransparency = fadeTransparency }
 		)
 		fadeTween:Play()
+		if self._coopFeverActive then
+			-- Second flash pulse for co-op
+			fadeTween.Completed:Connect(function()
+				if self._feverFrame and self._isFever then
+					self._feverFrame.BackgroundTransparency = flashTransparency
+					TweenService:Create(
+						self._feverFrame,
+						TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+						{ BackgroundTransparency = fadeTransparency }
+					):Play()
+				end
+			end)
+		end
 	end
 
 	-- Character glow + particle
@@ -698,6 +715,11 @@ end
 
 function FeverController:OnFeverEnd(callback: () -> ())
 	self._onFeverEnd = callback
+end
+
+-- Co-op fever: broadcast enhanced effect to both lanes
+function FeverController:SetCoopFeverEffect(enabled: boolean)
+	self._coopFeverActive = enabled
 end
 
 -- Check if fever is active

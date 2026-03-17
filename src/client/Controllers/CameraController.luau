@@ -24,6 +24,8 @@ export type CameraController = typeof(setmetatable(
 		_cameraDistance: number, -- 적응형 카메라 거리
 		_zoomOffset: number, -- 현재 줌 오프셋 (부드럽게 보간)
 		_targetZoomOffset: number, -- 목표 줌 오프셋
+		_coopModeActive: boolean, -- co-op mode: widened camera
+		_coopFovBonus: number, -- extra FOV degrees in co-op
 	},
 	CameraController
 ))
@@ -63,6 +65,8 @@ function CameraController.new(player: Player, character: Model): CameraControlle
 		_cameraDistance = calculateAdaptiveDistance(),
 		_zoomOffset = 0,
 		_targetZoomOffset = 0,
+		_coopModeActive = false,
+		_coopFovBonus = 0,
 	}, CameraController)
 
 	self:_initialize()
@@ -232,6 +236,19 @@ function CameraController:UpdateCharacter(newCharacter: Model)
 		self._targetCFrame = self:_calculateCameraPosition()
 		self._camera.CFrame = self._targetCFrame
 		print("[CameraController] Character updated after respawn")
+	end
+end
+
+-- Co-op: widen camera to show both lanes
+function CameraController:SetCoopMode(enabled: boolean)
+	if enabled then
+		-- Zoom out to show Z-offset lanes (roughly 8 units apart)
+		self._coopModeActive = true
+		-- Increase FOV by 15 degrees in co-op
+		self._coopFovBonus = 15
+	else
+		self._coopModeActive = false
+		self._coopFovBonus = 0
 	end
 end
 
