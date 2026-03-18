@@ -2,10 +2,12 @@
 -- Lobby Service
 -- 로비 물리 요소 생성 및 관리 (확장: 장식물 + 동물 NPC)
 
+local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 
 local GameConstants = require(ReplicatedStorage.Shared.Constants.GameConstants)
+local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)
 
 local LobbyService = {}
 
@@ -45,6 +47,9 @@ function LobbyService:Initialize()
 
 	-- 리더보드 간판 생성
 	self:_createLeaderboard()
+
+	-- Co-op 포탈 생성
+	self:_createCoopPortal()
 
 	-- 스폰 포인트 설정
 	self:_setupSpawnPoint()
@@ -1731,6 +1736,135 @@ function LobbyService:_createAnimalNPC(
 end
 
 -- 스폰 포인트 설정
+-- Co-op 포탈 생성 (ProximityPrompt 기반)
+function LobbyService:_createCoopPortal()
+	if not lobbyFolder then
+		return
+	end
+
+	-- Main portal is at PORTAL_POSITION (X=-25, Z=0).
+	-- Place the Co-op portal to the side (Z=-20) so it is clearly distinct.
+	local mainPortalPos = GameConstants.LOBBY.PORTAL_POSITION
+	local coopPos = Vector3.new(mainPortalPos.X, mainPortalPos.Y, mainPortalPos.Z - 20)
+	local portalSize = Vector3.new(6, 8, 1)
+
+	local success, err = pcall(function()
+		-- Portal face panel (Neon Cyan)
+		local coopPortal = Instance.new("Part")
+		coopPortal.Name = "CoopPortal"
+		coopPortal.Size = portalSize
+		coopPortal.Position = coopPos + Vector3.new(0, portalSize.Y / 2, 0)
+		coopPortal.Anchored = true
+		coopPortal.CanCollide = false
+		coopPortal.BrickColor = BrickColor.new("Cyan")
+		coopPortal.Material = Enum.Material.Neon
+		coopPortal.Transparency = 0.35
+		coopPortal.Parent = lobbyFolder
+
+		-- CollectionService tag for future reference
+		CollectionService:AddTag(coopPortal, "CoopPortal")
+
+		-- SurfaceGui showing "CO-OP" text
+		local surfaceGui = Instance.new("SurfaceGui")
+		surfaceGui.Name = "CoopPortalGui"
+		surfaceGui.Face = Enum.NormalId.Front
+		surfaceGui.CanvasSize = Vector2.new(300, 400)
+		surfaceGui.Parent = coopPortal
+
+		local textLabel = Instance.new("TextLabel")
+		textLabel.Size = UDim2.new(1, 0, 1, 0)
+		textLabel.BackgroundTransparency = 1
+		textLabel.TextColor3 = Color3.fromRGB(0, 255, 255)
+		textLabel.TextScaled = true
+		textLabel.Font = Enum.Font.GothamBlack
+		textLabel.Text = "CO-OP"
+		textLabel.TextStrokeTransparency = 0
+		textLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+		textLabel.Parent = surfaceGui
+
+		-- Portal glow pulse animation
+		task.spawn(function()
+			while coopPortal and coopPortal.Parent do
+				local tween = TweenService:Create(
+					coopPortal,
+					TweenInfo.new(1.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+					{ Transparency = 0.6 }
+				)
+				tween:Play()
+				tween.Completed:Wait()
+				if not coopPortal or not coopPortal.Parent then
+					break
+				end
+				local tween2 = TweenService:Create(
+					coopPortal,
+					TweenInfo.new(1.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+					{ Transparency = 0.25 }
+				)
+				tween2:Play()
+				tween2.Completed:Wait()
+			end
+		end)
+
+		-- Left pillar
+		local pillarL = Instance.new("Part")
+		pillarL.Name = "CoopPortalPillarL"
+		pillarL.Size = Vector3.new(1.5, portalSize.Y + 3, 1.5)
+		pillarL.Position = coopPos + Vector3.new(0, (portalSize.Y + 3) / 2 - 1.5, portalSize.Z / 2 + 0.75)
+		pillarL.Anchored = true
+		pillarL.CanCollide = true
+		pillarL.BrickColor = BrickColor.new("Dark blue")
+		pillarL.Material = Enum.Material.Metal
+		pillarL.Parent = lobbyFolder
+
+		-- Right pillar
+		local pillarR = Instance.new("Part")
+		pillarR.Name = "CoopPortalPillarR"
+		pillarR.Size = Vector3.new(1.5, portalSize.Y + 3, 1.5)
+		pillarR.Position = coopPos + Vector3.new(0, (portalSize.Y + 3) / 2 - 1.5, -portalSize.Z / 2 - 0.75)
+		pillarR.Anchored = true
+		pillarR.CanCollide = true
+		pillarR.BrickColor = BrickColor.new("Dark blue")
+		pillarR.Material = Enum.Material.Metal
+		pillarR.Parent = lobbyFolder
+
+		-- SpotLight for visibility
+		local spotlight = Instance.new("SpotLight")
+		spotlight.Brightness = 2
+		spotlight.Range = 25
+		spotlight.Angle = 50
+		spotlight.Color = Color3.fromRGB(0, 255, 255)
+		spotlight.Face = Enum.NormalId.Front
+		spotlight.Parent = coopPortal
+
+		-- ProximityPrompt (ActionText / ObjectText shown in the prompt UI)
+		local prompt = Instance.new("ProximityPrompt")
+		prompt.Name = "CoopPortalPrompt"
+		prompt.ActionText = "Play Co-op"
+		prompt.ObjectText = "Co-op Mode"
+		prompt.MaxActivationDistance = 8
+		prompt.HoldDuration = 0
+		prompt.RequiresLineOfSight = false
+		prompt.Parent = coopPortal
+
+		-- Fire CoopQueue RemoteEvent when a player activates the prompt
+		prompt.Triggered:Connect(function(player: Player)
+			RemoteEvents.CoopQueue:FireClient(player)
+		end)
+	end)
+
+	if not success then
+		warn("[LobbyService] Failed to create Co-op portal: " .. tostring(err))
+	end
+end
+
+-- Co-op 포탈 Part 가져오기
+function LobbyService:GetCoopPortal(): BasePart?
+	if not lobbyFolder then
+		return nil
+	end
+	return lobbyFolder:FindFirstChild("CoopPortal") :: BasePart?
+end
+
 function LobbyService:_setupSpawnPoint()
 	-- 기존 SpawnLocation 모두 제거 (충돌 방지)
 	for _, child in workspace:GetChildren() do

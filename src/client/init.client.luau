@@ -107,6 +107,7 @@ local BattlePassController = require(script.Controllers.BattlePassController)
 local GhostController = require(script.Controllers.GhostController)
 local TeamController = require(script.Controllers.TeamController)
 local CoopController = require(script.Controllers.CoopController)
+local AnalyticsController = require(script.Controllers.AnalyticsController)
 
 -- 컨트롤러 인스턴스 생성
 local inputController = InputController.new()
@@ -152,6 +153,7 @@ local battlePassController = BattlePassController.new()
 local ghostController = GhostController.new()
 local teamController = TeamController.new()
 local coopController = CoopController.new()
+local analyticsController = AnalyticsController.new()
 
 -- 배틀패스 컨트롤러 초기화
 battlePassController:Init()
@@ -164,6 +166,9 @@ teamController:Init()
 
 -- 코업 컨트롤러 초기화
 coopController:Init()
+
+-- 애널리틱스 컨트롤러 초기화
+analyticsController:Init()
 
 -- Fever mode callbacks (speed boost + camera shake + BGM speed + P0: 카메라 줌인)
 feverController:OnFeverStart(function(speedBoost: number, duration: number)

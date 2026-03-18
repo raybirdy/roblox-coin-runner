@@ -48,6 +48,7 @@ local _GhostService = require(ServerScriptService.Server.Services.GhostService)
 -- TeamService is required here to call CheckWeeklyReset; Init is handled by GameManager
 local TeamService = require(ServerScriptService.Server.Services.TeamService)
 local CoopMatchService = require(ServerScriptService.Server.Services.CoopMatchService)
+local AnalyticsService = require(ServerScriptService.Server.Services.AnalyticsService)
 
 print("[Server] Game Constants Loaded")
 print("[Server] Remote Events Initialized")
@@ -107,11 +108,17 @@ print("[Server] LobbyNpcService Loaded")
 
 print("[Server] CoopMatchService Loaded")
 
+-- AnalyticsService 초기화
+AnalyticsService:Init()
+print("[Server] AnalyticsService Loaded")
+
 print("[Server] BattlePassService Loaded")
 
 -- 플레이어 참가 처리
 game.Players.PlayerAdded:Connect(function(player: Player)
 	print(`[Server] Player {player.Name} joined`)
+	-- Analytics: session start
+	AnalyticsService:Track(player, "session_start", { platform = "roblox" })
 
 	-- 플레이어 데이터 로드
 	local playerData = PlayerDataService:LoadPlayerData(player)
@@ -185,6 +192,8 @@ end)
 -- 플레이어 퇴장 처리
 game.Players.PlayerRemoving:Connect(function(player: Player)
 	print(`[Server] Player {player.Name} leaving`)
+	-- Analytics: session end
+	AnalyticsService:Track(player, "session_end")
 
 	-- 플레이어 데이터 저장
 	PlayerDataService:OnPlayerRemoving(player)

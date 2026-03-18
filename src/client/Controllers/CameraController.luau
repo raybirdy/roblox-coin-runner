@@ -115,6 +115,11 @@ end
 function CameraController:SetLobbyMode()
 	self._isGameMode = false
 	self._camera.CameraType = Enum.CameraType.Custom
+	-- Reset FOV to default
+	self._camera.FieldOfView = 70
+	self._coopModeActive = false
+	self._coopFovBonus = 0
+	self._targetZoomOffset = 0
 
 	-- 현재 캐릭터의 Humanoid를 CameraSubject로 설정
 	local currentCharacter = self._player.Character
@@ -132,6 +137,10 @@ end
 function CameraController:SetGameMode()
 	self._isGameMode = true
 	self._camera.CameraType = Enum.CameraType.Scriptable
+	-- Reset FOV to default (co-op mode sets its own FOV)
+	if not self._coopModeActive then
+		self._camera.FieldOfView = 70
+	end
 
 	-- 카메라 거리 재계산
 	self._cameraDistance = calculateAdaptiveDistance()
@@ -241,15 +250,28 @@ end
 
 -- Co-op: widen camera to show both lanes
 function CameraController:SetCoopMode(enabled: boolean)
+	local TweenService = game:GetService("TweenService")
+	local BASE_FOV = 70
+
 	if enabled then
-		-- Zoom out to show Z-offset lanes (roughly 8 units apart)
 		self._coopModeActive = true
-		-- Increase FOV by 15 degrees in co-op
 		self._coopFovBonus = 15
+		self._targetZoomOffset = 10
 	else
 		self._coopModeActive = false
 		self._coopFovBonus = 0
+		self._targetZoomOffset = 0
 	end
+
+	-- Smoothly tween FOV change
+	local targetFov = BASE_FOV + self._coopFovBonus
+	TweenService:Create(
+		self._camera,
+		TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+		{ FieldOfView = targetFov }
+	):Play()
+
+	print(`[CameraController] Co-op mode {enabled and "enabled" or "disabled"} (FOV={targetFov}, Zoom={self._targetZoomOffset})`)
 end
 
 -- 정리

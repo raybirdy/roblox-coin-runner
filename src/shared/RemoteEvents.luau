@@ -707,4 +707,11 @@ RemoteEvents.CoopPartnerState = getOrCreateRemoteEvent("CoopPartnerState")
 RemoteEvents.CoopGameOver = getOrCreateRemoteEvent("CoopGameOver")
 -- 파라미터: { reason: string, score: number, partnerScore: number }
 
+
+-- ==================== Analytics (v3) ====================
+
+-- 클라이언트 → 서버: Analytics 이벤트 전송
+RemoteEvents.AnalyticsTrack = getOrCreateRemoteEvent("AnalyticsTrack")
+-- 파라미터: (eventName: string, data: { [string]: any }?)
+
 return RemoteEvents
