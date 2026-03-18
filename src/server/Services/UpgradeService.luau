@@ -17,6 +17,11 @@ export type UpgradeBonuses = {
 	luckyCoinsBonus: number, -- fraction e.g. 0.05 = +5% silver chance
 	comboBufferSeconds: number, -- extra seconds added to COMBO_TIMEOUT
 	startBoostSeconds: number, -- speed boost duration at game start (seconds)
+	baseSpeedBonus: number,
+	baseJumpBonus: number,
+	baseLivesBonus: number,
+	skillCooldownReduction: number,
+	miniGameBonus: number,
 }
 
 -- Get upgrade definition by id
@@ -75,6 +80,11 @@ function UpgradeService:GetUpgradeBonuses(player: Player, PlayerDataService: any
 		luckyCoinsBonus = 0,
 		comboBufferSeconds = 0,
 		startBoostSeconds = 0,
+		baseSpeedBonus = 0,
+		baseJumpBonus = 0,
+		baseLivesBonus = 0,
+		skillCooldownReduction = 0,
+		miniGameBonus = 0,
 	}
 
 	for _, def in GameConstants.UPGRADES.LIST do
@@ -95,6 +105,16 @@ function UpgradeService:GetUpgradeBonuses(player: Player, PlayerDataService: any
 				bonuses.comboBufferSeconds = value
 			elseif def.id == "start_boost" then
 				bonuses.startBoostSeconds = value
+			elseif def.id == "base_speed" then
+				bonuses.baseSpeedBonus = value / 100
+			elseif def.id == "base_jump" then
+				bonuses.baseJumpBonus = value / 100
+			elseif def.id == "base_lives" then
+				bonuses.baseLivesBonus = value
+			elseif def.id == "skill_cooldown" then
+				bonuses.skillCooldownReduction = value / 100
+			elseif def.id == "mini_game_bonus" then
+				bonuses.miniGameBonus = value / 100
 			end
 		end
 	end

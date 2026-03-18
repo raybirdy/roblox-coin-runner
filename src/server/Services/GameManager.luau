@@ -69,6 +69,11 @@ type UpgradeBonuses = {
 	luckyCoinsBonus: number,
 	comboBufferSeconds: number,
 	startBoostSeconds: number,
+	baseSpeedBonus: number,
+	baseJumpBonus: number,
+	baseLivesBonus: number,
+	skillCooldownReduction: number,
+	miniGameBonus: number,
 }
 
 -- 플레이어별 게임 세션 데이터
@@ -304,8 +309,12 @@ RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { 
 		startPosition = startPosition,
 		score = 0,
 		coins = 0,
-		lives = GameConstants.LIFE.STARTING_LIVES + statBonuses.maxLives
-			+ (if PlayerDataService:HasVIP(player) then GameConstants.MONETIZATION.VIP_BENEFITS.extraLife else 0),
+		lives = math.min(
+			GameConstants.LIFE.STARTING_LIVES + statBonuses.maxLives
+				+ (if PlayerDataService:HasVIP(player) then GameConstants.MONETIZATION.VIP_BENEFITS.extraLife else 0)
+				+ upgBonuses1.baseLivesBonus,
+			GameConstants.LIFE.MAX_TOTAL or 8
+		),
 		reviveCount = 0,
 		startPowerups = validPowerups,
 		comboCount = 0,
@@ -490,6 +499,8 @@ RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { 
 		dailyEventTheme = DailyEventService:GetTodayTheme(),
 		startBoostSeconds = upgBonuses1.startBoostSeconds,
 		startZone = skipToZone, -- Zone Skip: 클라이언트 ZoneController 즉시 전환용
+		baseSpeedBonus = upgBonuses1.baseSpeedBonus,
+		baseJumpBonus = upgBonuses1.baseJumpBonus,
 	})
 
 	print(`[GameManager] Game started for {player.Name} via portal (zone {skipToZone})`)
@@ -716,8 +727,12 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 		startPosition = startPosition,
 		score = 0,
 		coins = 0,
-		lives = GameConstants.LIFE.STARTING_LIVES + statBonuses.maxLives
-			+ (if PlayerDataService:HasVIP(player) then GameConstants.MONETIZATION.VIP_BENEFITS.extraLife else 0),
+		lives = math.min(
+			GameConstants.LIFE.STARTING_LIVES + statBonuses.maxLives
+				+ (if PlayerDataService:HasVIP(player) then GameConstants.MONETIZATION.VIP_BENEFITS.extraLife else 0)
+				+ upgBonuses2.baseLivesBonus,
+			GameConstants.LIFE.MAX_TOTAL or 8
+		),
 		reviveCount = 0,
 		comboCount = 0,
 		lastCoinTime = 0,
@@ -863,6 +878,8 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 		asyncBattle = session.asyncBattleTarget,
 		dailyEventTheme = DailyEventService:GetTodayTheme(),
 		startBoostSeconds = upgBonuses2.startBoostSeconds,
+		baseSpeedBonus = upgBonuses2.baseSpeedBonus,
+		baseJumpBonus = upgBonuses2.baseJumpBonus,
 	})
 
 	print(`[GameManager] Game started for {player.Name}`)
@@ -1503,7 +1520,9 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 			session.lastFeverEndTime = os.clock()
 			session.isSuperFever = false
 			session.isMiniFever = false -- 피버 종료 시 미니 피버도 해제
-			session.feverCooldownEnd = os.clock() + GameConstants.FEVER.COOLDOWN
+			local cooldownReduction = 1 - (session.upgradeBonuses.skillCooldownReduction or 0)
+			local feverCooldown = math.max(GameConstants.FEVER.COOLDOWN * cooldownReduction, 8)
+			session.feverCooldownEnd = os.clock() + feverCooldown
 			session.comboCount = 0 -- 피버 종료 시 콤보 리셋
 			session.miniFeverTriggeredAt = 0 -- 피버 종료 시 미니 피버 카운터 초기화
 			RemoteEvents.FeverEnd:FireClient(player)

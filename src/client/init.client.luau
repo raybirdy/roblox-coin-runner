@@ -574,6 +574,9 @@ RemoteEvents.GameStart.OnClientEvent:Connect(function(data)
 			end
 		end
 
+		-- 업그레이드 보너스 적용 (base_speed / base_jump)
+		playerController:SetUpgradeBonuses(data.baseSpeedBonus or 0, data.baseJumpBonus or 0)
+
 		-- 게임 시작!
 		playerController:StartGame()
 		inputController:SetGameActive(true)
