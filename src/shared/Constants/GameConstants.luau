@@ -2236,6 +2236,10 @@ GameConstants.MINI_GAME = {
 	TRIGGER_INTERVAL = { MIN = 10, MAX = 15 }, -- chunks between minigames
 	DURATION = { MIN = 15, MAX = 30 },         -- seconds per minigame
 
+	-- Solo mode adjustments
+	SOLO_TRIGGER_INTERVAL = { MIN = 12, MAX = 18 }, -- slightly less frequent in solo
+	SOLO_REWARD_MULTIPLIER = 1.2, -- 20% more reward in solo (compensate no co-op bonus)
+
 	-- Game types
 	GAME_TYPES = {
 		{
@@ -2324,6 +2328,10 @@ GameConstants.ACTIVE_SKILLS = {
 GameConstants.RANDOM_EVENTS = {
 	TRIGGER_INTERVAL = 20, -- average seconds between events
 	TRIGGER_VARIANCE = 5,  -- +/- seconds randomness
+
+	-- Solo mode adjustments
+	SOLO_TRIGGER_INTERVAL = 25, -- less frequent in solo (more breathing room)
+	SOLO_EVENT_MAX_DURATION = 10, -- cap event duration in solo
 	EVENTS = {
 		{
 			id = "coin_rain",
@@ -2383,6 +2391,18 @@ GameConstants.DAILY_CHALLENGES = {
 		{ id = "coop_runs", desc = "Play %d Co-op runs", difficulty = "hard", targets = { 1, 2, 3 } },
 		{ id = "use_skill", desc = "Use active skill %d times", difficulty = "normal", targets = { 2, 3, 5 } },
 	},
+}
+
+-- Soft Launch Verification (v3)
+GameConstants.V3_VERSION = "3.0.0"
+GameConstants.V3_FEATURES = {
+	"tutorial_5step",
+	"permanent_growth",
+	"minigame_obstacle_rush",
+	"minigame_coin_storm",
+	"active_skills",
+	"random_events",
+	"daily_challenges",
 }
 
 return GameConstants
