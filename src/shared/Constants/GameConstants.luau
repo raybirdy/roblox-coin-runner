@@ -2137,4 +2137,55 @@ GameConstants.COOP = {
 	SESSION_ID_PREFIX = "coop_",
 }
 
+-- Mini Game System (v3)
+-- DRAFT: Subject to refinement in M1 implementation
+GameConstants.MINI_GAME = {
+	-- Trigger settings
+	TRIGGER_INTERVAL = { MIN = 10, MAX = 15 }, -- chunks between minigames
+	DURATION = { MIN = 15, MAX = 30 },         -- seconds per minigame
+
+	-- Game types
+	GAME_TYPES = {
+		{
+			id = "obstacle_rush",
+			displayName = "Obstacle Rush",
+			description = "Dodge obstacles at high speed!",
+			duration = 20,
+			rewardCoins = 50,
+		},
+		{
+			id = "coin_storm",
+			displayName = "Coin Storm",
+			description = "Collect falling coins!",
+			duration = 20,
+			rewardCoins = 80,
+		},
+	},
+
+	-- Rewards
+	REWARDS = {
+		CLEAR_BONUS_MULTIPLIER = 1.0,   -- base multiplier for minigame rewards
+		FAIL_REWARD = 0,                 -- no reward on failure
+		NO_LIFE_PENALTY = true,          -- no life deduction on failure
+	},
+
+	-- Performance
+	CHUNKS_TO_UNLOAD = 2,               -- unload rear chunks on minigame entry
+	TRANSITION_TWEEN_DURATION = 0.5,    -- seconds for enter/exit transition
+
+	-- Difficulty scaling
+	DIFFICULTY_SCALE = {
+		{ zone = 1, speedMultiplier = 1.0, obstacleCount = 5 },
+		{ zone = 2, speedMultiplier = 1.2, obstacleCount = 8 },
+		{ zone = 3, speedMultiplier = 1.5, obstacleCount = 12 },
+	},
+
+	-- Session state names (for GameSession.sessionState)
+	STATE = {
+		RUNNING = "running",
+		MINIGAME = "minigame",
+		PAUSED = "paused",
+	},
+}
+
 return GameConstants

@@ -199,6 +199,12 @@ local function processReceipt(
 		return Enum.ProductPurchaseDecision.PurchaseGranted
 	end
 
+	-- Guard: Block purchases with unregistered ProductId (productId = 0)
+	if receiptInfo.ProductId == 0 then
+		warn("[MonetizationService] Blocked purchase attempt for unregistered product (productId = 0)")
+		return Enum.ProductPurchaseDecision.NotProcessedYet
+	end
+
 	-- 상품 정보 확인
 	local product = getGemProductByDevProductId(receiptInfo.ProductId)
 	if not product then
