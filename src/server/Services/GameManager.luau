@@ -37,6 +37,7 @@ local TeamService = require(script.Parent.TeamService)
 local CoopMatchService = require(script.Parent.CoopMatchService)
 local MiniGameService = require(script.Parent.MiniGameService)
 local AnalyticsService = require(script.Parent.AnalyticsService)
+local ActiveSkillService = require(script.Parent.ActiveSkillService)
 local RateLimiter = require(ReplicatedStorage.Shared.Utils.RateLimiter)
 
 -- BattlePassService: Init registers the PlayerDataService dependency
@@ -169,9 +170,16 @@ type GameSession = {
 	activeMiniGameId: string?,
 	-- Analytics reference
 	_analyticsService: any?,
+	equippedActiveSkill: string?,
+	activeShieldHits: number,
+	_dashActive: boolean,
+	_dashSpeedMultiplier: number,
+	_magnetBurstActive: boolean,
+	_magnetBurstRadius: number,
 }
 
 local activeSessions: { [Player]: GameSession } = {}
+ActiveSkillService:SetActiveSessions(activeSessions)
 
 -- 로비 대기 중 소모형 파워업 (gameStart 전 구매 목록, player별)
 local pendingConsumables: { [Player]: { [string]: boolean } } = {}
@@ -380,6 +388,12 @@ RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { 
 		chunksSinceLastMiniGame = 0,
 		activeMiniGameId = nil,
 		_analyticsService = AnalyticsService,
+		equippedActiveSkill = (PlayerDataService:GetPlayerData(player) or {}).equippedActiveSkill,
+		activeShieldHits = 0,
+		_dashActive = false,
+		_dashSpeedMultiplier = 1.0,
+		_magnetBurstActive = false,
+		_magnetBurstRadius = 0,
 	}
 
 	-- 소모형 런 파워업 적용
@@ -804,6 +818,12 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 		chunksSinceLastMiniGame = 0,
 		activeMiniGameId = nil,
 		_analyticsService = AnalyticsService,
+		equippedActiveSkill = (PlayerDataService:GetPlayerData(player) or {}).equippedActiveSkill,
+		activeShieldHits = 0,
+		_dashActive = false,
+		_dashSpeedMultiplier = 1.0,
+		_magnetBurstActive = false,
+		_magnetBurstRadius = 0,
 	}
 
 	-- 소모형 런 파워업 적용
@@ -1658,6 +1678,10 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 				RemoteEvents.PowerupCollected:FireClient(player, {
 					powerupType = "ShieldUsed",
 				})
+			-- Active skill shield check
+			elseif ActiveSkillService:ConsumeShieldHit(session) then
+				-- Shield absorbed the hit
+				RemoteEvents.SkillActivated:FireClient(player, { skillId = "shield_absorb" })
 			else
 				-- 라이프 감소
 				session.lives -= 1

@@ -121,6 +121,7 @@ type PlayerData = {
 		totalCoopWins: number,
 		bestCoopScore: number,
 	},
+	equippedActiveSkill: string?,
 }
 
 local DEFAULT_DATA: PlayerData = {
@@ -223,6 +224,7 @@ local DEFAULT_DATA: PlayerData = {
 		totalCoopWins = 0,
 		bestCoopScore = 0,
 	},
+	equippedActiveSkill = nil,
 }
 
 -- 메모리 캐시 (활성 플레이어)
@@ -1032,6 +1034,7 @@ VALID_KEYS["unlockedRunSkills"] = true
 VALID_KEYS["equippedRunSkills"] = true
 VALID_KEYS["tutorialProgress"] = true
 VALID_KEYS["tutorialCompleted"] = true -- backward compatibility during load
+VALID_KEYS["equippedActiveSkill"] = true
 
 -- 유틸리티: 기본값 병합
 function PlayerDataService:_mergeWithDefaults(data: any): PlayerData

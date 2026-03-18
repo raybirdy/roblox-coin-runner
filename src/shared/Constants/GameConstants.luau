@@ -2280,4 +2280,44 @@ GameConstants.MINI_GAME = {
 	},
 }
 
+-- Active Skill System (v3)
+GameConstants.ACTIVE_SKILLS = {
+	MAX_EQUIPPED = 1,
+	SKILLS = {
+		dash = {
+			id = "dash",
+			displayName = "Dash",
+			emoji = "💨",
+			desc = "Burst forward at 3x speed for 0.5s",
+			cooldown = 12,
+			duration = 0.5,
+			speedMultiplier = 3.0,
+			unlockUpgrade = "base_speed",
+			unlockLevel = 3,
+		},
+		shield = {
+			id = "shield",
+			displayName = "Shield",
+			emoji = "🛡️",
+			desc = "Block 2 hits for 5 seconds",
+			cooldown = 20,
+			duration = 5,
+			shieldHits = 2,
+			unlockUpgrade = "base_lives",
+			unlockLevel = 3,
+		},
+		active_magnet_burst = {
+			id = "active_magnet_burst",
+			displayName = "Magnet Burst",
+			emoji = "🧲",
+			desc = "Pull all nearby coins instantly",
+			cooldown = 15,
+			duration = 0,
+			radius = 35,
+			unlockUpgrade = "skill_cooldown",
+			unlockLevel = 5,
+		},
+	},
+}
+
 return GameConstants
