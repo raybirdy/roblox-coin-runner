@@ -17,9 +17,14 @@ local _gameModules: { [string]: any } = {}
 local function getGameModule(gameTypeId: string): any?
 	if not _gameModules[gameTypeId] then
 		local ok, mod = pcall(function()
-			return require(ServerScriptService.Server.Services.MiniGames.ObstacleRush)
+			if gameTypeId == "obstacle_rush" then
+				return require(ServerScriptService.Server.Services.MiniGames.ObstacleRush)
+			elseif gameTypeId == "coin_storm" then
+				return require(ServerScriptService.Server.Services.MiniGames.CoinStorm)
+			end
+			return nil
 		end)
-		if ok and gameTypeId == "obstacle_rush" then
+		if ok and mod then
 			_gameModules[gameTypeId] = mod
 		end
 	end
@@ -29,23 +34,41 @@ end
 -- Track co-op minigame results for synchronization
 local _coopResults: { [string]: { [Player]: { success: boolean, score: number } } } = {}
 
--- Select a game type (for now just obstacle_rush, coin_storm in Sprint 4)
-local _lastGameType: string? = nil
+-- Select a game type, preventing 3 consecutive same types
+local _lastGameTypes: { string } = {}
 
 local function selectGameType(): any
 	local types = GameConstants.MINI_GAME.GAME_TYPES
-	-- For MVP with 1 type, just return the first
-	if #types == 1 then
+	if #types <= 1 then
 		return types[1]
 	end
-	-- Avoid repeating same type 3 times
+
+	-- Filter out types that appeared 2 times consecutively
+	local available = {}
 	for _, gt in types do
-		if gt.id ~= _lastGameType then
-			_lastGameType = gt.id
-			return gt
+		local consecutiveCount = 0
+		for i = #_lastGameTypes, math.max(1, #_lastGameTypes - 1), -1 do
+			if _lastGameTypes[i] == gt.id then
+				consecutiveCount += 1
+			else
+				break
+			end
+		end
+		if consecutiveCount < 2 then
+			table.insert(available, gt)
 		end
 	end
-	return types[1]
+
+	if #available == 0 then
+		available = types
+	end
+
+	local selected = available[math.random(1, #available)]
+	table.insert(_lastGameTypes, selected.id)
+	if #_lastGameTypes > 10 then
+		table.remove(_lastGameTypes, 1)
+	end
+	return selected
 end
 
 -- Check if minigame should trigger
@@ -334,10 +357,13 @@ function MiniGameService:SetupRemoteEvents()
 		if not RateLimiter.Check(player, "MiniGameHitReport", 5) then
 			return
 		end
-		-- Forward to active minigame module
-		local mod = getGameModule("obstacle_rush")
-		if mod and mod.OnHitReport then
-			mod:OnHitReport(player, data)
+		-- Route to the active minigame module for this player
+		-- Check all sessions to find the player's active minigame
+		for _, modName in { "obstacle_rush", "coin_storm" } do
+			local mod = getGameModule(modName)
+			if mod and mod.OnHitReport then
+				mod:OnHitReport(player, data)
+			end
 		end
 	end)
 

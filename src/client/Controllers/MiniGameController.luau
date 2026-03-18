@@ -21,6 +21,8 @@ function MiniGameController.new()
 	self._hitsRemaining = 3
 	self._timeRemaining = 0
 	self._timerThread = nil :: thread?
+	self._coinsCollected = 0
+	self._gameTypeId = nil :: string?
 	return self
 end
 
@@ -58,6 +60,8 @@ function MiniGameController:_onMiniGameStart(data: any)
 	self._hitsRemaining = 3
 	self._duration = data.duration or 20
 	self._timeRemaining = data.duration or 20
+	self._gameTypeId = data.gameTypeId
+	self._coinsCollected = 0
 
 	-- Create minigame UI
 	self:_createUI()
@@ -110,10 +114,13 @@ function MiniGameController:_onObstacleSpawn(data: any)
 	local direction = data.direction or "left"
 	local speed = data.speed or 1.0
 
+	-- Determine if this is a coin (CoinStorm) or obstacle (ObstacleRush)
+	local isCoin = data.isCoin == true
+
 	-- Create obstacle warning indicator
 	local indicator = Instance.new("Frame")
 	indicator.Name = "Obstacle_" .. (data.obstacleIndex or 0)
-	indicator.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+	indicator.BackgroundColor3 = if isCoin then Color3.fromRGB(255, 215, 0) else Color3.fromRGB(255, 50, 50)
 	indicator.BackgroundTransparency = 0.3
 	indicator.Parent = self._gui
 
@@ -124,7 +131,7 @@ function MiniGameController:_onObstacleSpawn(data: any)
 	local warningLabel = Instance.new("TextLabel")
 	warningLabel.Size = UDim2.fromScale(1, 1)
 	warningLabel.BackgroundTransparency = 1
-	warningLabel.Text = "!"
+	warningLabel.Text = if isCoin then "$" else "!"
 	warningLabel.TextSize = 28
 	warningLabel.Font = Enum.Font.FredokaOne
 	warningLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -169,20 +176,33 @@ function MiniGameController:_onObstacleSpawn(data: any)
 	dodgeButton.Activated:Connect(function()
 		if not dodged and self._isActive then
 			dodged = true
-			-- Report successful dodge to server
 			RemoteEvents.MiniGameHitReport:FireServer({
 				obstacleIndex = data.obstacleIndex,
 			})
-			-- Visual feedback: obstacle fades
-			TweenService:Create(indicator, TweenInfo.new(0.2), {
-				BackgroundTransparency = 1,
-			}):Play()
+			if isCoin then
+				-- Coin collection feedback
+				self._coinsCollected += 1
+				self:_showCollectFeedback(indicator)
+			else
+				-- Obstacle dodge feedback
+				TweenService:Create(indicator, TweenInfo.new(0.2), {
+					BackgroundTransparency = 1,
+				}):Play()
+			end
 		end
 	end)
 end
 
 -- Hit notification
 function MiniGameController:_onHit(data: any)
+	if data.isCollection then
+		-- CoinStorm: update collection count display
+		self._coinsCollected = data.hitsRemaining or self._coinsCollected
+		self:_updateCollectionUI()
+		return
+	end
+
+	-- ObstacleRush: existing hit logic
 	self._hitsRemaining = data.hitsRemaining or 0
 	self:_updateHeartsUI()
 
@@ -235,6 +255,7 @@ function MiniGameController:_createUI()
 	heartsFrame.Size = UDim2.new(0, 120, 0, 40)
 	heartsFrame.Position = UDim2.new(1, -140, 0, 35)
 	heartsFrame.BackgroundTransparency = 1
+	heartsFrame.Visible = (self._gameTypeId ~= "coin_storm")
 	heartsFrame.Parent = gui
 
 	for i = 1, 3 do
@@ -249,7 +270,25 @@ function MiniGameController:_createUI()
 		heart.Parent = heartsFrame
 	end
 
-	-- Border glow (neon red)
+	-- Coin collection counter (CoinStorm)
+	local coinCounter = Instance.new("TextLabel")
+	coinCounter.Name = "CoinCounter"
+	coinCounter.Size = UDim2.new(0, 150, 0, 40)
+	coinCounter.Position = UDim2.new(0.5, -75, 0, 60)
+	coinCounter.BackgroundColor3 = Color3.fromRGB(255, 215, 0)
+	coinCounter.BackgroundTransparency = 0.2
+	coinCounter.Text = "$ 0"
+	coinCounter.TextSize = 24
+	coinCounter.Font = Enum.Font.FredokaOne
+	coinCounter.TextColor3 = Color3.fromRGB(80, 50, 0)
+	coinCounter.Visible = (self._gameTypeId == "coin_storm")
+	coinCounter.Parent = gui
+
+	local counterCorner = Instance.new("UICorner")
+	counterCorner.CornerRadius = UDim.new(0, 10)
+	counterCorner.Parent = coinCounter
+
+	-- Border glow (neon red or gold for CoinStorm)
 	local border = Instance.new("Frame")
 	border.Name = "MiniGameBorder"
 	border.Size = UDim2.fromScale(1, 1)
@@ -257,7 +296,11 @@ function MiniGameController:_createUI()
 	border.Parent = gui
 
 	local borderStroke = Instance.new("UIStroke")
-	borderStroke.Color = Color3.fromRGB(255, 50, 50)
+	if self._gameTypeId == "coin_storm" then
+		borderStroke.Color = Color3.fromRGB(255, 215, 0) -- Gold border for CoinStorm
+	else
+		borderStroke.Color = Color3.fromRGB(255, 50, 50) -- Red border for ObstacleRush
+	end
 	borderStroke.Thickness = 4
 	borderStroke.Transparency = 0.5
 	borderStroke.Parent = border
@@ -292,6 +335,34 @@ function MiniGameController:_updateTimerBar()
 		else
 			timerFill.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
 		end
+	end
+end
+
+-- Coin collection visual feedback
+function MiniGameController:_showCollectFeedback(indicator: Frame)
+	if not indicator.Parent then return end
+
+	-- Gold flash + size bounce
+	TweenService:Create(indicator, TweenInfo.new(0.15), {
+		BackgroundColor3 = Color3.fromRGB(255, 255, 100),
+		Size = indicator.Size + UDim2.new(0, 10, 0, 10),
+	}):Play()
+
+	task.delay(0.15, function()
+		if indicator.Parent then
+			TweenService:Create(indicator, TweenInfo.new(0.2), {
+				BackgroundTransparency = 1,
+			}):Play()
+		end
+	end)
+end
+
+-- Update collection counter display
+function MiniGameController:_updateCollectionUI()
+	if not self._gui then return end
+	local counter = self._gui:FindFirstChild("CoinCounter")
+	if counter then
+		counter.Text = "$ " .. self._coinsCollected
 	end
 end
 
@@ -372,6 +443,8 @@ function MiniGameController:_cleanup()
 	end
 	self._isActive = false
 	self._hitsRemaining = 3
+	self._coinsCollected = 0
+	self._gameTypeId = nil
 end
 
 function MiniGameController:Destroy()
