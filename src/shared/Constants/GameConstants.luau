@@ -2320,4 +2320,69 @@ GameConstants.ACTIVE_SKILLS = {
 	},
 }
 
+-- Random Event System (v3)
+GameConstants.RANDOM_EVENTS = {
+	TRIGGER_INTERVAL = 20, -- average seconds between events
+	TRIGGER_VARIANCE = 5,  -- +/- seconds randomness
+	EVENTS = {
+		{
+			id = "coin_rain",
+			displayName = "Coin Rain",
+			emoji = "🌧️",
+			duration = 10,
+			effect = "double_coin_spawn",
+		},
+		{
+			id = "speed_shift",
+			displayName = "Speed Shift",
+			emoji = "⚡",
+			duration = 8,
+			effect = "speed_change",
+			speedMultiplier = 1.5,
+		},
+		{
+			id = "giant_mode",
+			displayName = "Giant Mode",
+			emoji = "🦖",
+			duration = 10,
+			effect = "scale_change",
+			scaleFactor = 1.8,
+		},
+		{
+			id = "gravity_flip",
+			displayName = "Low Gravity",
+			emoji = "🌙",
+			duration = 8,
+			effect = "gravity_change",
+			gravityMultiplier = 0.4,
+		},
+		{
+			id = "fog",
+			displayName = "Fog",
+			emoji = "🌫️",
+			duration = 12,
+			effect = "visibility_change",
+			fogEnd = 80,
+		},
+	},
+}
+
+-- Daily Challenge System (v3)
+GameConstants.DAILY_CHALLENGES = {
+	CHALLENGES_PER_DAY = 3,
+	RESET_HOUR_UTC = 0,
+	XP_REWARDS = { easy = 20, normal = 40, hard = 80 },
+	CHALLENGE_POOL = {
+		{ id = "collect_coins", desc = "Collect %d coins", difficulty = "easy", targets = { 100, 200, 300 } },
+		{ id = "dodge_obstacles", desc = "Dodge %d obstacles", difficulty = "easy", targets = { 20, 30, 50 } },
+		{ id = "reach_combo", desc = "Reach %dx combo", difficulty = "normal", targets = { 10, 15, 20 } },
+		{ id = "play_runs", desc = "Complete %d runs", difficulty = "easy", targets = { 3, 5, 7 } },
+		{ id = "fever_count", desc = "Activate fever %d times", difficulty = "normal", targets = { 2, 3, 5 } },
+		{ id = "minigame_clear", desc = "Clear %d minigames", difficulty = "normal", targets = { 1, 2, 3 } },
+		{ id = "score_total", desc = "Score %d total points", difficulty = "hard", targets = { 500, 1000, 2000 } },
+		{ id = "coop_runs", desc = "Play %d Co-op runs", difficulty = "hard", targets = { 1, 2, 3 } },
+		{ id = "use_skill", desc = "Use active skill %d times", difficulty = "normal", targets = { 2, 3, 5 } },
+	},
+}
+
 return GameConstants

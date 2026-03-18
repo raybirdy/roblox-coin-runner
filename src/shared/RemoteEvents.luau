@@ -765,4 +765,30 @@ RemoteEvents.ActiveSkillEquip = getOrCreateRemoteEvent("ActiveSkillEquip")
 RemoteEvents.ActiveSkillData = getOrCreateRemoteEvent("ActiveSkillData")
 -- 파라미터: { unlockedSkills: { string }, equippedSkill: string? }
 
+
+-- ==================== 랜덤 이벤트 (v3) ====================
+
+-- 랜덤 이벤트 시작 (서버 → 클라이언트)
+RemoteEvents.RandomEventStart = getOrCreateRemoteEvent("RandomEventStart")
+-- 파라미터: { eventId: string, duration: number, eventConfig: table }
+
+-- 랜덤 이벤트 종료 (서버 → 클라이언트)
+RemoteEvents.RandomEventEnd = getOrCreateRemoteEvent("RandomEventEnd")
+-- 파라미터: { eventId: string }
+
+
+-- ==================== 일일 도전 과제 (v3) ====================
+
+-- 도전 과제 데이터 (서버 → 클라이언트)
+RemoteEvents.DailyChallengeData = getOrCreateRemoteEvent("DailyChallengeData")
+-- 파라미터: { challenges: { { id, desc, target, progress, completed, difficulty } }, resetTime: number }
+
+-- 도전 과제 진행도 업데이트 (서버 → 클라이언트)
+RemoteEvents.DailyChallengeProgress = getOrCreateRemoteEvent("DailyChallengeProgress")
+-- 파라미터: { challengeIndex: number, progress: number, completed: boolean }
+
+-- 도전 과제 보상 수령 (클라이언트 → 서버)
+RemoteEvents.DailyChallengeClaim = getOrCreateRemoteEvent("DailyChallengeClaim")
+-- 파라미터: { challengeIndex: number }
+
 return RemoteEvents

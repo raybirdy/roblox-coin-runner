@@ -128,6 +128,17 @@ ActiveSkillService:SetupRemoteEvents(PlayerDataService, AnalyticsService)
 ActiveSkillService:Init()
 print("[Server] ActiveSkillService Loaded")
 
+-- RandomEventService 초기화
+local RandomEventService = require(ServerScriptService.Server.Services.RandomEventService)
+RandomEventService:Init()
+print("[Server] RandomEventService Loaded")
+
+-- DailyChallengeService 초기화
+local DailyChallengeService = require(ServerScriptService.Server.Services.DailyChallengeService)
+DailyChallengeService:SetupRemoteEvents(PlayerDataService, BattlePassService)
+DailyChallengeService:Init()
+print("[Server] DailyChallengeService Loaded")
+
 print("[Server] BattlePassService Loaded")
 
 -- 플레이어 참가 처리
@@ -176,6 +187,9 @@ game.Players.PlayerAdded:Connect(function(player: Player)
 
 		-- 액티브 스킬 데이터 전송
 		ActiveSkillService:SendSkillData(player, PlayerDataService)
+
+		-- 일일 도전 과제 데이터 전송
+		DailyChallengeService:SendChallengeData(player)
 
 		-- 초대 보상 체크
 		ReferralService:OnPlayerJoin(player)
@@ -226,6 +240,12 @@ game.Players.PlayerRemoving:Connect(function(player: Player)
 
 	-- 액티브 스킬 정리
 	ActiveSkillService:OnPlayerRemoving(player)
+
+	-- 랜덤 이벤트 정리
+	RandomEventService:OnPlayerRemoving(player)
+
+	-- 일일 도전 과제 정리
+	DailyChallengeService:OnPlayerRemoving(player)
 
 	-- 플레이어 데이터 저장
 	PlayerDataService:OnPlayerRemoving(player)

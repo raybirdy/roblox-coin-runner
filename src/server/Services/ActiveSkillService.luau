@@ -8,6 +8,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local GameConstants = require(ReplicatedStorage.Shared.Constants.GameConstants)
 local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)
 local RateLimiter = require(ReplicatedStorage.Shared.Utils.RateLimiter)
+local DailyChallengeService = require(script.Parent.DailyChallengeService)
 
 local ActiveSkillService = {}
 
@@ -106,6 +107,9 @@ function ActiveSkillService:ActivateSkill(player: Player, skillId: string, sessi
 
 	-- Apply skill effect
 	self:_applyEffect(player, skillId, skillConfig, session)
+
+	-- 일일 도전 과제: 액티브 스킬 사용
+	DailyChallengeService:UpdateProgress(player, "use_skill", 1)
 
 	-- Notify client
 	RemoteEvents.SkillActivated:FireClient(player, {

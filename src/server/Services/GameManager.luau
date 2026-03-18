@@ -38,6 +38,8 @@ local CoopMatchService = require(script.Parent.CoopMatchService)
 local MiniGameService = require(script.Parent.MiniGameService)
 local AnalyticsService = require(script.Parent.AnalyticsService)
 local ActiveSkillService = require(script.Parent.ActiveSkillService)
+local RandomEventService = require(script.Parent.RandomEventService)
+local DailyChallengeService = require(script.Parent.DailyChallengeService)
 local RateLimiter = require(ReplicatedStorage.Shared.Utils.RateLimiter)
 
 -- BattlePassService: Init registers the PlayerDataService dependency
@@ -1089,6 +1091,13 @@ function GameManager.EndGame(player: Player)
 		DailyEventService:PersistProgress(player, playerDataForEvent, PlayerDataService)
 	end
 
+	-- 일일 도전 과제: 런 완료 및 점수 집계
+	DailyChallengeService:UpdateProgress(player, "play_runs", 1)
+	DailyChallengeService:UpdateProgress(player, "score_total", math.floor(finalScore))
+	if session.coopSessionId then
+		DailyChallengeService:UpdateProgress(player, "coop_runs", 1)
+	end
+
 	-- 시나리오 퀘스트 진행도 업데이트
 	local sessionDuration = math.floor(os.clock() - session.startTime)
 	local wasNoHit = session.lastHitDistance == 0 and finalScore > 0
@@ -1257,8 +1266,12 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 
 		-- Skip runner logic during minigame
 		if session.sessionState == "minigame" then
+			RandomEventService:ForceEnd(player, session)
 			continue
 		end
+
+		-- Random event update
+		RandomEventService:Update(player, session, deltaTime)
 
 		-- 플레이어 캐릭터 확인
 		local character = player.Character
@@ -1444,6 +1457,8 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 			DailyEventService:OnCoinsCollected(player, #collectedCoins)
 			-- 런 XP: 코인 1개당 +1 XP
 			RunSkillService:AddXP(player, #collectedCoins * GameConstants.RUN_PROGRESSION.XP_PER_COIN)
+			-- 일일 도전 과제: 코인 수집
+			DailyChallengeService:UpdateProgress(player, "collect_coins", #collectedCoins)
 		end
 
 		-- Phase B: 거인 코인 수집 체크
@@ -1509,6 +1524,8 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 			then
 				session.isFever = true
 				session.feverCount += 1 -- Phase B: 피버 횟수 추적
+				-- 일일 도전 과제: 피버 발동
+				DailyChallengeService:UpdateProgress(player, "fever_count", 1)
 
 				-- 슈퍼 피버 체인 체크: 직전 피버 종료로부터 CHAIN_WINDOW 이내 재발동
 				local isChain = session.lastFeverEndTime > 0
@@ -1545,6 +1562,9 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 
 			-- 콤보 미션 진행도 업데이트
 			ProgressionService:OnComboReached(player, session.comboCount)
+
+			-- 일일 도전 과제: 콤보 달성 (최고값 기준)
+			DailyChallengeService:SetProgressIfHigher(player, "reach_combo", session.comboCount)
 
 			-- 클라이언트에 콤보 상태 알림
 			RemoteEvents.ComboUpdate:FireClient(player, {
@@ -1785,6 +1805,8 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 			session.nearMissedObstacles[obstaclePart] = true
 			session.consecutiveHits = 0 -- 회피 성공 시 연속 피격 리셋
 			session.nearMissCount += 1 -- Phase B: 니어미스 횟수 추적
+			-- 일일 도전 과제: 장애물 회피
+			DailyChallengeService:UpdateProgress(player, "dodge_obstacles", 1)
 
 			-- 체인 업데이트
 			local now = os.clock()

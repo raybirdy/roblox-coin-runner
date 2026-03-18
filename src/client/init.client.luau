@@ -110,6 +110,8 @@ local CoopController = require(script.Controllers.CoopController)
 local AnalyticsController = require(script.Controllers.AnalyticsController)
 local MiniGameController = require(script.Controllers.MiniGameController)
 local ActiveSkillController = require(script.Controllers.ActiveSkillController)
+local RandomEventController = require(script.Controllers.RandomEventController)
+local DailyChallengeController = require(script.Controllers.DailyChallengeController)
 
 -- 컨트롤러 인스턴스 생성
 local inputController = InputController.new()
@@ -158,6 +160,8 @@ local coopController = CoopController.new()
 local analyticsController = AnalyticsController.new()
 local miniGameController = MiniGameController.new()
 local activeSkillController = ActiveSkillController.new()
+local randomEventController = RandomEventController.new()
+local dailyChallengeController = DailyChallengeController.new()
 
 -- 배틀패스 컨트롤러 초기화
 battlePassController:Init()
@@ -179,6 +183,12 @@ miniGameController:Init()
 
 -- 액티브 스킬 컨트롤러 초기화
 activeSkillController:Init()
+
+-- 랜덤 이벤트 컨트롤러 초기화
+randomEventController:Init()
+
+-- 일일 도전 과제 컨트롤러 초기화
+dailyChallengeController:Init()
 
 -- Fever mode callbacks (speed boost + camera shake + BGM speed + P0: 카메라 줌인)
 feverController:OnFeverStart(function(speedBoost: number, duration: number)

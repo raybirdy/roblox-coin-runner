@@ -8,6 +8,7 @@ local ServerScriptService = game:GetService("ServerScriptService")
 local GameConstants = require(ReplicatedStorage.Shared.Constants.GameConstants)
 local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)
 local RateLimiter = require(ReplicatedStorage.Shared.Utils.RateLimiter)
+local DailyChallengeService = require(script.Parent.DailyChallengeService)
 
 local MiniGameService = {}
 
@@ -235,6 +236,8 @@ function MiniGameService:EndForPlayer(player: Player, session: any, result: { su
 			reward = math.floor(reward)
 			session.coins += reward
 		end
+		-- 일일 도전 과제: 미니게임 클리어
+		DailyChallengeService:UpdateProgress(player, "minigame_clear", 1)
 	end
 	-- AC-3-5: No life penalty on failure (NO_LIFE_PENALTY = true)
 
