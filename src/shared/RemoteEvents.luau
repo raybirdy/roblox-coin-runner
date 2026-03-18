@@ -728,4 +728,27 @@ RemoteEvents.CoopGameOver = getOrCreateRemoteEvent("CoopGameOver")
 RemoteEvents.AnalyticsTrack = getOrCreateRemoteEvent("AnalyticsTrack")
 -- 파라미터: (eventName: string, data: { [string]: any }?)
 
+
+-- ==================== 미니게임 (v3) ====================
+
+-- 미니게임 시작 (서버 → 클라이언트)
+RemoteEvents.MiniGameStart = getOrCreateRemoteEvent("MiniGameStart")
+-- 파라미터: { gameTypeId: string, duration: number, difficulty: table }
+
+-- 미니게임 종료 (서버 → 클라이언트)
+RemoteEvents.MiniGameEnd = getOrCreateRemoteEvent("MiniGameEnd")
+-- 파라미터: { success: boolean, reward: number, gameTypeId: string }
+
+-- 미니게임 장애물 스폰 (서버 → 클라이언트)
+RemoteEvents.MiniGameObstacle = getOrCreateRemoteEvent("MiniGameObstacle")
+-- 파라미터: { obstacleIndex: number, position: Vector3, direction: string }
+
+-- 미니게임 피격 (서버 → 클라이언트)
+RemoteEvents.MiniGameHit = getOrCreateRemoteEvent("MiniGameHit")
+-- 파라미터: { hitsRemaining: number }
+
+-- 미니게임 피격 보고 (클라이언트 → 서버)
+RemoteEvents.MiniGameHitReport = getOrCreateRemoteEvent("MiniGameHitReport")
+-- 파라미터: { obstacleIndex: number }
+
 return RemoteEvents

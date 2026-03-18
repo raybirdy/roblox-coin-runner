@@ -117,6 +117,10 @@ print("[Server] AnalyticsService Loaded")
 TutorialService:SetupRemoteEvents(PlayerDataService, AnalyticsService)
 print("[Server] TutorialService v3 Loaded")
 
+-- MiniGameService 초기화
+local MiniGameService = require(ServerScriptService.Server.Services.MiniGameService)
+MiniGameService:Init()
+print("[Server] MiniGameService Loaded")
 
 print("[Server] BattlePassService Loaded")
 
