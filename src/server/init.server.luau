@@ -122,6 +122,12 @@ local MiniGameService = require(ServerScriptService.Server.Services.MiniGameServ
 MiniGameService:Init()
 print("[Server] MiniGameService Loaded")
 
+-- ActiveSkillService 초기화
+local ActiveSkillService = require(ServerScriptService.Server.Services.ActiveSkillService)
+ActiveSkillService:SetupRemoteEvents(PlayerDataService, AnalyticsService)
+ActiveSkillService:Init()
+print("[Server] ActiveSkillService Loaded")
+
 print("[Server] BattlePassService Loaded")
 
 -- 플레이어 참가 처리
@@ -167,6 +173,9 @@ game.Players.PlayerAdded:Connect(function(player: Player)
 
 		-- 런 스킬 슬롯 데이터 전송
 		RunSkillService:SendPreRunSkillData(player, PlayerDataService)
+
+		-- 액티브 스킬 데이터 전송
+		ActiveSkillService:SendSkillData(player, PlayerDataService)
 
 		-- 초대 보상 체크
 		ReferralService:OnPlayerJoin(player)
@@ -214,6 +223,9 @@ game.Players.PlayerRemoving:Connect(function(player: Player)
 
 	-- 튜토리얼 상태 정리
 	TutorialService:OnPlayerRemoving(player)
+
+	-- 액티브 스킬 정리
+	ActiveSkillService:OnPlayerRemoving(player)
 
 	-- 플레이어 데이터 저장
 	PlayerDataService:OnPlayerRemoving(player)

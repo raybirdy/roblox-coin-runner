@@ -751,4 +751,18 @@ RemoteEvents.MiniGameHit = getOrCreateRemoteEvent("MiniGameHit")
 RemoteEvents.MiniGameHitReport = getOrCreateRemoteEvent("MiniGameHitReport")
 -- 파라미터: { obstacleIndex: number }
 
+-- ==================== 액티브 스킬 (v3) ====================
+
+-- 액티브 스킬 쿨다운 업데이트 (서버 → 클라이언트)
+RemoteEvents.ActiveSkillCooldownUpdate = getOrCreateRemoteEvent("ActiveSkillCooldownUpdate")
+-- 파라미터: { skillId: string, remainingCooldown: number, totalCooldown: number }
+
+-- 액티브 스킬 장착 요청 (클라이언트 → 서버)
+RemoteEvents.ActiveSkillEquip = getOrCreateRemoteEvent("ActiveSkillEquip")
+-- 파라미터: { skillId: string }
+
+-- 액티브 스킬 데이터 (서버 → 클라이언트)
+RemoteEvents.ActiveSkillData = getOrCreateRemoteEvent("ActiveSkillData")
+-- 파라미터: { unlockedSkills: { string }, equippedSkill: string? }
+
 return RemoteEvents

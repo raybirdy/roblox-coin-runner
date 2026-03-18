@@ -109,6 +109,7 @@ local TeamController = require(script.Controllers.TeamController)
 local CoopController = require(script.Controllers.CoopController)
 local AnalyticsController = require(script.Controllers.AnalyticsController)
 local MiniGameController = require(script.Controllers.MiniGameController)
+local ActiveSkillController = require(script.Controllers.ActiveSkillController)
 
 -- 컨트롤러 인스턴스 생성
 local inputController = InputController.new()
@@ -156,6 +157,7 @@ local teamController = TeamController.new()
 local coopController = CoopController.new()
 local analyticsController = AnalyticsController.new()
 local miniGameController = MiniGameController.new()
+local activeSkillController = ActiveSkillController.new()
 
 -- 배틀패스 컨트롤러 초기화
 battlePassController:Init()
@@ -174,6 +176,9 @@ analyticsController:Init()
 
 -- 미니게임 컨트롤러 초기화
 miniGameController:Init()
+
+-- 액티브 스킬 컨트롤러 초기화
+activeSkillController:Init()
 
 -- Fever mode callbacks (speed boost + camera shake + BGM speed + P0: 카메라 줌인)
 feverController:OnFeverStart(function(speedBoost: number, duration: number)
@@ -591,6 +596,7 @@ RemoteEvents.GameStart.OnClientEvent:Connect(function(data)
 		dailyEventController:StartGame()
 		petController:StartGame()
 		objectiveHudController:DisableReroll() -- 카운트다운 후 리롤 잠금
+		activeSkillController:OnGameStart()
 
 		-- 고스트 레이싱: 런 시작 알림 (친구 고스트 요청 + 로컬 기록 시작)
 		ghostController:OnRunStart()
@@ -700,6 +706,7 @@ RemoteEvents.GameOver.OnClientEvent:Connect(function(data)
 	-- 고스트 레이싱: 런 종료 알림
 	ghostController:OnRunEnd()
 	cameraController:SetCoopMode(false)
+	activeSkillController:OnGameEnd()
 
 	-- 부활 가능한 경우 게임 일시정지만 (완전 종료 아님)
 	if data.canRevive then
