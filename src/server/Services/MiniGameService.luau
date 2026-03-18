@@ -79,6 +79,11 @@ function MiniGameService:StartForPlayer(player: Player, session: any, gameType: 
 	session.pauseStartTime = os.clock()
 	session.activeMiniGameId = selectedType.id
 
+	-- Unload rear chunks for memory management
+	if session.chunkService then
+		session.chunkService:UnloadRearChunks(GameConstants.MINI_GAME.CHUNKS_TO_UNLOAD)
+	end
+
 	-- Get difficulty based on zone
 	local zoneIndex = session.currentZoneIndex or 1
 	local difficulty = nil
@@ -210,6 +215,9 @@ function MiniGameService:EndForPlayer(player: Player, session: any, result: { su
 	end
 	-- AC-3-5: No life penalty on failure (NO_LIFE_PENALTY = true)
 
+	-- Save gameTypeId BEFORE clearing it
+	local gameTypeId = session.activeMiniGameId or "unknown"
+
 	-- Restore session state
 	session.sessionState = GameConstants.MINI_GAME.STATE.RUNNING
 	session.pauseStartTime = 0
@@ -217,7 +225,7 @@ function MiniGameService:EndForPlayer(player: Player, session: any, result: { su
 	session.chunksSinceLastMiniGame = 0
 
 	-- Cleanup minigame module
-	local mod = getGameModule(result.success and "obstacle_rush" or "obstacle_rush") -- TODO: track actual type
+	local mod = getGameModule(gameTypeId)
 	if mod then
 		mod:Cleanup(player)
 	end
@@ -226,14 +234,14 @@ function MiniGameService:EndForPlayer(player: Player, session: any, result: { su
 	RemoteEvents.MiniGameEnd:FireClient(player, {
 		success = result.success,
 		reward = reward,
-		gameTypeId = session.activeMiniGameId or "obstacle_rush",
+		gameTypeId = gameTypeId,
 	})
 
 	-- Analytics
 	local AnalyticsService = session._analyticsService
 	if AnalyticsService then
 		AnalyticsService:Track(player, "minigame_end", {
-			gameTypeId = session.activeMiniGameId or "obstacle_rush",
+			gameTypeId = gameTypeId,
 			success = result.success,
 			reward = reward,
 		})
@@ -244,6 +252,11 @@ end
 
 -- Shift all time-based fields by pauseDelta to protect from minigame pause
 function MiniGameService:_shiftTimeFields(session: any, pauseDelta: number)
+	-- Base timestamps
+	if session.startTime and session.startTime > 0 then
+		session.startTime += pauseDelta
+	end
+
 	-- Future timestamps (endTime pattern)
 	if session.feverEndTime and session.feverEndTime > 0 then
 		session.feverEndTime += pauseDelta
@@ -285,6 +298,32 @@ function MiniGameService:_shiftTimeFields(session: any, pauseDelta: number)
 	end
 	if session.lastEventProgressTime and session.lastEventProgressTime > 0 then
 		session.lastEventProgressTime += pauseDelta
+	end
+end
+
+-- Handle player disconnect during minigame
+function MiniGameService:OnPlayerDisconnect(player: Player, session: any, activeSessions: any?, CoopMatchService: any?)
+	if not session or session.sessionState ~= GameConstants.MINI_GAME.STATE.MINIGAME then
+		return
+	end
+
+	-- Force-finish for this player
+	local result = { success = false, score = 0 }
+
+	-- Clean up active minigame module
+	local mod = getGameModule(session.activeMiniGameId or "obstacle_rush")
+	if mod then
+		mod:Cleanup(player)
+	end
+
+	-- Handle co-op: force-complete for remaining players
+	if session.coopSessionId and CoopMatchService and activeSessions then
+		self:OnPlayerFinish(player, session, result, activeSessions, CoopMatchService)
+	end
+
+	-- Clean up co-op results
+	if session.coopSessionId then
+		_coopResults[session.coopSessionId] = nil
 	end
 end
 

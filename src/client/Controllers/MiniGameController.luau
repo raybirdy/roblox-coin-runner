@@ -56,6 +56,7 @@ end
 function MiniGameController:_onMiniGameStart(data: any)
 	self._isActive = true
 	self._hitsRemaining = 3
+	self._duration = data.duration or 20
 	self._timeRemaining = data.duration or 20
 
 	-- Create minigame UI
@@ -157,22 +158,25 @@ function MiniGameController:_onObstacleSpawn(data: any)
 		end
 	end)
 
-	-- Hit detection: player taps/clicks obstacle to dodge (or it passes = safe)
-	-- For Sprint 3, obstacles are server-judged — client just shows visuals
-	-- Client reports hit via proximity to player character
-	local hitButton = Instance.new("TextButton")
-	hitButton.Size = UDim2.fromScale(1, 1)
-	hitButton.BackgroundTransparency = 1
-	hitButton.Text = ""
-	hitButton.Parent = indicator
+	-- Dodge button: player taps to dodge this obstacle
+	local dodgeButton = Instance.new("TextButton")
+	dodgeButton.Size = UDim2.fromScale(1, 1)
+	dodgeButton.BackgroundTransparency = 1
+	dodgeButton.Text = ""
+	dodgeButton.Parent = indicator
 
-	-- If player doesn't dodge (obstacle reaches center), report hit
-	task.delay(0.7 / speed, function()
-		if indicator.Parent and self._isActive then
-			-- Report potential hit to server
+	local dodged = false
+	dodgeButton.Activated:Connect(function()
+		if not dodged and self._isActive then
+			dodged = true
+			-- Report successful dodge to server
 			RemoteEvents.MiniGameHitReport:FireServer({
 				obstacleIndex = data.obstacleIndex,
 			})
+			-- Visual feedback: obstacle fades
+			TweenService:Create(indicator, TweenInfo.new(0.2), {
+				BackgroundTransparency = 1,
+			}):Play()
 		end
 	end)
 end
@@ -276,7 +280,7 @@ function MiniGameController:_updateTimerBar()
 
 	local timerFill = timerBg:FindFirstChild("TimerFill")
 	if timerFill then
-		local duration = 20 -- default
+		local duration = self._duration or 20
 		local ratio = math.clamp(self._timeRemaining / duration, 0, 1)
 		timerFill.Size = UDim2.fromScale(ratio, 1)
 

@@ -21,6 +21,7 @@ local _activeGames: { [Player]: {
 	endTimer: thread?,
 	session: any,
 	onFinish: ((Player, { success: boolean, score: number }) -> ())?,
+	dodgedObstacles: { [number]: boolean },
 } } = {}
 
 -- Start obstacle rush for a player
@@ -38,6 +39,7 @@ function ObstacleRush:Start(player: Player, session: any, difficulty: any, gameT
 		endTimer = nil,
 		session = session,
 		onFinish = nil,
+		dodgedObstacles = {},
 	}
 	_activeGames[player] = game
 
@@ -60,6 +62,22 @@ function ObstacleRush:Start(player: Player, session: any, difficulty: any, gameT
 				direction = dir,
 				speed = speedMult,
 			})
+
+			-- Server-authoritative hit: if client doesn't dodge, auto-hit
+			task.delay(0.7 / (speedMult or 1.0), function()
+				if not game.isActive then return end
+				-- Check if this obstacle was already dodged (tracked by dodge reports)
+				if not game.dodgedObstacles[i] then
+					-- Auto-hit: client failed to dodge
+					game.hitCount += 1
+					RemoteEvents.MiniGameHit:FireClient(player, {
+						hitsRemaining = game.maxHits - game.hitCount,
+					})
+					if game.hitCount >= game.maxHits then
+						self:_finish(player, false)
+					end
+				end
+			end)
 		end)
 	end
 
@@ -73,23 +91,19 @@ function ObstacleRush:Start(player: Player, session: any, difficulty: any, gameT
 	print(`[ObstacleRush] Started for {player.Name}: {obstacleCount} obstacles, {duration}s`)
 end
 
--- Handle hit report from client
-function ObstacleRush:OnHitReport(player: Player, _data: any)
+-- Handle dodge report from client (client reports successful dodge)
+function ObstacleRush:OnHitReport(player: Player, data: any)
 	local game = _activeGames[player]
 	if not game or not game.isActive then
 		return
 	end
-
-	game.hitCount += 1
-
-	-- Notify client of remaining hits
-	RemoteEvents.MiniGameHit:FireClient(player, {
-		hitsRemaining = game.maxHits - game.hitCount,
-	})
-
-	-- Check failure
-	if game.hitCount >= game.maxHits then
-		self:_finish(player, false)
+	-- Client reports DODGE (not hit) — mark obstacle as dodged
+	local obstacleIndex = data and data.obstacleIndex
+	if type(obstacleIndex) == "number" and obstacleIndex >= 1 and obstacleIndex <= game.totalObstacles then
+		if not game.dodgedObstacles then
+			game.dodgedObstacles = {}
+		end
+		game.dodgedObstacles[obstacleIndex] = true
 	end
 end
 
@@ -116,6 +130,9 @@ function ObstacleRush:_finish(player: Player, success: boolean)
 	-- Notify MiniGameService via callback or direct require
 	local MiniGameService = require(script.Parent.Parent.MiniGameService)
 	MiniGameService:OnPlayerFinish(player, game.session, result)
+
+	-- Remove from active games to prevent memory leak
+	_activeGames[player] = nil
 
 	print(`[ObstacleRush] Finished for {player.Name}: success={success}, hits={game.hitCount}`)
 end

@@ -998,6 +998,11 @@ function GameManager.EndGame(player: Player)
 
 	session.isPlaying = false
 
+	-- Clean up minigame state on disconnect
+	if session.sessionState == GameConstants.MINI_GAME.STATE.MINIGAME then
+		MiniGameService:OnPlayerDisconnect(player, session, activeSessions, CoopMatchService)
+	end
+
 	-- 런 스킬 세션 종료
 	RunSkillService:EndSession(player)
 
