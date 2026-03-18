@@ -35,6 +35,8 @@ local BattlePassService = require(script.Parent.BattlePassService)
 local GhostService = require(script.Parent.GhostService)
 local TeamService = require(script.Parent.TeamService)
 local CoopMatchService = require(script.Parent.CoopMatchService)
+local MiniGameService = require(script.Parent.MiniGameService)
+local AnalyticsService = require(script.Parent.AnalyticsService)
 local RateLimiter = require(ReplicatedStorage.Shared.Utils.RateLimiter)
 
 -- BattlePassService: Init registers the PlayerDataService dependency
@@ -159,6 +161,14 @@ type GameSession = {
 	coopSessionId: string?,    -- nil if solo run
 	coopLaneZ: number,         -- Z offset for this player's lane (0 for solo)
 	coopSharedLives: number,   -- shared lives in co-op (mirrors session)
+	-- MiniGame state machine (v3)
+	sessionState: string,
+	pausedDuration: number,
+	pauseStartTime: number,
+	chunksSinceLastMiniGame: number,
+	activeMiniGameId: string?,
+	-- Analytics reference
+	_analyticsService: any?,
 }
 
 local activeSessions: { [Player]: GameSession } = {}
@@ -364,6 +374,12 @@ RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { 
 		coopSessionId = nil,
 		coopLaneZ = 0,
 		coopSharedLives = 0,
+		sessionState = "running",
+		pausedDuration = 0,
+		pauseStartTime = 0,
+		chunksSinceLastMiniGame = 0,
+		activeMiniGameId = nil,
+		_analyticsService = AnalyticsService,
 	}
 
 	-- 소모형 런 파워업 적용
@@ -782,6 +798,12 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 		coopSessionId = nil,
 		coopLaneZ = 0,
 		coopSharedLives = 0,
+		sessionState = "running",
+		pausedDuration = 0,
+		pauseStartTime = 0,
+		chunksSinceLastMiniGame = 0,
+		activeMiniGameId = nil,
+		_analyticsService = AnalyticsService,
 	}
 
 	-- 소모형 런 파워업 적용
@@ -975,6 +997,11 @@ function GameManager.EndGame(player: Player)
 	end
 
 	session.isPlaying = false
+
+	-- Clean up minigame state on disconnect
+	if session.sessionState == GameConstants.MINI_GAME.STATE.MINIGAME then
+		MiniGameService:OnPlayerDisconnect(player, session, activeSessions, CoopMatchService)
+	end
 
 	-- 런 스킬 세션 종료
 	RunSkillService:EndSession(player)
@@ -1208,6 +1235,11 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 			continue
 		end
 
+		-- Skip runner logic during minigame
+		if session.sessionState == "minigame" then
+			continue
+		end
+
 		-- 플레이어 캐릭터 확인
 		local character = player.Character
 		if not character then
@@ -1310,6 +1342,12 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 		-- 새 청크 생성 필요 시
 		if chunkService:CheckSpawnNewChunk(hrp.Position) then
 			chunkService:SpawnNextChunk()
+			session.chunksSinceLastMiniGame += 1
+
+			-- Check minigame trigger
+			if MiniGameService:ShouldTrigger(session) then
+				MiniGameService:Start(player, session, activeSessions, CoopMatchService)
+			end
 		end
 
 		-- 파워업 수집 체크
