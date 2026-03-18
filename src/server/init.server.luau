@@ -49,6 +49,7 @@ local _GhostService = require(ServerScriptService.Server.Services.GhostService)
 local TeamService = require(ServerScriptService.Server.Services.TeamService)
 local CoopMatchService = require(ServerScriptService.Server.Services.CoopMatchService)
 local AnalyticsService = require(ServerScriptService.Server.Services.AnalyticsService)
+local TutorialService = require(ServerScriptService.Server.Services.TutorialService)
 
 print("[Server] Game Constants Loaded")
 print("[Server] Remote Events Initialized")
@@ -112,6 +113,11 @@ print("[Server] CoopMatchService Loaded")
 AnalyticsService:Init()
 print("[Server] AnalyticsService Loaded")
 
+-- TutorialService v3 RemoteEvent 연결
+TutorialService:SetupRemoteEvents(PlayerDataService, AnalyticsService)
+print("[Server] TutorialService v3 Loaded")
+
+
 print("[Server] BattlePassService Loaded")
 
 -- 플레이어 참가 처리
@@ -167,6 +173,13 @@ game.Players.PlayerAdded:Connect(function(player: Player)
 		-- 팀 주간 리셋 체크 (매주 리셋 + 팀 데이터 클라이언트 전송)
 		TeamService:CheckWeeklyReset(player)
 
+		-- v3 Tutorial: lobby step (Step 5) 확인 및 클라이언트 전송
+		local lobbyStep = TutorialService:GetLobbyStep(playerData)
+		if lobbyStep then
+			local stepConfig = GameConstants.TUTORIAL.STEPS[lobbyStep]
+			RemoteEvents.TutorialLobbyStep:FireClient(player, lobbyStep, stepConfig)
+		end
+
 		print(`[Server] Sent player data to {player.Name}`)
 	end
 
@@ -194,6 +207,9 @@ game.Players.PlayerRemoving:Connect(function(player: Player)
 	print(`[Server] Player {player.Name} leaving`)
 	-- Analytics: session end
 	AnalyticsService:Track(player, "session_end")
+
+	-- 튜토리얼 상태 정리
+	TutorialService:OnPlayerRemoving(player)
 
 	-- 플레이어 데이터 저장
 	PlayerDataService:OnPlayerRemoving(player)

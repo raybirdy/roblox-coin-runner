@@ -233,6 +233,51 @@ GameConstants.TUTORIAL = {
 	SLOWMO_SPEED_MULTIPLIER = 0.60, -- 슬로모션 속도 (60%) - 너무 느리지 않게
 	SLOWMO_TRANSITION_TIME = 0.3, -- 슬로모션 전환 시간 (초)
 	SKIP_AFTER_DISTANCE = 150, -- 150 studs 이동 시 자동 종료 (빠르게)
+	TOTAL_STEPS = 5,
+	STEPS = {
+		[1] = {
+			id = "move_and_collect",
+			triggerRun = 1,
+			completionType = "coin_collect",
+			completionTarget = 5,
+			npcMessage = "Hi! I'm Coiny! Run and collect coins!",
+			highlightTarget = "coins",
+		},
+		[2] = {
+			id = "jump_obstacle",
+			triggerRun = 2,
+			completionType = "action",
+			completionAction = "jump",
+			npcMessage = "Obstacle ahead! Jump to dodge! Tap or Swipe Up!",
+			highlightTarget = "jump_button",
+		},
+		[3] = {
+			id = "slide_obstacle",
+			triggerRun = 3,
+			completionType = "action",
+			completionAction = "slide",
+			npcMessage = "Low obstacle! Slide under it! Swipe Down!",
+			highlightTarget = "slide_button",
+		},
+		[4] = {
+			id = "powerup_magnet",
+			triggerRun = 4,
+			completionType = "powerup_collect",
+			completionTarget = "magnet",
+			npcMessage = "Shiny item! Grab it and coins fly to you!",
+			highlightTarget = "powerup",
+		},
+		[5] = {
+			id = "coop_portal",
+			triggerRun = 5,
+			completionType = "portal_interact",
+			npcMessage = "Run with friends! Find the Co-op Portal!",
+			highlightTarget = "coop_portal",
+		},
+	},
+	NPC_NAME = "Coiny",
+	NPC_TOUCH_SIZE_MIN = 100,
+	SKIP_BUTTON_DELAY = 2,
 }
 
 -- UI
