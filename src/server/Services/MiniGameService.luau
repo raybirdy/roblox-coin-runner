@@ -78,8 +78,11 @@ function MiniGameService:ShouldTrigger(session: any): boolean
 		return false
 	end
 
-	local minInterval = GameConstants.MINI_GAME.TRIGGER_INTERVAL.MIN
-	local maxInterval = GameConstants.MINI_GAME.TRIGGER_INTERVAL.MAX
+	-- Use solo-specific intervals if not in co-op
+	local isCoop = session.coopSessionId ~= nil
+	local triggerInterval = isCoop and GameConstants.MINI_GAME.TRIGGER_INTERVAL or GameConstants.MINI_GAME.SOLO_TRIGGER_INTERVAL or GameConstants.MINI_GAME.TRIGGER_INTERVAL
+	local minInterval = triggerInterval.MIN
+	local maxInterval = triggerInterval.MAX
 
 	if session.chunksSinceLastMiniGame < minInterval then
 		return false
@@ -234,6 +237,9 @@ function MiniGameService:EndForPlayer(player: Player, session: any, result: { su
 				* GameConstants.MINI_GAME.REWARDS.CLEAR_BONUS_MULTIPLIER
 				* (1 + (session.upgradeBonuses and session.upgradeBonuses.miniGameBonus or 0))
 			reward = math.floor(reward)
+			if not session.coopSessionId then
+				reward = math.floor(reward * (GameConstants.MINI_GAME.SOLO_REWARD_MULTIPLIER or 1.0))
+			end
 			session.coins += reward
 		end
 		-- 일일 도전 과제: 미니게임 클리어

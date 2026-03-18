@@ -62,9 +62,18 @@ end
 function RandomEventService:StartEvent(player: Player, session: any)
 	local eventConfig = selectEvent()
 
+	-- Solo: cap event duration
+	local duration = eventConfig.duration
+	if not session.coopSessionId then
+		local maxDuration = GameConstants.RANDOM_EVENTS.SOLO_EVENT_MAX_DURATION or 10
+		if duration > maxDuration then
+			duration = maxDuration
+		end
+	end
+
 	_activeEvents[player] = {
 		eventId = eventConfig.id,
-		endTime = os.clock() + eventConfig.duration,
+		endTime = os.clock() + duration,
 		effectData = eventConfig,
 	}
 	_nextEventTime[player] = nil
@@ -75,11 +84,11 @@ function RandomEventService:StartEvent(player: Player, session: any)
 	-- Notify client
 	RemoteEvents.RandomEventStart:FireClient(player, {
 		eventId = eventConfig.id,
-		duration = eventConfig.duration,
+		duration = duration,
 		eventConfig = eventConfig,
 	})
 
-	print(`[RandomEventService] {eventConfig.id} started for {player.Name} ({eventConfig.duration}s)`)
+	print(`[RandomEventService] {eventConfig.id} started for {player.Name} ({duration}s)`)
 end
 
 -- End current event
