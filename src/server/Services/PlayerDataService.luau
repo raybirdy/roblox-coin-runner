@@ -29,7 +29,12 @@ type PlayerData = {
 	gamesPlayed: number,
 	totalDistance: number,
 	totalCoinsCollected: number,
-	tutorialCompleted: boolean,
+	tutorialProgress: {
+		currentStep: number,
+		completedSteps: { number },
+		skipped: boolean,
+		lastStepRunId: number,
+	},
 	-- 상점 시스템
 	ownedSkins: { string },
 	equippedSkin: string,
@@ -125,7 +130,12 @@ local DEFAULT_DATA: PlayerData = {
 	gamesPlayed = 0,
 	totalDistance = 0,
 	totalCoinsCollected = 0,
-	tutorialCompleted = false,
+	tutorialProgress = {
+		currentStep = 1,
+		completedSteps = {},
+		skipped = false,
+		lastStepRunId = 0,
+	},
 	-- 상점 시스템 기본값
 	ownedSkins = { "default" },
 	equippedSkin = "default",
@@ -391,19 +401,25 @@ function PlayerDataService:OnGameEnd(player: Player, finalScore: number, earnedC
 	RemoteEvents.PlayerDataLoaded:FireClient(player, playerData)
 end
 
--- 튜토리얼 완료 상태 설정
-function PlayerDataService:SetTutorialCompleted(player: Player, completed: boolean)
-	local playerData = playerDataCache[player]
-	if not playerData then
-		return
+-- 튜토리얼 진행 상태 설정
+function PlayerDataService:SetTutorialProgress(player: Player, progress: { currentStep: number, completedSteps: { number }, skipped: boolean, lastStepRunId: number })
+	local playerData = self:GetPlayerData(player)
+	if playerData then
+		playerData.tutorialProgress = progress
+		self:SavePlayerData(player)
 	end
+end
 
-	playerData.tutorialCompleted = completed
-
-	-- 즉시 저장
-	self:SavePlayerData(player)
-
-	print(`[PlayerDataService] Tutorial completed for {player.Name}: {completed}`)
+-- Legacy compatibility wrapper
+function PlayerDataService:SetTutorialCompleted(player: Player, completed: boolean)
+	if completed then
+		self:SetTutorialProgress(player, {
+			currentStep = 6,
+			completedSteps = {1, 2, 3, 4, 5},
+			skipped = false,
+			lastStepRunId = 0,
+		})
+	end
 end
 
 -- 플레이어 퇴장 시 정리
@@ -1014,6 +1030,8 @@ VALID_KEYS["equippedCharacter"] = true
 VALID_KEYS["characterSkillLastUsed"] = true
 VALID_KEYS["unlockedRunSkills"] = true
 VALID_KEYS["equippedRunSkills"] = true
+VALID_KEYS["tutorialProgress"] = true
+VALID_KEYS["tutorialCompleted"] = true -- backward compatibility during load
 
 -- 유틸리티: 기본값 병합
 function PlayerDataService:_mergeWithDefaults(data: any): PlayerData
@@ -1023,6 +1041,26 @@ function PlayerDataService:_mergeWithDefaults(data: any): PlayerData
 		if VALID_KEYS[key] then
 			merged[key] = value
 		end
+	end
+
+	-- Tutorial migration: tutorialCompleted (boolean) → tutorialProgress (table)
+	if merged.tutorialCompleted ~= nil then
+		if merged.tutorialCompleted == true then
+			merged.tutorialProgress = {
+				currentStep = 6,
+				completedSteps = {1, 2, 3, 4, 5},
+				skipped = false,
+				lastStepRunId = merged.gamesPlayed or 0,
+			}
+		else
+			merged.tutorialProgress = {
+				currentStep = 1,
+				completedSteps = {},
+				skipped = false,
+				lastStepRunId = 0,
+			}
+		end
+		merged.tutorialCompleted = nil
 	end
 
 	return merged

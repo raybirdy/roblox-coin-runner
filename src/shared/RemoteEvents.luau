@@ -91,6 +91,20 @@ RemoteEvents.TutorialMode = getOrCreateRemoteEvent("TutorialMode")
 RemoteEvents.TutorialCompleted = getOrCreateRemoteEvent("TutorialCompleted")
 -- 클라이언트 → 서버: 튜토리얼 완료 알림
 
+-- 튜토리얼 단계 완료 (v3)
+RemoteEvents.TutorialStepComplete = getOrCreateRemoteEvent("TutorialStepComplete")
+-- 클라이언트 → 서버: 튜토리얼 단계 완료 알림
+-- 파라미터: (stepNumber: number)
+
+-- 튜토리얼 스킵 (v3)
+RemoteEvents.TutorialSkip = getOrCreateRemoteEvent("TutorialSkip")
+-- 클라이언트 → 서버: 튜토리얼 전체 스킵 요청
+
+-- 튜토리얼 로비 단계 시작 (v3)
+RemoteEvents.TutorialLobbyStep = getOrCreateRemoteEvent("TutorialLobbyStep")
+-- 서버 → 클라이언트: 로비에서 튜토리얼 진행 알림
+-- 파라미터: (stepNumber: number, stepConfig: table)
+
 -- 청크 생성 (디버깅/테스트용)
 RemoteEvents.ChunkSpawned = getOrCreateRemoteEvent("ChunkSpawned")
 -- 서버 → 클라이언트: 새 청크 생성 알림 (필요 시)

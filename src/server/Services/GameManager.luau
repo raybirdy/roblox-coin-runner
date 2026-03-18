@@ -462,8 +462,13 @@ RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { 
 	end
 	RemoteEvents.RunObjectivesGenerated:FireClient(player, { objectives = objPayload1 })
 
-	-- 튜토리얼 필요 여부 확인
-	local needsTutorial = globalTutorialService:NeedsTutorial(player)
+	-- 튜토리얼 필요 여부 확인 (v3: step-based)
+	local playerDataForTutorial1 = PlayerDataService:GetPlayerData(player)
+	local tutorialStep1 = globalTutorialService:GetStepForRun(playerDataForTutorial1)
+	local startTutorial1 = tutorialStep1 ~= nil
+	if startTutorial1 then
+		globalTutorialService:SetActiveStep(player, tutorialStep1)
+	end
 
 	-- 고스트 레이싱: 새 런 기록 시작
 	_ghostService:StartRecording(player)
@@ -477,7 +482,7 @@ RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { 
 	RemoteEvents.GameStart:FireClient(player, {
 		startTime = session.startTime,
 		lives = session.lives,
-		startTutorial = needsTutorial,
+		tutorialStep = tutorialStep1,
 		startPosition = startPosition,
 		startPowerups = validPowerups,
 		scenarioStatBonuses = statBonuses,
@@ -834,8 +839,13 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 	end
 	RemoteEvents.RunObjectivesGenerated:FireClient(player, { objectives = objPayload2 })
 
-	-- 튜토리얼 필요 여부 확인
-	local needsTutorial = globalTutorialService:NeedsTutorial(player)
+	-- 튜토리얼 필요 여부 확인 (v3: step-based)
+	local playerDataForTutorial2 = PlayerDataService:GetPlayerData(player)
+	local tutorialStep2 = globalTutorialService:GetStepForRun(playerDataForTutorial2)
+	local startTutorial2 = tutorialStep2 ~= nil
+	if startTutorial2 then
+		globalTutorialService:SetActiveStep(player, tutorialStep2)
+	end
 
 	-- 소모형 파워업 목록 클라이언트에 전송 (UI 피드백용)
 	if #activeConsumableIds2 > 0 then
@@ -846,7 +856,7 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 	RemoteEvents.GameStart:FireClient(player, {
 		startTime = session.startTime,
 		lives = session.lives,
-		startTutorial = needsTutorial,
+		tutorialStep = tutorialStep2,
 		startPosition = startPosition,
 		scenarioStatBonuses = statBonuses,
 		unlockedSkills = unlockedSkills,

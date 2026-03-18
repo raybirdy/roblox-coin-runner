@@ -606,9 +606,9 @@ RemoteEvents.GameStart.OnClientEvent:Connect(function(data)
 			speedEffectController:StartGame(charNow)
 		end
 
-		-- 튜토리얼 시작 (필요 시)
-		if data.startTutorial then
-			tutorialController:Start(data.startPosition)
+		-- 튜토리얼 시작 (필요 시, v3: step-based)
+		if data.tutorialStep then
+			tutorialController:Start(data.startPosition, data.tutorialStep)
 			uiController:ShowTutorialBanner()
 		end
 
