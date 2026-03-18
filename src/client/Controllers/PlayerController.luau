@@ -77,6 +77,10 @@ export type PlayerController = typeof(setmetatable(
 		_jumpBoostMultiplier: number,   -- MushroomBounce: 점프력 일시 배율 (기본 1.0)
 		_gravityMultiplier: number,     -- GravityZone: 저중력 배율 (기본 1.0)
 
+		-- 업그레이드 기본 보너스
+		_baseSpeedBonus: number, -- base_speed 업그레이드 보너스 (0.0~0.3 등)
+		_baseJumpBonus: number,  -- base_jump 업그레이드 보너스 (0.0~0.3 등)
+
 		-- 디버그
 		_lastJumpTime: number,
 		_lastGroundedTime: number, -- 코요테 타임용 마지막 착지 시각
@@ -126,6 +130,8 @@ function PlayerController.new(player: Player, character: Model): PlayerControlle
 		_dashLeanAngle = 0,
 		_jumpBoostMultiplier = 1.0,
 		_gravityMultiplier = 1.0,
+		_baseSpeedBonus = 0,
+		_baseJumpBonus = 0,
 	}, PlayerController)
 
 	self:_createSounds()
@@ -141,6 +147,13 @@ end
 function PlayerController:_setupAnimations()
 	self._animationController = AnimationController.new(self.humanoid)
 	print("[PlayerController] Animation controller initialized")
+end
+
+-- 업그레이드 보너스 설정 (GameStart 데이터에서 호출)
+function PlayerController:SetUpgradeBonuses(baseSpeedBonus: number, baseJumpBonus: number)
+	self._baseSpeedBonus = baseSpeedBonus or 0
+	self._baseJumpBonus = baseJumpBonus or 0
+	print(`[PlayerController] Upgrade bonuses — speed: +{self._baseSpeedBonus * 100}%, jump: +{self._baseJumpBonus * 100}%`)
 end
 
 -- 게임 시작
@@ -231,6 +244,8 @@ function PlayerController:StopGame()
 	self._slideSessionId += 1 -- invalidate any pending slide task.delay
 	self.canDoubleJump = false
 	self.verticalVelocity = 0
+	self._baseSpeedBonus = 0
+	self._baseJumpBonus = 0
 
 	-- 속도 완전 정지
 	self.humanoidRootPart.AssemblyLinearVelocity = Vector3.zero
@@ -545,8 +560,14 @@ function PlayerController:_updateSpeed()
 	-- EaseInQuad: t^2 (처음에 느리게, 나중에 빠르게 가속)
 	local easedT = t * t
 
-	local minSpeed = GameConstants.PHYSICS.SPEED_MIN
-	local maxSpeed = GameConstants.PHYSICS.SPEED_MAX
+	-- base_speed 업그레이드 보너스 적용 (e.g. 0.1 = +10%)
+	local speedBoostFactor = 1 + (self._baseSpeedBonus or 0)
+	local minSpeed = GameConstants.PHYSICS.SPEED_MIN * speedBoostFactor
+	local maxSpeed = GameConstants.PHYSICS.SPEED_MAX * speedBoostFactor
+
+	-- 업그레이드 속도 상한 (BASE_SPEED_CAP 기준, 배포 시 원본 SPEED_MAX 초과 방지)
+	local speedCap = GameConstants.PHYSICS.SPEED_MAX * (GameConstants.UPGRADES.BASE_SPEED_CAP or 1.3)
+	maxSpeed = math.min(maxSpeed, speedCap)
 
 	if t >= 1 then
 		-- 최고속 도달 후: 60초 주기의 사인파 호흡 패턴 (±4 studs/s)
@@ -732,8 +753,10 @@ function PlayerController:_performJump(jumpHeight: number)
 	-- NOTE: humanoid:ChangeState(Freefall) 제거 — CFrame 이동과 충돌하여
 	--       Humanoid 물리 접촉 감지 파괴 → isGrounded 영구 false 버그 유발
 	local gravity = GameConstants.PHYSICS.GRAVITY
-	-- Zone 효과 배율 적용 (_jumpBoostMultiplier: MushroomBounce, _gravityMultiplier: GravityZone)
-	local effectiveHeight = jumpHeight * self._jumpBoostMultiplier * self._gravityMultiplier
+	-- Zone 효과 배율 + base_jump 업그레이드 보너스 적용
+	-- _jumpBoostMultiplier: MushroomBounce, _gravityMultiplier: GravityZone, _baseJumpBonus: 업그레이드
+	local jumpBonus = 1 + (self._baseJumpBonus or 0)
+	local effectiveHeight = jumpHeight * self._jumpBoostMultiplier * self._gravityMultiplier * jumpBonus
 	local jumpVelocity = math.sqrt(2 * gravity * effectiveHeight)
 
 	-- AssemblyLinearVelocity로 점프 (X 속도 유지, Y 설정)

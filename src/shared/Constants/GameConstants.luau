@@ -178,6 +178,7 @@ GameConstants.EXPLODING_BARREL = {
 -- 라이프 시스템
 GameConstants.LIFE = {
 	STARTING_LIVES = 3,
+	MAX_TOTAL = 8, -- maximum total lives including all bonuses
 	INVINCIBLE_DURATION = 3, -- 피격 후 무적 시간 (초)
 	MERCY_CHUNK_THRESHOLD = 2, -- 연속 피격 2회 시 자비 청크
 	MERCY_CHUNK_COUNT = 2, -- 자비 모드 시 연속 쉬운 청크 수
@@ -1384,6 +1385,7 @@ GameConstants.DAILY_EVENT = {
 -- ==================== 업그레이드 ====================
 
 GameConstants.UPGRADES = {
+	BASE_SPEED_CAP = 1.3, -- max speed multiplier from base_speed upgrade (AC-2-8)
 	LIST = {
 		{
 			id = "magnet_range",
@@ -1440,6 +1442,51 @@ GameConstants.UPGRADES = {
 			maxLevel = 3,
 			costs = { 180, 450, 1100 },
 			values = { 3, 5, 8 }, -- 부스트 지속 시간 (초)
+		},
+		{
+			id = "base_speed",
+			displayName = "Base Speed",
+			emoji = "💨",
+			desc = "Increase base running speed",
+			maxLevel = 10,
+			costs = { 200, 400, 800, 1500, 2800, 5000, 9000, 15000, 22000, 30000 },
+			values = { 2, 4, 6, 8, 10, 13, 16, 19, 23, 27 }, -- % increase
+		},
+		{
+			id = "base_jump",
+			displayName = "Base Jump",
+			emoji = "⬆️",
+			desc = "Increase jump height",
+			maxLevel = 10,
+			costs = { 150, 300, 600, 1200, 2200, 4000, 7000, 12000, 18000, 25000 },
+			values = { 2, 4, 6, 8, 10, 12, 14, 16, 18, 20 }, -- % increase
+		},
+		{
+			id = "base_lives",
+			displayName = "Base Lives",
+			emoji = "❤️",
+			desc = "Start with extra lives",
+			maxLevel = 10,
+			costs = { 500, 1000, 2000, 4000, 7500, 13000, 20000, 30000, 42000, 55000 },
+			values = { 1, 1, 1, 2, 2, 2, 3, 3, 3, 4 }, -- absolute extra lives
+		},
+		{
+			id = "skill_cooldown",
+			displayName = "Fever Recovery",
+			emoji = "🔥",
+			desc = "Reduce fever cooldown time",
+			maxLevel = 10,
+			costs = { 300, 600, 1200, 2200, 4000, 7000, 12000, 18000, 26000, 35000 },
+			values = { 3, 6, 9, 12, 15, 18, 21, 24, 27, 30 }, -- % cooldown reduction
+		},
+		{
+			id = "mini_game_bonus",
+			displayName = "Mini Game Bonus",
+			emoji = "🎮",
+			desc = "Increase mini game rewards",
+			maxLevel = 10,
+			costs = { 200, 400, 800, 1500, 2800, 5000, 8500, 14000, 20000, 28000 },
+			values = { 5, 10, 15, 20, 25, 30, 35, 40, 45, 50 }, -- % bonus
 		},
 	},
 }
