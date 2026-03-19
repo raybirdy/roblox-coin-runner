@@ -7,20 +7,21 @@ print("[Server] Coin Runner Server Starting...")
 local ServerScriptService = game:GetService("ServerScriptService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
--- 기본 Baseplate 제거 (우리만의 바닥 사용)
+-- 공유 모듈 로드
+local GameConstants = require(ReplicatedStorage.Shared.Constants.GameConstants)
+local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)
+local RateLimiter = require(ReplicatedStorage.Shared.Utils.RateLimiter)
+
+-- 서버 서비스 로드 (GameManager → LobbyService:Initialize() 내부 호출)
+local _GameManager = require(ServerScriptService.Server.Services.GameManager)
+
+-- 기본 Baseplate 제거 (LobbyService가 바닥을 생성한 후 제거)
 local baseplate = workspace:FindFirstChild("Baseplate")
 if baseplate then
 	baseplate:Destroy()
 	print("[Server] Removed default Baseplate")
 end
 
--- 공유 모듈 로드
-local GameConstants = require(ReplicatedStorage.Shared.Constants.GameConstants)
-local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)
-local RateLimiter = require(ReplicatedStorage.Shared.Utils.RateLimiter)
-
--- 서버 서비스 로드
-local _GameManager = require(ServerScriptService.Server.Services.GameManager)
 local PlayerDataService = require(ServerScriptService.Server.Services.PlayerDataService)
 local _LobbyService = require(ServerScriptService.Server.Services.LobbyService)
 local _ShopService = require(ServerScriptService.Server.Services.ShopService)
