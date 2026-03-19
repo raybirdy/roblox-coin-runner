@@ -18,11 +18,14 @@ export type ObjectiveHudController = typeof(setmetatable(
 	{} :: {
 		_screenGui: ScreenGui?,
 		_hudFrame: Frame?,
+		_iconBtn: TextButton?,
 		_rows: { Frame },
 		_rerollButtons: { TextButton },
 		_targets: { number },
 		_connections: { RBXScriptConnection },
 		_rerollEnabled: boolean,
+		_isTweening: boolean,
+		_collapseTask: thread?,
 	},
 	ObjectiveHudController
 ))
@@ -31,11 +34,14 @@ function ObjectiveHudController.new(): ObjectiveHudController
 	local self = setmetatable({
 		_screenGui = nil,
 		_hudFrame = nil,
+		_iconBtn = nil,
 		_rows = {},
 		_rerollButtons = {},
 		_targets = {},
 		_connections = {},
 		_rerollEnabled = true,
+		_isTweening = false,
+		_collapseTask = nil,
 	}, ObjectiveHudController)
 
 	self:_createUI()
@@ -82,6 +88,47 @@ function ObjectiveHudController:_createUI()
 	hudStroke.Color = Color3.fromRGB(80, 80, 140)
 	hudStroke.Thickness = 1
 	hudStroke.Parent = hudFrame
+
+	-- Collapsed icon button (48x48, top-right, below HudFrame)
+	local iconBtn = Instance.new("TextButton")
+	iconBtn.Name = "ObjectiveIconBtn"
+	iconBtn.Size = UDim2.new(0, 48, 0, 48)
+	iconBtn.AnchorPoint = Vector2.new(1, 1)
+	-- Align right edge with hudFrame's right edge; place below it with a small gap
+	local iconRightX = ResponsiveUtil.scaledOffset(10) + hudW
+	local iconTopY = -(math.max(minYOffset, ResponsiveUtil.scaledOffset(280)) + 8 + 48)
+	iconBtn.Position = UDim2.new(0, iconRightX, 1, -iconTopY - 48)
+	iconBtn.BackgroundColor3 = Color3.fromRGB(15, 15, 30)
+	iconBtn.BackgroundTransparency = 0.3
+	iconBtn.BorderSizePixel = 0
+	iconBtn.Text = "0/3"
+	iconBtn.TextSize = ResponsiveUtil.scaledTextSize(13, 11)
+	iconBtn.Font = Enum.Font.GothamBold
+	iconBtn.TextColor3 = Color3.fromRGB(210, 210, 240)
+	iconBtn.Visible = false
+	iconBtn.Parent = screenGui
+	self._iconBtn = iconBtn
+
+	local iconCorner = Instance.new("UICorner")
+	iconCorner.CornerRadius = UDim.new(0, 8)
+	iconCorner.Parent = iconBtn
+
+	local iconStroke = Instance.new("UIStroke")
+	iconStroke.Color = Color3.fromRGB(80, 80, 140)
+	iconStroke.Thickness = 1
+	iconStroke.Parent = iconBtn
+
+	iconBtn.Activated:Connect(function()
+		self:ShowFull()
+		-- Auto-collapse back after 1.5 seconds
+		if self._collapseTask then
+			task.cancel(self._collapseTask)
+		end
+		self._collapseTask = task.delay(1.5, function()
+			self._collapseTask = nil
+			self:CollapseToIcon()
+		end)
+	end)
 
 	-- "런 목표" title label
 	local titleLabel = Instance.new("TextLabel")
@@ -151,7 +198,7 @@ function ObjectiveHudController:_createUI()
 		-- 리롤 버튼 (🔄 30코인)
 		local rerollBtn = Instance.new("TextButton")
 		rerollBtn.Name = "RerollBtn"
-		rerollBtn.Size = UDim2.new(0, 38, 0.8, 0)
+		rerollBtn.Size = UDim2.new(0, 48, 0.8, 0)
 		rerollBtn.AnchorPoint = Vector2.new(1, 0.5)
 		rerollBtn.Position = UDim2.new(1, -2, 0.5, 0)
 		rerollBtn.BackgroundColor3 = Color3.fromRGB(60, 80, 160)
@@ -341,7 +388,75 @@ function ObjectiveHudController:_showCompletionFlash(bonus: number?)
 	end)
 end
 
+-- Update icon button label with completed/total count
+function ObjectiveHudController:_updateIconLabel()
+	if not self._iconBtn then return end
+	local completed = 0
+	local total = #self._rows
+	for _, row in self._rows do
+		local checkLabel = row:FindFirstChild("Check") :: TextLabel?
+		if checkLabel and checkLabel.Text == "✓" then
+			completed += 1
+		end
+	end
+	self._iconBtn.Text = `{completed}/{total}`
+end
+
+-- Show the full objectives panel
+function ObjectiveHudController:ShowFull()
+	if self._isTweening then return end
+	if self._iconBtn then self._iconBtn.Visible = false end
+	if self._hudFrame then
+		self._hudFrame.Visible = true
+	end
+end
+
+-- Collapse to the 48x48 icon button showing progress
+function ObjectiveHudController:CollapseToIcon()
+	if self._isTweening then return end
+	self._isTweening = true
+	if self._hudFrame then
+		local tween = TweenService:Create(
+			self._hudFrame,
+			TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
+			{ BackgroundTransparency = 1 }
+		)
+		tween.Completed:Connect(function()
+			if self._hudFrame then
+				self._hudFrame.Visible = false
+				self._hudFrame.BackgroundTransparency = 0.25
+			end
+			self._isTweening = false
+			self:_updateIconLabel()
+			if self._iconBtn then self._iconBtn.Visible = true end
+		end)
+		tween:Play()
+	else
+		self._isTweening = false
+		self:_updateIconLabel()
+		if self._iconBtn then self._iconBtn.Visible = true end
+	end
+end
+
+-- Hide the entire objectiveHud GUI
+function ObjectiveHudController:Hide()
+	if self._collapseTask then
+		task.cancel(self._collapseTask)
+		self._collapseTask = nil
+	end
+	if self._hudFrame then self._hudFrame.Visible = false end
+	if self._iconBtn then self._iconBtn.Visible = false end
+end
+
+-- Return whether the HUD (full panel or icon) is currently visible
+function ObjectiveHudController:IsActive(): boolean
+	local panelVisible = self._hudFrame ~= nil and self._hudFrame.Visible
+	local iconVisible = self._iconBtn ~= nil and self._iconBtn.Visible
+	return panelVisible or iconVisible
+end
+
 -- Show HUD at game start (리롤 버튼 활성 — 카운트다운 중 리롤 허용)
+-- Auto-collapses to icon after 3 seconds per mobile UI spec §5.3
 function ObjectiveHudController:StartGame()
 	self._rerollEnabled = true
 	if self._hudFrame then
@@ -357,6 +472,15 @@ function ObjectiveHudController:StartGame()
 		btn.BackgroundColor3 = Color3.fromRGB(60, 80, 160)
 		btn.AutoButtonColor = true
 	end
+
+	-- Schedule auto-collapse to icon after 3 seconds
+	if self._collapseTask then
+		task.cancel(self._collapseTask)
+	end
+	self._collapseTask = task.delay(3, function()
+		self._collapseTask = nil
+		self:CollapseToIcon()
+	end)
 end
 
 -- 실제 게임 진행 중 리롤 비활성화 (카운트다운 끝난 후 호출)
@@ -371,9 +495,7 @@ end
 -- Hide HUD on game end or lobby
 function ObjectiveHudController:EndGame()
 	self._rerollEnabled = true
-	if self._hudFrame then
-		self._hudFrame.Visible = false
-	end
+	self:Hide()
 	for _, btn in self._rerollButtons do
 		btn.BackgroundColor3 = Color3.fromRGB(60, 80, 160)
 		btn.TextColor3 = Color3.fromRGB(255, 255, 255)

@@ -374,6 +374,19 @@ function RunSkillHudController:_showActivationFeedback(emoji: string, name: stri
 	end)
 end
 
+-- Show/Hide XP frame GUI
+function RunSkillHudController:Show()
+	if self._gui then
+		self._gui.Enabled = true
+	end
+end
+
+function RunSkillHudController:Hide()
+	if self._gui then
+		self._gui.Enabled = false
+	end
+end
+
 -- 게임 시작 시 HUD 활성화
 function RunSkillHudController:StartGame()
 	self._active = true

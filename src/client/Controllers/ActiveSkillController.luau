@@ -237,6 +237,19 @@ function ActiveSkillController:_updateButtonVisibility()
 	end
 end
 
+-- Show/Hide skill button GUI
+function ActiveSkillController:ShowUI()
+	if self._gui then
+		self._gui.Enabled = true
+	end
+end
+
+function ActiveSkillController:HideUI()
+	if self._gui then
+		self._gui.Enabled = false
+	end
+end
+
 function ActiveSkillController:Destroy()
 	for _, conn in self._connections do
 		conn:Disconnect()

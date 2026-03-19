@@ -48,6 +48,7 @@ function DailyChallengeController:_createUI()
 	gui.Name = "DailyChallengeGui"
 	gui.ResetOnSpawn = false
 	gui.DisplayOrder = 60
+	gui.Enabled = false
 	gui.Parent = self._player.PlayerGui
 	self._gui = gui
 
@@ -157,6 +158,18 @@ function DailyChallengeController:_updateProgress(data: any)
 	if self._challenges[index] then
 		self._challenges[index].progress = data.progress
 		self._challenges[index].completed = data.completed
+	end
+end
+
+function DailyChallengeController:Show()
+	if self._gui then
+		self._gui.Enabled = true
+	end
+end
+
+function DailyChallengeController:Hide()
+	if self._gui then
+		self._gui.Enabled = false
 	end
 end
 
