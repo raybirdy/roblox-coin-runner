@@ -12,18 +12,28 @@ local GameConstants = require(ReplicatedStorage.Shared.Constants.GameConstants)
 local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)
 local RateLimiter = require(ReplicatedStorage.Shared.Utils.RateLimiter)
 
--- 서버 서비스 로드 (GameManager → LobbyService:Initialize() 내부 호출)
-local _GameManager = require(ServerScriptService.Server.Services.GameManager)
-
--- 기본 Baseplate 제거 (LobbyService가 바닥을 생성한 후 제거)
-local baseplate = workspace:FindFirstChild("Baseplate")
-if baseplate then
-	baseplate:Destroy()
-	print("[Server] Removed default Baseplate")
+-- 로비 먼저 초기화 (다른 서비스 실패와 무관하게 로비는 반드시 생성)
+local LobbyService = require(ServerScriptService.Server.Services.LobbyService)
+local lobbyOk, lobbyErr = pcall(function()
+	LobbyService:Initialize()
+end)
+if lobbyOk then
+	print("[Server] LobbyService initialized successfully")
+	-- 로비 바닥 생성 확인 후 기본 Baseplate 제거
+	local baseplate = workspace:FindFirstChild("Baseplate")
+	if baseplate then
+		baseplate:Destroy()
+		print("[Server] Removed default Baseplate")
+	end
+else
+	warn("[Server] LobbyService initialization FAILED: " .. tostring(lobbyErr))
+	warn("[Server] Keeping default Baseplate as fallback floor")
 end
 
+-- 서버 서비스 로드
+local _GameManager = require(ServerScriptService.Server.Services.GameManager)
 local PlayerDataService = require(ServerScriptService.Server.Services.PlayerDataService)
-local _LobbyService = require(ServerScriptService.Server.Services.LobbyService)
+local _LobbyService = LobbyService -- already loaded above
 local _ShopService = require(ServerScriptService.Server.Services.ShopService)
 local _MonetizationService = require(ServerScriptService.Server.Services.MonetizationService)
 local ProgressionService = require(ServerScriptService.Server.Services.ProgressionService)

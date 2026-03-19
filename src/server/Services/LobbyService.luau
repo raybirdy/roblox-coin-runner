@@ -13,9 +13,17 @@ local LobbyService = {}
 
 -- 로비 요소들을 저장할 폴더
 local lobbyFolder: Folder? = nil
+local initialized = false
 
 -- 로비 초기화
 function LobbyService:Initialize()
+	-- 이미 초기화된 경우 스킵 (init.server.luau + GameManager 중복 호출 방지)
+	if initialized then
+		print("[LobbyService] Already initialized, skipping")
+		return
+	end
+	initialized = true
+
 	-- 기존 로비 정리
 	self:Destroy()
 
