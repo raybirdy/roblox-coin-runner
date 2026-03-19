@@ -1373,10 +1373,10 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 			chunkService:SpawnNextChunk()
 			session.chunksSinceLastMiniGame += 1
 
-			-- Check minigame trigger
-			if MiniGameService:ShouldTrigger(session) then
-				MiniGameService:Start(player, session, activeSessions, CoopMatchService)
-			end
+			-- Minigame trigger disabled (v3.1 — 재미 부족으로 비활성화, 코드 보존)
+			-- if MiniGameService:ShouldTrigger(session) then
+			-- 	MiniGameService:Start(player, session, activeSessions, CoopMatchService)
+			-- end
 		end
 
 		-- 파워업 수집 체크
