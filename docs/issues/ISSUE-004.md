@@ -3,11 +3,11 @@ id: ISSUE-004
 title: Client 크래시 — TutorialController:SetNPCController() 미존재 메서드 호출
 category: bug
 priority: P1-high
-status: open
+status: resolved
 related_sprint: Sprint 1 (v3 튜토리얼 리팩토링)
 related_ac: AC-1-8
 created: 2026-03-19
-resolved: null
+resolved: 2026-03-19
 ---
 
 ## 설명

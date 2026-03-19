@@ -3,11 +3,11 @@ id: ISSUE-003
 title: GameManager 크래시 — TutorialService.new() nil 호출 (게임 시작 불가)
 category: blocker
 priority: P0-critical
-status: open
+status: resolved
 related_sprint: Sprint 1 (v3 튜토리얼 리팩토링)
 related_ac: AC-1-8
 created: 2026-03-19
-resolved: null
+resolved: 2026-03-19
 ---
 
 ## 설명

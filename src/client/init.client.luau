@@ -466,9 +466,6 @@ leaderboardController:SetChallengeCallback(function(targetName: string, targetSc
 	uiController:ShowGameFeedback(`⚔️ {targetName}에게 도전!`, Color3.fromRGB(255, 100, 100))
 end)
 
--- 튜토리얼 컨트롤러에 NPCController 연결
-tutorialController:SetNPCController(npcController)
-
 -- 캐릭터 리스폰 시 PlayerController 업데이트
 player.CharacterAdded:Connect(function(newCharacter: Model)
 	character = newCharacter

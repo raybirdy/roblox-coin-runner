@@ -197,10 +197,6 @@ RealtimeBattleService:SetScoreGetter(GameManager.GetCurrentScore)
 
 -- 위로 보상 추적 (플레이어별 연속 빠른 게임오버 횟수)
 local consolationTracker: { [Player]: number } = {}
-local globalTutorialService = TutorialService.new()
-
--- TutorialService에 PlayerDataService 연결
-globalTutorialService:SetPlayerDataService(PlayerDataService)
 
 -- 로비 초기화
 LobbyService:Initialize()
@@ -322,7 +318,7 @@ RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { 
 		obstacleService = obstacleService,
 		powerupService = powerupService,
 		npcService = npcService,
-		tutorialService = globalTutorialService,
+		tutorialService = TutorialService,
 		backgroundService = backgroundService,
 		isPlaying = true,
 		startTime = os.clock(),
@@ -505,10 +501,10 @@ RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { 
 
 	-- 튜토리얼 필요 여부 확인 (v3: step-based)
 	local playerDataForTutorial1 = PlayerDataService:GetPlayerData(player)
-	local tutorialStep1 = globalTutorialService:GetStepForRun(playerDataForTutorial1)
+	local tutorialStep1 = TutorialService:GetStepForRun(playerDataForTutorial1)
 	local startTutorial1 = tutorialStep1 ~= nil
 	if startTutorial1 then
-		globalTutorialService:SetActiveStep(player, tutorialStep1)
+		TutorialService:SetActiveStep(player, tutorialStep1)
 	end
 
 	-- 고스트 레이싱: 새 런 기록 시작
@@ -752,7 +748,7 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 		obstacleService = obstacleService,
 		powerupService = powerupService,
 		npcService = npcService,
-		tutorialService = globalTutorialService,
+		tutorialService = TutorialService,
 		backgroundService = backgroundService,
 		isPlaying = true,
 		startTime = os.clock(),
@@ -900,10 +896,10 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 
 	-- 튜토리얼 필요 여부 확인 (v3: step-based)
 	local playerDataForTutorial2 = PlayerDataService:GetPlayerData(player)
-	local tutorialStep2 = globalTutorialService:GetStepForRun(playerDataForTutorial2)
+	local tutorialStep2 = TutorialService:GetStepForRun(playerDataForTutorial2)
 	local startTutorial2 = tutorialStep2 ~= nil
 	if startTutorial2 then
-		globalTutorialService:SetActiveStep(player, tutorialStep2)
+		TutorialService:SetActiveStep(player, tutorialStep2)
 	end
 
 	-- 소모형 파워업 목록 클라이언트에 전송 (UI 피드백용)
