@@ -431,6 +431,33 @@ function TutorialController:_trackEvent(action: string)
 	end)
 end
 
+-- Check if tutorial is currently active
+function TutorialController:IsActive(): boolean
+	return self._isActive
+end
+
+-- Handle player action during tutorial (jump, slide, etc.)
+function TutorialController:OnPlayerAction(action: string)
+	if not self._isActive or not self._stepConfig then
+		return
+	end
+	-- Check if the action matches the current step's required action
+	if self._stepConfig.action == action then
+		self._completionCount += 1
+		if self._completionCount >= (self._stepConfig.requiredCount or 1) then
+			self:_onComplete()
+		end
+	end
+end
+
+-- Update distance tracking during tutorial
+function TutorialController:UpdateDistance(_position: Vector3)
+	-- Distance tracking for tutorial steps (e.g., "run 50 studs")
+	if not self._isActive then
+		return
+	end
+end
+
 -- Stop tutorial (external call)
 function TutorialController:Stop()
 	self._isActive = false
