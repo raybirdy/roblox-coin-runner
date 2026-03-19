@@ -613,7 +613,7 @@ GameConstants.MONETIZATION = {
 		{ id = "starter_pack", productId = 3540343511, gems = 150, robux = 49, bonus = 0, bundlePet = "hamster" },
 		{
 			id = "mega_bundle",
-			productId = 0, -- TODO: Create 499 R$ product on Roblox Developer Dashboard and replace with real ID
+			productId = 3559214777,
 			gems = 1500,
 			robux = 499,
 			bonus = 500, -- display: "2000 gems = 1500 + 500 bonus"
@@ -625,7 +625,7 @@ GameConstants.MONETIZATION = {
 		},
 		{
 			id = "ultra_bundle",
-			productId = 0, -- TODO: Create 999 R$ product on Roblox Developer Dashboard and replace with real ID
+			productId = 3559214994,
 			gems = 4000,
 			robux = 999,
 			bonus = 1500, -- display: "5500 gems = 4000 + 1500 bonus"
@@ -2138,7 +2138,7 @@ GameConstants.CONSUMABLE_POWERUPS = {
 GameConstants.BATTLE_PASS = {
 	SEASON_DURATION_DAYS = 28,
 	PRICE_ROBUX = 149,
-	GAME_PASS_ID = 0, -- TODO: Roblox에서 GamePass 생성 후 ID 입력
+	GAME_PASS_ID = 1761124660,
 	MAX_LEVEL = 30,
 	-- 레벨별 필요 XP (레벨 1→2에 100XP, 레벨 2→3에 150XP, ...)
 	XP_PER_LEVEL = {
