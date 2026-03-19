@@ -96,7 +96,7 @@ function CoinStorm:_finish(player: Player)
 	game.isActive = false
 
 	if game.endTimer then
-		task.cancel(game.endTimer)
+		pcall(task.cancel, game.endTimer)
 		game.endTimer = nil
 	end
 
@@ -121,7 +121,7 @@ function CoinStorm:Cleanup(player: Player)
 	if game then
 		game.isActive = false
 		if game.endTimer then
-			task.cancel(game.endTimer)
+			pcall(task.cancel, game.endTimer)
 		end
 	end
 	_activeGames[player] = nil
