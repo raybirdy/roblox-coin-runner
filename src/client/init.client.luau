@@ -112,6 +112,7 @@ local MiniGameController = require(script.Controllers.MiniGameController)
 local ActiveSkillController = require(script.Controllers.ActiveSkillController)
 local RandomEventController = require(script.Controllers.RandomEventController)
 local DailyChallengeController = require(script.Controllers.DailyChallengeController)
+local UIVisibilityManager = require(script.Controllers.UIVisibilityManager)
 
 -- 컨트롤러 인스턴스 생성
 local inputController = InputController.new()
@@ -162,6 +163,25 @@ local miniGameController = MiniGameController.new()
 local activeSkillController = ActiveSkillController.new()
 local randomEventController = RandomEventController.new()
 local dailyChallengeController = DailyChallengeController.new()
+
+-- UIVisibilityManager 초기화 (게임 상태별 UI 가시성 중앙 관리)
+UIVisibilityManager:Init({
+	dailyChallengeController = dailyChallengeController,
+	objectiveHudController = objectiveHudController,
+	progressionController = progressionController,
+	runSkillHudController = runSkillHudController,
+	activeSkillController = activeSkillController,
+	miniGameController = miniGameController,
+	feverController = feverController,
+	scenarioController = scenarioController,
+	worldMapController = worldMapController,
+	realtimeBattleController = realtimeBattleController,
+	dailyEventController = dailyEventController,
+	rankingController = rankingController,
+	petController = petController,
+	coinKingController = coinKingController,
+})
+UIVisibilityManager:SetState("lobby")
 
 -- 배틀패스 컨트롤러 초기화
 battlePassController:Init()
@@ -284,9 +304,10 @@ RemoteEvents.PlayerDataRequest:FireServer()
 -- 로비 복귀 처리
 RemoteEvents.ReturnToLobby.OnClientEvent:Connect(function()
 	print("[Client] Returned to lobby")
-	uiController:HideGameOver() -- 게임오버 화면 명시적 제거 (로비 안내와 겹침 방지)
+	-- UI 상태 전환: lobby (UIVisibilityManager가 모든 컨트롤러 가시성 관리)
+	UIVisibilityManager:SetState("lobby")
+	uiController:HideGameOver()
 	uiController:ShowLobbyUI()
-	feverController:HideGauge()
 
 	-- 로비에서는 기본 이동 활성화
 	enableDefaultControls()
@@ -302,15 +323,6 @@ RemoteEvents.ReturnToLobby.OnClientEvent:Connect(function()
 
 	-- 코인 킹 연출 종료
 	coinKingController:EndGame()
-
-	-- 진행도 UI 표시
-	progressionController:ShowInLobby()
-	scenarioController:ShowInLobby()
-	worldMapController:ShowInLobby()
-	rankingController:ShowInLobby()
-	realtimeBattleController:ShowInLobby()
-	dailyEventController:ShowInLobby()
-	objectiveHudController:EndGame()
 end)
 
 -- Zone Skip 프롬프트 표시 (선택 후 useZoneSkip과 함께 서버 전송)
@@ -546,15 +558,11 @@ end)
 -- 서버로부터 게임 시작 응답 수신
 RemoteEvents.GameStart.OnClientEvent:Connect(function(data)
 	print("[Client] Game start confirmed by server")
-	-- 1. UI 전환: 로비 UI 숨기고 게임 UI 표시
+	-- 1. UI 전환: UIVisibilityManager로 중앙 관리
+	UIVisibilityManager:SetState("countdown")
 	uiController:HideGameOver()
 	uiController:HideLobbyUI()
 	leaderboardController:Hide()
-	progressionController:HideForGame()
-	scenarioController:HideForGame()
-	worldMapController:HideForGame()
-	rankingController:HideForGame()
-	realtimeBattleController:HideForGame()
 
 	-- 2. 컨트롤 전환: 기본 이동 비활성화
 	disableDefaultControls()
@@ -590,6 +598,9 @@ RemoteEvents.GameStart.OnClientEvent:Connect(function(data)
 				hrp.Anchored = false
 			end
 		end
+
+		-- UI 상태 전환: running (최소 HUD 모드)
+		UIVisibilityManager:SetState("running")
 
 		-- 업그레이드 보너스 적용 (base_speed / base_jump)
 		playerController:SetUpgradeBonuses(data.baseSpeedBonus or 0, data.baseJumpBonus or 0)
@@ -681,12 +692,12 @@ end)
 
 -- 서버로부터 게임 종료 수신
 RemoteEvents.GameOver.OnClientEvent:Connect(function(data)
+	-- UI 상태 전환: gameover
+	UIVisibilityManager:SetState("gameover")
+
 	-- 스와이프 입력 비활성화
 	inputController:SetGameActive(false)
 	coinController:SetGameActive(false)
-
-	-- 피버 게이지 숨기기
-	feverController:HideGauge()
 
 	-- 스킬 비활성화
 	skillController:SetGameActive(false)
