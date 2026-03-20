@@ -72,6 +72,32 @@ function ResponsiveUtil.onViewportChanged(callback: (Vector2) -> ()): RBXScriptC
 	return event.Event:Connect(function() end)
 end
 
+-- Check if device is in compact mode (small mobile: width < 500px)
+function ResponsiveUtil.isCompactMode(): boolean
+	local viewport = getViewportSize()
+	return viewport.X < 500
+end
+
+-- Scale offset with compact mode multiplier (smaller on tiny screens)
+function ResponsiveUtil.compactOffset(px: number, compactMultiplier: number?): number
+	local scale = ResponsiveUtil.getScaleFactor()
+	local result = math.round(px * scale)
+	if ResponsiveUtil.isCompactMode() then
+		result = math.round(result * (compactMultiplier or 0.8))
+	end
+	return result
+end
+
+-- Scale text size with compact mode reduction
+function ResponsiveUtil.compactTextSize(base: number, min: number, compactMultiplier: number?): number
+	local scale = ResponsiveUtil.getScaleFactor()
+	local result = math.round(base * scale)
+	if ResponsiveUtil.isCompactMode() then
+		result = math.round(result * (compactMultiplier or 0.85))
+	end
+	return math.max(result, min)
+end
+
 -- Get current viewport size (public)
 function ResponsiveUtil.getViewportSize(): Vector2
 	return getViewportSize()
