@@ -66,16 +66,25 @@ GameConstants.CHUNK_SPAWN_RATES = {
 		Bonus = 0.10,
 		NPC = 0.10,
 	},
-	-- 60~120초
+	-- 60~90초 (Zone 2 초반 — Normal 중심, Hard 도입 시작)
 	{
-		maxTime = 120,
-		Easy = 0.20,
+		maxTime = 90,
+		Easy = 0.25,
 		Normal = 0.40,
-		Hard = 0.20,
+		Hard = 0.15,
 		Bonus = 0.10,
 		NPC = 0.10,
 	},
-	-- 120~180초
+	-- 90~120초 (Zone 2 후반 — Hard 비율 상승)
+	{
+		maxTime = 120,
+		Easy = 0.15,
+		Normal = 0.40,
+		Hard = 0.25,
+		Bonus = 0.10,
+		NPC = 0.10,
+	},
+	-- 120~180초 (Zone 3 — 신규 장애물 등장, Hard 균형)
 	{
 		maxTime = 180,
 		Easy = 0.10,
@@ -84,14 +93,23 @@ GameConstants.CHUNK_SPAWN_RATES = {
 		Bonus = 0.10,
 		NPC = 0.10,
 	},
-	-- 180초+
+	-- 180~240초 (Zone 4 — LaserBeam 등장, Hard 강화)
+	{
+		maxTime = 240,
+		Easy = 0.05,
+		Normal = 0.28,
+		Hard = 0.42,
+		Bonus = 0.12,
+		NPC = 0.13,
+	},
+	-- 240초+ (Zone 5 — 최고 난이도)
 	{
 		maxTime = math.huge,
-		Easy = 0.05,
-		Normal = 0.30,
-		Hard = 0.45,
-		Bonus = 0.10,
-		NPC = 0.10,
+		Easy = 0.03,
+		Normal = 0.25,
+		Hard = 0.47,
+		Bonus = 0.12,
+		NPC = 0.13,
 	},
 }
 
@@ -1537,6 +1555,8 @@ GameConstants.OBSTACLE_COMBOS = {
 		{ name = "low_double",   obstacles = { { type = "LowWall",   xOffset = 0 }, { type = "LowWall",   xOffset = 20 } } },
 		{ name = "spike_gap",    obstacles = { { type = "SpikeTrap", xOffset = 0 }, { type = "Gap",       xOffset = 22 } } },
 		{ name = "tunnel_spike", obstacles = { { type = "Tunnel",    xOffset = 0 }, { type = "SpikeTrap", xOffset = 22 } } },
+		-- 신규: 낙석-터널 (경고 읽기 + 슬라이드)
+		{ name = "rock_tunnel",  obstacles = { { type = "FallingRock", xOffset = 0 }, { type = "Tunnel", xOffset = 22 } } },
 	},
 	-- Hard 난이도 콤보 (35% 확률로 선택)
 	hard = {
@@ -1544,6 +1564,10 @@ GameConstants.OBSTACLE_COMBOS = {
 		{ name = "moving_spike",    obstacles = { { type = "MovingWall", xOffset = 0 }, { type = "SpikeTrap",       xOffset = 20 } } },
 		{ name = "double_gap",      obstacles = { { type = "DoubleWall", xOffset = 0 }, { type = "Gap",             xOffset = 22 } } },
 		{ name = "triple_gauntlet", obstacles = { { type = "LowWall",    xOffset = 0 }, { type = "SpikeTrap",       xOffset = 18 }, { type = "Gap", xOffset = 36 } } },
+		-- 신규: 타이밍 콤보
+		{ name = "pendulum_barrel", obstacles = { { type = "PendulumLog", xOffset = 0 }, { type = "ExplodingBarrel", xOffset = 22 } } },
+		{ name = "laser_wall",      obstacles = { { type = "LaserBeam",   xOffset = 0 }, { type = "LowWall",         xOffset = 20 } } },
+		{ name = "rock_spike",      obstacles = { { type = "FallingRock", xOffset = 0 }, { type = "SpikeTrap",       xOffset = 22 } } },
 	},
 }
 
@@ -1571,6 +1595,9 @@ GameConstants.OBSTACLE_RHYTHMS = {
 		-- 점프-갭 (낮은 벽 넘고 구덩이 점프)
 		{ name = "wall_then_gap",
 		  beats = { { type = "LowWall", xOffset = 0 }, { type = "Gap", xOffset = 22 } } },
+		-- 신규: 낙석-점프 (경고 읽고 점프)
+		{ name = "rock_then_jump",
+		  beats = { { type = "FallingRock", xOffset = 0 }, { type = "LowWall", xOffset = 24 } } },
 	},
 	-- ===================== Hard 리듬 =====================
 	hard = {
@@ -1592,6 +1619,15 @@ GameConstants.OBSTACLE_RHYTHMS = {
 		-- 갭-더블점프-갭 (연속 공중 이동)
 		{ name = "gap_double_gap",
 		  beats = { { type = "Gap", xOffset = 0 }, { type = "DoubleWall", xOffset = 22 }, { type = "Gap", xOffset = 44 } } },
+		-- 신규: 통나무-갭-벽 (타이밍 후 점프 연속)
+		{ name = "pendulum_gap_wall",
+		  beats = { { type = "PendulumLog", xOffset = 0 }, { type = "Gap", xOffset = 24 }, { type = "LowWall", xOffset = 46 } } },
+		-- 신규: 레이저-슬라이드-낙석 (타이밍 복합)
+		{ name = "laser_slide_rock",
+		  beats = { { type = "LaserBeam", xOffset = 0 }, { type = "Tunnel", xOffset = 22 }, { type = "FallingRock", xOffset = 44 } } },
+		-- 신규: 낙석-배럴 (연속 위치 회피)
+		{ name = "rock_barrel",
+		  beats = { { type = "FallingRock", xOffset = 0 }, { type = "ExplodingBarrel", xOffset = 22 } } },
 	},
 }
 
@@ -1623,6 +1659,12 @@ GameConstants.SKILL_ROUTES = {
 	DoubleWall = { { xOffset = 0, y = 8.0, coinType = "Silver" }, { xOffset = 4, y = 9.5, coinType = "Gold" } },
 	-- ExplodingBarrel 폭발 직전 순간 이동 — 배럴 옆을 스치면 Silver 코인
 	ExplodingBarrel = { { xOffset = -6, y = 6.0, coinType = "Silver" }, { xOffset = 6, y = 6.0, coinType = "Silver" } },
+	-- PendulumLog 통과 직후 — 타이밍 맞추면 Gold
+	PendulumLog = { { xOffset = 4, y = 6.0, coinType = "Gold" } },
+	-- LaserBeam Off 구간 — 레이저 위치 바로 위 Gold
+	LaserBeam = { { xOffset = 0, y = 5.5, coinType = "Gold" } },
+	-- FallingRock 낙하 지점 — 바위 직전 위치에 Diamond (고위험 고보상)
+	FallingRock = { { xOffset = 0, y = 7.0, coinType = "Diamond" } },
 }
 
 -- 스킬 루트 코인 출현 확률 (난이도별)
@@ -1693,6 +1735,45 @@ GameConstants.GRAVITY_ZONE = {
 	EFFECT_DURATION    = 8.0, -- 저중력 지속 시간 (초, 청크 통과 시간보다 길게)
 	MARKER_COLOR       = Color3.fromRGB(80, 120, 255), -- 파란 네온 마커
 	MARKER_SIZE        = Vector3.new(80, 0.5, 12),     -- 청크 폭 전체 얇은 바닥 마커
+}
+
+-- PendulumLog 상수 (Zone 3+, Hard 전용 — 상하 스윙 통나무)
+-- 타이밍에 맞춰 통과: 통나무가 올라간 틈에 지나감
+GameConstants.PENDULUM_LOG = {
+	SIZE           = Vector3.new(3, 3, 10),            -- 통나무 크기
+	COLOR          = Color3.fromRGB(120, 70, 30),      -- 갈색 나무
+	SWING_Y_MIN    = 0,                                -- 최저 위치 (지면)
+	SWING_Y_MAX    = 9,                                -- 최고 위치 (높이 올라감)
+	SWING_CYCLE    = 2.4,                              -- 상하 왕복 주기 (초)
+	CLEAR_Y        = 4,                                -- 이 높이 이상이면 아래로 통과 가능
+	NORMAL_CHANCE  = 0.0,                              -- Normal: 비등장
+	HARD_CHANCE    = 0.10,                             -- Hard: 10%
+}
+
+-- LaserBeam 상수 (Zone 4+, Hard 전용 — On/Off 토글 레이저)
+-- 레이저 Off 타이밍에 맞춰 통과
+GameConstants.LASER_BEAM = {
+	SIZE           = Vector3.new(1, 0.4, 12),          -- 얇은 수평 빔
+	COLOR_ON       = Color3.fromRGB(255, 30, 30),      -- 활성 시 빨간 네온
+	COLOR_OFF      = Color3.fromRGB(80, 80, 80),       -- 비활성 시 회색
+	HEIGHT         = 3,                                -- 빔 높이 (점프로 회피)
+	ON_DURATION    = 1.2,                              -- On 지속 시간 (초)
+	OFF_DURATION   = 0.8,                              -- Off 지속 시간 (초, 통과 가능 구간)
+	HARD_CHANCE    = 0.08,                             -- Hard: 8%
+}
+
+-- FallingRock 상수 (Zone 3+, Normal/Hard — 경고 그림자 후 낙석)
+-- 바닥 경고 표시 → 일정 시간 후 바위 낙하, 위치 회피
+GameConstants.FALLING_ROCK = {
+	SIZE           = Vector3.new(4, 4, 10),            -- 바위 크기
+	COLOR          = Color3.fromRGB(100, 90, 80),      -- 회갈색 바위
+	WARNING_SIZE   = Vector3.new(5, 0.2, 10),          -- 바닥 경고 그림자
+	WARNING_COLOR  = Color3.fromRGB(255, 60, 60),      -- 빨간 경고 그림자
+	DROP_HEIGHT    = 25,                               -- 낙하 시작 높이 (studs)
+	WARNING_TIME   = 0.8,                              -- 경고 표시 → 낙하까지 (초)
+	DROP_SPEED     = 0.4,                              -- 낙하 시간 (초)
+	NORMAL_CHANCE  = 0.10,                             -- Normal: 10%
+	HARD_CHANCE    = 0.15,                             -- Hard: 15%
 }
 
 -- =====================================================================
