@@ -40,6 +40,7 @@ local AnalyticsService = require(script.Parent.AnalyticsService)
 local ActiveSkillService = require(script.Parent.ActiveSkillService)
 local RandomEventService = require(script.Parent.RandomEventService)
 local DailyChallengeService = require(script.Parent.DailyChallengeService)
+local CharacterService = require(script.Parent.CharacterService)
 local RateLimiter = require(ReplicatedStorage.Shared.Utils.RateLimiter)
 
 -- BattlePassService: Init registers the PlayerDataService dependency
@@ -486,6 +487,16 @@ RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { 
 		elseif powerupId == "start_double" then
 			powerupService:ActivatePowerup("DoubleCoin")
 		end
+	end
+
+	-- Character passive: start_magnet (게임 시작 시 자동 자석 발동)
+	local startMagnetDur = CharacterService:GetStartMagnetDuration(player, PlayerDataService)
+	if startMagnetDur > 0 then
+		powerupService:ActivatePowerup("Magnet")
+		-- 기본 자석 시간 대신 캐릭터 패시브 시간 적용 (더 긴 쪽 유지)
+		local defaultEnd = powerupService._magnetEndTime or 0
+		local passiveEnd = tick() + startMagnetDur
+		powerupService._magnetEndTime = math.max(defaultEnd, passiveEnd)
 	end
 
 	-- 런 목표 생성 및 클라이언트 전송
@@ -1396,7 +1407,12 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 		session.powerupsCollected += #collectedPowerups
 
 		-- 코인 수집 체크 (자석 효과 적용, 피버/슈퍼피버 시 초강력 자석)
-		local magnetRadius = powerupService:GetMagnetRadius() + session.scenarioStatBonuses.magnetRadius + session.upgradeBonuses.magnetBonus + PetService:GetMagnetBonus(player, PlayerDataService)
+		local magnetRadius = powerupService:GetMagnetRadius() + session.scenarioStatBonuses.magnetRadius + session.upgradeBonuses.magnetBonus + PetService:GetMagnetBonus(player, PlayerDataService) + CharacterService:GetMagnetBonus(player, PlayerDataService)
+		-- Active Skill: magnet_burst 즉시 흡수 (발동 프레임에 반경 확장)
+		local burstActive, burstRadius = ActiveSkillService:ConsumeMagnetBurst(session)
+		if burstActive then
+			magnetRadius = math.max(magnetRadius, burstRadius)
+		end
 		-- 헤드스타트 자석 효과 (일반 자석 반경과 동등)
 		if session.headStartActive then
 			magnetRadius = math.max(magnetRadius, GameConstants.MINI_FEVER.MAGNET_RADIUS)
@@ -1417,6 +1433,10 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 		-- 소모형 코인 부스트 적용
 		if session.coinBoostActive then
 			coinMultiplier *= session.coinBoostMultiplier
+		end
+		-- RandomEvent: coin_rain 활성 시 코인 2배
+		if session._coinRainActive then
+			coinMultiplier *= 2
 		end
 		if session.isSuperFever then
 			coinMultiplier *= GameConstants.SUPER_FEVER.COIN_MULTIPLIER
@@ -1536,7 +1556,7 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 					print(`[GameManager] SUPER FEVER activated for {player.Name}!`)
 				else
 					session.isSuperFever = false
-					local feverDuration = GameConstants.FEVER.DURATION + session.upgradeBonuses.feverExtend
+					local feverDuration = GameConstants.FEVER.DURATION + session.upgradeBonuses.feverExtend + PetService:GetFeverBonus(player, PlayerDataService) + CharacterService:GetFeverExtend(player, PlayerDataService)
 					session.feverEndTime = now + feverDuration
 					RemoteEvents.FeverStart:FireClient(player, {
 						duration = feverDuration,
@@ -1646,6 +1666,12 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 		elseif session.isFever then
 			_estimatedSpeed = _estimatedSpeed * GameConstants.FEVER.SPEED_BOOST
 		end
+		-- Active Skill: dash 속도 배율 반영
+		_estimatedSpeed = _estimatedSpeed * ActiveSkillService:GetDashMultiplier(session)
+		-- RandomEvent: speed_shift 속도 배율 반영
+		if session._speedShiftMultiplier and session._speedShiftMultiplier ~= 1.0 then
+			_estimatedSpeed = _estimatedSpeed * session._speedShiftMultiplier
+		end
 		local chaseMobHit = obstacleService:UpdateChaseMobs(hrp.Position, _estimatedSpeed, session.isFever or session.isSuperFever)
 
 		-- MushroomPad 밟기 판정 (Zone 3 전용)
@@ -1664,7 +1690,11 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 		-- 장애물 충돌 체크
 		local isSliding = hrp:GetAttribute("IsSliding") or false
 		local isMini = powerupService:IsMiniSizeActive()
-		local hitObstacle = obstacleService:CheckObstacleCollision(hrp.Position, isSliding, isMini)
+		-- Character passive: hitbox_reduction → isMini와 동일하게 축소 히트박스 적용
+		local charPassive = CharacterService:GetPassiveBonus(player, PlayerDataService)
+		local effectiveMini = isMini or (charPassive.type == "hitbox_reduction")
+		-- RandomEvent: giant_mode 활성 시 히트박스 확대 안 함 (시각만 커짐, 판정은 유지)
+		local hitObstacle = obstacleService:CheckObstacleCollision(hrp.Position, isSliding, effectiveMini)
 			or chaseMobHit
 
 		-- 헤드스타트 만료 체크 (10초 후 비활성화)
@@ -1698,6 +1728,11 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 			elseif ActiveSkillService:ConsumeShieldHit(session) then
 				-- Shield absorbed the hit
 				RemoteEvents.SkillActivated:FireClient(player, { skillId = "shield_absorb" })
+			-- Character passive: hit_resist (확률적 피격 무시)
+			elseif CharacterService:HasHitResist(player, PlayerDataService) and math.random() < CharacterService:GetHitResistChance(player, PlayerDataService) then
+				-- 캐릭터 패시브로 피격 저항 성공
+				print(`[GameManager] Player {player.Name} resisted hit (character passive)!`)
+				RemoteEvents.SkillActivated:FireClient(player, { skillId = "hit_resist" })
 			else
 				-- 라이프 감소
 				session.lives -= 1
