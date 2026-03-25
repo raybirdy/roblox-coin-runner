@@ -124,6 +124,10 @@ function RandomEventService:_applyEffect(session: any, config: any)
 		session._gravityMultiplier = config.gravityMultiplier or 0.4
 	elseif config.id == "fog" then
 		session._fogActive = true
+	elseif config.id == "bonus_time" then
+		session._bonusTimeActive = true
+		session._bonusTimeCoinMult = config.coinMultiplier or 3
+		session._bonusTimeSpeedMult = config.speedReduction or 0.75
 	end
 end
 
@@ -139,6 +143,10 @@ function RandomEventService:_revertEffect(session: any, config: any)
 		session._gravityMultiplier = 1.0
 	elseif config.id == "fog" then
 		session._fogActive = false
+	elseif config.id == "bonus_time" then
+		session._bonusTimeActive = false
+		session._bonusTimeCoinMult = 1
+		session._bonusTimeSpeedMult = 1
 	end
 end
 

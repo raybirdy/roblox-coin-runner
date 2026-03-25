@@ -55,6 +55,74 @@ function PetService:GetMagnetBonus(player: Player, playerDataService: any): numb
 	return (pet.magnetBonus or 0) + levelBonus
 end
 
+-- 펫 액티브 스킬 업데이트 (GameManager Heartbeat에서 호출)
+-- 쿨다운마다 자동 발동, 효과를 세션에 적용
+function PetService:UpdatePetSkill(player: Player, playerDataService: any, session: any, deltaTime: number)
+	local pet = _getEquippedPetData(player, playerDataService)
+	if not pet then return end
+
+	local skillConfig = GameConstants.PET_SKILLS[pet.id]
+	if not skillConfig then return end
+
+	-- 쿨다운 타이머 초기화
+	if not session._petSkillTimer then
+		session._petSkillTimer = 0
+	end
+	session._petSkillTimer += deltaTime
+
+	if session._petSkillTimer < skillConfig.interval then return end
+	session._petSkillTimer = 0
+
+	-- 스킬 발동
+	if skillConfig.id == "auto_magnet" then
+		-- 자석 자동 발동 (일시적으로 자석 반경 확대)
+		session._petAutoMagnetActive = true
+		task.delay(skillConfig.duration, function()
+			session._petAutoMagnetActive = false
+		end)
+	elseif skillConfig.id == "auto_shield" then
+		-- 피격 1회 자동 방어
+		if not session._petShieldActive then
+			session._petShieldActive = true
+		end
+	elseif skillConfig.id == "auto_coin_burst" then
+		-- 주변 코인 즉시 흡수 (magnet burst와 동일)
+		session._petCoinBurstActive = true
+		task.defer(function()
+			session._petCoinBurstActive = false
+		end)
+	elseif skillConfig.id == "auto_slow" then
+		-- 속도 감소 (코인 수집 기회)
+		session._petSlowActive = true
+		task.delay(skillConfig.duration, function()
+			session._petSlowActive = false
+		end)
+	elseif skillConfig.id == "auto_jump_boost" then
+		-- 점프력 부스트 (클라이언트에 알림)
+		RemoteEvents.PetSkillActivated:FireClient(player, {
+			skillId = skillConfig.id,
+			duration = skillConfig.duration,
+		})
+	end
+
+	-- 클라이언트에 스킬 발동 알림 (VFX용)
+	if skillConfig.id ~= "auto_jump_boost" then
+		RemoteEvents.PetSkillActivated:FireClient(player, {
+			skillId = skillConfig.id,
+			duration = skillConfig.duration or 0,
+		})
+	end
+end
+
+-- 펫 쉴드 소비 (피격 시 호출)
+function PetService:ConsumePetShield(session: any): boolean
+	if session._petShieldActive then
+		session._petShieldActive = false
+		return true
+	end
+	return false
+end
+
 -- 피버 지속 시간 추가 (초)
 function PetService:GetFeverBonus(player: Player, playerDataService: any): number
 	local pet = _getEquippedPetData(player, playerDataService)

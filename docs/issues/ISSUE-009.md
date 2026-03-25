@@ -3,11 +3,11 @@ id: ISSUE-009
 title: 콤보 배율 실시간 상승 시스템 — 마일스톤 방식에서 연속 배율로 전환
 category: improvement
 priority: P1-high
-status: open
+status: resolved
 related_sprint: none (v3.2 후보)
 related_ac: none
 created: 2026-03-25
-resolved: null
+resolved: 2026-03-25
 ---
 
 ## 설명
@@ -41,4 +41,4 @@ resolved: null
 - **의존성**: Fever 임계값 재밸런싱, BattlePass XP `COMBO_10` 재설계, 일일 챌린지 `reach_combo` 목표 조정
 
 ## 해결 방안
-(Sprint 편입 시 /dev로 구현)
+GameConstants에 COMBO_MULTIPLIER 테이블 추가 (5/15/30/50 콤보 → 1.5x/2x/3x/5x). GameManager 코인 배율에 session.comboMultiplier 반영. 피격 시 콤보 리셋 + 배율 초기화. FeverGaugeUpdate에 comboMultiplier 포함.

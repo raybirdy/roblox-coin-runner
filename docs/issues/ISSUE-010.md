@@ -3,11 +3,11 @@ id: ISSUE-010
 title: 보너스 타임 이벤트 — 비활성화된 미니게임을 러너 내 보너스 구간으로 대체
 category: improvement
 priority: P1-high
-status: open
+status: resolved
 related_sprint: none (v3.2 후보)
 related_ac: none
 created: 2026-03-25
-resolved: null
+resolved: 2026-03-25
 ---
 
 ## 설명
@@ -37,4 +37,4 @@ resolved: null
 - **관련 이슈**: ISSUE-006 (미니게임 task.cancel 에러), ISSUE-007 (미니게임 게임성 고도화)
 
 ## 해결 방안
-(Sprint 편입 시 /dev로 구현 — ISSUE-007을 이 이슈로 대체/병합 검토)
+RandomEventService에 bonus_time 이벤트 추가 (코인 3배, 속도 75%). GameManager에서 _bonusTimeActive 플래그 소비 (코인/속도 모두 반영). 클라이언트: 골든 틴트 + 코인비 이펙트. 미니게임(ISSUE-007) 대체 완료.

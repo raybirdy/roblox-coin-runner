@@ -3,11 +3,11 @@ id: ISSUE-011
 title: 캐릭터 고유 스킬 활성화 검증 — 기존 구현의 서버 효과 적용 확인
 category: improvement
 priority: P1-high
-status: open
+status: resolved
 related_sprint: none (v3.2 후보)
 related_ac: none
 created: 2026-03-25
-resolved: null
+resolved: 2026-03-25
 ---
 
 ## 설명
@@ -38,4 +38,4 @@ Coin Runner에는 이미 캐릭터 스킬 시스템이 **80% 구현되어 있음
 - **의존성**: ActiveSkillService와 캐릭터 스킬 간 슬롯 공유 여부 설계 결정 필요
 
 ## 해결 방안
-(Sprint 편입 시 /dev로 검증 및 구현)
+CharacterService에 _applySkillEffect() 추가 — 5종 스킬(dash/vortex/shield/sparkle/magnet_field) 세션 효과 적용. GameManager에 CharacterService:SetActiveSessions() 연결. dash/shield → 피격 무적, vortex → 50 studs 자석, sparkle → 미니피버 즉시 발동, magnet_field → 자석 2배.

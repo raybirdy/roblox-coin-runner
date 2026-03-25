@@ -10,6 +10,12 @@ local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)
 local RateLimiter = require(ReplicatedStorage.Shared.Utils.RateLimiter)
 
 local CharacterService = {}
+CharacterService._activeSessions = nil :: { [Player]: any }?
+
+-- 게임 세션 연결 (GameManager에서 호출)
+function CharacterService:SetActiveSessions(sessions: { [Player]: any })
+	self._activeSessions = sessions
+end
 
 -- 캐릭터 ID → 데이터 맵
 local characterMap: { [string]: any } = {}
@@ -129,6 +135,48 @@ local function isSkillReady(playerData: any, characterId: string, cooldown: numb
 	return os.time() - lastUsed >= cooldown
 end
 
+-- 스킬 효과를 세션에 적용
+function CharacterService:_applySkillEffect(player: Player, skill: any)
+	local session = self._activeSessions and self._activeSessions[player]
+	if not session then return end
+
+	if skill.id == "dash" then
+		-- 대시: 짧은 무적 + 속도 부스트
+		session._charDashActive = true
+		task.delay(skill.duration or 0.4, function()
+			session._charDashActive = false
+		end)
+	elseif skill.id == "vortex" then
+		-- 마법 소용돌이: 주변 코인 전부 흡수 (자석 반경 극대화)
+		session._charVortexActive = true
+		session._charVortexRadius = 50
+		task.delay(skill.duration or 4, function()
+			session._charVortexActive = false
+			session._charVortexRadius = 0
+		end)
+	elseif skill.id == "shield" then
+		-- 방패: 무적
+		session._charShieldActive = true
+		task.delay(skill.duration or 3, function()
+			session._charShieldActive = false
+		end)
+	elseif skill.id == "sparkle" then
+		-- 반짝임: 즉시 미니 피버 발동
+		if not session.isFever and not session.isMiniFever then
+			session.isMiniFever = true
+			session.miniFeverEndTime = os.clock() + GameConstants.MINI_FEVER.DURATION
+		end
+	elseif skill.id == "magnet_field" then
+		-- 자기장: 자석 반경 2배
+		session._charMagnetFieldActive = true
+		session._charMagnetFieldMult = 2.0
+		task.delay(skill.duration or 10, function()
+			session._charMagnetFieldActive = false
+			session._charMagnetFieldMult = 1.0
+		end)
+	end
+end
+
 -- 스킬 사용 처리
 function CharacterService:_onSkillUse(player: Player, playerDataService: any)
 	local playerData = playerDataService:GetPlayerData(player)
@@ -152,6 +200,9 @@ function CharacterService:_onSkillUse(player: Player, playerDataService: any)
 		playerData.characterSkillLastUsed = {}
 	end
 	playerData.characterSkillLastUsed[characterId] = os.time()
+
+	-- 서버 게임 세션에 스킬 효과 적용
+	self:_applySkillEffect(player, skill)
 
 	-- 클라이언트에 스킬 발동 알림
 	RemoteEvents.CharacterSkillActivated:FireClient(player, {

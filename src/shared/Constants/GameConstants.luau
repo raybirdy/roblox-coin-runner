@@ -214,10 +214,23 @@ GameConstants.CONSOLATION = {
 GameConstants.SCORE = {
 	DISTANCE_MULTIPLIER = 1, -- 1 stud = 1 점
 	NEAR_MISS_BONUS = 5,
-	COMBO_10_BONUS = 10,
+	COMBO_10_BONUS = 10, -- (레거시, 하위호환용)
 	COMBO_30_BONUS = 30,
 	COMBO_50_BONUS = 50,
 	COMBO_TIMEOUT = 3, -- 콤보 리셋 시간 (초) - 6~8세 반응속도 고려
+}
+
+-- 콤보 실시간 배율 시스템 (마일스톤 보너스를 대체/보강)
+-- 코인 수집 시 comboCount에 따라 배율 적용
+GameConstants.COMBO_MULTIPLIER = {
+	TIERS = {
+		{ threshold = 5,  multiplier = 1.5 },
+		{ threshold = 15, multiplier = 2.0 },
+		{ threshold = 30, multiplier = 3.0 },
+		{ threshold = 50, multiplier = 5.0 },
+	},
+	DEFAULT_MULTIPLIER = 1.0,
+	RESET_ON_HIT = true, -- 피격 시 콤보 리셋 + 배율 초기화
 }
 
 -- 파워업 (자석, 쉴드, 무적, 2배코인, 미니사이즈)
@@ -1947,6 +1960,17 @@ GameConstants.PETS.MAX_PET_LEVEL = 5
 GameConstants.PETS.LEVEL_COIN_BONUS = 0.02 -- 레벨당 coinBonus +0.02 (누적)
 GameConstants.PETS.LEVEL_MAGNET_BONUS = 0.5 -- 레벨당 magnetBonus +0.5 studs (누적)
 
+-- 펫 액티브 스킬 (하이브리드: 기존 패시브 유지 + 자동 발동 액티브 추가)
+-- 자동 발동: 쿨다운마다 자동으로 효과 적용 (플레이어 입력 불필요)
+GameConstants.PET_SKILLS = {
+	chick    = nil, -- 병아리: 스킬 없음 (기본 펫)
+	rabbit   = { id = "auto_jump_boost", interval = 20, duration = 3, desc = "3초간 점프력 1.3배" },
+	cat      = { id = "auto_magnet",     interval = 18, duration = 2, desc = "2초간 자석 자동 발동" },
+	dog      = { id = "auto_shield",     interval = 30, duration = 0, desc = "피격 1회 자동 방어" },
+	penguin  = { id = "auto_slow",       interval = 25, duration = 3, desc = "3초간 속도 감소 (코인 수집 기회)" },
+	fox      = { id = "auto_coin_burst", interval = 15, duration = 0, desc = "주변 코인 즉시 흡수" },
+}
+
 -- ==================== 캐릭터 시스템 ====================
 GameConstants.CHARACTERS = {
 	LIST = {
@@ -2453,7 +2477,23 @@ GameConstants.RANDOM_EVENTS = {
 			effect = "visibility_change",
 			fogEnd = 80,
 		},
+		{
+			id = "bonus_time",
+			displayName = "BONUS TIME!",
+			emoji = "🎉",
+			duration = 12,
+			effect = "bonus_time",
+			coinMultiplier = 3,     -- 코인 3배
+			speedReduction = 0.75,  -- 속도 75%로 감소
+		},
 	},
+}
+
+-- 보너스 타임 상수 (미니게임 대체, 러너 흐름 유지)
+GameConstants.BONUS_TIME = {
+	COIN_MULTIPLIER = 3,      -- 코인 가치 3배
+	SPEED_REDUCTION = 0.75,   -- 이동 속도 75%
+	OBSTACLE_REDUCE = true,   -- 장애물 밀도 감소 (Bonus 청크와 유사)
 }
 
 -- Daily Challenge System (v3)
