@@ -440,6 +440,15 @@ function ObstacleService:SpawnObstaclesInChunk(chunk: Model, difficulty: string)
 		-- 장애물 타입 선택
 		local obstacleType = self:_selectObstacleType(difficulty)
 
+		-- 존 제한 필터링: 특정 장애물은 해당 Zone 이후에만 등장
+		-- PendulumLog/FallingRock: Zone 3+, LaserBeam: Zone 4+
+		local zone = self._currentZoneIndex
+		local isZoneRestricted = ((obstacleType == "PendulumLog" or obstacleType == "FallingRock") and zone < 3)
+			or (obstacleType == "LaserBeam" and zone < 4)
+		if isZoneRestricted then
+			obstacleType = "LowWall" -- 해당 Zone 미만에서는 기본 장애물로 대체
+		end
+
 		-- 장애물 생성
 		self:_spawnObstacle(obstaclePosition, obstacleType)
 
@@ -474,32 +483,41 @@ function ObstacleService:_selectObstacleType(difficulty: string): string
 		-- Easy는 Low Wall만 (점프만 연습)
 		return "LowWall"
 	elseif difficulty == "Normal" then
-		-- Normal: Low Wall + Tunnel + SpikeTrap + ExplodingBarrel (20%)
-		if rand < 0.20 then
+		-- Normal: Low Wall + Tunnel + SpikeTrap + ExplodingBarrel + FallingRock
+		-- Zone 3+ 제한은 ChunkService에서 처리, 여기는 확률만 정의
+		if rand < 0.18 then
 			return "ExplodingBarrel"
-		elseif rand < 0.50 then
+		elseif rand < 0.45 then
 			return "LowWall"
-		elseif rand < 0.78 then
+		elseif rand < 0.68 then
 			return "Tunnel"
-		elseif rand < 0.93 then
+		elseif rand < 0.82 then
 			return "SpikeTrap"
+		elseif rand < 0.92 then
+			return "FallingRock" -- 10% (Zone 3+에서만 실제 스폰)
 		else
 			return "Gap"
 		end
 	elseif difficulty == "Hard" then
-		-- Hard: 모든 타입 + ExplodingBarrel (30%), ChaseMob은 SpawnObstaclesInChunk에서 별도 처리
-		if rand < 0.30 then
+		-- Hard: 모든 타입 + 신규 3종, ChaseMob은 SpawnObstaclesInChunk에서 별도 처리
+		if rand < 0.24 then
 			return "ExplodingBarrel"
-		elseif rand < 0.49 then
+		elseif rand < 0.40 then
 			return "LowWall"
-		elseif rand < 0.65 then
+		elseif rand < 0.54 then
 			return "Tunnel"
-		elseif rand < 0.76 then
+		elseif rand < 0.63 then
 			return "SpikeTrap"
-		elseif rand < 0.88 then
+		elseif rand < 0.73 then
 			return "DoubleWall"
-		elseif rand < 0.96 then
+		elseif rand < 0.80 then
 			return "MovingWall"
+		elseif rand < 0.87 then
+			return "PendulumLog" -- 7% (Zone 3+)
+		elseif rand < 0.93 then
+			return "LaserBeam" -- 6% (Zone 4+)
+		elseif rand < 0.97 then
+			return "FallingRock" -- 4% (Zone 3+)
 		else
 			return "Gap"
 		end
@@ -799,6 +817,244 @@ function ObstacleService:_spawnObstacle(position: Vector3, obstacleType: string)
 		table.insert(self._activeObstacles, swData)
 		print(`[ObstacleService] Spawned ShadowWall at {position}`)
 		return
+
+	elseif obstacleType == "PendulumLog" then
+		-- 상하 스윙 통나무 (Zone 3+, Hard 전용 — 타이밍 맞춰 통과)
+		local logSize = GameConstants.PENDULUM_LOG.SIZE
+		local startHigh = math.random() > 0.5
+
+		obstacle = Instance.new("Part")
+		obstacle.Name = "Obstacle_PendulumLog"
+		obstacle.Size = logSize
+		obstacle.Color = GameConstants.PENDULUM_LOG.COLOR
+		obstacle.Material = Enum.Material.WoodPlanks
+		obstacle.Transparency = 0.05
+		obstacle.Shape = Enum.PartType.Cylinder
+
+		local yMin = position.Y + logSize.Y / 2
+		local yMax = position.Y + GameConstants.PENDULUM_LOG.SWING_Y_MAX + logSize.Y / 2
+		obstacle.Position = if startHigh
+			then Vector3.new(position.X, yMax, position.Z)
+			else Vector3.new(position.X, yMin, position.Z)
+
+		obstacle.Anchored = true
+		obstacle.CanCollide = false
+		obstacle:SetAttribute("ObstacleType", obstacleType)
+
+		-- 구역 색상 틴트 적용 (40% 베이스 + 60% 구역)
+		local plZoneColor = self:_getZoneObstacleColor()
+		local plBaseColor = obstacle.Color
+		obstacle.Color = Color3.new(
+			plBaseColor.R * 0.40 + plZoneColor.R * 0.60,
+			plBaseColor.G * 0.40 + plZoneColor.G * 0.60,
+			plBaseColor.B * 0.40 + plZoneColor.B * 0.60
+		)
+
+		-- 통나무 라벨
+		local plBb = Instance.new("BillboardGui")
+		plBb.Name = "PendulumLabel"
+		plBb.Size = UDim2.new(0, 50, 0, 50)
+		plBb.StudsOffset = Vector3.new(0, 3, 0)
+		plBb.AlwaysOnTop = false
+		plBb.Parent = obstacle
+
+		local plLbl = Instance.new("TextLabel")
+		plLbl.Size = UDim2.new(1, 0, 1, 0)
+		plLbl.BackgroundTransparency = 1
+		plLbl.Text = "🪵"
+		plLbl.TextScaled = true
+		plLbl.Parent = plBb
+
+		obstacle.Parent = workspace
+
+		-- 상하 왕복 트윈 (Sine 무한 반복)
+		task.defer(function()
+			if not obstacle or not obstacle.Parent then return end
+			local halfCycle = GameConstants.PENDULUM_LOG.SWING_CYCLE / 2
+			local targetY = if startHigh then yMin else yMax
+			local tweenInfo = TweenInfo.new(halfCycle, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
+			TweenService:Create(obstacle, tweenInfo, {
+				Position = Vector3.new(obstacle.Position.X, targetY, obstacle.Position.Z),
+			}):Play()
+		end)
+
+		local plData: ObstacleData = {
+			part = obstacle,
+			obstacleType = obstacleType,
+			spawnTime = tick(),
+		}
+		table.insert(self._activeObstacles, plData)
+		print(`[ObstacleService] Spawned PendulumLog at {position} (startHigh: {startHigh})`)
+		return
+
+	elseif obstacleType == "LaserBeam" then
+		-- On/Off 토글 레이저 (Zone 4+, Hard 전용)
+		local beamHeight = GameConstants.LASER_BEAM.HEIGHT
+
+		obstacle = Instance.new("Part")
+		obstacle.Name = "Obstacle_LaserBeam"
+		obstacle.Size = GameConstants.LASER_BEAM.SIZE
+		obstacle.Position = position + Vector3.new(0, beamHeight, 0)
+		obstacle.Color = GameConstants.LASER_BEAM.COLOR_ON
+		obstacle.Material = Enum.Material.Neon
+		obstacle.Transparency = 0.1
+		obstacle.Anchored = true
+		obstacle.CanCollide = false
+		obstacle:SetAttribute("ObstacleType", obstacleType)
+		obstacle:SetAttribute("LaserActive", true)
+
+		-- 레이저 이미터 기둥 (좌우)
+		for _, zOff in { -5.5, 5.5 } do
+			local emitter = Instance.new("Part")
+			emitter.Name = "LaserEmitter"
+			emitter.Size = Vector3.new(1, beamHeight * 2, 1)
+			emitter.Position = position + Vector3.new(0, beamHeight, zOff)
+			emitter.Color = Color3.fromRGB(60, 60, 60)
+			emitter.Material = Enum.Material.Metal
+			emitter.Anchored = true
+			emitter.CanCollide = false
+			emitter.Parent = workspace
+		end
+
+		-- 레이저 경고 라벨
+		local lbBb = Instance.new("BillboardGui")
+		lbBb.Name = "LaserLabel"
+		lbBb.Size = UDim2.new(0, 50, 0, 50)
+		lbBb.StudsOffset = Vector3.new(0, 2, 0)
+		lbBb.AlwaysOnTop = false
+		lbBb.Parent = obstacle
+
+		local lbLbl = Instance.new("TextLabel")
+		lbLbl.Size = UDim2.new(1, 0, 1, 0)
+		lbLbl.BackgroundTransparency = 1
+		lbLbl.Text = "⚡"
+		lbLbl.TextScaled = true
+		lbLbl.Parent = lbBb
+
+		obstacle.Parent = workspace
+
+		-- On/Off 토글 루프 (비동기)
+		task.defer(function()
+			local onDur = GameConstants.LASER_BEAM.ON_DURATION
+			local offDur = GameConstants.LASER_BEAM.OFF_DURATION
+			while obstacle and obstacle.Parent do
+				-- ON 상태
+				obstacle:SetAttribute("LaserActive", true)
+				obstacle.Color = GameConstants.LASER_BEAM.COLOR_ON
+				obstacle.Material = Enum.Material.Neon
+				obstacle.Transparency = 0.1
+				task.wait(onDur)
+				if not obstacle or not obstacle.Parent then break end
+				-- OFF 상태
+				obstacle:SetAttribute("LaserActive", false)
+				obstacle.Color = GameConstants.LASER_BEAM.COLOR_OFF
+				obstacle.Material = Enum.Material.SmoothPlastic
+				obstacle.Transparency = 0.7
+				task.wait(offDur)
+			end
+		end)
+
+		local lbData: ObstacleData = {
+			part = obstacle,
+			obstacleType = obstacleType,
+			spawnTime = tick(),
+		}
+		table.insert(self._activeObstacles, lbData)
+		print(`[ObstacleService] Spawned LaserBeam at {position}`)
+		return
+
+	elseif obstacleType == "FallingRock" then
+		-- 낙석 (Zone 3+, Normal/Hard — 경고 그림자 후 바위 낙하)
+		local rockConst = GameConstants.FALLING_ROCK
+
+		-- 바닥 경고 그림자 (즉시 표시)
+		local warning = Instance.new("Part")
+		warning.Name = "FallingRock_Warning"
+		warning.Size = rockConst.WARNING_SIZE
+		warning.Position = position + Vector3.new(0, 0.15, 0)
+		warning.Color = rockConst.WARNING_COLOR
+		warning.Material = Enum.Material.Neon
+		warning.Transparency = 0.3
+		warning.Anchored = true
+		warning.CanCollide = false
+		warning.Parent = workspace
+
+		-- 경고 점멸 이펙트
+		task.defer(function()
+			if not warning or not warning.Parent then return end
+			local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Linear, Enum.EasingDirection.Out, 3, true)
+			TweenService:Create(warning, tweenInfo, { Transparency = 0.8 }):Play()
+		end)
+
+		-- 바위 (높은 곳에서 대기 → WARNING_TIME 후 낙하)
+		obstacle = Instance.new("Part")
+		obstacle.Name = "Obstacle_FallingRock"
+		obstacle.Size = rockConst.SIZE
+		obstacle.Position = position + Vector3.new(0, rockConst.DROP_HEIGHT, 0)
+		obstacle.Color = rockConst.COLOR
+		obstacle.Material = Enum.Material.Slate
+		obstacle.Transparency = 0.0
+		obstacle.Anchored = true
+		obstacle.CanCollide = false
+		obstacle:SetAttribute("ObstacleType", obstacleType)
+		obstacle:SetAttribute("RockLanded", false)
+
+		-- 구역 색상 틴트
+		local frZoneColor = self:_getZoneObstacleColor()
+		local frBaseColor = obstacle.Color
+		obstacle.Color = Color3.new(
+			frBaseColor.R * 0.40 + frZoneColor.R * 0.60,
+			frBaseColor.G * 0.40 + frZoneColor.G * 0.60,
+			frBaseColor.B * 0.40 + frZoneColor.B * 0.60
+		)
+
+		-- 바위 경고 라벨
+		local frBb = Instance.new("BillboardGui")
+		frBb.Name = "RockLabel"
+		frBb.Size = UDim2.new(0, 60, 0, 60)
+		frBb.StudsOffset = Vector3.new(0, 3, 0)
+		frBb.AlwaysOnTop = false
+		frBb.Parent = obstacle
+
+		local frLbl = Instance.new("TextLabel")
+		frLbl.Size = UDim2.new(1, 0, 1, 0)
+		frLbl.BackgroundTransparency = 1
+		frLbl.Text = "🪨"
+		frLbl.TextScaled = true
+		frLbl.Parent = frBb
+
+		obstacle.Parent = workspace
+
+		-- 경고 시간 후 낙하 트윈
+		task.defer(function()
+			task.wait(rockConst.WARNING_TIME)
+			if not obstacle or not obstacle.Parent then return end
+			local landY = position.Y + rockConst.SIZE.Y / 2
+			local tweenInfo = TweenInfo.new(rockConst.DROP_SPEED, Enum.EasingStyle.Bounce, Enum.EasingDirection.Out)
+			local tween = TweenService:Create(obstacle, tweenInfo, {
+				Position = Vector3.new(obstacle.Position.X, landY, obstacle.Position.Z),
+			})
+			tween.Completed:Connect(function()
+				if obstacle and obstacle.Parent then
+					obstacle:SetAttribute("RockLanded", true)
+				end
+				-- 경고 제거
+				if warning and warning.Parent then
+					warning:Destroy()
+				end
+			end)
+			tween:Play()
+		end)
+
+		local frData: ObstacleData = {
+			part = obstacle,
+			obstacleType = obstacleType,
+			spawnTime = tick(),
+		}
+		table.insert(self._activeObstacles, frData)
+		print(`[ObstacleService] Spawned FallingRock at {position}`)
+		return
+
 	elseif obstacleType == "ExplodingBarrel" then
 		-- 폭발 배럴 (Normal/Hard 전용, 범위 피해)
 		obstacle = Instance.new("Part")
@@ -1091,6 +1347,57 @@ function ObstacleService:CheckObstacleCollision(playerPosition: Vector3, isSlidi
 					self._collidedObstacles[obstaclePart] = true
 					return true
 				end
+			elseif obstacleType == "PendulumLog" then
+				-- PendulumLog: 통나무가 높이 올라간 틈에 통과
+				local logBottom = obstaclePart.Position.Y - obstaclePart.Size.Y / 2
+				local logTop = obstaclePart.Position.Y + obstaclePart.Size.Y / 2
+				if playerPosition.Y > logTop then
+					-- 통나무 위로 점프
+					print(`[ObstacleService] {self._player.Name} jumped over PendulumLog!`)
+					continue
+				elseif logBottom > GameConstants.PENDULUM_LOG.CLEAR_Y then
+					-- 통나무가 높이 올라가 있으면 아래로 통과
+					print(`[ObstacleService] {self._player.Name} passed under PendulumLog! (logBottom: {logBottom})`)
+					continue
+				else
+					self._collidedObstacles[obstaclePart] = true
+					return true
+				end
+			elseif obstacleType == "LaserBeam" then
+				-- LaserBeam: Off일 때 통과 가능, On일 때 점프로 회피
+				local isActive = obstaclePart:GetAttribute("LaserActive")
+				if not isActive then
+					-- 레이저 Off — 자유 통과
+					print(`[ObstacleService] {self._player.Name} passed through LaserBeam (OFF)!`)
+					continue
+				elseif playerPosition.Y > GameConstants.LASER_BEAM.HEIGHT + 1 then
+					-- 레이저 위로 점프
+					print(`[ObstacleService] {self._player.Name} jumped over LaserBeam!`)
+					continue
+				elseif isSliding and playerPosition.Y < GameConstants.LASER_BEAM.HEIGHT - 1 then
+					-- 슬라이드로 레이저 아래 통과
+					print(`[ObstacleService] {self._player.Name} slid under LaserBeam!`)
+					continue
+				else
+					self._collidedObstacles[obstaclePart] = true
+					return true
+				end
+			elseif obstacleType == "FallingRock" then
+				-- FallingRock: 착지 전이면 안전, 착지 후 위치에 있으면 충돌
+				local hasLanded = obstaclePart:GetAttribute("RockLanded")
+				if not hasLanded then
+					-- 아직 낙하 중 (상공에 있음) — 충돌 안 함
+					continue
+				end
+				-- 착지 후: 바위 위로 점프하면 회피
+				local rockTop = obstaclePart.Position.Y + obstaclePart.Size.Y / 2
+				if playerPosition.Y > rockTop then
+					print(`[ObstacleService] {self._player.Name} jumped over FallingRock!`)
+					continue
+				else
+					self._collidedObstacles[obstaclePart] = true
+					return true
+				end
 			end
 		end
 	end
@@ -1184,6 +1491,31 @@ function ObstacleService:CheckNearMiss(
 			local absDx = math.abs(dx)
 			if absDx >= blastRadius and absDx < blastRadius + NEAR_MISS_X_RANGE then
 				isNearMiss = true
+			end
+		elseif obstacleType == "PendulumLog" then
+			-- PendulumLog: 통나무 아래를 아슬아슬하게 통과
+			local logBottom = obstaclePart.Position.Y - obstaclePart.Size.Y / 2
+			if logBottom > GameConstants.PENDULUM_LOG.CLEAR_Y
+				and logBottom < GameConstants.PENDULUM_LOG.CLEAR_Y + NEAR_MISS_Y_MARGIN then
+				isNearMiss = true
+			end
+		elseif obstacleType == "LaserBeam" then
+			-- LaserBeam: On 상태에서 점프로 아슬아슬하게 넘을 때
+			local isActive = obstaclePart:GetAttribute("LaserActive")
+			if isActive then
+				local beamY = GameConstants.LASER_BEAM.HEIGHT + 1
+				if playerPosition.Y > beamY and playerPosition.Y < beamY + NEAR_MISS_Y_MARGIN then
+					isNearMiss = true
+				end
+			end
+		elseif obstacleType == "FallingRock" then
+			-- FallingRock: 착지 직후 바위 바로 위를 스치며 통과
+			local hasLanded = obstaclePart:GetAttribute("RockLanded")
+			if hasLanded then
+				local rockTop = obstaclePart.Position.Y + obstaclePart.Size.Y / 2
+				if playerPosition.Y > rockTop and playerPosition.Y < rockTop + NEAR_MISS_Y_MARGIN then
+					isNearMiss = true
+				end
 			end
 		end
 
