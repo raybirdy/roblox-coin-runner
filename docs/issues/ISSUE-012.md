@@ -3,11 +3,11 @@ id: ISSUE-012
 title: 펫 능동 스킬 시스템 — 패시브 보너스에서 타이밍 액티브 능력으로 전환
 category: feature
 priority: P2-medium
-status: open
+status: resolved
 related_sprint: none (v3.3+ 백로그)
 related_ac: none
 created: 2026-03-25
-resolved: null
+resolved: 2026-03-25
 ---
 
 ## 설명
@@ -43,4 +43,4 @@ resolved: null
   - ActiveSkillService와 펫 스킬 간 쿨다운 시스템 통합/분리 결정
 
 ## 해결 방안
-(v3.3+ 백로그 — Feature 1~3 안정화 후 진행 권장, 하이브리드 접근 검토: 패시브 유지 + 소규모 액티브 추가)
+하이브리드 접근: 기존 패시브 유지 + PET_SKILLS 테이블로 자동 발동 액티브 추가. PetService:UpdatePetSkill() → GameManager Heartbeat에서 호출. 스킬 5종: auto_magnet(고양이), auto_shield(강아지), auto_coin_burst(여우), auto_slow(펭귄), auto_jump_boost(토끼).

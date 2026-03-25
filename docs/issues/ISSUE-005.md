@@ -3,11 +3,11 @@ id: ISSUE-005
 title: 모바일 UI 정보 과부하 — HUD/다이얼로그 최적화 필요
 category: improvement
 priority: P1-high
-status: open
+status: resolved
 related_sprint: none (v3.1 후보)
 related_ac: none
 created: 2026-03-19
-resolved: null
+resolved: 2026-03-25
 ---
 
 ## 설명
@@ -46,4 +46,10 @@ resolved: null
 6. **/design 선행 필수**: 7개 컨트롤러 변경 → UX 스펙 확정 후 구현
 
 ## 해결 방안
-(등록 시점에는 비워둠 — /design → /dev로 위임)
+v3.1 Sprint 0 (S0-1~S0-9)에서 해결:
+- UIVisibilityManager: 6상태 머신으로 게임 상태별 UI 가시성 자동 제어
+- UITokens: 디자인 토큰 단일 소스
+- DailyChallengeController: 로비 전용, 게임 중 Hide
+- ObjectiveHudController: 축소 모드 (48px 아이콘)
+- RunSkillHudController/ActiveSkillController: Show/Hide 통합
+- ResponsiveUtil: compactMode로 모바일 대응

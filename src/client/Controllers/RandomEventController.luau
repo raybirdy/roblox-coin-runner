@@ -90,6 +90,11 @@ function RandomEventController:_onEventStart(data: any)
 			FogEnd = config.fogEnd or 80,
 			FogColor = Color3.fromRGB(180, 180, 200),
 		}):Play()
+
+	elseif eventId == "bonus_time" then
+		-- Golden celebration tint + coin rain effect
+		self:_applyColorCorrection("bonus_time", Color3.fromRGB(255, 230, 100), 0.2)
+		self:_startCoinRainEffect()
 	end
 
 	self._activeEffects[eventId] = true
@@ -132,6 +137,10 @@ function RandomEventController:_onEventEnd(data: any)
 			FogEnd = originalEnd,
 			FogColor = Color3.fromRGB(192, 192, 192),
 		}):Play()
+
+	elseif eventId == "bonus_time" then
+		self:_removeColorCorrection("bonus_time")
+		self:_stopCoinRainEffect()
 	end
 
 	self._activeEffects[eventId] = nil

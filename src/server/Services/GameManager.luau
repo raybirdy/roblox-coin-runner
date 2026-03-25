@@ -183,6 +183,7 @@ type GameSession = {
 
 local activeSessions: { [Player]: GameSession } = {}
 ActiveSkillService:SetActiveSessions(activeSessions)
+CharacterService:SetActiveSessions(activeSessions)
 
 -- 로비 대기 중 소모형 파워업 (gameStart 전 구매 목록, player별)
 local pendingConsumables: { [Player]: { [string]: boolean } } = {}
@@ -1279,6 +1280,8 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 
 		-- Random event update
 		RandomEventService:Update(player, session, deltaTime)
+		-- 펫 액티브 스킬 자동 발동 업데이트
+		PetService:UpdatePetSkill(player, PlayerDataService, session, deltaTime)
 
 		-- 플레이어 캐릭터 확인
 		local character = player.Character
@@ -1413,6 +1416,22 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 		if burstActive then
 			magnetRadius = math.max(magnetRadius, burstRadius)
 		end
+		-- Character Skill: vortex (주변 코인 전부 흡수)
+		if session._charVortexActive then
+			magnetRadius = math.max(magnetRadius, session._charVortexRadius or 50)
+		end
+		-- Character Skill: magnet_field (자석 반경 2배)
+		if session._charMagnetFieldActive then
+			magnetRadius = magnetRadius * (session._charMagnetFieldMult or 2)
+		end
+		-- Pet Skill: auto_magnet (자동 자석 발동)
+		if session._petAutoMagnetActive then
+			magnetRadius = math.max(magnetRadius, GameConstants.POWERUP.MAGNET_RADIUS)
+		end
+		-- Pet Skill: auto_coin_burst (즉시 코인 흡수)
+		if session._petCoinBurstActive then
+			magnetRadius = math.max(magnetRadius, 35)
+		end
 		-- 헤드스타트 자석 효과 (일반 자석 반경과 동등)
 		if session.headStartActive then
 			magnetRadius = math.max(magnetRadius, GameConstants.MINI_FEVER.MAGNET_RADIUS)
@@ -1437,6 +1456,12 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 		-- RandomEvent: coin_rain 활성 시 코인 2배
 		if session._coinRainActive then
 			coinMultiplier *= 2
+		end
+		-- 콤보 실시간 배율 적용
+		coinMultiplier *= (session.comboMultiplier or 1)
+		-- RandomEvent: bonus_time 활성 시 코인 배율 추가
+		if session._bonusTimeActive then
+			coinMultiplier *= (session._bonusTimeCoinMult or 1)
 		end
 		if session.isSuperFever then
 			coinMultiplier *= GameConstants.SUPER_FEVER.COIN_MULTIPLIER
@@ -1496,7 +1521,16 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 			end
 			session.lastCoinTime = now
 
-			-- 콤보 마일스톤 보너스 체크
+			-- 콤보 실시간 배율 계산
+			local comboMult = GameConstants.COMBO_MULTIPLIER.DEFAULT_MULTIPLIER
+			for _, tier in GameConstants.COMBO_MULTIPLIER.TIERS do
+				if session.comboCount >= tier.threshold then
+					comboMult = tier.multiplier
+				end
+			end
+			session.comboMultiplier = comboMult
+
+			-- 콤보 마일스톤 보너스 체크 (레거시 호환 + 추가 보상)
 			local prevCombo = session.comboCount - #collectedCoins
 			local comboBonus = 0
 			if session.comboCount >= 50 and prevCombo < 50 then
@@ -1569,11 +1603,12 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 				end
 			end
 
-			-- 피버 게이지 업데이트
+			-- 피버 게이지 업데이트 (콤보 배율 포함)
 			RemoteEvents.FeverGaugeUpdate:FireClient(player, {
 				combo = session.comboCount,
 				threshold = session.feverThreshold,
 				onCooldown = now < session.feverCooldownEnd,
+				comboMultiplier = session.comboMultiplier or 1,
 			})
 
 			-- 콤보 미션 진행도 업데이트
@@ -1672,6 +1707,14 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 		if session._speedShiftMultiplier and session._speedShiftMultiplier ~= 1.0 then
 			_estimatedSpeed = _estimatedSpeed * session._speedShiftMultiplier
 		end
+		-- RandomEvent: bonus_time 감속 반영
+		if session._bonusTimeActive then
+			_estimatedSpeed = _estimatedSpeed * (session._bonusTimeSpeedMult or 1)
+		end
+		-- Pet Skill: auto_slow (코인 수집용 감속)
+		if session._petSlowActive then
+			_estimatedSpeed = _estimatedSpeed * 0.7
+		end
 		local chaseMobHit = obstacleService:UpdateChaseMobs(hrp.Position, _estimatedSpeed, session.isFever or session.isSuperFever)
 
 		-- MushroomPad 밟기 판정 (Zone 3 전용)
@@ -1711,6 +1754,12 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 			elseif session.headStartActive then
 				-- 헤드스타트 무적으로 통과
 				print(`[GameManager] Player {player.Name} passed through obstacle (HeadStart)!`)
+			-- Character Skill: dash 무적 (짧은 돌진 중 장애물 통과)
+			elseif session._charDashActive then
+				print(`[GameManager] Player {player.Name} dashed through obstacle (character skill)!`)
+			-- Character Skill: shield 무적 (방패 스킬)
+			elseif session._charShieldActive then
+				print(`[GameManager] Player {player.Name} blocked obstacle with character shield!`)
 			-- 무적 상태 체크
 			elseif powerupService:IsInvincible() then
 				-- 무적으로 통과
@@ -1728,6 +1777,10 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 			elseif ActiveSkillService:ConsumeShieldHit(session) then
 				-- Shield absorbed the hit
 				RemoteEvents.SkillActivated:FireClient(player, { skillId = "shield_absorb" })
+			-- Pet Skill: auto_shield (자동 방어)
+			elseif PetService:ConsumePetShield(session) then
+				print(`[GameManager] Player {player.Name} blocked obstacle with pet shield!`)
+				RemoteEvents.PetSkillActivated:FireClient(player, { skillId = "shield_used" })
 			-- Character passive: hit_resist (확률적 피격 무시)
 			elseif CharacterService:HasHitResist(player, PlayerDataService) and math.random() < CharacterService:GetHitResistChance(player, PlayerDataService) then
 				-- 캐릭터 패시브로 피격 저항 성공
@@ -1737,6 +1790,16 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 				-- 라이프 감소
 				session.lives -= 1
 				obstacleService:OnObstacleHit()
+
+				-- 콤보 리셋 (피격 시 콤보 배율 초기화)
+				if GameConstants.COMBO_MULTIPLIER.RESET_ON_HIT then
+					session.comboCount = 0
+					session.comboMultiplier = GameConstants.COMBO_MULTIPLIER.DEFAULT_MULTIPLIER
+					RemoteEvents.ComboUpdate:FireClient(player, {
+						combo = 0,
+						multiplier = 1,
+					})
+				end
 
 				-- 보스 런 활성 시 보스 런 라이프도 감소
 				if BossRunService:IsBossRunActive(player) then
