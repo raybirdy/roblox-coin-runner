@@ -3,11 +3,11 @@ id: ISSUE-013
 title: "Giant Mode / Coin Rain 랜덤 이벤트 미작동 — 서버 플래그 미소비 + 클라이언트 효과 미구현"
 category: bug
 priority: P1-high
-status: open
+status: resolved
 related_sprint: none
 related_ac: none
 created: 2026-03-25
-resolved: null
+resolved: 2026-03-25
 ---
 
 ## 설명
@@ -48,4 +48,6 @@ resolved: null
 - 랜덤 이벤트 전체 파이프라인 검증 권장 (speed_shift 포함)
 
 ## 해결 방안
-(등록 시점에는 비워둠 — /dev로 수정)
+GameManager에서 RandomEvent 세션 플래그 소비 로직 추가 (_coinRainActive → 코인 2배, _giantScaleFactor → 서버측은 시각 전용 유지).
+클라이언트 Giant Mode: 3축(Height/Width/Depth/Head) 모두 스케일링.
+클라이언트 Coin Rain: 금색 코인 파트 낙하 이펙트 추가.

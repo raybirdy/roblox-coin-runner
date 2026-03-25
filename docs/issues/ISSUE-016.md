@@ -3,11 +3,11 @@ id: ISSUE-016
 title: "Pet feverBonus 미적용 + RandomEvent speed_shift 미작동 — 추가 dead store 정리"
 category: bug
 priority: P2-medium
-status: open
+status: resolved
 related_sprint: none
 related_ac: none
 created: 2026-03-25
-resolved: null
+resolved: 2026-03-25
 ---
 
 ## 설명
@@ -42,4 +42,6 @@ resolved: null
   - gravity_flip/fog: dead store 제거 또는 서버 권위적 처리 전환
 
 ## 해결 방안
-(등록 시점에는 비워둠 — /dev로 수정)
+Pet feverBonus: 피버 지속시간 계산에 PetService:GetFeverBonus() 추가.
+speed_shift: GameManager Heartbeat 속도 계산에 session._speedShiftMultiplier 반영.
+gravity_flip/fog: 클라이언트 직접 변경으로 작동 중 — 서버 플래그는 향후 정리 대상.

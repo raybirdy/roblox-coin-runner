@@ -3,11 +3,11 @@ id: ISSUE-015
 title: "캐릭터 패시브 5종 전체 미작동 — CharacterService가 GameManager에 연결되지 않음"
 category: bug
 priority: P1-high
-status: open
+status: resolved
 related_sprint: none
 related_ac: none
 created: 2026-03-25
-resolved: null
+resolved: 2026-03-25
 ---
 
 ## 설명
@@ -35,4 +35,9 @@ CharacterService에 정의된 5종 캐릭터 패시브가 **전부 dead code**:
 - **수정 방향**: GameManager에서 CharacterService import 후 각 통합점에 getter 호출 추가
 
 ## 해결 방안
-(등록 시점에는 비워둠 — /dev로 수정)
+GameManager에 CharacterService import 추가.
+hitbox_reduction: 장애물 충돌 시 effectiveMini로 축소 히트박스 적용.
+magnet_bonus: 자석 반경 계산에 CharacterService:GetMagnetBonus() 추가.
+hit_resist: 피격 체인에 확률적 저항 판정 추가.
+fever_extend: 피버 지속시간에 CharacterService:GetFeverExtend() 추가.
+start_magnet: 게임 시작 시 PowerupService:ActivatePowerup('Magnet') 발동.

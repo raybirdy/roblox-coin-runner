@@ -3,11 +3,11 @@ id: ISSUE-014
 title: "액티브 스킬 dash/magnet_burst 미작동 — 서버 플래그 설정만 되고 GameManager 미소비"
 category: bug
 priority: P1-high
-status: open
+status: resolved
 related_sprint: none
 related_ac: none
 created: 2026-03-25
-resolved: null
+resolved: 2026-03-25
 ---
 
 ## 설명
@@ -28,4 +28,5 @@ ActiveSkillService의 3종 스킬 중 2종이 미작동:
   - magnet_burst: GameManager 코인 수집 섹션에서 `ConsumeMagnetBurst(session)` 호출하여 범위 내 코인 즉시 흡수
 
 ## 해결 방안
-(등록 시점에는 비워둠 — /dev로 수정)
+GameManager Heartbeat에서 ActiveSkillService:GetDashMultiplier() 호출하여 속도에 반영.
+GameManager 코인 수집 섹션에서 ActiveSkillService:ConsumeMagnetBurst() 호출하여 반경 확장.
