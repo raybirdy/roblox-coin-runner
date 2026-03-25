@@ -3,11 +3,11 @@ id: ISSUE-007
 title: 미니게임 게임성 고도화 필요 — 러너 흐름 방해
 category: improvement
 priority: P2-medium
-status: open
+status: resolved
 related_sprint: v3.0 Sprint 3-4 (M1)
 related_ac: none
 created: 2026-03-19
-resolved: null
+resolved: 2026-03-25
 ---
 
 ## 설명
@@ -26,7 +26,5 @@ resolved: null
   - `src/server/Services/GameManager.luau:1377` (트리거 주석 처리)
 
 ## 해결 방안
-(v3.2+ 백로그 — 재설계 시 고려사항)
-- 러너 흐름을 끊지 않는 인라인 미니게임 방식 검토
-- 미니게임 진입/복귀 전환 시간 최소화
-- 플레이어 선택적 진입 (강제 → 선택)
+ISSUE-010 (보너스 타임 이벤트)로 대체 — 러너 흐름을 끊지 않는 인라인 보너스 구간으로 재설계.
+기존 미니게임(CoinStorm/ObstacleRush)은 보너스 타임으로 통합 예정.
