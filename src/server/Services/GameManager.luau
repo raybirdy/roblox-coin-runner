@@ -1470,6 +1470,10 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 		elseif session.isMiniFever then
 			coinMultiplier *= GameConstants.MINI_FEVER.COIN_MULTIPLIER
 		end
+		-- 코인 배율 상한선 (경제 밸런스 보호, 스택 폭주 방지)
+		local MAX_COIN_MULTIPLIER = 20
+		coinMultiplier = math.min(coinMultiplier, MAX_COIN_MULTIPLIER)
+
 		local hitRushActive = os.clock() < session.hitRushEndTime
 		local hitRushMult = if hitRushActive then GameConstants.HIT_RECOVERY.COIN_MULTIPLIER else 1
 		for _, coinData in collectedCoins do

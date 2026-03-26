@@ -903,7 +903,7 @@ function ObstacleService:_spawnObstacle(position: Vector3, obstacleType: string)
 		obstacle:SetAttribute("ObstacleType", obstacleType)
 		obstacle:SetAttribute("LaserActive", true)
 
-		-- 레이저 이미터 기둥 (좌우)
+		-- 레이저 이미터 기둥 (좌우, obstacle 자식 → Destroy 시 자동 정리)
 		for _, zOff in { -5.5, 5.5 } do
 			local emitter = Instance.new("Part")
 			emitter.Name = "LaserEmitter"
@@ -913,7 +913,7 @@ function ObstacleService:_spawnObstacle(position: Vector3, obstacleType: string)
 			emitter.Material = Enum.Material.Metal
 			emitter.Anchored = true
 			emitter.CanCollide = false
-			emitter.Parent = workspace
+			emitter.Parent = obstacle
 		end
 
 		-- 레이저 경고 라벨
@@ -933,23 +933,29 @@ function ObstacleService:_spawnObstacle(position: Vector3, obstacleType: string)
 
 		obstacle.Parent = workspace
 
-		-- On/Off 토글 루프 (비동기)
+		-- On/Off 토글 루프 (비동기, pcall로 파괴된 파트 접근 보호)
 		task.defer(function()
 			local onDur = GameConstants.LASER_BEAM.ON_DURATION
 			local offDur = GameConstants.LASER_BEAM.OFF_DURATION
 			while obstacle and obstacle.Parent do
-				-- ON 상태
-				obstacle:SetAttribute("LaserActive", true)
-				obstacle.Color = GameConstants.LASER_BEAM.COLOR_ON
-				obstacle.Material = Enum.Material.Neon
-				obstacle.Transparency = 0.1
+				local ok = pcall(function()
+					-- ON 상태
+					obstacle:SetAttribute("LaserActive", true)
+					obstacle.Color = GameConstants.LASER_BEAM.COLOR_ON
+					obstacle.Material = Enum.Material.Neon
+					obstacle.Transparency = 0.1
+				end)
+				if not ok then break end
 				task.wait(onDur)
 				if not obstacle or not obstacle.Parent then break end
-				-- OFF 상태
-				obstacle:SetAttribute("LaserActive", false)
-				obstacle.Color = GameConstants.LASER_BEAM.COLOR_OFF
-				obstacle.Material = Enum.Material.SmoothPlastic
-				obstacle.Transparency = 0.7
+				local ok2 = pcall(function()
+					-- OFF 상태
+					obstacle:SetAttribute("LaserActive", false)
+					obstacle.Color = GameConstants.LASER_BEAM.COLOR_OFF
+					obstacle.Material = Enum.Material.SmoothPlastic
+					obstacle.Transparency = 0.7
+				end)
+				if not ok2 then break end
 				task.wait(offDur)
 			end
 		end)
@@ -967,7 +973,8 @@ function ObstacleService:_spawnObstacle(position: Vector3, obstacleType: string)
 		-- 낙석 (Zone 3+, Normal/Hard — 경고 그림자 후 바위 낙하)
 		local rockConst = GameConstants.FALLING_ROCK
 
-		-- 바닥 경고 그림자 (즉시 표시)
+		-- 바닥 경고 그림자 (즉시 표시, obstacle 자식 → Destroy 시 자동 정리)
+		-- obstacle보다 먼저 생성하여 workspace에 임시 배치 후, obstacle 생성 후 자식으로 이동
 		local warning = Instance.new("Part")
 		warning.Name = "FallingRock_Warning"
 		warning.Size = rockConst.WARNING_SIZE
@@ -977,7 +984,6 @@ function ObstacleService:_spawnObstacle(position: Vector3, obstacleType: string)
 		warning.Transparency = 0.3
 		warning.Anchored = true
 		warning.CanCollide = false
-		warning.Parent = workspace
 
 		-- 경고 점멸 이펙트
 		task.defer(function()
@@ -1024,6 +1030,8 @@ function ObstacleService:_spawnObstacle(position: Vector3, obstacleType: string)
 		frLbl.Parent = frBb
 
 		obstacle.Parent = workspace
+		-- 경고 그림자를 obstacle 자식으로 배치 (Destroy 시 자동 정리)
+		warning.Parent = workspace
 
 		-- 경고 시간 후 낙하 트윈
 		task.defer(function()
@@ -1050,6 +1058,7 @@ function ObstacleService:_spawnObstacle(position: Vector3, obstacleType: string)
 			part = obstacle,
 			obstacleType = obstacleType,
 			spawnTime = tick(),
+			warningPart = warning, -- 경고 그림자 참조 (cleanup 시 함께 정리)
 		}
 		table.insert(self._activeObstacles, frData)
 		print(`[ObstacleService] Spawned FallingRock at {position}`)
@@ -1540,6 +1549,10 @@ function ObstacleService:CleanupObstaclesInChunk(chunkPosition: Vector3, chunkSi
 
 		if isInChunk then
 			self._collidedObstacles[obstacleData.part] = nil
+			-- FallingRock 경고 그림자 함께 정리
+			if obstacleData.warningPart and obstacleData.warningPart.Parent then
+				obstacleData.warningPart:Destroy()
+			end
 			obstacleData.part:Destroy()
 			table.remove(self._activeObstacles, i)
 		end
@@ -1560,6 +1573,10 @@ end
 -- 모든 장애물 정리 (게임 종료 시)
 function ObstacleService:Destroy()
 	for _, obstacleData in self._activeObstacles do
+		-- FallingRock 경고 그림자 함께 정리
+		if obstacleData.warningPart and obstacleData.warningPart.Parent then
+			obstacleData.warningPart:Destroy()
+		end
 		if obstacleData.part then
 			obstacleData.part:Destroy()
 		end
