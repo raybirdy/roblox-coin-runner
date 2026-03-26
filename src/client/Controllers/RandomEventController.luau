@@ -227,9 +227,13 @@ function RandomEventController:Destroy()
 end
 
 -- Coin Rain visual effect: 화면 상단에서 금색 코인 파트가 떨어지는 이펙트
+-- 참조 카운트로 coin_rain과 bonus_time이 동시에 사용 가능
 function RandomEventController:_startCoinRainEffect()
-	-- 기존 이펙트 정리
-	self:_stopCoinRainEffect()
+	-- 참조 카운트 증가
+	self._coinRainRefCount = (self._coinRainRefCount or 0) + 1
+
+	-- 이미 루프가 돌고 있으면 카운트만 증가
+	if self._coinRainRefCount > 1 then return end
 
 	local character = self._player.Character
 	if not character then return end
@@ -273,6 +277,12 @@ function RandomEventController:_startCoinRainEffect()
 end
 
 function RandomEventController:_stopCoinRainEffect()
+	-- 참조 카운트 감소
+	self._coinRainRefCount = math.max(0, (self._coinRainRefCount or 0) - 1)
+
+	-- 아직 다른 이벤트가 사용 중이면 루프 유지
+	if self._coinRainRefCount > 0 then return end
+
 	self._coinRainActive = false
 	-- 잔여 코인 파트 정리
 	for _, part in workspace:GetChildren() do

@@ -161,8 +161,8 @@ function CharacterService:_applySkillEffect(player: Player, skill: any)
 			session._charShieldActive = false
 		end)
 	elseif skill.id == "sparkle" then
-		-- 반짝임: 즉시 미니 피버 발동
-		if not session.isFever and not session.isMiniFever then
+		-- 반짝임: 즉시 미니 피버 발동 (피버/슈퍼피버/미니피버 중 아닐 때만)
+		if not session.isFever and not session.isMiniFever and not session.isSuperFever then
 			session.isMiniFever = true
 			session.miniFeverEndTime = os.clock() + GameConstants.MINI_FEVER.DURATION
 		end
