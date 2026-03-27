@@ -453,6 +453,16 @@ function DailyEventController:EndGame()
 	end
 end
 
+-- UIVisibilityManager 호환: countdown/running 상태에서 전체 숨김
+function DailyEventController:Hide()
+	if self._lobbyGui then
+		self._lobbyGui.Enabled = false
+	end
+	if self._hudGui then
+		self._hudGui.Enabled = false
+	end
+end
+
 -- Called when returning to lobby (show banner if not dismissed)
 function DailyEventController:ShowInLobby()
 	self._isGameActive = false

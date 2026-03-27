@@ -123,6 +123,11 @@ function PetController:EndGame()
 	end
 end
 
+-- UIVisibilityManager 호환 alias (lobby/gameover 상태에서 호출)
+function PetController:StopGame()
+	self:EndGame()
+end
+
 -- 서버에서 펫 데이터 수신
 _petDataConn = RemoteEvents.PetData.OnClientEvent:Connect(function(data: any)
 	if type(data) ~= "table" then

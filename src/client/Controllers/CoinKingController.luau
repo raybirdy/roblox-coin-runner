@@ -158,6 +158,11 @@ function CoinKingController:EndGame()
 	end
 end
 
+-- UIVisibilityManager 호환 alias (lobby/gameover 상태에서 호출)
+function CoinKingController:Hide()
+	self:EndGame()
+end
+
 function CoinKingController:Destroy()
 	self:EndGame()
 	if self._container then

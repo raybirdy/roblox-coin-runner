@@ -435,6 +435,19 @@ function MiniGameController:_showFlashText(text: string, duration: number)
 	end)
 end
 
+-- §9.3: UIVisibilityManager 호환 – 상태 전환 시 HUD 가시성 제어
+function MiniGameController:HideUI()
+	if self._gui then
+		self._gui.Enabled = false
+	end
+end
+
+function MiniGameController:ShowUI()
+	if self._gui then
+		self._gui.Enabled = true
+	end
+end
+
 -- Cleanup
 function MiniGameController:_cleanup()
 	if self._gui then
