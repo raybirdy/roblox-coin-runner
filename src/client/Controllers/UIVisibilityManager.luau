@@ -57,6 +57,13 @@ end
 
 -- ===== 공개 API =====
 
+-- 싱글톤 초기화 (init.client.luau에서 호출)
+function UIVisibilityManager:Init(controllers: Controllers)
+	self._controllers = controllers
+	self._currentState = "lobby" :: GameUIState
+	self._activeTweens = {} :: { Tween }
+end
+
 -- 현재 상태 조회
 function UIVisibilityManager:GetState(): GameUIState
 	return self._currentState
@@ -119,6 +126,10 @@ end
 
 function UIVisibilityManager:_applyState(state: GameUIState)
 	local c = self._controllers
+	if not c then
+		warn("[UIVisibilityManager] _applyState called before Init, state=" .. tostring(state))
+		return
+	end
 
 	-- 컨트롤러 메서드를 안전하게 호출하는 헬퍼
 	local function safeCall(controller: any?, method: string)
