@@ -3,11 +3,11 @@ id: ISSUE-018
 title: 코인이 캐릭터에 닿기 전에 화면에서 사라짐 — 청크 삭제 시 코인 동반 파괴
 category: bug
 priority: P1-high
-status: open
+status: resolved
 related_sprint: none
 related_ac: none
 created: 2026-03-28
-resolved: null
+resolved: 2026-03-28
 ---
 
 ## 설명
@@ -30,6 +30,7 @@ resolved: null
 - ISSUE-020 (Fever 시 코인 사라짐)과 동일 근본 원인
 
 ## 해결 방안
-(처리 시 채움)
-- 청크 삭제 전 magnetRadius 범위 내 코인을 workspace로 이동 (재부모화)
-- 전방 수집 히트박스 확대 (X*2 가중치 완화 또는 캡슐 스윕 판정)
+- ChunkService: 청크 삭제 전 SUPER_FEVER.MAGNET_RADIUS + 10 범위 내 코인을 workspace로 재부모화
+- CoinService: 전방 수집 히트박스 X*2 → X*1.5로 완화 (유효 범위 ~1.5 → ~2 studs)
+- CoinService: 거대 코인 Parent를 chunk → workspace로 변경
+- 커밋: 6c73342

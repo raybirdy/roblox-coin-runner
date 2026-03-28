@@ -3,11 +3,11 @@ id: ISSUE-021
 title: 랜덤 이벤트 시각 효과 미작동 — 거인 모드 무음 실패 + 코인 소나기 stale 참조
 category: bug
 priority: P1-high
-status: open
+status: resolved
 related_sprint: none
 related_ac: none
 created: 2026-03-28
-resolved: null
+resolved: 2026-03-28
 ---
 
 ## 설명
@@ -39,14 +39,16 @@ ISSUE-017(Init 크래시)과는 별개의 문제.
 - `src/server/Services/RandomEventService.luau` — 서버 이벤트 발송 (정상 동작)
 
 ## 해결 방안
-(처리 시 채움)
 
 ### 거인 모드
-- R15 스케일 값이 없으면 R6 폴백: 캐릭터 BasePart.Size를 직접 스케일링
-- `Humanoid:ScaleTo()` API 사용 검토 (R6/R15 모두 지원)
+- R15 스케일 값 존재 여부 감지 (`r15Found` 플래그)
+- R15 없으면 R6 폴백: 모든 BasePart.Size를 직접 스케일링 + 원본 저장
+- 복원 시 R6 폴백 역연산 추가
 - 실패 시 warn 로그 추가
 
 ### 코인 소나기
-- 루프 내에서 매 반복마다 `self._player.Character` 재취득
-- character nil 시 early return 전에 refCount 원복 또는 `_coinRainActive = true`를 nil 체크 이전으로 이동
-- 진단용 print/warn 추가
+- `_coinRainActive = true`를 character nil 체크 이전으로 이동 (refCount 동기화)
+- 루프 내 매 반복마다 `self._player.Character` 재취득 (stale 참조 방지)
+- character/HRP nil 시 break → continue + task.wait(0.15)로 변경 (리스폰 대기)
+
+### 커밋: 6c73342

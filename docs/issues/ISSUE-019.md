@@ -3,11 +3,11 @@ id: ISSUE-019
 title: 자석 파워업 시 코인 시각적 흡인 효과 없음 — 코인이 캐릭터를 따라오지 않음
 category: improvement
 priority: P1-high
-status: open
+status: resolved
 related_sprint: none
 related_ac: none
 created: 2026-03-28
-resolved: null
+resolved: 2026-03-28
 ---
 
 ## 설명
@@ -36,6 +36,8 @@ resolved: null
 - ISSUE-018, ISSUE-020과 결합 시 코인 수집 전반의 체감 문제 악화
 
 ## 해결 방안
-(처리 시 채움)
-- 서버: magnetRadius 내 코인을 매 프레임 캐릭터 방향으로 이동 (Lerp)
-- 클라이언트: 코인 모델 → 캐릭터 방향 트윈 애니메이션 + 잔상/파티클 효과
+- CoinService:CheckCoinCollection에 deltaTime 파라미터 추가
+- magnetRadius 내 코인을 40 studs/s로 캐릭터 방향 이동 (SetPrimaryPartCFrame)
+- 코인 회전 기준점을 Attribute로 저장하여 이동 시 갱신
+- GameManager에서 deltaTime 전달
+- 커밋: 6c73342

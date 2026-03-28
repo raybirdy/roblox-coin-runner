@@ -3,11 +3,11 @@ id: ISSUE-020
 title: Fever 모드 시 코인이 수집 전에 사라짐 — 속도 증가 + 청크 삭제 경합
 category: bug
 priority: P1-high
-status: open
+status: resolved
 related_sprint: none
 related_ac: none
 created: 2026-03-28
-resolved: null
+resolved: 2026-03-28
 ---
 
 ## 설명
@@ -35,7 +35,7 @@ ISSUE-018과 동일한 근본 원인(청크 삭제 시 코인 동반 파괴)이 
 - ISSUE-018 (일반 코인 사라짐) + ISSUE-019 (자석 흡인 없음)과 결합 시 핵심 게임플레이 만족도 하락
 
 ## 해결 방안
-(처리 시 채움)
-- ISSUE-018 해결 (청크 삭제 전 코인 재부모화)로 기본 해결
-- Fever 시 DELETE_DISTANCE 확대 또는 코인 밀도 증가 검토
-- ISSUE-019 (자석 흡인 효과) 적용 시 체감 대폭 개선 예상
+- ISSUE-018 해결로 기본 해결 (청크 삭제 전 코인 재부모화)
+- ISSUE-019 해결로 Fever 자석 흡인 시각 효과 추가
+- 거대 코인 Parent를 workspace로 변경하여 청크 삭제 영향 제거
+- 커밋: 6c73342
