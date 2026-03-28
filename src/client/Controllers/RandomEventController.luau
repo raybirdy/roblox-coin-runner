@@ -65,11 +65,26 @@ function RandomEventController:_onEventStart(data: any)
 			if humanoid then
 				local scale = config.scaleFactor or 1.8
 				local scaleNames = { "BodyHeightScale", "BodyWidthScale", "BodyDepthScale", "HeadScale" }
+				local r15Found = false
 				for _, scaleName in scaleNames do
 					local scaleValue = humanoid:FindFirstChild(scaleName) :: NumberValue?
 					if scaleValue then
+						r15Found = true
 						self._activeEffects["original_" .. scaleName] = scaleValue.Value
 						TweenService:Create(scaleValue, TweenInfo.new(0.5), { Value = scale }):Play()
+					end
+				end
+
+				-- R6 리그: NumberValue 스케일이 없으므로 BasePart 크기를 직접 조절
+				if not r15Found then
+					warn("[RandomEventController] giant_mode: R15 scale values not found, falling back to R6 BasePart scaling")
+					self._activeEffects["giant_r6_parts"] = {}
+					for _, part in character:GetChildren() do
+						if part:IsA("BasePart") then
+							self._activeEffects["giant_r6_parts"][part] = part.Size
+							-- HumanoidRootPart는 보이지 않으므로 스케일만 적용
+							TweenService:Create(part, TweenInfo.new(0.5), { Size = part.Size * scale }):Play()
+						end
 					end
 				end
 			end
@@ -117,11 +132,29 @@ function RandomEventController:_onEventEnd(data: any)
 			local humanoid = character:FindFirstChild("Humanoid") :: Humanoid?
 			if humanoid then
 				local scaleNames = { "BodyHeightScale", "BodyWidthScale", "BodyDepthScale", "HeadScale" }
+				local r15Reverted = false
 				for _, scaleName in scaleNames do
 					local scaleValue = humanoid:FindFirstChild(scaleName) :: NumberValue?
 					if scaleValue then
+						r15Reverted = true
 						local original = self._activeEffects["original_" .. scaleName] or 1.0
 						TweenService:Create(scaleValue, TweenInfo.new(0.5), { Value = original }):Play()
+						self._activeEffects["original_" .. scaleName] = nil
+					end
+				end
+
+				-- R6 폴백: 저장해둔 원본 크기로 복원
+				if not r15Reverted then
+					local r6Parts = self._activeEffects["giant_r6_parts"]
+					if r6Parts then
+						for part, originalSize in r6Parts do
+							if part and part.Parent then
+								TweenService:Create(part, TweenInfo.new(0.5), { Size = originalSize }):Play()
+							end
+						end
+						self._activeEffects["giant_r6_parts"] = nil
+					else
+						warn("[RandomEventController] giant_mode revert: no R6 part data found")
 					end
 				end
 			end
@@ -235,15 +268,22 @@ function RandomEventController:_startCoinRainEffect()
 	-- 이미 루프가 돌고 있으면 카운트만 증가
 	if self._coinRainRefCount > 1 then return end
 
-	local character = self._player.Character
-	if not character then return end
-
+	-- _coinRainActive를 캐릭터 체크 전에 설정해 refCount 디싱크 방지
 	self._coinRainActive = true
+
+	if not self._player.Character then
+		warn("[RandomEventController] _startCoinRainEffect: character is nil at start, loop will wait for spawn")
+	end
 
 	task.defer(function()
 		while self._coinRainActive do
+			-- 루프 반복마다 캐릭터 재취득 (리스폰 대응)
+			local character = self._player.Character
 			local hrp = character and character:FindFirstChild("HumanoidRootPart")
-			if not hrp then break end
+			if not hrp then
+				task.wait(0.15)
+				continue
+			end
 
 			-- 플레이어 주변에 코인 파트 스폰 (시각 전용)
 			for _ = 1, 3 do

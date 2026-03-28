@@ -1443,7 +1443,7 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 		elseif session.isMiniFever then
 			magnetRadius = math.max(magnetRadius, GameConstants.MINI_FEVER.MAGNET_RADIUS)
 		end
-		local collectedCoins = coinService:CheckCoinCollection(hrp.Position, magnetRadius)
+		local collectedCoins = coinService:CheckCoinCollection(hrp.Position, magnetRadius, deltaTime)
 		local coinMultiplier = powerupService:GetCoinMultiplier()
 			* MonetizationService:GetCoinMultiplier(player)
 			* (1 + session.scenarioStatBonuses.coinValue)

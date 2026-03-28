@@ -820,7 +820,10 @@ function CoinService:_startCoinRotation(coinModel: Model)
 	end
 
 	local startAngle = math.random() * 360
-	local basePosition = primaryPart.Position
+	-- 초기 위치를 Attribute로 저장 — 자석 이동 시 이 값을 갱신해 회전 루프가 새 위치를 기준으로 동작한다
+	primaryPart:SetAttribute("RotationBaseX", primaryPart.Position.X)
+	primaryPart:SetAttribute("RotationBaseY", primaryPart.Position.Y)
+	primaryPart:SetAttribute("RotationBaseZ", primaryPart.Position.Z)
 
 	task.spawn(function()
 		local angle = startAngle
@@ -829,6 +832,11 @@ function CoinService:_startCoinRotation(coinModel: Model)
 			if angle >= 360 then
 				angle = angle - 360
 			end
+			-- 자석 이동 후 갱신된 basePosition을 매 프레임 읽는다
+			local bx = primaryPart:GetAttribute("RotationBaseX") :: number
+			local by = primaryPart:GetAttribute("RotationBaseY") :: number
+			local bz = primaryPart:GetAttribute("RotationBaseZ") :: number
+			local basePosition = Vector3.new(bx, by, bz)
 			local newCFrame = CFrame.new(basePosition) * CFrame.Angles(0, math.rad(angle), 0)
 			coinModel:SetPrimaryPartCFrame(newCFrame)
 			task.wait(0.025)
@@ -850,35 +858,32 @@ function CoinService:_setupCollisionHandlers()
 end
 
 -- 플레이어 위치로 코인 수집 체크 (GameManager에서 호출)
-function CoinService:CheckCoinCollection(playerPosition: Vector3, magnetRadius: number?): { CoinData }
+-- deltaTime: 이번 프레임 경과 시간 (자석 이동 거리 계산용)
+function CoinService:CheckCoinCollection(playerPosition: Vector3, magnetRadius: number?, deltaTime: number?): { CoinData }
 	local collectedCoins = {}
 	local baseRadius = 3
-	local collectionRadius = baseRadius
-	if magnetRadius and magnetRadius > 0 then
-		collectionRadius = magnetRadius
-	end
-
-	-- 캐릭터가 +X 방향으로 달리므로, 정면(X) 수집 범위를 절반으로 압축해
-	-- 코인이 시각적으로 캐릭터에 닿기 전에 수집되는 문제를 방지한다.
-	-- 자석 효과 중에는 전방향 구형 판정을 유지한다.
 	local useMagnet = magnetRadius and magnetRadius > 0
+	-- 자석 인력 속도: 초당 40 studs
+	local MAGNET_SPEED = 40
+	local dt = deltaTime or (1 / 60)
 
 	for i = #self._activeCoins, 1, -1 do
 		local coinData = self._activeCoins[i]
-		local delta = coinData.part.Position - playerPosition
+		local coinPos = coinData.part.Position
+		local delta = coinPos - playerPosition
 
+		-- 일반 수집 판정: 전방향 구형 (자석 활성 시) 또는 전진 방향 가중 타원 (일반)
 		local effectiveDist: number
 		if useMagnet then
-			-- 자석: 모든 방향 동일한 구형 판정
 			effectiveDist = delta.Magnitude
 		else
-			-- 일반: 전진 방향(+X) 판정 거리를 2배 가중 → 실제 수집 범위 절반(1.5 studs)
-			effectiveDist = Vector3.new(delta.X * 2, delta.Y, delta.Z).Magnitude
+			-- 일반: 전진 방향(+X) 판정 거리를 1.5배 가중 → 실제 수집 범위 2/3(2 studs)
+			effectiveDist = Vector3.new(delta.X * 1.5, delta.Y, delta.Z).Magnitude
 		end
 
-		if effectiveDist < collectionRadius then
+		if effectiveDist < baseRadius then
+			-- 일반 수집 반경 내: 즉시 수집
 			table.insert(collectedCoins, coinData)
-
 			local coinModel = coinData.part.Parent
 			if coinModel and coinModel:IsA("Model") then
 				coinModel:Destroy()
@@ -886,6 +891,24 @@ function CoinService:CheckCoinCollection(playerPosition: Vector3, magnetRadius: 
 				coinData.part:Destroy()
 			end
 			table.remove(self._activeCoins, i)
+		elseif useMagnet and effectiveDist < (magnetRadius :: number) then
+			-- 자석 반경 내, 수집 반경 밖: 코인을 플레이어 방향으로 이동시킨다
+			-- 코인이 날아오는 시각적 피드백 — 다음 프레임에 baseRadius 이내 진입 시 수집됨
+			local coinModel = coinData.part.Parent
+			if coinModel and coinModel:IsA("Model") then
+				local dir = (playerPosition - coinPos)
+				local distToPlayer = dir.Magnitude
+				if distToPlayer > 0.01 then
+					local moveStep = math.min(MAGNET_SPEED * dt, distToPlayer)
+					local newPos = coinPos + dir.Unit * moveStep
+					coinModel:SetPrimaryPartCFrame(CFrame.new(newPos))
+					-- 회전 루프의 basePosition도 갱신해 자석 이동 후 회전 기준이 올바르게 유지된다
+					coinData.part:SetAttribute("RotationBaseX", newPos.X)
+					coinData.part:SetAttribute("RotationBaseY", newPos.Y)
+					coinData.part:SetAttribute("RotationBaseZ", newPos.Z)
+				end
+			end
+			-- 수집은 하지 않음 — 다음 heartbeat에서 baseRadius 진입 시 수집
 		end
 	end
 
@@ -966,7 +989,8 @@ function CoinService:SpawnGiantCoin(chunk: Model, chunkPosition: Vector3)
 	innerCircle.Parent = coinModel
 
 	coinModel.PrimaryPart = outerRing
-	coinModel.Parent = chunk
+	-- chunk가 아닌 workspace에 직접 배치하여 청크 삭제 시 함께 소멸하는 문제 방지
+	coinModel.Parent = workspace
 
 	self:_startCoinRotation(coinModel)
 

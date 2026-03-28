@@ -653,6 +653,32 @@ function ChunkService:CleanupOldChunks(playerPosition: Vector3)
 		local index = chunksToRemove[i]
 		local chunkData = self._activeChunks[index]
 
+		-- 청크 삭제 전: 플레이어 근처 코인을 workspace로 이전 (수집 기회 보장)
+		-- SUPER_FEVER 자석 반경(40 studs)보다 큰 거리를 구조 거리로 사용
+		local rescueDistance = GameConstants.SUPER_FEVER and GameConstants.SUPER_FEVER.MAGNET_RADIUS or 40
+		rescueDistance = rescueDistance + 10 -- 여유 마진 추가
+		for _, child in chunkData.model:GetChildren() do
+			if child:IsA("Model") and (child.Name:find("Coin") or child.Name:find("coin")) then
+				-- 코인 모델의 PrimaryPart 또는 첫 번째 BasePart로 거리 계산
+				local refPart = child.PrimaryPart
+				if not refPart then
+					for _, part in child:GetChildren() do
+						if part:IsA("BasePart") then
+							refPart = part
+							break
+						end
+					end
+				end
+				if refPart then
+					local dist = (refPart.Position - playerPosition).Magnitude
+					if dist <= rescueDistance then
+						-- 플레이어 근처 코인: 청크 삭제 후에도 살아남도록 workspace로 이전
+						child.Parent = workspace
+					end
+				end
+			end
+		end
+
 		chunkData.model:Destroy()
 		table.remove(self._activeChunks, index)
 
