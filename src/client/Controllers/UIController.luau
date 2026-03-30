@@ -129,8 +129,8 @@ function UIController:_createUI()
 	-- 하트 (최상단)
 	local livesContainer = Instance.new("Frame")
 	livesContainer.Name = "LivesContainer"
-	livesContainer.Size = UDim2.new(1, 0, 0, 28)
-	livesContainer.Position = UDim2.new(0, 0, 0, 6)
+	livesContainer.Size = UDim2.new(1, 0, 0, ResponsiveUtil.compactOffset(28))
+	livesContainer.Position = UDim2.new(0, 0, 0, ResponsiveUtil.compactOffset(6))
 	livesContainer.BackgroundTransparency = 1
 	livesContainer.Parent = hudFrame
 	self._livesContainer = livesContainer
@@ -156,8 +156,8 @@ function UIController:_createUI()
 	-- 점수
 	local scoreLabel = Instance.new("TextLabel")
 	scoreLabel.Name = "ScoreLabel"
-	scoreLabel.Size = UDim2.new(1, -16, 0, 24)
-	scoreLabel.Position = UDim2.new(0, 8, 0, 34)
+	scoreLabel.Size = UDim2.new(1, -16, 0, ResponsiveUtil.compactOffset(24))
+	scoreLabel.Position = UDim2.new(0, 8, 0, ResponsiveUtil.compactOffset(34))
 	scoreLabel.BackgroundTransparency = 1
 	scoreLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 	scoreLabel.TextSize = ResponsiveUtil.scaledTextSize(18, 14)
@@ -170,8 +170,8 @@ function UIController:_createUI()
 	-- 거리
 	local distanceLabel = Instance.new("TextLabel")
 	distanceLabel.Name = "DistanceLabel"
-	distanceLabel.Size = UDim2.new(1, -16, 0, 24)
-	distanceLabel.Position = UDim2.new(0, 8, 0, 58)
+	distanceLabel.Size = UDim2.new(1, -16, 0, ResponsiveUtil.compactOffset(24))
+	distanceLabel.Position = UDim2.new(0, 8, 0, ResponsiveUtil.compactOffset(58))
 	distanceLabel.BackgroundTransparency = 1
 	distanceLabel.TextColor3 = Color3.fromRGB(100, 200, 255)
 	distanceLabel.TextSize = ResponsiveUtil.scaledTextSize(16, 13)
@@ -184,8 +184,8 @@ function UIController:_createUI()
 	-- 코인
 	local coinsLabel = Instance.new("TextLabel")
 	coinsLabel.Name = "CoinsLabel"
-	coinsLabel.Size = UDim2.new(1, -16, 0, 24)
-	coinsLabel.Position = UDim2.new(0, 8, 0, 82)
+	coinsLabel.Size = UDim2.new(1, -16, 0, ResponsiveUtil.compactOffset(24))
+	coinsLabel.Position = UDim2.new(0, 8, 0, ResponsiveUtil.compactOffset(82))
 	coinsLabel.BackgroundTransparency = 1
 	coinsLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
 	coinsLabel.TextSize = ResponsiveUtil.scaledTextSize(16, 13)

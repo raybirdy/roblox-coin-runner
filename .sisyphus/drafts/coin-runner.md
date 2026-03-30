@@ -439,21 +439,21 @@ Sprint 0 (M5+M4+설계)
 
 ## v3.1 구현 단계
 
-### Sprint 0 — 모바일 UI 최적화 [active]
+### Sprint 0 — 모바일 UI 최적화 [done]
 **목표**: 게임 플레이 중 화면에 표시되는 UI 요소를 핵심 정보(생명, 점수, 코인, 조작 버튼)로 축소하여 6~12세 모바일 유저의 정보 과부하를 해소하고, 좌측 엄지 영역을 확보한다.
 **기간**: 3일
 **피처**: ISSUE-005
 **의존성**: none
 
-- [ ] S0-1: UIVisibilityManager 모듈 신설 — 게임 상태(lobby/running/minigame/paused)별 ScreenGui Enabled 일괄 제어
-- [ ] S0-2: DailyChallengeController 게임 중 숨김 — 로비에서만 Visible, GameStart 시 Enabled=false
-- [ ] S0-3: ObjectiveHudController 축소 모드 — 게임 시작 3초 후 아이콘(32px) 모드 자동 축소, 탭 시 1.5초 펼침
-- [ ] S0-4: ProgressionController 레벨/XP 바 게임 중 숨김 — LevelContainer+MissionButton Visible=false, 레벨업 토스트만 표시
-- [ ] S0-5: RunSkillHudController XP 바 게임 중 숨김 — 스킬 레벨업 시에만 2초 토스트
-- [ ] S0-6: HUD 레이아웃 재배치 — 좌측 화면 비움, ActiveSkill 버튼을 우측 하단(Jump 상단)으로 이동
-- [ ] S0-7: 터치 타겟 최소 48px 검증 — GameConstants.UI.MIN_TOUCH_TARGET = 48 상수 추가, 전 버튼 검증
-- [ ] S0-8: ResponsiveUtil compactMode — 화면 너비 500px 미만 시 HUD 추가 축소
-- [ ] S0-9: 스모크 테스트 체크리스트 작성 — docs/test/sprint0-smoke-test.md
+- [x] S0-1: UIVisibilityManager 모듈 신설 — 게임 상태(lobby/running/minigame/paused)별 ScreenGui Enabled 일괄 제어
+- [x] S0-2: DailyChallengeController 게임 중 숨김 — 로비에서만 Visible, GameStart 시 Enabled=false
+- [x] S0-3: ObjectiveHudController 축소 모드 — 게임 시작 3초 후 아이콘(48px) 모드 자동 축소, 탭 시 1.5초 펼침
+- [x] S0-4: ProgressionController 레벨/XP 바 게임 중 숨김 — LevelContainer+MissionButton Visible=false, 레벨업 토스트만 표시
+- [x] S0-5: RunSkillHudController XP 바 게임 중 숨김 — 스킬 레벨업 시에만 2초 토스트
+- [x] S0-6: HUD 레이아웃 재배치 — 좌측 화면 비움, ActiveSkill 버튼을 우측 하단(Jump 상단)으로 이동
+- [x] S0-7: 터치 타겟 최소 48px 검증 — UITokens.Touch.MIN_TARGET_SIZE = 48 상수, 전 버튼 검증
+- [x] S0-8: ResponsiveUtil compactMode — 화면 너비 500px 미만 시 HUD 추가 축소
+- [x] S0-9: 스모크 테스트 체크리스트 작성 — docs/test/sprint0-smoke-test.md
 
 **Acceptance Criteria**:
 - [ ] AC-0-1: 게임 중(running) 동시 표시 UI 프레임 최대 3개 이하 (HudFrame, 터치버튼, 스킬버튼)

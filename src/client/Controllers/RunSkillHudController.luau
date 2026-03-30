@@ -7,6 +7,7 @@ local TweenService = game:GetService("TweenService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)
+local ResponsiveUtil = require(ReplicatedStorage.Shared.Utils.ResponsiveUtil)
 
 local RARITY_COLORS = {
 	common = Color3.fromRGB(150, 150, 150),
@@ -57,8 +58,9 @@ function RunSkillHudController:_buildGui()
 	-- ===== XP 바 (우측 상단 작은 바) =====
 	local xpFrame = Instance.new("Frame")
 	xpFrame.Name = "XPFrame"
-	xpFrame.Size = UDim2.new(0, 180, 0, 28)
-	xpFrame.Position = UDim2.new(1, -190, 0, 10)
+	local xpW = ResponsiveUtil.compactOffset(180)
+	xpFrame.Size = UDim2.new(0, xpW, 0, ResponsiveUtil.compactOffset(28))
+	xpFrame.Position = UDim2.new(1, -xpW - ResponsiveUtil.compactOffset(10), 0, ResponsiveUtil.compactOffset(10))
 	xpFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
 	xpFrame.BackgroundTransparency = 0.3
 	xpFrame.BorderSizePixel = 0
@@ -91,7 +93,7 @@ function RunSkillHudController:_buildGui()
 	xpLabel.BackgroundTransparency = 1
 	xpLabel.Text = "Lv.1"
 	xpLabel.TextColor3 = Color3.fromRGB(200, 240, 255)
-	xpLabel.TextSize = 13
+	xpLabel.TextSize = ResponsiveUtil.compactTextSize(13, 10)
 	xpLabel.Font = Enum.Font.GothamBold
 	xpLabel.TextXAlignment = Enum.TextXAlignment.Right
 	xpLabel.Parent = xpFrame
@@ -100,9 +102,11 @@ function RunSkillHudController:_buildGui()
 	-- ===== 스킬 선택 패널 (중앙 상단) =====
 	local selFrame = Instance.new("Frame")
 	selFrame.Name = "SkillSelection"
-	selFrame.Size = UDim2.new(0, 400, 0, 140)
+	local selW = math.min(ResponsiveUtil.compactOffset(400), ResponsiveUtil.getViewportSize().X - 20)
+	local selH = ResponsiveUtil.compactOffset(140)
+	selFrame.Size = UDim2.new(0, selW, 0, selH)
 	selFrame.AnchorPoint = Vector2.new(0.5, 0)
-	selFrame.Position = UDim2.new(0.5, 0, 0, -160) -- 초기 화면 위 (숨김)
+	selFrame.Position = UDim2.new(0.5, 0, 0, -selH - 20) -- 초기 화면 위 (숨김)
 	selFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 20)
 	selFrame.BackgroundTransparency = 0.15
 	selFrame.BorderSizePixel = 0
@@ -117,7 +121,7 @@ function RunSkillHudController:_buildGui()
 	titleLabel.BackgroundTransparency = 1
 	titleLabel.Text = "⭐ 런 레벨업! 스킬을 선택하세요"
 	titleLabel.TextColor3 = Color3.fromRGB(255, 230, 80)
-	titleLabel.TextSize = 14
+	titleLabel.TextSize = ResponsiveUtil.compactTextSize(14, 11)
 	titleLabel.Font = Enum.Font.GothamBold
 	titleLabel.Parent = selFrame
 
@@ -210,7 +214,7 @@ function RunSkillHudController:_showSkillSelection(skills: { any }, autoDelay: n
 	-- 카드 생성
 	for i, skill in skills do
 		local rarityColor = RARITY_COLORS[skill.rarity] or RARITY_COLORS.common
-		local cardWidth = 118
+		local cardWidth = ResponsiveUtil.compactOffset(118)
 
 		local card = Instance.new("TextButton")
 		card.Name = `Card_{i}`
@@ -234,7 +238,7 @@ function RunSkillHudController:_showSkillSelection(skills: { any }, autoDelay: n
 		emojiLabel.Position = UDim2.new(0, 0, 0, 4)
 		emojiLabel.BackgroundTransparency = 1
 		emojiLabel.Text = skill.emoji
-		emojiLabel.TextSize = 26
+		emojiLabel.TextSize = ResponsiveUtil.compactTextSize(26, 18)
 		emojiLabel.Font = Enum.Font.GothamBold
 		emojiLabel.Parent = card
 
@@ -245,7 +249,7 @@ function RunSkillHudController:_showSkillSelection(skills: { any }, autoDelay: n
 		nameLabel.BackgroundTransparency = 1
 		nameLabel.Text = skill.name
 		nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-		nameLabel.TextSize = 12
+		nameLabel.TextSize = ResponsiveUtil.compactTextSize(12, 10)
 		nameLabel.Font = Enum.Font.GothamBold
 		nameLabel.TextWrapped = true
 		nameLabel.Parent = card
@@ -257,7 +261,7 @@ function RunSkillHudController:_showSkillSelection(skills: { any }, autoDelay: n
 		descLabel.BackgroundTransparency = 1
 		descLabel.Text = skill.desc
 		descLabel.TextColor3 = Color3.fromRGB(180, 180, 200)
-		descLabel.TextSize = 10
+		descLabel.TextSize = ResponsiveUtil.compactTextSize(10, 8)
 		descLabel.Font = Enum.Font.Gotham
 		descLabel.TextWrapped = true
 		descLabel.Parent = card
@@ -269,7 +273,7 @@ function RunSkillHudController:_showSkillSelection(skills: { any }, autoDelay: n
 		rarityLabel.BackgroundTransparency = 1
 		rarityLabel.Text = RARITY_NAMES[skill.rarity] or skill.rarity
 		rarityLabel.TextColor3 = rarityColor
-		rarityLabel.TextSize = 10
+		rarityLabel.TextSize = ResponsiveUtil.compactTextSize(10, 8)
 		rarityLabel.Font = Enum.Font.GothamBold
 		rarityLabel.Parent = card
 
@@ -342,7 +346,7 @@ function RunSkillHudController:_showActivationFeedback(emoji: string, name: stri
 	toast.Parent = playerGui
 
 	local label = Instance.new("TextLabel")
-	label.Size = UDim2.new(0, 200, 0, 40)
+	label.Size = UDim2.new(0, ResponsiveUtil.compactOffset(200), 0, ResponsiveUtil.compactOffset(40))
 	label.AnchorPoint = Vector2.new(0.5, 0.5)
 	label.Position = UDim2.new(0.5, 0, 0.35, 0)
 	label.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
@@ -350,7 +354,7 @@ function RunSkillHudController:_showActivationFeedback(emoji: string, name: stri
 	label.BorderSizePixel = 0
 	label.Text = `{emoji} {name} 발동!`
 	label.TextColor3 = Color3.fromRGB(255, 240, 150)
-	label.TextSize = 16
+	label.TextSize = ResponsiveUtil.compactTextSize(16, 12)
 	label.Font = Enum.Font.GothamBold
 	label.Parent = toast
 	Instance.new("UICorner", label).CornerRadius = UDim.new(0, 8)

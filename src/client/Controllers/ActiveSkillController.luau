@@ -8,6 +8,8 @@ local TweenService = game:GetService("TweenService")
 
 local GameConstants = require(ReplicatedStorage.Shared.Constants.GameConstants)
 local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)
+local ResponsiveUtil = require(ReplicatedStorage.Shared.Utils.ResponsiveUtil)
+local UITokens = require(ReplicatedStorage.Shared.Constants.UITokens)
 
 local ActiveSkillController = {}
 ActiveSkillController.__index = ActiveSkillController
@@ -92,11 +94,12 @@ function ActiveSkillController:_createUI()
 	-- Skill button (bottom-right, above MiniGame area)
 	local button = Instance.new("TextButton")
 	button.Name = "SkillButton"
-	button.Size = UDim2.new(0, 80, 0, 80)
-	button.Position = UDim2.new(1, -100, 1, -220)
+	local btnSize = ResponsiveUtil.compactOffset(UITokens.Touch.SKILL_BUTTON_SIZE)
+	button.Size = UDim2.new(0, btnSize, 0, btnSize)
+	button.Position = UDim2.new(1, -btnSize - ResponsiveUtil.compactOffset(20), 1, -ResponsiveUtil.compactOffset(220))
 	button.BackgroundColor3 = Color3.fromRGB(60, 120, 220)
 	button.Text = skillConfig.emoji or "⚡"
-	button.TextSize = 36
+	button.TextSize = ResponsiveUtil.compactTextSize(36, 24)
 	button.Font = Enum.Font.FredokaOne
 	button.Parent = gui
 
@@ -130,7 +133,7 @@ function ActiveSkillController:_createUI()
 	cdText.Size = UDim2.fromScale(1, 1)
 	cdText.BackgroundTransparency = 1
 	cdText.Text = ""
-	cdText.TextSize = 18
+	cdText.TextSize = ResponsiveUtil.compactTextSize(18, 12)
 	cdText.Font = Enum.Font.GothamBold
 	cdText.TextColor3 = Color3.fromRGB(255, 255, 255)
 	cdText.ZIndex = 3
