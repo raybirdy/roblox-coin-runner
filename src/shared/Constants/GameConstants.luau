@@ -2431,11 +2431,11 @@ GameConstants.ACTIVE_SKILLS = {
 
 -- Random Event System (v3)
 GameConstants.RANDOM_EVENTS = {
-	TRIGGER_INTERVAL = 20, -- average seconds between events
-	TRIGGER_VARIANCE = 5,  -- +/- seconds randomness
+	TRIGGER_INTERVAL = 8,  -- average seconds between events (줄임: 첫 이벤트 체감 개선)
+	TRIGGER_VARIANCE = 3,  -- +/- seconds randomness
 
 	-- Solo mode adjustments
-	SOLO_TRIGGER_INTERVAL = 25, -- less frequent in solo (more breathing room)
+	SOLO_TRIGGER_INTERVAL = 12, -- less frequent in solo (more breathing room)
 	SOLO_EVENT_MAX_DURATION = 10, -- cap event duration in solo
 	EVENTS = {
 		{

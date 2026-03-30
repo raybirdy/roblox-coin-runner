@@ -43,6 +43,8 @@ function RandomEventController:_onEventStart(data: any)
 	local eventId = data.eventId
 	local config = data.eventConfig
 
+	print("[RandomEventController] Event START:", eventId)
+
 	-- Create notification GUI
 	self:_showEventNotification(config)
 
@@ -117,6 +119,8 @@ end
 
 function RandomEventController:_onEventEnd(data: any)
 	local eventId = data.eventId
+
+	print("[RandomEventController] Event END:", eventId)
 
 	-- Revert visual effect
 	if eventId == "coin_rain" or eventId == "speed_shift" then
