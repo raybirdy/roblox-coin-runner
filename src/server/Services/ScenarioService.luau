@@ -111,6 +111,9 @@ function ScenarioService:UpdateQuestProgress(player: Player, questType: string, 
 	-- 챕터 완료 체크
 	self:_checkChapterCompletion(player, playerData)
 
+	-- 점수 등 조건 충족으로 새로 해금된 챕터 오프닝 체크 (highScore 갱신 후 실행됨)
+	self:_checkAndNotifyUnlockedChapters(player, playerData)
+
 	-- 클라이언트에 최신 데이터 전송
 	self:_fireScenarioUpdate(player, playerData)
 end
@@ -241,20 +244,8 @@ function ScenarioService:_completeChapter(
 		chapterReward = chapter.chapterReward,
 	})
 
-	-- 다음 챕터 해금 알림 (있을 경우)
-	local nextChapter = ScenarioConstants.CHAPTERS[chapter.num + 1]
-	if nextChapter and self:_isChapterUnlocked(nextChapter, completedSet, playerData.highScore) then
-		RemoteEvents.ChapterUnlocked:FireClient(player, {
-			chapterId = nextChapter.id,
-			chapterName = nextChapter.name,
-			chapterTheme = nextChapter.theme,
-			skillUnlocked = nil,
-			statBonus = nil,
-			cutscene = ScenarioConstants.CUTSCENES[nextChapter.id] and ScenarioConstants.CUTSCENES[nextChapter.id].opening,
-			chapterReward = nil,
-			isOpening = true,
-		})
-	end
+	-- 다음 챕터 해금 알림 — _checkAndNotifyUnlockedChapters가 중복 방지 포함하여 처리
+	self:_checkAndNotifyUnlockedChapters(player, playerData)
 
 	-- 클라이언트에 최신 데이터 전송
 	self:_fireScenarioUpdate(player, playerData)
@@ -283,6 +274,56 @@ function ScenarioService:TriggerChapterCompletion(player: Player, chapterId: str
 		if chapter.id == chapterId then
 			self:_completeChapter(player, chapter, playerData, completedChapters, completedSet)
 			break
+		end
+	end
+end
+
+-- 새로 해금된 챕터 오프닝 알림 (중복 방지 포함)
+-- UpdateQuestProgress, _completeChapter, OnScenarioDataRequest에서 호출
+function ScenarioService:_checkAndNotifyUnlockedChapters(player: Player, playerData: any)
+	-- 레거시 데이터 마이그레이션: chapterOpeningsSent 필드가 없는 기존 유저 대응
+	if not playerData.chapterOpeningsSent then
+		playerData.chapterOpeningsSent = {}
+		-- 이미 완료된 챕터는 오프닝을 봤다고 처리
+		local existing = playerData.completedChapters :: { string }
+		for _, chId in existing do
+			playerData.chapterOpeningsSent[chId] = true
+		end
+		-- ch1은 hasSeenCh1Opening으로 관리
+		if playerData.hasSeenCh1Opening then
+			playerData.chapterOpeningsSent["ch1"] = true
+		end
+	end
+
+	local completedChapters = playerData.completedChapters :: { string }
+	local completedSet: { [string]: boolean } = {}
+	for _, chId in completedChapters do
+		completedSet[chId] = true
+	end
+
+	local sent = playerData.chapterOpeningsSent :: { [string]: boolean }
+
+	for _, chapter in ScenarioConstants.CHAPTERS do
+		if chapter.num == 1 then
+			continue -- ch1은 hasSeenCh1Opening으로 별도 관리
+		end
+		if completedSet[chapter.id] then
+			continue -- 완료된 챕터 스킵
+		end
+		if sent[chapter.id] then
+			continue -- 이미 오프닝 발송됨
+		end
+		if self:_isChapterUnlocked(chapter, completedSet, playerData.highScore) then
+			sent[chapter.id] = true
+			local opening = ScenarioConstants.CUTSCENES[chapter.id] and ScenarioConstants.CUTSCENES[chapter.id].opening
+			RemoteEvents.ChapterUnlocked:FireClient(player, {
+				chapterId = chapter.id,
+				chapterName = chapter.name,
+				chapterTheme = chapter.theme,
+				cutscene = opening,
+				isOpening = true,
+			})
+			print(`[ScenarioService] {player.Name} unlocked chapter opening: {chapter.id}`)
 		end
 	end
 end
@@ -473,6 +514,11 @@ function ScenarioService:OnScenarioDataRequest(player: Player)
 		unlockedSkills = unlockedSkills,
 		statBonuses = self:GetStatBonuses(player),
 	})
+
+	-- 로그인 시 캐치업: 오프닝 컷씬을 아직 못 본 챕터가 있으면 발송
+	task.delay(3, function()
+		self:_checkAndNotifyUnlockedChapters(player, playerData)
+	end)
 
 	-- 기존 유저 중 ch1 오프닝을 못 본 경우:
 	-- hasSeenScenarioIntro=true (인트로 팝업을 이미 봤으므로 ScenarioIntroSeen 경로 불가)

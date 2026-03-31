@@ -62,6 +62,7 @@ type PlayerData = {
 	unlockedSkills: { string }?, -- 해금된 스킬 ID 목록 e.g. { "double_jump" }
 	hasSeenScenarioIntro: boolean?, -- 시나리오 인트로 팝업을 본 적 있는지
 	hasSeenCh1Opening: boolean?, -- ch1 오프닝 컷씬을 본 적 있는지
+	chapterOpeningsSent: { [string]: boolean }?, -- 오프닝 컷씬 발송 완료 챕터 { [chapterId]: true }
 	bossRunCompleted: { [string]: boolean }?, -- 보스 런 클리어 챕터 { [chapterId]: true }
 	-- 데일리 이벤트
 	dailyEventDate: string?, -- "YYYY-MM-DD" 마지막 이벤트 날짜
@@ -165,6 +166,7 @@ local DEFAULT_DATA: PlayerData = {
 	unlockedSkills = {},
 	hasSeenScenarioIntro = false,
 	hasSeenCh1Opening = false,
+	chapterOpeningsSent = {},
 	bossRunCompleted = {},
 	-- 데일리 이벤트
 	dailyEventDate = nil,
