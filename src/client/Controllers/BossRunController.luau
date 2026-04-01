@@ -4,6 +4,7 @@
 
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
+local Lighting = game:GetService("Lighting")
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)
@@ -27,6 +28,8 @@ export type BossRunController = typeof(setmetatable(
 		_isActive: boolean,
 		_currentChapterId: string?,
 		_currentTargetScore: number,
+		_colorCorrection: ColorCorrectionEffect?,
+		_savedFogEnd: number,
 	},
 	BossRunController
 ))
@@ -47,6 +50,8 @@ function BossRunController.new(): BossRunController
 		_isActive = false,
 		_currentChapterId = nil,
 		_currentTargetScore = 500,
+		_colorCorrection = nil,
+		_savedFogEnd = 1000,
 	}, BossRunController)
 
 	self:_createGui()
@@ -247,6 +252,9 @@ function BossRunController:Show(data: any)
 		self._gui.Enabled = true
 	end
 
+	-- 보스런 Lighting 연출 (IDEA-006 MVP): 붉은 틴트 + 안개 + 어두운 분위기
+	self:_applyBossLighting()
+
 	-- 입장 애니메이션
 	if self._hudFrame then
 		self._hudFrame.Position = UDim2.new(0.5, -160, 0, -100)
@@ -305,6 +313,7 @@ end
 
 function BossRunController:ShowResult(success: boolean, data: any)
 	self._isActive = false
+	self:_restoreLighting()
 
 	local playerGui = self._player:WaitForChild("PlayerGui")
 
@@ -448,6 +457,70 @@ function BossRunController:ShowResult(success: boolean, data: any)
 			self._gui.Enabled = false
 		end
 	end)
+end
+
+-- ==================== Lighting 연출 (IDEA-006) ====================
+
+-- 보스런 진입 시 붉은 틴트 + 안개 축소 적용
+function BossRunController:_applyBossLighting()
+	-- 현재 FogEnd 저장
+	self._savedFogEnd = Lighting.FogEnd
+
+	-- ColorCorrectionEffect 생성 (없으면 신규)
+	local existing = Lighting:FindFirstChildOfClass("ColorCorrectionEffect")
+	if not existing then
+		local cc = Instance.new("ColorCorrectionEffect")
+		cc.Name = "BossRunColorCorrection"
+		cc.Parent = Lighting
+		self._colorCorrection = cc
+	else
+		self._colorCorrection = existing :: ColorCorrectionEffect
+	end
+
+	-- 붉은 틴트 + 어두운 분위기로 트윈 (1.5s)
+	local tweenInfo = TweenInfo.new(1.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+	TweenService:Create(self._colorCorrection, tweenInfo, {
+		TintColor = Color3.fromRGB(255, 120, 100), -- 붉은 틴트
+		Brightness = -0.12,                         -- 약간 어둡게
+		Contrast = 0.15,                             -- 대비 강화
+		Saturation = -0.25,                          -- 채도 감소 (긴장감)
+	}):Play()
+
+	-- FogEnd 축소 (가시거리 감소)
+	TweenService:Create(Lighting, tweenInfo, {
+		FogEnd = math.min(self._savedFogEnd, 200),
+		FogColor = Color3.fromRGB(180, 40, 30),
+	}):Play()
+
+	print("[BossRunController] Boss lighting applied")
+end
+
+-- 보스런 종료 시 Lighting 복원
+function BossRunController:_restoreLighting()
+	if not self._colorCorrection then return end
+
+	local tweenInfo = TweenInfo.new(1.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+	TweenService:Create(self._colorCorrection, tweenInfo, {
+		TintColor = Color3.fromRGB(255, 255, 255), -- 기본 흰색 틴트
+		Brightness = 0,
+		Contrast = 0,
+		Saturation = 0,
+	}):Play()
+
+	TweenService:Create(Lighting, tweenInfo, {
+		FogEnd = self._savedFogEnd,
+		FogColor = Lighting.FogColor, -- ZoneController가 이미 관리 중 → 값 유지
+	}):Play()
+
+	-- 보스런 전용으로 생성한 경우만 제거
+	task.delay(1.3, function()
+		if self._colorCorrection and self._colorCorrection.Name == "BossRunColorCorrection" then
+			self._colorCorrection:Destroy()
+		end
+		self._colorCorrection = nil
+	end)
+
+	print("[BossRunController] Boss lighting restored")
 end
 
 return BossRunController
