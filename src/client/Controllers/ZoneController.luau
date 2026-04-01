@@ -19,6 +19,8 @@ export type ZoneController = typeof(setmetatable(
 		_currentZone: number,
 		_zoneGui: ScreenGui?,
 		_zoneLabel: TextLabel?,
+		_flashFrame: Frame?,
+		_labelTween: Tween?,
 	},
 	ZoneController
 ))
@@ -29,6 +31,8 @@ function ZoneController.new(): ZoneController
 		_currentZone = 1,
 		_zoneGui = nil,
 		_zoneLabel = nil,
+		_flashFrame = nil,
+		_labelTween = nil,
 	}, ZoneController)
 
 	self:_createZoneUI()
@@ -69,6 +73,17 @@ function ZoneController:_createZoneUI()
 	local corner = Instance.new("UICorner")
 	corner.CornerRadius = UDim.new(0, 12)
 	corner.Parent = label
+
+	-- 존 전환 화면 플래시 (전체화면 색상 오버레이)
+	local flash = Instance.new("Frame")
+	flash.Name = "ZoneFlash"
+	flash.Size = UDim2.new(1, 0, 1, 0)
+	flash.Position = UDim2.new(0, 0, 0, 0)
+	flash.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	flash.BackgroundTransparency = 1
+	flash.ZIndex = 10
+	flash.Parent = screenGui
+	self._flashFrame = flash
 end
 
 -- Zone 전환 연출
@@ -95,9 +110,22 @@ function ZoneController:TransitionToZone(zoneIndex: number, displayName: string)
 	})
 	lightingTween:Play()
 
-	-- 2) Zone 이름 팝업 표시
+	-- 2) 화면 플래시 (존 테마 색상으로 0.45s 페이드 아웃)
+	if self._flashFrame then
+		self._flashFrame.BackgroundColor3 = theme.skyAmbient
+		self._flashFrame.BackgroundTransparency = 0.35
+		local flashInfo = TweenInfo.new(0.45, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+		TweenService:Create(self._flashFrame, flashInfo, { BackgroundTransparency = 1 }):Play()
+	end
+
+	-- 3) Zone 이름 팝업: 위에서 슬라이드 인 + 스케일 바운스
 	if self._zoneLabel then
-		-- Zone 아이콘
+		-- 진행 중인 트윈 취소
+		if self._labelTween then
+			self._labelTween:Cancel()
+			self._labelTween = nil
+		end
+
 		local icons = {
 			Meadow = "🌿",
 			FlowerPath = "🌸",
@@ -106,11 +134,28 @@ function ZoneController:TransitionToZone(zoneIndex: number, displayName: string)
 			Starlight = "⭐",
 		}
 		local icon = icons[theme.name] or ""
+		local labelW = math.min(400, ResponsiveUtil.getViewportSize().X * 0.80)
+		local finalY = ResponsiveUtil.scaledOffset(80)
+		local smallTextSize = ResponsiveUtil.scaledTextSize(18, 14)
+		local normalTextSize = ResponsiveUtil.scaledTextSize(28, 20)
+
+		-- 시작: 위쪽에서 작게
 		self._zoneLabel.Text = `{icon} {displayName}`
 		self._zoneLabel.BackgroundColor3 = theme.skyAmbient
 		self._zoneLabel.BackgroundTransparency = 0.3
 		self._zoneLabel.TextTransparency = 0
+		self._zoneLabel.TextSize = smallTextSize
+		self._zoneLabel.Position = UDim2.new(0.5, -labelW / 2, 0, finalY - 48)
 		self._zoneLabel.Visible = true
+
+		-- Back 이징으로 슬라이드 인 + 텍스트 확대
+		local slideInfo = TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+		local slideTween = TweenService:Create(self._zoneLabel, slideInfo, {
+			Position = UDim2.new(0.5, -labelW / 2, 0, finalY),
+			TextSize = normalTextSize,
+		})
+		slideTween:Play()
+		self._labelTween = slideTween
 
 		-- 2초 후 페이드 아웃
 		task.delay(2, function()
