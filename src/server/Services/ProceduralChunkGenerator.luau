@@ -64,6 +64,17 @@ function ProceduralChunkGenerator.Generate(
 	local chunk = Instance.new("Model")
 	chunk.Name = `Chunk_{difficulty}_{startHeight}`
 
+	-- DualFloor: 전용 생성 경로 (IDEA-003)
+	if difficulty == "DualFloor" then
+		ProceduralChunkGenerator._createDualFloor(chunk, position, theme)
+		chunk:SetAttribute("Difficulty", "DualFloor")
+		chunk:SetAttribute("StartHeight", startHeight)
+		chunk:SetAttribute("EndHeight", startHeight)
+		chunk:SetAttribute("Procedural", true)
+		chunk.Parent = workspace
+		return chunk
+	end
+
 	-- 끝 높이 결정
 	local endHeight = ProceduralChunkGenerator._selectEndHeight(startHeight)
 
@@ -99,6 +110,101 @@ function ProceduralChunkGenerator.Generate(
 	chunk.Parent = workspace
 
 	return chunk
+end
+
+-- 2층 분기 맵 생성 (IDEA-003)
+function ProceduralChunkGenerator._createDualFloor(chunk: Model, position: Vector3, theme: any?)
+	local df = GameConstants.DUAL_FLOOR
+	local chunkLength = GameConstants.CHUNK.LENGTH
+	local floorWidth = CHUNK_CONFIG.FLOOR_WIDTH
+	local floorColor = if theme then theme.floorColor else Color3.fromRGB(90, 90, 100)
+	local railColor = if theme then theme.railColor else Color3.fromRGB(150, 150, 160)
+
+	-- 1층 바닥 (청크 전체 길이)
+	local floor1 = Instance.new("Part")
+	floor1.Name = "Floor"
+	floor1.Size = Vector3.new(chunkLength, CHUNK_CONFIG.FLOOR_THICKNESS, floorWidth)
+	floor1.Position = Vector3.new(position.X + chunkLength / 2, CHUNK_CONFIG.FLOOR_THICKNESS / 2, position.Z)
+	floor1.Anchored = true
+	floor1.CanCollide = true
+	floor1.Color = floorColor
+	floor1.Material = Enum.Material.Concrete
+	floor1.Parent = chunk
+	chunk.PrimaryPart = floor1
+
+	-- 2층 진입 경사로 (1층 끝에서 2층 높이까지 경사)
+	local rampLength = df.RAMP_LENGTH
+	local floor2Y = df.FLOOR2_Y
+	local rampAngle = math.atan2(floor2Y, rampLength)
+	local rampDiag = math.sqrt(floor2Y ^ 2 + rampLength ^ 2)
+	local ramp = Instance.new("Part")
+	ramp.Name = "DualFloorRamp"
+	ramp.Size = Vector3.new(rampDiag, CHUNK_CONFIG.FLOOR_THICKNESS, floorWidth)
+	ramp.CFrame = CFrame.new(
+		position.X + rampLength / 2,
+		floor2Y / 2,
+		position.Z
+	) * CFrame.Angles(0, 0, -rampAngle)
+	ramp.Anchored = true
+	ramp.CanCollide = true
+	ramp.Color = floorColor
+	ramp.Material = Enum.Material.Concrete
+	ramp.Parent = chunk
+
+	-- 2층 바닥 플랫폼
+	local platformLength = df.PLATFORM_LENGTH
+	local floor2 = Instance.new("Part")
+	floor2.Name = "DualFloor2"
+	floor2.Size = Vector3.new(platformLength, CHUNK_CONFIG.FLOOR_THICKNESS, floorWidth)
+	floor2.Position = Vector3.new(
+		position.X + rampLength + platformLength / 2,
+		floor2Y + CHUNK_CONFIG.FLOOR_THICKNESS / 2,
+		position.Z
+	)
+	floor2.Anchored = true
+	floor2.CanCollide = true
+	floor2.Color = floorColor:Lerp(Color3.new(1, 1, 1), 0.12) -- 1층보다 약간 밝게
+	floor2.Material = Enum.Material.Concrete
+	floor2.Parent = chunk
+
+	-- 2층 사이드 레일
+	for _, zOffset in { -floorWidth / 2 - 0.5, floorWidth / 2 + 0.5 } do
+		local rail = Instance.new("Part")
+		rail.Name = "DualRail2"
+		rail.Size = Vector3.new(platformLength, 0.5, 0.5)
+		rail.Position = Vector3.new(
+			position.X + rampLength + platformLength / 2,
+			floor2Y + 1.25,
+			position.Z + zOffset
+		)
+		rail.Anchored = true
+		rail.CanCollide = false
+		rail.Color = railColor
+		rail.Material = Enum.Material.Metal
+		rail.Parent = chunk
+	end
+
+	-- 2층 끝 안내 파티클 (낙하 지점 강조: 작은 표시판)
+	local marker = Instance.new("Part")
+	marker.Name = "DualFloorEnd"
+	marker.Size = Vector3.new(0.5, 3, floorWidth + 2)
+	marker.Position = Vector3.new(
+		position.X + rampLength + platformLength,
+		floor2Y + 1.5,
+		position.Z
+	)
+	marker.Anchored = true
+	marker.CanCollide = false
+	marker.Transparency = 0.5
+	marker.Color = Color3.fromRGB(255, 200, 50)
+	marker.Material = Enum.Material.Neon
+	marker.Parent = chunk
+
+	-- Attribute: CoinService가 2층 높이 참조
+	chunk:SetAttribute("IsDualFloor", true)
+	chunk:SetAttribute("Floor2Y", floor2Y)
+	chunk:SetAttribute("Floor2StartX", position.X + rampLength)
+	chunk:SetAttribute("Floor2EndX", position.X + rampLength + platformLength)
 end
 
 -- 끝 높이 선택

@@ -46,6 +46,17 @@ GameConstants.CHUNK = {
 	HEIGHT_HIGH = 12,
 }
 
+-- 2층 분기 맵 (IDEA-003)
+GameConstants.DUAL_FLOOR = {
+	FLOOR2_Y = 10, -- 2층 바닥 높이 (studs, 1층 기준)
+	RAMP_LENGTH = 8, -- 진입 경사로 길이 (studs)
+	PLATFORM_LENGTH = 60, -- 2층 플랫폼 유지 길이 (studs, 총 80 중)
+	SPAWN_CHANCE = 0.10, -- 출현 확률 (10%)
+	MIN_ELAPSED_TIME = 30, -- 최소 경과 시간 (초)
+	COIN_Y_OFFSET = 4, -- 2층 코인 높이 오프셋 (바닥 위 studs)
+	COIN_COUNT = 15, -- 2층 코인 개수
+}
+
 -- 난이도별 청크 출현 확률 (시간대별)
 GameConstants.CHUNK_SPAWN_RATES = {
 	-- 0~30초 (초반 - 매우 쉬움)

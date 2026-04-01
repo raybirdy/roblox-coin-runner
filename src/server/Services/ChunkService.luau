@@ -506,6 +506,14 @@ function ChunkService:_selectDifficulty(): string
 		return mercyDifficulty
 	end
 
+	-- 2층 분기 맵: 30s+ 조건에서 10% 확률 (IDEA-003)
+	if elapsedTime >= GameConstants.DUAL_FLOOR.MIN_ELAPSED_TIME then
+		if math.random() < GameConstants.DUAL_FLOOR.SPAWN_CHANCE then
+			print(`[ChunkService] 🏠 DualFloor chunk at {math.floor(elapsedTime)}s`)
+			return "DualFloor"
+		end
+	end
+
 	-- 호흡 패턴 (60초 이후: Hard 15s → Easy 10s 반복 사이클)
 	if elapsedTime >= 60 then
 		local phaseElapsed = tick() - self._breathPhaseStart

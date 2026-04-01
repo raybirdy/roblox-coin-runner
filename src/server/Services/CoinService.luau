@@ -619,6 +619,26 @@ function CoinService:SpawnCoinsInChunk(
 	obstaclePositions = obstaclePositions or {}
 	obstacleInfos = obstacleInfos or {}
 
+	-- DualFloor: 2층 바닥에 코인 집중 배치 (IDEA-003)
+	if difficulty == "DualFloor" or chunk:GetAttribute("IsDualFloor") then
+		local df = GameConstants.DUAL_FLOOR
+		local floor2Y = (chunk:GetAttribute("Floor2Y") :: number?) or df.FLOOR2_Y
+		local floor2StartX = (chunk:GetAttribute("Floor2StartX") :: number?)
+		local floor2EndX = (chunk:GetAttribute("Floor2EndX") :: number?)
+		if floor2StartX and floor2EndX then
+			local coinZ = chunk:GetPrimaryPartCFrame().Position.Z
+			local coinY = floor2Y + df.COIN_Y_OFFSET
+			local span = floor2EndX - floor2StartX
+			for i = 1, df.COIN_COUNT do
+				local t = (i - 0.5) / df.COIN_COUNT
+				local coinX = floor2StartX + t * span
+				local coinType = if i % 5 == 0 then "Gold" elseif i % 2 == 0 then "Silver" else "Bronze"
+				self:_spawnCoin(Vector3.new(coinX, coinY, coinZ), coinType)
+			end
+		end
+		return
+	end
+
 	-- 코인 개수 결정
 	local coinCount = self:_getCoinCountForDifficulty(difficulty)
 
