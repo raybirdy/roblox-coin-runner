@@ -479,6 +479,10 @@ RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { 
 	-- Zone 설정 (Zone Skip 적용)
 	chunkService:SetCurrentZone(skipToZone)
 
+	-- 챕터 연동 맵 테마 설정 (IDEA-005)
+	local activeChapterId = ScenarioService:GetActiveChapterId(player)
+	chunkService:SetActiveChapterId(activeChapterId)
+
 	-- 시작 파워업 적용
 	for _, powerupId in validPowerups do
 		if powerupId == "start_magnet" then

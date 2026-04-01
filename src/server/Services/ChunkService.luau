@@ -6,6 +6,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerStorage = game:GetService("ServerStorage")
 
 local GameConstants = require(ReplicatedStorage.Shared.Constants.GameConstants)
+local ScenarioConstants = require(ReplicatedStorage.Shared.Constants.ScenarioConstants)
 local ProceduralChunkGenerator = require(script.Parent.ProceduralChunkGenerator)
 
 local ChunkService = {}
@@ -46,6 +47,7 @@ export type ChunkService = typeof(setmetatable(
 		_nextStarWaveTime: number,
 		_starWaveActive: boolean,
 		_starWaveEndTime: number,
+		_activeChapterId: string?, -- 챕터 연동 맵 테마 (IDEA-005)
 	},
 	ChunkService
 ))
@@ -74,11 +76,17 @@ function ChunkService.new(): ChunkService
 		_nextStarWaveTime = 0,
 		_starWaveActive = false,
 		_starWaveEndTime = 0,
+		_activeChapterId = nil,
 	}, ChunkService)
 
 	self:_loadChunkTemplates()
 
 	return self
+end
+
+-- 활성 챕터 설정 (GameManager에서 게임 시작 시 호출 — IDEA-005)
+function ChunkService:SetActiveChapterId(chapterId: string?)
+	self._activeChapterId = chapterId
 end
 
 -- CoinService 설정 (GameManager에서 호출)
@@ -321,8 +329,20 @@ function ChunkService:SpawnNextChunk(): Model?
 
 	local spawnPosition = self:_calculateSpawnPosition()
 
-	-- Phase B: 현재 zone 테마
+	-- Phase B: 현재 zone 테마 + 챕터 accentColor 오버레이 (IDEA-005)
 	local theme = GameConstants.ZONE_THEMES[self._currentZoneIndex]
+	if self._activeChapterId then
+		local chapterTheme = ScenarioConstants.CHAPTER_THEMES[self._activeChapterId]
+		if chapterTheme then
+			-- 원본 테이블 수정 방지: 얕은 복사 후 chapterAccentColor 추가
+			local themeCopy = {}
+			for k, v in theme do
+				themeCopy[k] = v
+			end
+			themeCopy.chapterAccentColor = chapterTheme.accentColor
+			theme = themeCopy
+		end
+	end
 
 	-- 템플릿 찾기 시도
 	local chunkTemplate = self:_getChunkTemplate(difficulty, self._lastChunkEndHeight)

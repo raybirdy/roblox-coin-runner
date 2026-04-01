@@ -306,6 +306,13 @@ end
 function ProceduralChunkGenerator._addDecorations(chunk: Model, position: Vector3, _difficulty: string, theme: any?)
 	local chunkLength = GameConstants.CHUNK.LENGTH
 
+	-- 챕터 accentColor tint 계산 (IDEA-005): Zone 테마 우선, 챕터 색상 35% 혼합
+	local accentColor = theme and theme.chapterAccentColor :: Color3?
+	local railBase = if theme then theme.railColor else Color3.fromRGB(150, 150, 160)
+	local railColor = if accentColor then railBase:Lerp(accentColor, 0.35) else railBase
+	local lineBase = Color3.fromRGB(200, 200, 200)
+	local lineColor = if accentColor then lineBase:Lerp(accentColor, 0.40) else lineBase
+
 	-- 측면 레일/가드
 	for _, zOffset in { -CHUNK_CONFIG.FLOOR_WIDTH / 2 - 0.5, CHUNK_CONFIG.FLOOR_WIDTH / 2 + 0.5 } do
 		local rail = Instance.new("Part")
@@ -314,7 +321,7 @@ function ProceduralChunkGenerator._addDecorations(chunk: Model, position: Vector
 		rail.Position = Vector3.new(position.X + chunkLength / 2, 1.25, position.Z + zOffset)
 		rail.Anchored = true
 		rail.CanCollide = false
-		rail.Color = if theme then theme.railColor else Color3.fromRGB(150, 150, 160)
+		rail.Color = railColor
 		rail.Material = Enum.Material.Metal
 		rail.Parent = chunk
 	end
@@ -328,7 +335,7 @@ function ProceduralChunkGenerator._addDecorations(chunk: Model, position: Vector
 		line.Position = Vector3.new(position.X + i * 20, 1.05, position.Z)
 		line.Anchored = true
 		line.CanCollide = false
-		line.Color = Color3.fromRGB(200, 200, 200)
+		line.Color = lineColor
 		line.Material = Enum.Material.SmoothPlastic
 		line.Parent = chunk
 	end
