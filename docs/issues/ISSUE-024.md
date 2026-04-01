@@ -3,11 +3,11 @@ id: ISSUE-024
 title: 게임 진행 중 과도한 UI 요소가 화면을 방해함
 category: improvement
 priority: P1-high
-status: open
+status: resolved
 related_sprint: v3.1 Sprint 1 후보
 related_ac: none
 created: 2026-04-01
-resolved: null
+resolved: 2026-04-01
 ---
 
 ## 설명
@@ -55,4 +55,17 @@ resolved: null
 4. **설정 옵션**: 플레이어가 표시할 HUD 요소를 직접 선택
 
 ## 해결 방안
-(등록 시점에는 비워둠 — 처리 시 채움)
+
+**적용 방향**: 해결 방향 후보 1 (게임 중 비핵심 UI 숨김)
+
+**수정 내용** (`DailyEventController.luau`):
+- `StartGame`: `_hudGui.Enabled = false` (게임 시작 시 기본 숨김)
+- `_showHudBriefly()` 추가: 진행 업데이트 시 3.5초 표시 후 자동 숨김
+- `DailyEventProgress` 핸들러: `_showHudBriefly()` 호출 추가
+- `_showCompletionEffect`: 이벤트 완료 시 HUD 강제 활성화 + _refreshHud 호출
+- `Destroy`: `_hudHideTask` task.cancel 정리 추가
+
+**미변경 항목** (변경 불필요):
+- `RealtimeBattleController`: `_isInBattle` 조건부이므로 이미 배틀 중일 때만 표시
+- `CoinKingController`: 15초 딜레이 후 서서히 표시, 기본 투명함
+- 필수 HUD (점수/라이프/피버/스킬버튼): 유지

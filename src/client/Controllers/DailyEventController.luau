@@ -25,6 +25,7 @@ export type DailyEventController = typeof(setmetatable(
 		_isGameActive: boolean,
 		_dismissed: boolean,
 		_pulseConnection: RBXScriptConnection?,
+		_hudHideTask: thread?,
 	},
 	DailyEventController
 ))
@@ -54,6 +55,7 @@ function DailyEventController.new(player: Player): DailyEventController
 		_isGameActive = false,
 		_dismissed = false,
 		_pulseConnection = nil,
+		_hudHideTask = nil,
 	}, DailyEventController)
 
 	self:_createLobbyBanner()
@@ -253,6 +255,7 @@ function DailyEventController:_setupEventHandlers()
 		end
 		if self._isGameActive then
 			self:_refreshHud()
+			self:_showHudBriefly() -- 진행 업데이트 시 HUD 잠깐 표시
 		end
 	end)
 	table.insert(self._connections, progressConn)
@@ -324,6 +327,32 @@ function DailyEventController:_refreshLobbyBanner()
 	end
 end
 
+-- 게임 중 HUD를 잠깐(3.5초) 표시 후 자동 숨김 (ISSUE-024: 화면 방해 최소화)
+function DailyEventController:_showHudBriefly()
+	if not self._hudGui then
+		return
+	end
+	self._hudGui.Enabled = true
+
+	-- 이전 타이머 취소
+	if self._hudHideTask then
+		task.cancel(self._hudHideTask)
+		self._hudHideTask = nil
+	end
+
+	-- 이벤트 완료 상태이면 계속 표시 (숨김 타이머 불필요)
+	if self._goalCompleted then
+		return
+	end
+
+	self._hudHideTask = task.delay(3.5, function()
+		self._hudHideTask = nil
+		if self._isGameActive and self._hudGui and not self._goalCompleted then
+			self._hudGui.Enabled = false
+		end
+	end)
+end
+
 -- Refresh in-game HUD
 function DailyEventController:_refreshHud()
 	local theme = self._currentTheme
@@ -367,6 +396,10 @@ function DailyEventController:_showCompletionEffect()
 	if not gui then
 		return
 	end
+
+	-- 완료 효과는 HUD가 보여야 함
+	gui.Enabled = true
+	self:_refreshHud()
 
 	local label = Instance.new("TextLabel")
 	label.Name = "EventClear"
@@ -433,16 +466,15 @@ function DailyEventController:_startPulse(banner: Frame)
 	end)
 end
 
--- Called at game start (show HUD)
+-- Called at game start (ISSUE-024: HUD 기본 숨김 — 진행 업데이트 시 잠깐만 표시)
 function DailyEventController:StartGame()
 	self._isGameActive = true
 	if self._hudGui then
-		self._hudGui.Enabled = true
+		self._hudGui.Enabled = false
 	end
 	if self._lobbyGui then
 		self._lobbyGui.Enabled = false
 	end
-	self:_refreshHud()
 end
 
 -- Called at game over (hide HUD)
@@ -476,6 +508,10 @@ end
 
 -- Cleanup
 function DailyEventController:Destroy()
+	if self._hudHideTask then
+		task.cancel(self._hudHideTask)
+		self._hudHideTask = nil
+	end
 	if self._pulseConnection then
 		self._pulseConnection:Disconnect()
 		self._pulseConnection = nil
