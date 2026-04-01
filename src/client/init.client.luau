@@ -114,6 +114,7 @@ local RandomEventController = require(script.Controllers.RandomEventController)
 local DailyChallengeController = require(script.Controllers.DailyChallengeController)
 local UIVisibilityManager = require(script.Controllers.UIVisibilityManager)
 local ParallaxController = require(script.Controllers.ParallaxController)
+local WeatherController = require(script.Controllers.WeatherController)
 
 -- 컨트롤러 인스턴스 생성
 local inputController = InputController.new()
@@ -165,6 +166,7 @@ local activeSkillController = ActiveSkillController.new()
 local randomEventController = RandomEventController.new()
 local dailyChallengeController = DailyChallengeController.new()
 local parallaxController = ParallaxController.new()
+local weatherController = WeatherController.new()
 
 -- UIVisibilityManager 초기화 (게임 상태별 UI 가시성 중앙 관리)
 UIVisibilityManager:Init({
@@ -615,6 +617,8 @@ RemoteEvents.GameStart.OnClientEvent:Connect(function(data)
 		skillController:SetGameActive(true)
 		dailyEventController:StartGame()
 		petController:StartGame()
+		weatherController:StartGame()
+		weatherController:SetZone(1) -- 기본 Zone 1 날씨 시작
 		objectiveHudController:DisableReroll() -- 카운트다운 후 리롤 잠금
 		activeSkillController:OnGameStart()
 
@@ -671,6 +675,7 @@ RemoteEvents.GameStart.OnClientEvent:Connect(function(data)
 			if theme then
 				zoneController:TransitionToZone(startZone, theme.displayName)
 				parallaxController:SetZoneTheme(startZone)
+				weatherController:SetZone(startZone)
 				uiController:ShowGameFeedback(
 					`✈️ {theme.displayName}부터 시작!`,
 					Color3.fromRGB(100, 200, 255)
@@ -740,6 +745,7 @@ RemoteEvents.GameOver.OnClientEvent:Connect(function(data)
 		speedEffectController:StopGame()
 		zoneController:ResetToDefault() -- Phase B: zone 복원
 		parallaxController:SetZoneTheme(1)
+		weatherController:EndGame()
 
 		-- 튜토리얼 종료 (활성화된 경우)
 		if tutorialController:IsActive() then
@@ -835,6 +841,7 @@ end)
 RemoteEvents.ZoneTransition.OnClientEvent:Connect(function(data)
 	zoneController:TransitionToZone(data.zoneIndex, data.displayName)
 	parallaxController:SetZoneTheme(data.zoneIndex)
+	weatherController:SetZone(data.zoneIndex)
 	-- 구역 도착 연출: 카메라 줌아웃 → 복귀 + 화면 피드백 + 미약한 흔들림
 	cameraController:Zoom(8, 1.5) -- 1.5초 동안 살짝 줌아웃 (새 구역 전경 노출)
 	cameraController:Shake(0.2)
