@@ -19,9 +19,10 @@ local _activeEvents: { [Player]: {
 local _nextEventTime: { [Player]: number } = {}
 
 -- Calculate next event trigger time
-local function getNextTriggerTime(): number
-	local interval = GameConstants.RANDOM_EVENTS.TRIGGER_INTERVAL
-	local variance = GameConstants.RANDOM_EVENTS.TRIGGER_VARIANCE
+local function getNextTriggerTime(isSolo: boolean?): number
+	local re = GameConstants.RANDOM_EVENTS
+	local interval = (isSolo and re.SOLO_TRIGGER_INTERVAL) or re.TRIGGER_INTERVAL
+	local variance = re.TRIGGER_VARIANCE
 	return os.clock() + interval + (math.random() * 2 - 1) * variance
 end
 
@@ -49,7 +50,8 @@ function RandomEventService:Update(player: Player, session: any, _deltaTime: num
 
 	-- Initialize next event time
 	if not _nextEventTime[player] then
-		_nextEventTime[player] = getNextTriggerTime()
+		local isSolo = not session.coopSessionId
+		_nextEventTime[player] = getNextTriggerTime(isSolo)
 	end
 
 	-- Check trigger
@@ -109,7 +111,8 @@ function RandomEventService:EndEvent(player: Player, session: any)
 	print(`[RandomEventService] {activeEvent.eventId} ended for {player.Name}`)
 
 	_activeEvents[player] = nil
-	_nextEventTime[player] = getNextTriggerTime()
+	local isSolo = not session.coopSessionId
+	_nextEventTime[player] = getNextTriggerTime(isSolo)
 end
 
 -- Apply effect to session

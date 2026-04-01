@@ -93,6 +93,10 @@ function ScenarioService:UpdateQuestProgress(player: Player, questType: string, 
 		end
 	end
 
+	-- 점수 등 조건 충족으로 새로 해금된 챕터 오프닝 체크
+	-- changed 여부와 무관하게 실행 (highScore는 외부에서 갱신되므로)
+	self:_checkAndNotifyUnlockedChapters(player, playerData)
+
 	if not changed then
 		return
 	end
@@ -110,9 +114,6 @@ function ScenarioService:UpdateQuestProgress(player: Player, questType: string, 
 
 	-- 챕터 완료 체크
 	self:_checkChapterCompletion(player, playerData)
-
-	-- 점수 등 조건 충족으로 새로 해금된 챕터 오프닝 체크 (highScore 갱신 후 실행됨)
-	self:_checkAndNotifyUnlockedChapters(player, playerData)
 
 	-- 클라이언트에 최신 데이터 전송
 	self:_fireScenarioUpdate(player, playerData)
