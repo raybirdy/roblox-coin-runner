@@ -499,25 +499,29 @@ function ObstacleService:_selectObstacleType(difficulty: string): string
 			return "Gap"
 		end
 	elseif difficulty == "Hard" then
-		-- Hard: 모든 타입 + 신규 3종, ChaseMob은 SpawnObstaclesInChunk에서 별도 처리
-		if rand < 0.24 then
+		-- Hard: 모든 타입 + 신규 5종, ChaseMob은 SpawnObstaclesInChunk에서 별도 처리
+		if rand < 0.20 then
 			return "ExplodingBarrel"
-		elseif rand < 0.40 then
+		elseif rand < 0.35 then
 			return "LowWall"
-		elseif rand < 0.54 then
+		elseif rand < 0.48 then
 			return "Tunnel"
-		elseif rand < 0.63 then
+		elseif rand < 0.56 then
 			return "SpikeTrap"
-		elseif rand < 0.73 then
+		elseif rand < 0.65 then
 			return "DoubleWall"
-		elseif rand < 0.80 then
+		elseif rand < 0.72 then
 			return "MovingWall"
-		elseif rand < 0.87 then
+		elseif rand < 0.79 then
 			return "PendulumLog" -- 7% (Zone 3+)
-		elseif rand < 0.93 then
+		elseif rand < 0.85 then
 			return "LaserBeam" -- 6% (Zone 4+)
-		elseif rand < 0.97 then
+		elseif rand < 0.89 then
 			return "FallingRock" -- 4% (Zone 3+)
+		elseif rand < 0.94 then
+			return "RotatingBar" -- 5% (IDEA-004)
+		elseif rand < 0.98 then
+			return "FallingDebris" -- 4% (IDEA-004)
 		else
 			return "Gap"
 		end
@@ -1062,6 +1066,123 @@ function ObstacleService:_spawnObstacle(position: Vector3, obstacleType: string)
 		}
 		table.insert(self._activeObstacles, frData)
 		print(`[ObstacleService] Spawned FallingRock at {position}`)
+		return
+
+	elseif obstacleType == "RotatingBar" then
+		-- 회전 장애물 (Hard 전용, 타이밍 점프/슬라이드 — IDEA-004)
+		local barConst = GameConstants.ROTATING_BAR
+		obstacle = Instance.new("Part")
+		obstacle.Name = "Obstacle_RotatingBar"
+		obstacle.Size = barConst.SIZE
+		obstacle.CFrame = CFrame.new(position.X, position.Y + barConst.PIVOT_Y, position.Z)
+		obstacle.Color = barConst.COLOR
+		obstacle.Material = Enum.Material.Neon
+		obstacle.Transparency = 0.1
+		obstacle.Anchored = true
+		obstacle.CanCollide = false
+		obstacle:SetAttribute("ObstacleType", obstacleType)
+
+		-- 경고 BillboardGui
+		local rbBb = Instance.new("BillboardGui")
+		rbBb.Name = "RotatingBarLabel"
+		rbBb.Size = UDim2.new(0, 50, 0, 50)
+		rbBb.StudsOffset = Vector3.new(0, barConst.PIVOT_Y + 2, 0)
+		rbBb.AlwaysOnTop = false
+		rbBb.Parent = obstacle
+		local rbLbl = Instance.new("TextLabel")
+		rbLbl.Size = UDim2.new(1, 0, 1, 0)
+		rbLbl.BackgroundTransparency = 1
+		rbLbl.Text = "🔄"
+		rbLbl.TextScaled = true
+		rbLbl.Parent = rbBb
+
+		obstacle.Parent = workspace
+
+		-- X축 기준 회전 트윈 (수평 ↔ 수직, 1.5s 사이클, 네트워크 복제)
+		task.defer(function()
+			if not obstacle or not obstacle.Parent then return end
+			local halfCycle = barConst.CYCLE_TIME / 2
+			local tweenInfo = TweenInfo.new(halfCycle, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
+			local pivot = obstacle.CFrame
+			TweenService:Create(obstacle, tweenInfo, {
+				CFrame = pivot * CFrame.Angles(math.pi / 2, 0, 0),
+			}):Play()
+		end)
+
+		local rbData: ObstacleData = {
+			part = obstacle,
+			obstacleType = obstacleType,
+			spawnTime = tick(),
+		}
+		table.insert(self._activeObstacles, rbData)
+		print(`[ObstacleService] Spawned RotatingBar at {position}`)
+		return
+
+	elseif obstacleType == "FallingDebris" then
+		-- 낙하 잔해 (Hard 전용, 3연속 파편 낙하 — IDEA-004)
+		local dbConst = GameConstants.FALLING_DEBRIS
+		local spawnTimeDb = tick()
+
+		for i = 1, dbConst.COUNT do
+			local xOffset = (i - (dbConst.COUNT + 1) / 2) * dbConst.SPACING
+			local debrisPos = Vector3.new(position.X + xOffset, position.Y, position.Z)
+			local debrisDropPos = Vector3.new(position.X + xOffset, position.Y + dbConst.DROP_HEIGHT, position.Z)
+
+			-- 경고 그림자
+			local warning = Instance.new("Part")
+			warning.Name = "FallingDebris_Warning"
+			warning.Size = Vector3.new(dbConst.PIECE_SIZE.X + 1, 0.2, dbConst.PIECE_SIZE.Z)
+			warning.Position = debrisPos + Vector3.new(0, 0.15, 0)
+			warning.Color = dbConst.WARNING_COLOR
+			warning.Material = Enum.Material.Neon
+			warning.Transparency = 0.4
+			warning.Anchored = true
+			warning.CanCollide = false
+			warning.Parent = workspace
+
+			-- 파편
+			local piece = Instance.new("Part")
+			piece.Name = "Obstacle_FallingDebris"
+			piece.Size = dbConst.PIECE_SIZE
+			piece.Position = debrisDropPos
+			piece.Color = dbConst.COLOR
+			piece.Material = Enum.Material.Slate
+			piece.Transparency = 0
+			piece.Anchored = true
+			piece.CanCollide = false
+			piece:SetAttribute("ObstacleType", "FallingDebris")
+			piece:SetAttribute("DebrisLanded", false)
+			piece.Parent = workspace
+
+			local pieceData: ObstacleData = {
+				part = piece,
+				obstacleType = "FallingDebris",
+				spawnTime = spawnTimeDb,
+				warningPart = warning,
+			}
+			table.insert(self._activeObstacles, pieceData)
+
+			-- 딜레이 후 낙하 (스태거 효과)
+			local fallDelay = (i - 1) * dbConst.STAGGER_TIME
+			task.delay(dbConst.WARNING_TIME + fallDelay, function()
+				if not piece or not piece.Parent then
+					if warning and warning.Parent then warning:Destroy() end
+					return
+				end
+				local landY = debrisPos.Y + dbConst.PIECE_SIZE.Y / 2
+				local tweenInfo = TweenInfo.new(dbConst.DROP_SPEED, Enum.EasingStyle.Bounce, Enum.EasingDirection.Out)
+				local tween = TweenService:Create(piece, tweenInfo, {
+					Position = Vector3.new(piece.Position.X, landY, piece.Position.Z),
+				})
+				tween.Completed:Connect(function()
+					if piece and piece.Parent then piece:SetAttribute("DebrisLanded", true) end
+					if warning and warning.Parent then warning:Destroy() end
+				end)
+				tween:Play()
+			end)
+		end
+
+		print(`[ObstacleService] Spawned FallingDebris x{dbConst.COUNT} at {position}`)
 		return
 
 	elseif obstacleType == "ExplodingBarrel" then

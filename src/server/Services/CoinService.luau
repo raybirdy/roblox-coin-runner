@@ -500,6 +500,8 @@ local ACTION_HINT_MAP: { [string]: string } = {
 	MovingWall = "action_timing_cluster",
 	FlowerWind = "action_jump_arc",  -- FlowerWind도 LowWall처럼 점프 유도
 	ShadowWall = "action_jump_arc",  -- ShadowWall도 점프 유도 (리딩 코인 중요!)
+	RotatingBar = "action_timing_cluster", -- 회전 타이밍 → 코인 클러스터 (IDEA-004)
+	FallingDebris = "action_avoid_side", -- 좌우 회피 유도 (IDEA-004)
 }
 
 function CoinService:_selectPattern(difficulty: string, obstaclePositions: { Vector3 }, obstacleInfos: { any }?): string

@@ -1800,6 +1800,27 @@ GameConstants.FALLING_ROCK = {
 	HARD_CHANCE    = 0.15,                             -- Hard: 15%
 }
 
+-- 회전 장애물 (Rotating Bar) — Hard 전용, 타이밍 점프/슬라이드 회피 (IDEA-004)
+GameConstants.ROTATING_BAR = {
+	SIZE          = Vector3.new(1, 8, 12),             -- 얇은 벽 (높이×폭)
+	COLOR         = Color3.fromRGB(255, 180, 0),       -- 밝은 주황/노란색 (경고색)
+	CYCLE_TIME    = 1.5,                               -- 1사이클 시간 (초)
+	PIVOT_Y       = 4,                                 -- 회전 중심 높이 (studs)
+}
+
+-- 낙하 잔해 (Falling Debris) — Hard 전용, 경고 후 3연속 파편 낙하 (IDEA-004)
+GameConstants.FALLING_DEBRIS = {
+	PIECE_SIZE    = Vector3.new(3, 3, 8),              -- 파편 크기
+	COLOR         = Color3.fromRGB(200, 130, 50),      -- 갈색 파편
+	DROP_HEIGHT   = 22,                                -- 낙하 시작 높이 (studs)
+	WARNING_TIME  = 0.6,                               -- 경고 → 낙하 지연 (초)
+	DROP_SPEED    = 0.35,                              -- 낙하 시간 (초)
+	STAGGER_TIME  = 0.25,                              -- 파편 간 딜레이 (초)
+	COUNT         = 3,                                 -- 파편 개수
+	SPACING       = 4,                                 -- X 간격 (studs)
+	WARNING_COLOR = Color3.fromRGB(255, 130, 0),       -- 주황 경고 그림자
+}
+
 -- =====================================================================
 -- Phase 4: 피크 모먼트 + 밸런스 패스
 -- =====================================================================
