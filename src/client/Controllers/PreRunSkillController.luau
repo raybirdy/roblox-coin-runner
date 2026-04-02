@@ -63,11 +63,12 @@ function PreRunSkillController:_buildGui()
 	-- 메인 패널
 	local panel = Instance.new("Frame")
 	panel.Name = "Panel"
-	panel.Size = UDim2.new(0, 420, 0, 340)
+	panel.Size = UDim2.new(0, 460, 0, 420)
 	panel.AnchorPoint = Vector2.new(0.5, 0.5)
 	panel.Position = UDim2.new(0.5, 0, 0.5, 0)
 	panel.BackgroundColor3 = Color3.fromRGB(12, 12, 22)
 	panel.BorderSizePixel = 0
+	panel.ClipDescendants = true
 	panel.Parent = dim
 	Instance.new("UICorner", panel).CornerRadius = UDim.new(0, 14)
 	self._panel = panel
@@ -137,7 +138,7 @@ function PreRunSkillController:_buildGui()
 	-- 스킬 카드 그리드 (해금된 스킬들)
 	local gridScroll = Instance.new("ScrollingFrame")
 	gridScroll.Name = "Grid"
-	gridScroll.Size = UDim2.new(1, -20, 0, 160)
+	gridScroll.Size = UDim2.new(1, -20, 0, 210)
 	gridScroll.Position = UDim2.new(0, 10, 0, 140)
 	gridScroll.BackgroundTransparency = 1
 	gridScroll.ScrollBarThickness = 4
@@ -146,7 +147,7 @@ function PreRunSkillController:_buildGui()
 	gridScroll.Parent = panel
 
 	local gridLayout = Instance.new("UIGridLayout")
-	gridLayout.CellSize = UDim2.new(0, 118, 0, 68)
+	gridLayout.CellSize = UDim2.new(0, 130, 0, 82)
 	gridLayout.CellPadding = UDim2.new(0, 6, 0, 6)
 	gridLayout.Parent = gridScroll
 
@@ -270,9 +271,10 @@ function PreRunSkillController:_refresh()
 
 		local card = Instance.new("TextButton")
 		card.Name = `Card_{skill.id}`
-		card.Size = UDim2.new(0, 118, 0, 68)
+		card.Size = UDim2.new(0, 130, 0, 82)
 		card.BackgroundColor3 = if isEquipped then Color3.fromRGB(30, 60, 30) else Color3.fromRGB(22, 22, 38)
 		card.BorderSizePixel = 0
+		card.ClipDescendants = true
 		card.AutoButtonColor = false
 		card.Text = ""
 		card.Parent = gridScroll
@@ -284,7 +286,8 @@ function PreRunSkillController:_refresh()
 		stroke.Parent = card
 
 		local emojiLabel = Instance.new("TextLabel")
-		emojiLabel.Size = UDim2.new(0, 30, 1, 0)
+		emojiLabel.Size = UDim2.new(0, 32, 1, 0)
+		emojiLabel.Position = UDim2.new(0, 4, 0, 0)
 		emojiLabel.BackgroundTransparency = 1
 		emojiLabel.Text = skill.emoji
 		emojiLabel.TextSize = 22
@@ -292,8 +295,8 @@ function PreRunSkillController:_refresh()
 		emojiLabel.Parent = card
 
 		local nameLabel = Instance.new("TextLabel")
-		nameLabel.Size = UDim2.new(1, -34, 0, 22)
-		nameLabel.Position = UDim2.new(0, 32, 0, 4)
+		nameLabel.Size = UDim2.new(1, -42, 0, 24)
+		nameLabel.Position = UDim2.new(0, 38, 0, 6)
 		nameLabel.BackgroundTransparency = 1
 		nameLabel.Text = skill.name
 		nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -304,8 +307,8 @@ function PreRunSkillController:_refresh()
 		nameLabel.Parent = card
 
 		local descLabel = Instance.new("TextLabel")
-		descLabel.Size = UDim2.new(1, -36, 0, 30)
-		descLabel.Position = UDim2.new(0, 34, 0, 26)
+		descLabel.Size = UDim2.new(1, -42, 0, 44)
+		descLabel.Position = UDim2.new(0, 38, 0, 30)
 		descLabel.BackgroundTransparency = 1
 		descLabel.Text = skill.desc
 		descLabel.TextColor3 = Color3.fromRGB(160, 160, 180)
