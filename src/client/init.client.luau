@@ -308,6 +308,15 @@ RemoteEvents.PlayerDataRequest:FireServer()
 -- 로비 복귀 처리
 RemoteEvents.ReturnToLobby.OnClientEvent:Connect(function()
 	print("[Client] Returned to lobby")
+
+	-- 카운트다운 중 도착한 경우 무시 (포탈 재진입 레이스 컨디션)
+	-- 서버가 ReturnToLobby:FireClient()를 보낸 직후 포탈이 감지되면
+	-- GameStart:FireClient()가 먼저 도착해 countdown 상태일 수 있음
+	if UIVisibilityManager:GetState() == "countdown" then
+		print("[Client] ReturnToLobby ignored — countdown in progress")
+		return
+	end
+
 	-- UI 상태 전환: lobby (UIVisibilityManager가 모든 컨트롤러 가시성 관리)
 	UIVisibilityManager:SetState("lobby")
 	uiController:HideGameOver()
