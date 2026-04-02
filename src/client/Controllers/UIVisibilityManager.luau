@@ -42,7 +42,7 @@ local VALID_TRANSITIONS: { [GameUIState]: { GameUIState } } = {
 	running   = { "minigame", "paused", "gameover" },
 	minigame  = { "running", "gameover" },
 	paused    = { "running" },
-	gameover  = { "lobby" },
+	gameover  = { "lobby", "countdown" }, -- gameover→countdown: ReturnToLobby 전에 포탈 재진입 가능 (레이스 컨디션 허용)
 }
 
 -- ===== 생성자 =====
