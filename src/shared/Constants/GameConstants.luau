@@ -48,8 +48,8 @@ GameConstants.CHUNK = {
 
 -- 2층 분기 맵 (IDEA-003)
 GameConstants.DUAL_FLOOR = {
-	FLOOR2_Y = 10, -- 2층 바닥 높이 (studs, 1층 기준)
-	RAMP_LENGTH = 8, -- 진입 경사로 길이 (studs)
+	FLOOR2_Y = 8, -- 2층 바닥 높이 (studs, 1층 기준) — 기존 10 → 8 (ISSUE-030)
+	RAMP_LENGTH = 18, -- 진입 경사로 길이 (studs) — 기존 8 → 18, 경사각 51° → 24° (ISSUE-030)
 	PLATFORM_LENGTH = 60, -- 2층 플랫폼 유지 길이 (studs, 총 80 중)
 	SPAWN_CHANCE = 0.10, -- 출현 확률 (10%)
 	MIN_ELAPSED_TIME = 30, -- 최소 경과 시간 (초)
