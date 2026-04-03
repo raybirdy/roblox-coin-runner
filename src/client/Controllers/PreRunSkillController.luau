@@ -68,7 +68,7 @@ function PreRunSkillController:_buildGui()
 	panel.Position = UDim2.new(0.5, 0, 0.5, 0)
 	panel.BackgroundColor3 = Color3.fromRGB(12, 12, 22)
 	panel.BorderSizePixel = 0
-	panel.ClipDescendants = true
+	panel.ClipsDescendants = true
 	panel.Parent = dim
 	Instance.new("UICorner", panel).CornerRadius = UDim.new(0, 14)
 	self._panel = panel
@@ -274,7 +274,7 @@ function PreRunSkillController:_refresh()
 		card.Size = UDim2.new(0, 130, 0, 82)
 		card.BackgroundColor3 = if isEquipped then Color3.fromRGB(30, 60, 30) else Color3.fromRGB(22, 22, 38)
 		card.BorderSizePixel = 0
-		card.ClipDescendants = true
+		card.ClipsDescendants = true
 		card.AutoButtonColor = false
 		card.Text = ""
 		card.Parent = gridScroll
