@@ -60,12 +60,13 @@ function RandomEventController:_onEventStart(data: any)
 		self:_applyColorCorrection("speed_shift", Color3.fromRGB(100, 150, 255), 0.1)
 
 	elseif eventId == "giant_mode" then
-		-- Scale player character (3축 모두 적용: Height, Width, Depth)
+		-- Scale player character
 		local character = self._player.Character
 		if character then
 			local humanoid = character:FindFirstChild("Humanoid") :: Humanoid?
 			if humanoid then
 				local scale = config.scaleFactor or 1.8
+				-- R15: Humanoid 하위 NumberValue로 스케일 조정 (공식 방법)
 				local scaleNames = { "BodyHeightScale", "BodyWidthScale", "BodyDepthScale", "HeadScale" }
 				local r15Found = false
 				for _, scaleName in scaleNames do
@@ -77,17 +78,10 @@ function RandomEventController:_onEventStart(data: any)
 					end
 				end
 
-				-- R6 리그: NumberValue 스케일이 없으므로 BasePart 크기를 직접 조절
+				-- R6 폴백: Model:ScaleTo() 사용 (BasePart 개별 크기 조절은 애니메이션에 의해 덮어씌워짐)
 				if not r15Found then
-					warn("[RandomEventController] giant_mode: R15 scale values not found, falling back to R6 BasePart scaling")
-					self._activeEffects["giant_r6_parts"] = {}
-					for _, part in character:GetChildren() do
-						if part:IsA("BasePart") then
-							self._activeEffects["giant_r6_parts"][part] = part.Size
-							-- HumanoidRootPart는 보이지 않으므로 스케일만 적용
-							TweenService:Create(part, TweenInfo.new(0.5), { Size = part.Size * scale }):Play()
-						end
-					end
+					self._activeEffects["giant_model_scaled"] = true
+					;(character :: any):ScaleTo(scale)
 				end
 			end
 		end
@@ -130,7 +124,7 @@ function RandomEventController:_onEventEnd(data: any)
 		end
 
 	elseif eventId == "giant_mode" then
-		-- Revert all scale axes
+		-- Revert scale
 		local character = self._player.Character
 		if character then
 			local humanoid = character:FindFirstChild("Humanoid") :: Humanoid?
@@ -147,19 +141,10 @@ function RandomEventController:_onEventEnd(data: any)
 					end
 				end
 
-				-- R6 폴백: 저장해둔 원본 크기로 복원
-				if not r15Reverted then
-					local r6Parts = self._activeEffects["giant_r6_parts"]
-					if r6Parts then
-						for part, originalSize in r6Parts do
-							if part and part.Parent then
-								TweenService:Create(part, TweenInfo.new(0.5), { Size = originalSize }):Play()
-							end
-						end
-						self._activeEffects["giant_r6_parts"] = nil
-					else
-						warn("[RandomEventController] giant_mode revert: no R6 part data found")
-					end
+				-- R6 폴백: ScaleTo(1.0)로 원래 크기 복원
+				if not r15Reverted and self._activeEffects["giant_model_scaled"] then
+					;(character :: any):ScaleTo(1.0)
+					self._activeEffects["giant_model_scaled"] = nil
 				end
 			end
 		end

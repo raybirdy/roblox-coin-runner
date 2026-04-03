@@ -3,11 +3,11 @@ id: ISSUE-029
 title: giant_mode 등 랜덤 이벤트 시각 효과 미작동
 category: bug
 priority: P2-medium
-status: open
+status: resolved
+resolved: 2026-04-03
 related_sprint: none
 related_ac: none
 created: 2026-04-03
-resolved: null
 ---
 
 ## 설명
@@ -40,4 +40,10 @@ resolved: null
 - `src/server/Services/RandomEventService.luau` — 이벤트 발동 서버 로직
 
 ## 해결 방안
-(등록 시점에는 비워둠 — 처리 시 채움)
+
+**R6 폴백 코드 교체**: `BasePart.Size` 개별 트윈 → `Model:ScaleTo()` API 사용
+- R6에서 `BasePart.Size` 트윈은 Roblox 애니메이션 시스템에 의해 즉시 덮어씌워짐
+- `character:ScaleTo(scale)` — 모델 전체 비율 유지 스케일 (1.8 = 원래 크기의 1.8배)
+- `character:ScaleTo(1.0)` — 이벤트 종료 시 원상 복구
+
+R15 경로 (Humanoid NumberValue 트윈)는 정상 동작하므로 유지.
