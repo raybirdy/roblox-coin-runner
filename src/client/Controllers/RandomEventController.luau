@@ -81,7 +81,8 @@ function RandomEventController:_onEventStart(data: any)
 				-- R6 폴백: Model:ScaleTo() 사용 (BasePart 개별 크기 조절은 애니메이션에 의해 덮어씌워짐)
 				if not r15Found then
 					self._activeEffects["giant_model_scaled"] = true
-					;(character :: any):ScaleTo(scale)
+					local charAny = character :: any
+					charAny:ScaleTo(scale)
 				end
 			end
 		end
@@ -143,7 +144,8 @@ function RandomEventController:_onEventEnd(data: any)
 
 				-- R6 폴백: ScaleTo(1.0)로 원래 크기 복원
 				if not r15Reverted and self._activeEffects["giant_model_scaled"] then
-					;(character :: any):ScaleTo(1.0)
+					local charAny = character :: any
+					charAny:ScaleTo(1.0)
 					self._activeEffects["giant_model_scaled"] = nil
 				end
 			end
