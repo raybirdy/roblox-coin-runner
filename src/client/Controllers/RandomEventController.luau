@@ -279,6 +279,15 @@ function RandomEventController:_startCoinRainEffect()
 		warn("[RandomEventController] _startCoinRainEffect: character is nil at start, loop will wait for spawn")
 	end
 
+	-- 코인 파트를 담을 Folder 생성 (정리 시 Destroy만 호출하면 됨)
+	if not self._coinRainFolder or not self._coinRainFolder.Parent then
+		local folder = Instance.new("Folder")
+		folder.Name = "CoinRainEffects"
+		folder.Parent = workspace
+		self._coinRainFolder = folder
+	end
+	local folder = self._coinRainFolder
+
 	task.defer(function()
 		while self._coinRainActive do
 			-- 루프 반복마다 캐릭터 재취득 (리스폰 대응)
@@ -287,6 +296,12 @@ function RandomEventController:_startCoinRainEffect()
 			if not hrp then
 				task.wait(0.15)
 				continue
+			end
+
+			-- 폴더가 사라졌으면 루프 종료 (EndGame 시 Folder:Destroy()가 호출된 경우)
+			if not folder.Parent then
+				self._coinRainActive = false
+				break
 			end
 
 			-- 플레이어 주변에 코인 파트 스폰 (시각 전용)
@@ -300,7 +315,7 @@ function RandomEventController:_startCoinRainEffect()
 				coin.Anchored = true
 				coin.CanCollide = false
 				coin.Position = hrp.Position + Vector3.new(math.random(-8, 8), math.random(15, 22), math.random(-4, 4))
-				coin.Parent = workspace
+				coin.Parent = folder
 
 				-- 낙하 트윈
 				local endY = hrp.Position.Y - 3
@@ -328,11 +343,10 @@ function RandomEventController:_stopCoinRainEffect()
 	if self._coinRainRefCount > 0 then return end
 
 	self._coinRainActive = false
-	-- 잔여 코인 파트 정리
-	for _, part in workspace:GetChildren() do
-		if part.Name == "CoinRainDrop" then
-			part:Destroy()
-		end
+	-- Folder 통째로 파괴 (workspace 전체 순회 불필요)
+	if self._coinRainFolder and self._coinRainFolder.Parent then
+		self._coinRainFolder:Destroy()
+		self._coinRainFolder = nil
 	end
 end
 

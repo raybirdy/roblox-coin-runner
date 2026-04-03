@@ -3,11 +3,11 @@ id: ISSUE-028
 title: 일일 미션 CHALLENGE_POOL에 미니게임 목표 포함 — 제거 필요
 category: improvement
 priority: P2-medium
-status: open
+status: resolved
+resolved: 2026-04-03
 related_sprint: none
 related_ac: none
 created: 2026-04-03
-resolved: null
 ---
 
 ## 설명

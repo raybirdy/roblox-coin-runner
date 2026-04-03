@@ -1032,6 +1032,9 @@ function GameManager.EndGame(player: Player)
 
 	session.isPlaying = false
 
+	-- 활성 랜덤 이벤트 강제 종료 (코인 레인 루프 등 클라이언트 효과 정리)
+	RandomEventService:ForceEnd(player, session)
+
 	-- Clean up minigame state on disconnect
 	if session.sessionState == GameConstants.MINI_GAME.STATE.MINIGAME then
 		MiniGameService:OnPlayerDisconnect(player, session, activeSessions, CoopMatchService)

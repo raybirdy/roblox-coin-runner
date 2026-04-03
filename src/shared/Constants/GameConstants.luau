@@ -2539,7 +2539,6 @@ GameConstants.DAILY_CHALLENGES = {
 		{ id = "reach_combo", desc = "Reach %dx combo", difficulty = "normal", targets = { 10, 15, 20 } },
 		{ id = "play_runs", desc = "Complete %d runs", difficulty = "easy", targets = { 3, 5, 7 } },
 		{ id = "fever_count", desc = "Activate fever %d times", difficulty = "normal", targets = { 2, 3, 5 } },
-		{ id = "minigame_clear", desc = "Clear %d minigames", difficulty = "normal", targets = { 1, 2, 3 } },
 		{ id = "score_total", desc = "Score %d total points", difficulty = "hard", targets = { 500, 1000, 2000 } },
 		{ id = "coop_runs", desc = "Play %d Co-op runs", difficulty = "hard", targets = { 1, 2, 3 } },
 		{ id = "use_skill", desc = "Use active skill %d times", difficulty = "normal", targets = { 2, 3, 5 } },
