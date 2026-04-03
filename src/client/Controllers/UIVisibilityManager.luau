@@ -39,9 +39,11 @@ export type Controllers = {
 local VALID_TRANSITIONS: { [GameUIState]: { GameUIState } } = {
 	lobby     = { "countdown", "lobby" },
 	countdown = { "running", "lobby" },
-	running   = { "minigame", "paused", "gameover" },
-	minigame  = { "running", "gameover" },
-	paused    = { "running" },
+	-- running→countdown: 캐릭터 리스폰 후 GameOver 미수신 상태에서 포탈 재진입 시 레이스 컨디션 허용
+	-- running→lobby: ReturnToLobby 수신 시 경고 없이 처리
+	running   = { "minigame", "paused", "gameover", "countdown", "lobby" },
+	minigame  = { "running", "gameover", "countdown" }, -- minigame 중 재시작 허용
+	paused    = { "running", "countdown" },             -- 일시정지 중 재시작 허용
 	gameover  = { "lobby", "countdown" }, -- gameover→countdown: ReturnToLobby 전에 포탈 재진입 가능 (레이스 컨디션 허용)
 }
 

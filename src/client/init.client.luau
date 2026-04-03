@@ -709,6 +709,14 @@ end)
 
 -- 서버로부터 게임 종료 수신
 RemoteEvents.GameOver.OnClientEvent:Connect(function(data)
+	-- 카운트다운 중 도착한 GameOver는 무시 (이전 세션의 지연 도착 레이스 컨디션)
+	-- 시나리오: 낙사 → 캐릭터 리스폰 → 포탈 재진입 → GameStart 수신(countdown)
+	--           이 시점에 이전 세션의 GameOver가 늦게 도착하면 countdown을 끊어버림
+	if UIVisibilityManager:GetState() == "countdown" then
+		print("[Client] GameOver ignored — countdown in progress (stale GameOver from previous session)")
+		return
+	end
+
 	-- UI 상태 전환: gameover
 	UIVisibilityManager:SetState("gameover")
 
