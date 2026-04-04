@@ -7,6 +7,7 @@ local ServerStorage = game:GetService("ServerStorage")
 
 local GameConstants = require(ReplicatedStorage.Shared.Constants.GameConstants)
 local ScenarioConstants = require(ReplicatedStorage.Shared.Constants.ScenarioConstants)
+local EncounterLibrary = require(ReplicatedStorage.Shared.Constants.EncounterLibrary)
 local ProceduralChunkGenerator = require(script.Parent.ProceduralChunkGenerator)
 
 local ChunkService = {}
@@ -379,7 +380,50 @@ function ChunkService:SpawnNextChunk(): Model?
 	-- 청크 내 장애물 생성 (안전 구역 이후부터, 이벤트 청크에는 장애물 없음)
 	local obstacleInfos: { any } = {} -- { { position: Vector3, obstacleType: string } }
 	local isInSafeZone = self._chunkCounter <= GameConstants.CHUNK.SAFE_ZONE_CHUNKS
-	if self._obstacleService and not isInSafeZone and not eventType then
+
+	-- ── Encounter 기반 배치 (IDEA-010) ──────────────────────────────────────
+	-- Normal/Hard 30% 확률로 EncounterLibrary에서 템플릿 선택 → 장애물+코인 동시 배치
+	-- 선택 시 기존 랜덤 배치(SpawnObstaclesInChunk/SpawnCoinsInChunk)를 건너뜀
+	local usedEncounter = false
+	if self._obstacleService and self._coinService and not isInSafeZone and not eventType then
+		if (difficulty == "Normal" or difficulty == "Hard") and math.random() < 0.30 then
+			local pool = EncounterLibrary.getByDifficulty(difficulty)
+			if #pool > 0 then
+				local enc = pool[math.random(#pool)]
+				local chunkCF = chunk:GetPrimaryPartCFrame()
+				local chunkHalfX = chunk:GetExtentsSize().X / 2
+				-- 청크 왼쪽 끝을 relX=0 기준으로 삼아 월드 좌표 계산
+				local chunkLeftX = chunkCF.Position.X - chunkHalfX
+				local chunkZ = chunkCF.Position.Z
+				local baseY = chunkCF.Position.Y
+
+				-- 장애물 스폰
+				for _, obs in enc.obstacles do
+					local obsPos = Vector3.new(chunkLeftX + obs.relX, baseY + obs.relY, chunkZ)
+					self._obstacleService:SpawnObstacleAt(obs.obstacleType, obsPos)
+					table.insert(obstacleInfos, { position = obsPos, obstacleType = obs.obstacleType })
+				end
+
+				-- 유도 코인 스폰 (Bronze — 방향 힌트)
+				for _, c in enc.guidCoins do
+					local coinPos = Vector3.new(chunkLeftX + c.relX, baseY + c.relY, chunkZ)
+					self._coinService:SpawnCoinAt(coinPos, "Bronze")
+				end
+
+				-- 보상 코인 스폰 (Gold — 성공 피드백)
+				for _, c in enc.rewardCoins do
+					local coinPos = Vector3.new(chunkLeftX + c.relX, baseY + c.relY, chunkZ)
+					self._coinService:SpawnCoinAt(coinPos, "Gold")
+				end
+
+				print(`[ChunkService] Encounter '{enc.id}' spawned at chunk #{self._chunkCounter} ({difficulty})`)
+				usedEncounter = true
+			end
+		end
+	end
+	-- ────────────────────────────────────────────────────────────────────────
+
+	if not usedEncounter and self._obstacleService and not isInSafeZone and not eventType then
 		obstacleInfos = self._obstacleService:SpawnObstaclesInChunk(chunk, difficulty)
 		-- Hard 청크: Chase Mob 등장 확률 체크 (60초 이후, 15% 확률)
 		self._obstacleService:TrySpawnChaseMobForChunk(difficulty)
@@ -409,6 +453,7 @@ function ChunkService:SpawnNextChunk(): Model?
 	end
 
 	-- 청크 내 코인 생성 (장애물 정보를 전달하여 ActionHint 패턴 적용)
+	-- Encounter 배치 시 코인은 이미 스폰됐으므로 일반 경로만 건너뜀 (이벤트는 유지)
 	if self._coinService then
 		if eventType == "CoinRush" then
 			-- 코인 러시: 대량 코인 (3회 호출)
@@ -424,7 +469,8 @@ function ChunkService:SpawnNextChunk(): Model?
 			self._coinService:SpawnCoinPattern(chunk, "waterfall", {})
 			self._coinService:SpawnCoinsInChunk(chunk, "Bonus", {}, {})
 			print(`[ChunkService] Coin Waterfall event at chunk #{self._chunkCounter}!`)
-		else
+		elseif not usedEncounter then
+			-- 일반 랜덤 배치 (Encounter 미사용 시에만)
 			self._coinService:SpawnCoinsInChunk(chunk, difficulty, obstaclePositions, obstacleInfos)
 			-- Zone Climax: 코인 밀도 2배 (추가 호출)
 			if isZoneClimax then

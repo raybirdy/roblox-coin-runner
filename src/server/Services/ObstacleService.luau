@@ -370,6 +370,11 @@ function ObstacleService:_spawnObstacleCombo(
 	return spawnedInfos
 end
 
+-- 단일 장애물을 지정 위치에 생성 (Encounter 시스템 — IDEA-010)
+function ObstacleService:SpawnObstacleAt(obstacleType: string, position: Vector3)
+	self:_spawnObstacle(position, obstacleType)
+end
+
 -- 청크 내 장애물 생성 (생성된 장애물 정보 목록 반환 — 위치 + 타입)
 function ObstacleService:SpawnObstaclesInChunk(chunk: Model, difficulty: string): { ObstacleInfo }
 	local obstacleInfos: { ObstacleInfo } = {}

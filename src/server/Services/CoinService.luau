@@ -684,6 +684,12 @@ function CoinService:_generatePatternPositions(
 	return result
 end
 
+-- 단일 코인을 지정 위치에 생성 (Encounter 시스템 — IDEA-010)
+-- coinType: "Bronze" | "Silver" | "Gold" | "Diamond" (생략 시 "Bronze")
+function CoinService:SpawnCoinAt(position: Vector3, coinType: string?)
+	self:_spawnCoin(position, coinType or "Bronze")
+end
+
 -- =====================================================================
 -- 청크 내 코인 생성 (패턴 기반)
 -- obstacleInfos: { { position: Vector3, obstacleType: string } } (선택)
