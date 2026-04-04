@@ -132,19 +132,19 @@ function ProceduralChunkGenerator._createDualFloor(chunk: Model, position: Vecto
 	floor1.Parent = chunk
 	chunk.PrimaryPart = floor1
 
-	-- 2층 진입 경사로 (1층 끝에서 2층 높이까지 경사)
+	-- 2층 진입 경사로 (WedgePart — floor2와 완벽히 정합, 캐릭터 걸림 방지)
 	local rampLength = df.RAMP_LENGTH
 	local floor2Y = df.FLOOR2_Y
-	local rampAngle = math.atan2(floor2Y, rampLength)
-	local rampDiag = math.sqrt(floor2Y ^ 2 + rampLength ^ 2)
-	local ramp = Instance.new("Part")
+	-- WedgePart: Size=(floorWidth, floor2Y, rampLength), Y축 90° 회전으로 경사 방향을 X축(달리기 방향)으로 전환
+	-- 낮은 끝(X=position.X, Y=0)에서 높은 끝(X=position.X+rampLength, Y=floor2Y)으로 자연스러운 경사
+	local ramp = Instance.new("WedgePart")
 	ramp.Name = "DualFloorRamp"
-	ramp.Size = Vector3.new(rampDiag, CHUNK_CONFIG.FLOOR_THICKNESS, floorWidth)
+	ramp.Size = Vector3.new(floorWidth, floor2Y, rampLength)
 	ramp.CFrame = CFrame.new(
 		position.X + rampLength / 2,
 		floor2Y / 2,
 		position.Z
-	) * CFrame.Angles(0, 0, -rampAngle)
+	) * CFrame.Angles(0, math.pi / 2, 0)
 	ramp.Anchored = true
 	ramp.CanCollide = true
 	ramp.Color = floorColor
