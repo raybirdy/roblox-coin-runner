@@ -92,6 +92,9 @@ function ProceduralChunkGenerator.Generate(
 	-- 난이도별 장식 생성 (테마 색상 적용)
 	ProceduralChunkGenerator._addDecorations(chunk, position, difficulty, theme)
 
+	-- Zone 장식 프롭 추가 (IDEA-009)
+	ProceduralChunkGenerator._addZoneProps(chunk, position, theme)
+
 	-- 높이 전환 경사로 (필요시)
 	if startHeight ~= endHeight then
 		ProceduralChunkGenerator._createRamp(chunk, position, startHeight, endHeight)
@@ -338,6 +341,198 @@ function ProceduralChunkGenerator._addDecorations(chunk: Model, position: Vector
 		line.Color = lineColor
 		line.Material = Enum.Material.SmoothPlastic
 		line.Parent = chunk
+	end
+end
+
+-- Zone 테마별 장식 프롭 배치 (IDEA-009)
+-- position: 청크 시작 위치, theme: ZONE_THEMES 항목
+function ProceduralChunkGenerator._addZoneProps(chunk: Model, position: Vector3, theme: any?)
+	if not theme or not theme.name then return end
+
+	local palette = GameConstants.ZONE_PROP_PALETTES[theme.name]
+	if not palette or #palette == 0 then return end
+
+	local chunkLength = GameConstants.CHUNK.LENGTH
+	local floorWidth = 20 -- CHUNK_CONFIG.FLOOR_WIDTH
+	local sideOffset = floorWidth / 2 + 2 -- 달리기 경로 바깥 최소 거리
+
+	-- 가중치 합산으로 랜덤 prop 선택
+	local function pickProp(): any
+		local totalWeight = 0
+		for _, p in palette do totalWeight += p.weight end
+		local r = math.random() * totalWeight
+		local cumul = 0
+		for _, p in palette do
+			cumul += p.weight
+			if r <= cumul then return p end
+		end
+		return palette[1]
+	end
+
+	-- 청크당 양쪽에 0~3개씩 배치 (총 최대 6개)
+	local propCount = math.random(1, 3)
+	for side = -1, 1, 2 do -- -1 = 앞쪽, 1 = 뒤쪽 (Z축 방향)
+		for _ = 1, propCount do
+			local prop = pickProp()
+			local px = position.X + math.random() * chunkLength
+			local pz = position.Z + side * (sideOffset + math.random() * 5)
+			local py = 1 -- 바닥 위
+
+			local propType = prop.propType
+			local color = prop.color
+
+			if propType == "flower" then
+				-- 꽃: 얇은 줄기(Cylinder) + 작은 구형 꽃봉오리(Sphere)
+				local stem = Instance.new("Part")
+				stem.Size = Vector3.new(0.2, 1.2, 0.2)
+				stem.Position = Vector3.new(px, py + 0.6, pz)
+				stem.Shape = Enum.PartType.Cylinder
+				stem.Color = Color3.fromRGB(60, 160, 60)
+				stem.Material = Enum.Material.SmoothPlastic
+				stem.Anchored = true
+				stem.CanCollide = false
+				stem.CFrame = CFrame.new(px, py + 0.6, pz) * CFrame.Angles(0, 0, math.pi / 2)
+				stem.Parent = chunk
+
+				local bud = Instance.new("Part")
+				bud.Size = Vector3.new(0.8, 0.8, 0.8)
+				bud.Position = Vector3.new(px, py + 1.3, pz)
+				bud.Shape = Enum.PartType.Ball
+				bud.Color = color
+				bud.Material = Enum.Material.SmoothPlastic
+				bud.Anchored = true
+				bud.CanCollide = false
+				bud.Parent = chunk
+
+			elseif propType == "grassTuft" then
+				-- 풀 뭉치: 3개의 얇은 웨지
+				for i = -1, 1 do
+					local blade = Instance.new("WedgePart")
+					blade.Size = Vector3.new(0.15, 0.9 + i * 0.2, 0.15)
+					blade.CFrame = CFrame.new(px + i * 0.25, py + 0.45, pz) * CFrame.Angles(0, math.random() * math.pi, 0)
+					blade.Color = color
+					blade.Material = Enum.Material.Grass
+					blade.Anchored = true
+					blade.CanCollide = false
+					blade.Parent = chunk
+				end
+
+			elseif propType == "mushroom" then
+				-- 버섯: 짧은 원통(줄기) + 납작한 구형(갓)
+				local stalk = Instance.new("Part")
+				stalk.Size = Vector3.new(0.5, 0.8, 0.5)
+				stalk.Position = Vector3.new(px, py + 0.4, pz)
+				stalk.Shape = Enum.PartType.Cylinder
+				stalk.Color = Color3.fromRGB(240, 220, 190)
+				stalk.Material = Enum.Material.SmoothPlastic
+				stalk.Anchored = true
+				stalk.CanCollide = false
+				stalk.CFrame = CFrame.new(px, py + 0.4, pz) * CFrame.Angles(0, 0, math.pi / 2)
+				stalk.Parent = chunk
+
+				local cap = Instance.new("Part")
+				cap.Size = Vector3.new(1.4, 0.6, 1.4)
+				cap.Position = Vector3.new(px, py + 1.0, pz)
+				cap.Shape = Enum.PartType.Ball
+				cap.Color = color
+				cap.Material = Enum.Material.SmoothPlastic
+				cap.Anchored = true
+				cap.CanCollide = false
+				cap.Parent = chunk
+
+			elseif propType == "crystal" then
+				-- 수정: Neon 소재 WedgePart (뾰족한 형태)
+				local height = 1.5 + math.random() * 1.5
+				local crystal = Instance.new("WedgePart")
+				crystal.Size = Vector3.new(0.5, height, 0.5)
+				crystal.CFrame = CFrame.new(px, py + height / 2, pz) * CFrame.Angles(0, math.random() * math.pi, 0)
+				crystal.Color = color
+				crystal.Material = Enum.Material.Neon
+				crystal.Transparency = 0.2
+				crystal.Anchored = true
+				crystal.CanCollide = false
+				crystal.Parent = chunk
+
+			elseif propType == "glowOrb" then
+				-- 빛나는 구체
+				local orb = Instance.new("Part")
+				orb.Size = Vector3.new(0.6, 0.6, 0.6)
+				orb.Position = Vector3.new(px, py + 0.8 + math.random() * 1.5, pz)
+				orb.Shape = Enum.PartType.Ball
+				orb.Color = color
+				orb.Material = Enum.Material.Neon
+				orb.Transparency = 0.3
+				orb.Anchored = true
+				orb.CanCollide = false
+				orb.Parent = chunk
+
+			elseif propType == "lantern" then
+				-- 등불: 작은 박스 + Neon 구체
+				local post = Instance.new("Part")
+				post.Size = Vector3.new(0.2, 2.0, 0.2)
+				post.Position = Vector3.new(px, py + 1.0, pz)
+				post.Color = Color3.fromRGB(100, 80, 60)
+				post.Material = Enum.Material.Metal
+				post.Anchored = true
+				post.CanCollide = false
+				post.Parent = chunk
+
+				local light = Instance.new("Part")
+				light.Size = Vector3.new(0.5, 0.5, 0.5)
+				light.Position = Vector3.new(px, py + 2.3, pz)
+				light.Shape = Enum.PartType.Ball
+				light.Color = color
+				light.Material = Enum.Material.Neon
+				light.Transparency = 0.1
+				light.Anchored = true
+				light.CanCollide = false
+				light.Parent = chunk
+
+			elseif propType == "stone" then
+				-- 돌: 작은 납작 박스
+				local stone = Instance.new("Part")
+				stone.Size = Vector3.new(0.8 + math.random() * 0.6, 0.4 + math.random() * 0.3, 0.6 + math.random() * 0.4)
+				stone.CFrame = CFrame.new(px, py + 0.3, pz) * CFrame.Angles(0, math.random() * math.pi, 0)
+				stone.Color = color
+				stone.Material = Enum.Material.Slate
+				stone.Anchored = true
+				stone.CanCollide = false
+				stone.Parent = chunk
+
+			elseif propType == "woodPost" then
+				-- 나무 말뚝
+				local post = Instance.new("Part")
+				post.Size = Vector3.new(0.35, 1.5, 0.35)
+				post.Position = Vector3.new(px, py + 0.75, pz)
+				post.Color = color
+				post.Material = Enum.Material.Wood
+				post.Anchored = true
+				post.CanCollide = false
+				post.Parent = chunk
+
+			elseif propType == "pillar" then
+				-- 기둥
+				local pillar = Instance.new("Part")
+				pillar.Size = Vector3.new(0.6, 2.5, 0.6)
+				pillar.Position = Vector3.new(px, py + 1.25, pz)
+				pillar.Color = color
+				pillar.Material = Enum.Material.Concrete
+				pillar.Anchored = true
+				pillar.CanCollide = false
+				pillar.Parent = chunk
+
+			elseif propType == "log" then
+				-- 쓰러진 통나무
+				local log = Instance.new("Part")
+				log.Size = Vector3.new(0.6, 0.6, 2.0)
+				log.CFrame = CFrame.new(px, py + 0.3, pz) * CFrame.Angles(0, math.random() * math.pi, 0)
+				log.Color = color
+				log.Material = Enum.Material.Wood
+				log.Anchored = true
+				log.CanCollide = false
+				log.Parent = chunk
+			end
+		end
 	end
 end
 
