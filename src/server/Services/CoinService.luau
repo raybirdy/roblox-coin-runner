@@ -439,6 +439,72 @@ local function patternDoubleLine(count: number, halfWidth: number): { { x: numbe
 	return positions
 end
 
+-- ── Shape Patterns (IDEA-008) ──────────────────────────────────────────────
+-- 명시적 좌표 배열 기반 도형 패턴. count 파라미터는 하위 호환을 위해 유지하되 무시.
+
+local function patternShapeArrowUp(_count: number, halfWidth: number): { { x: number, y: number } }
+	-- ↑ 화살표: 점프 구간 직전 유도 (낮은 코인에서 높은 코인으로 상승)
+	local w = halfWidth * 0.55
+	return {
+		{ x = -w * 0.9, y = 2 }, { x = -w * 0.6, y = 2 }, { x = -w * 0.3, y = 2 },
+		{ x = w * 0.0, y = 2 }, { x = w * 0.3, y = 2 },
+		{ x = -w * 0.4, y = 4.5 }, { x = w * 0.4, y = 4.5 },
+		{ x = -w * 0.15, y = 6 }, { x = w * 0.15, y = 6 },
+	}
+end
+
+local function patternShapeArrowDown(_count: number, halfWidth: number): { { x: number, y: number } }
+	-- ↓ 화살표: 슬라이드/낮은 통로 직전 유도 (높은 코인에서 낮은 코인으로 하강)
+	local w = halfWidth * 0.55
+	return {
+		{ x = -w * 0.15, y = 6 }, { x = w * 0.15, y = 6 },
+		{ x = -w * 0.15, y = 4.5 }, { x = w * 0.15, y = 4.5 },
+		{ x = -w * 0.4, y = 3 }, { x = w * 0.4, y = 3 },
+		{ x = -w * 0.15, y = 1.5 }, { x = w * 0.15, y = 1.5 },
+		{ x = w * 0.0, y = 0.8 },
+	}
+end
+
+local function patternShapeHeart(_count: number, halfWidth: number): { { x: number, y: number } }
+	-- ♥ 하트: 보너스/축하 구간 연출
+	local w = halfWidth * 0.6
+	return {
+		{ x = -w * 0.3, y = 5.5 }, { x = w * 0.3, y = 5.5 },
+		{ x = -w * 0.6, y = 5.0 }, { x = w * 0.6, y = 5.0 },
+		{ x = -w * 0.7, y = 4.0 }, { x = w * 0.7, y = 4.0 },
+		{ x = -w * 0.5, y = 3.0 }, { x = w * 0.5, y = 3.0 },
+		{ x = -w * 0.25, y = 2.2 }, { x = w * 0.25, y = 2.2 },
+		{ x = w * 0.0, y = 1.5 },
+	}
+end
+
+local function patternShapeStar(_count: number, halfWidth: number): { { x: number, y: number } }
+	-- ★ 별: 고득점 구간 연출
+	local w = halfWidth * 0.55
+	local cx, cy = 0, 4
+	local pts: { { x: number, y: number } } = {}
+	for i = 1, 5 do
+		local outerA = math.pi / 2 + (i - 1) * 2 * math.pi / 5
+		local innerA = outerA + math.pi / 5
+		table.insert(pts, { x = cx + math.cos(outerA) * w * 0.65, y = cy + math.sin(outerA) * 2.8 })
+		table.insert(pts, { x = cx + math.cos(innerA) * w * 0.28, y = cy + math.sin(innerA) * 1.2 })
+	end
+	return pts
+end
+
+local function patternShapeDiamond(_count: number, halfWidth: number): { { x: number, y: number } }
+	-- ◆ 다이아몬드: 일반 장식 패턴
+	local w = halfWidth * 0.5
+	return {
+		{ x = w * 0.0, y = 7.0 },
+		{ x = -w * 0.3, y = 5.5 }, { x = w * 0.3, y = 5.5 },
+		{ x = -w * 0.6, y = 4.0 }, { x = w * 0.6, y = 4.0 },
+		{ x = -w * 0.3, y = 2.5 }, { x = w * 0.3, y = 2.5 },
+		{ x = w * 0.0, y = 1.5 },
+	}
+end
+-- ── End Shape Patterns ──────────────────────────────────────────────────────
+
 -- lucky_coins 업그레이드 보너스 설정 (GameManager에서 호출)
 function CoinService:SetLuckyCoinsBonus(bonus: number)
 	self._luckyCoinsBonus = bonus
@@ -595,6 +661,16 @@ function CoinService:_generatePatternPositions(
 		offsets = patternActionAvoidSide(coinCount, halfWidth, firstObsRelX)
 	elseif pattern == "action_timing_cluster" then
 		offsets = patternActionTimingCluster(coinCount, halfWidth, firstObsRelX)
+	elseif pattern == "shape_arrow_up" then
+		offsets = patternShapeArrowUp(coinCount, halfWidth)
+	elseif pattern == "shape_arrow_down" then
+		offsets = patternShapeArrowDown(coinCount, halfWidth)
+	elseif pattern == "shape_heart" then
+		offsets = patternShapeHeart(coinCount, halfWidth)
+	elseif pattern == "shape_star" then
+		offsets = patternShapeStar(coinCount, halfWidth)
+	elseif pattern == "shape_diamond" then
+		offsets = patternShapeDiamond(coinCount, halfWidth)
 	else
 		offsets = patternDoubleLine(coinCount, halfWidth)
 	end

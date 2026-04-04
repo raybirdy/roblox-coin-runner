@@ -135,11 +135,11 @@ GameConstants.COIN = {
 -- 코인 패턴 (난이도별 사용 가능한 배치 패턴 목록)
 -- ActionHint 패턴(action_*)은 장애물 타입 감지 시 _selectPattern에서 직접 주입되며 여기서는 제외
 GameConstants.COIN_PATTERNS = {
-	EASY = { "line", "arc", "spread" },
-	NORMAL = { "line", "arc", "zigzag", "step_up", "step_down", "wave" },
-	HARD = { "zigzag", "step_up", "step_down", "corridor", "wave", "swoop" },
-	BONUS = { "line", "arc", "double_line", "spread" },
-	NPC = { "line", "spread" },
+	EASY = { "line", "arc", "spread", "shape_diamond", "shape_heart" },
+	NORMAL = { "line", "arc", "zigzag", "step_up", "step_down", "wave", "shape_arrow_up", "shape_diamond" },
+	HARD = { "zigzag", "step_up", "step_down", "corridor", "wave", "swoop", "shape_arrow_up", "shape_arrow_down" },
+	BONUS = { "line", "arc", "double_line", "spread", "shape_heart", "shape_star" },
+	NPC = { "line", "spread", "shape_diamond" },
 }
 
 -- 코인 개수 (난이도별, ActionHint + Leading Coins + 스킬루트 코인 추가분 반영 후 조정)
@@ -1265,6 +1265,42 @@ GameConstants.ZONE_THEMES = {
 		fogStart = 60,
 		fogEnd = 200,
 		decoration = "stars",
+	},
+}
+
+-- Zone-specific decorative prop palettes (IDEA-009)
+-- 각 prop: type(string), color(Color3), weight(number)
+-- type에 따라 ProceduralChunkGenerator._addZoneProps()에서 생성 방법 결정
+GameConstants.ZONE_PROP_PALETTES = {
+	Meadow = {
+		{ propType = "flower",    color = Color3.fromRGB(255, 100, 150), weight = 4 },
+		{ propType = "flower",    color = Color3.fromRGB(255, 220, 60),  weight = 3 },
+		{ propType = "grassTuft", color = Color3.fromRGB(80, 180, 60),   weight = 3 },
+		{ propType = "woodPost",  color = Color3.fromRGB(160, 110, 60),  weight = 1 },
+	},
+	FlowerPath = {
+		{ propType = "flower",    color = Color3.fromRGB(255, 120, 200), weight = 4 },
+		{ propType = "flower",    color = Color3.fromRGB(200, 100, 255), weight = 3 },
+		{ propType = "grassTuft", color = Color3.fromRGB(100, 200, 80),  weight = 2 },
+		{ propType = "stone",     color = Color3.fromRGB(180, 170, 160), weight = 1 },
+	},
+	MushroomWood = {
+		{ propType = "mushroom",  color = Color3.fromRGB(220, 60, 40),   weight = 4 },
+		{ propType = "mushroom",  color = Color3.fromRGB(200, 160, 50),  weight = 3 },
+		{ propType = "log",       color = Color3.fromRGB(130, 90, 50),   weight = 2 },
+		{ propType = "stone",     color = Color3.fromRGB(150, 140, 130), weight = 1 },
+	},
+	Sunset = {
+		{ propType = "lantern",   color = Color3.fromRGB(255, 160, 60),  weight = 3 },
+		{ propType = "pillar",    color = Color3.fromRGB(200, 180, 140), weight = 2 },
+		{ propType = "stone",     color = Color3.fromRGB(180, 160, 130), weight = 2 },
+		{ propType = "woodPost",  color = Color3.fromRGB(140, 100, 60),  weight = 1 },
+	},
+	Starlight = {
+		{ propType = "crystal",   color = Color3.fromRGB(140, 180, 255), weight = 4 },
+		{ propType = "crystal",   color = Color3.fromRGB(200, 140, 255), weight = 3 },
+		{ propType = "glowOrb",   color = Color3.fromRGB(180, 220, 255), weight = 2 },
+		{ propType = "stone",     color = Color3.fromRGB(100, 110, 140), weight = 1 },
 	},
 }
 
