@@ -8,6 +8,7 @@ local ServerStorage = game:GetService("ServerStorage")
 local GameConstants = require(ReplicatedStorage.Shared.Constants.GameConstants)
 local ScenarioConstants = require(ReplicatedStorage.Shared.Constants.ScenarioConstants)
 local EncounterLibrary = require(ReplicatedStorage.Shared.Constants.EncounterLibrary)
+local PhraseLibrary = require(ReplicatedStorage.Shared.Constants.PhraseLibrary) -- IDEA-011
 local ProceduralChunkGenerator = require(script.Parent.ProceduralChunkGenerator)
 
 local ChunkService = {}
@@ -49,6 +50,7 @@ export type ChunkService = typeof(setmetatable(
 		_starWaveActive: boolean,
 		_starWaveEndTime: number,
 		_activeChapterId: string?, -- 챕터 연동 맵 테마 (IDEA-005)
+		_phraseQueue: { string }, -- Phrase 기반 난이도 큐 (IDEA-011)
 	},
 	ChunkService
 ))
@@ -78,6 +80,7 @@ function ChunkService.new(): ChunkService
 		_starWaveActive = false,
 		_starWaveEndTime = 0,
 		_activeChapterId = nil,
+		_phraseQueue = {}, -- IDEA-011: Phrase 기반 난이도 큐
 	}, ChunkService)
 
 	self:_loadChunkTemplates()
@@ -608,19 +611,23 @@ function ChunkService:_selectDifficulty(): string
 		end
 	end
 
-	-- 가중 랜덤 선택 (기본 시간대별 테이블)
-	local rand = math.random()
-	local cumulative = 0
-
-	local difficulties = { "Easy", "Normal", "Hard", "Bonus", "NPC" }
-	for _, diff in difficulties do
-		cumulative += rateTable[diff]
-		if rand <= cumulative then
-			return diff
+	-- Phrase 큐 소비 (IDEA-011): 기존 override 시스템을 통과한 경우에만 도달
+	-- breathing/mercy/star-wave 등 우선순위 시스템이 위에서 먼저 처리됨
+	if #self._phraseQueue > 0 then
+		local queued = table.remove(self._phraseQueue, 1)
+		if queued then
+			return queued
 		end
 	end
 
-	return "Easy" -- 폴백
+	-- Phrase 큐가 비었으면 새 Phrase를 선택하여 큐 채움 (IDEA-011)
+	local phrase = PhraseLibrary.pick(elapsedTime)
+	-- 첫 번째 청크 난이도는 즉시 반환, 나머지는 큐에 저장
+	for i = 2, #phrase.sequence do
+		table.insert(self._phraseQueue, phrase.sequence[i].difficulty)
+	end
+	print(`[ChunkService] Phrase "{phrase.label}" ({phrase.id}): {#phrase.sequence} chunks queued`)
+	return phrase.sequence[1].difficulty
 end
 
 -- 청크 템플릿 가져오기 (난이도 및 높이 매칭)
