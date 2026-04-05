@@ -95,9 +95,10 @@ function ProceduralChunkGenerator.Generate(
 	-- Zone 장식 프롭 추가 (IDEA-009)
 	ProceduralChunkGenerator._addZoneProps(chunk, position, theme)
 
-	-- 높이 전환 경사로 (필요시)
+	-- 높이 전환 경사로 + 전환 게이트 (IDEA-012)
 	if startHeight ~= endHeight then
-		ProceduralChunkGenerator._createRamp(chunk, position, startHeight, endHeight)
+		ProceduralChunkGenerator._createRamp(chunk, position, startHeight, endHeight, theme)
+		ProceduralChunkGenerator._createTransitionGate(chunk, position, startHeight, theme)
 	end
 
 	-- 난이도별 시각 효과
@@ -268,41 +269,95 @@ function ProceduralChunkGenerator._getHeightValue(height: string): number
 	return 0
 end
 
--- 경사로 생성 (높이 전환 시)
-function ProceduralChunkGenerator._createRamp(chunk: Model, position: Vector3, startHeight: string, endHeight: string)
+-- 경사로 생성 — 3-Part 베지어 곡선 근사 S-커브 (IDEA-012)
+function ProceduralChunkGenerator._createRamp(chunk: Model, position: Vector3, startHeight: string, endHeight: string, theme: any?)
+	local ct = GameConstants.CHUNK_TRANSITION
 	local chunkLength = GameConstants.CHUNK.LENGTH
 	local startY = ProceduralChunkGenerator._getHeightValue(startHeight)
 	local endY = ProceduralChunkGenerator._getHeightValue(endHeight)
 
-	-- 경사로 길이 (청크 중간 부분)
 	local rampLength = chunkLength * 0.4
 	local rampStartX = position.X + chunkLength * 0.3
 
-	-- 경사 각도 계산
-	local heightDiff = endY - startY
-	local angle = math.atan2(heightDiff, rampLength)
+	-- 테마 색상 (IDEA-005 패턴 재사용)
+	local accentColor = theme and theme.chapterAccentColor :: Color3?
+	local railBase = if theme then theme.railColor else Color3.fromRGB(100, 100, 110)
+	local rampColor = if accentColor then railBase:Lerp(accentColor, 0.35) else railBase
 
-	local ramp = Instance.new("Part")
-	ramp.Name = "Ramp"
-	ramp.Size = Vector3.new(rampLength, 1, CHUNK_CONFIG.FLOOR_WIDTH - 2)
-	ramp.CFrame = CFrame.new(rampStartX + rampLength / 2, (startY + endY) / 2 + 0.5, position.Z)
-		* CFrame.Angles(0, 0, -angle)
-	ramp.Anchored = true
-	ramp.CanCollide = false -- CFrame 이동 방식과 충돌 방지: 경사면은 시각 전용
-	ramp.Color = Color3.fromRGB(100, 100, 110)
-	ramp.Material = Enum.Material.Concrete
-	ramp.Parent = chunk
+	-- 3차 베지어 제어점 (S-커브: 출발 평탄 → 중간 가파름 → 도착 평탄)
+	local x0, y0 = rampStartX, startY
+	local x1, y1 = rampStartX + rampLength * 0.33, startY   -- 출발 접선: 수평
+	local x2, y2 = rampStartX + rampLength * 0.67, endY     -- 도착 접선: 수평
+	local x3, y3 = rampStartX + rampLength, endY
 
-	-- 경사로 가이드 라인
-	local guideLine = Instance.new("Part")
-	guideLine.Name = "RampGuide"
-	guideLine.Size = Vector3.new(rampLength, 0.2, 0.5)
-	guideLine.CFrame = ramp.CFrame * CFrame.new(0, 0.6, 0)
-	guideLine.Anchored = true
-	guideLine.CanCollide = false
-	guideLine.Color = Color3.fromRGB(255, 200, 50)
-	guideLine.Material = Enum.Material.Neon
-	guideLine.Parent = chunk
+	-- 베지어 샘플 함수
+	local function bezier(t: number, a: number, b: number, c: number, d: number): number
+		local mt = 1 - t
+		return mt * mt * mt * a + 3 * mt * mt * t * b + 3 * mt * t * t * c + t * t * t * d
+	end
+
+	-- 4개 샘플 포인트 → 3개 세그먼트
+	local tValues = { 0, 1/3, 2/3, 1 }
+	local pts = {}
+	for _, t in tValues do
+		pts[#pts + 1] = { x = bezier(t, x0, x1, x2, x3), y = bezier(t, y0, y1, y2, y3) }
+	end
+
+	for i = 1, ct.BEZIER_SEGMENTS do
+		local from = pts[i]
+		local to = pts[i + 1]
+		local midX = (from.x + to.x) / 2
+		local midY = (from.y + to.y) / 2
+		local segLen = math.sqrt((to.x - from.x) ^ 2 + (to.y - from.y) ^ 2)
+		local angle = math.atan2(to.y - from.y, to.x - from.x)
+
+		local seg = Instance.new("Part")
+		seg.Name = `RampSeg{i}`
+		seg.Size = Vector3.new(segLen, 1, CHUNK_CONFIG.FLOOR_WIDTH - 2)
+		seg.CFrame = CFrame.new(midX, midY + 0.5, position.Z) * CFrame.Angles(0, 0, -angle)
+		seg.Anchored = true
+		seg.CanCollide = ct.RAMP_COLLIDE
+		seg.Color = rampColor
+		seg.Material = Enum.Material.Concrete
+		seg.Parent = chunk
+	end
+end
+
+-- 전환 게이트 생성 (청크 경계 아치, IDEA-012)
+function ProceduralChunkGenerator._createTransitionGate(chunk: Model, position: Vector3, startHeight: string, theme: any?)
+	local ct = GameConstants.CHUNK_TRANSITION
+	local floorWidth = CHUNK_CONFIG.FLOOR_WIDTH
+	local startY = ProceduralChunkGenerator._getHeightValue(startHeight)
+
+	local accentColor = theme and theme.chapterAccentColor :: Color3?
+	local railBase = if theme then theme.railColor else Color3.fromRGB(150, 150, 160)
+	local gateColor = if accentColor then railBase:Lerp(accentColor, 0.35) else railBase
+
+	-- 좌우 기둥
+	for _, zOffset in { -floorWidth / 2 - 0.5, floorWidth / 2 + 0.5 } do
+		local post = Instance.new("Part")
+		post.Name = "GatePost"
+		post.Size = Vector3.new(0.5, ct.GATE_HEIGHT, 0.5)
+		post.Position = Vector3.new(position.X, startY + ct.GATE_HEIGHT / 2, position.Z + zOffset)
+		post.Anchored = true
+		post.CanCollide = false
+		post.Color = gateColor
+		post.Material = Enum.Material.Metal
+		post.Transparency = 0.3
+		post.Parent = chunk
+	end
+
+	-- 가로 바
+	local bar = Instance.new("Part")
+	bar.Name = "GateBar"
+	bar.Size = Vector3.new(0.5, 0.5, floorWidth + 1)
+	bar.Position = Vector3.new(position.X, startY + ct.GATE_HEIGHT, position.Z)
+	bar.Anchored = true
+	bar.CanCollide = false
+	bar.Color = gateColor
+	bar.Material = Enum.Material.Neon
+	bar.Transparency = 0.3
+	bar.Parent = chunk
 end
 
 -- 장식 추가

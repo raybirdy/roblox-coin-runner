@@ -57,6 +57,13 @@ GameConstants.DUAL_FLOOR = {
 	COIN_COUNT = 15, -- 2층 코인 개수
 }
 
+-- 청크 전환 연출 (IDEA-012)
+GameConstants.CHUNK_TRANSITION = {
+	BEZIER_SEGMENTS = 3, -- 경사로 분할 파트 수
+	GATE_HEIGHT = 4,     -- 전환 게이트 높이 (studs)
+	RAMP_COLLIDE = false, -- 경사로 CanCollide (시각 전용)
+}
+
 -- 난이도별 청크 출현 확률 (시간대별)
 GameConstants.CHUNK_SPAWN_RATES = {
 	-- 0~30초 (초반 - 매우 쉬움)
