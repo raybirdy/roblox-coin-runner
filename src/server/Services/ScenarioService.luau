@@ -97,6 +97,10 @@ function ScenarioService:UpdateQuestProgress(player: Player, questType: string, 
 	-- changed 여부와 무관하게 실행 (highScore는 외부에서 갱신되므로)
 	self:_checkAndNotifyUnlockedChapters(player, playerData)
 
+	-- 챕터 완료 체크: 퀘스트 변경 없어도 매번 실행
+	-- (퀘스트가 이미 완료된 상태에서 보스런 미완료 → 재트리거 필요)
+	self:_checkChapterCompletion(player, playerData)
+
 	if not changed then
 		return
 	end
@@ -185,19 +189,20 @@ function ScenarioService:_checkChapterCompletion(player: Player, playerData: any
 				-- 보스 런 이미 완료 → 챕터 완료 처리
 				self:_completeChapter(player, chapter, playerData, completedChapters, completedSet)
 			else
-				-- 보스 런 아직 미완료 → clear 컷씬 보여주고 보스 런 준비 알림
-				RemoteEvents.ChapterUnlocked:FireClient(player, {
-					chapterId = chapter.id,
-					chapterName = chapter.name,
-					chapterTheme = chapter.theme,
-					cutscene = ScenarioConstants.CUTSCENES[chapter.id]
-						and ScenarioConstants.CUTSCENES[chapter.id].clear,
-					bossRunReady = true,
-				})
-				-- 보스 런 시작
-				task.delay(0.5, function()
-					BossRunService:StartBossRun(player, chapter.id)
-				end)
+				-- 보스 런 아직 미완료: 이미 활성화된 세션이 없을 때만 시작
+				if not BossRunService:IsBossRunActive(player) then
+					RemoteEvents.ChapterUnlocked:FireClient(player, {
+						chapterId = chapter.id,
+						chapterName = chapter.name,
+						chapterTheme = chapter.theme,
+						cutscene = ScenarioConstants.CUTSCENES[chapter.id]
+							and ScenarioConstants.CUTSCENES[chapter.id].clear,
+						bossRunReady = true,
+					})
+					task.delay(0.5, function()
+						BossRunService:StartBossRun(player, chapter.id)
+					end)
+				end
 			end
 		end
 	end
