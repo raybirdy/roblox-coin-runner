@@ -21,7 +21,7 @@
 | 브랜치 전략 | GitHub Flow (feature → PR → main) | 기존 유지 |
 | PMF 스테이지 | pre-pmf | 소프트 론치 전, 속도 우선 |
 | Permission 모드 | 개발 중 항상 허용 | |
-| Last updated | 2026-03-19 | |
+| Last updated | 2026-04-05 | |
 
 ---
 
@@ -464,3 +464,99 @@ Sprint 0 (M5+M4+설계)
 - [ ] AC-0-6: 화면 좌측 50%에 게임 중 상시 UI 없음 (SlideButton 제외, 엄지 영역 확보)
 - [ ] AC-0-7: UIVisibilityManager가 lobby/running/minigame 3개 상태에서 올바른 UI set만 Enabled
 - [ ] AC-0-8: iPhone SE(375x667) 해상도에서 HUD 요소 간 겹침 0건
+
+### Sprint 1 — 존 전환 시각 연출 + 배경 시차 스크롤 [done]
+**목표**: Zone 전환 시 극적 연출(IDEA-001) + 배경 원경/중경 시차 스크롤(IDEA-002)
+**커밋**: e6f92d6
+**피처**: IDEA-001, IDEA-002
+
+**Acceptance Criteria**:
+- [x] Zone 전환 시 0.3s 컬러 플래시 발생
+- [x] ZoneLabel 바운스 애니메이션 (Back EasingStyle)
+- [x] ParallaxController 원거리 0.15x / 중거리 0.40x 시차 동작
+
+### Sprint 2 — 2층 분기 맵 Dual-Floor MVP [done]
+**목표**: 점프 진입 2층 보너스 구간 (IDEA-003)
+**커밋**: 395257e
+**피처**: IDEA-003
+
+**Acceptance Criteria**:
+- [x] 2층 청크 30초+ 이후 ~10% 확률 등장
+- [x] 진입 경사로 캐릭터 걸림 없음 (WedgePart, 24도)
+- [x] 2층 끝에서 자동 낙하
+- [x] CameraController Y 소프트 팔로우
+
+### Sprint 3 — 이동 장애물 2종 [done]
+**목표**: RotatingBar + FallingDebris 장애물 추가 (IDEA-004)
+**커밋**: 5a1549f
+**피처**: IDEA-004
+
+**Acceptance Criteria**:
+- [x] RotatingBar TweenService 1.5s 회전
+- [x] FallingDebris 3연속 스태거 낙하
+- [x] Hard 구간 전용, ACTION_HINT_MAP 등록
+
+### Sprint 4 — 챕터 연동 맵 테마 [done]
+**목표**: 진행 중인 챕터의 accentColor를 레일/바닥에 Lerp tint (IDEA-005)
+**커밋**: 2d93bda
+**피처**: IDEA-005
+
+**Acceptance Criteria**:
+- [x] 챕터별 레일/바닥라인 색상 35~40% Lerp tint
+- [x] Zone 테마 우선, 챕터 오버레이 방식
+
+### Sprint 5 — 보스런 전용 맵 스타일 MVP [done]
+**목표**: 보스런 진입 시 붉은 틴트 + 안개 연출 (IDEA-006)
+**커밋**: 048cb45
+**피처**: IDEA-006
+
+**Acceptance Criteria**:
+- [x] 보스런 진입 시 ColorCorrectionEffect 활성화
+- [x] FogEnd 200 감소 (가시거리 축소)
+- [x] 보스런 종료 시 원복
+
+### Sprint 6 — 환경 날씨 파티클 [done]
+**목표**: Zone별 5종 날씨 파티클 (IDEA-007)
+**커밋**: 5037ca6
+**피처**: IDEA-007
+
+**Acceptance Criteria**:
+- [x] Zone별 전용 파티클 (sparkles/petals/spores/dust/stars)
+- [x] MaxParticles 50 이하, 플레이어 위 18 studs 추적
+- [x] ZoneController + ParallaxController + WeatherController 3중 동기화
+
+### Sprint 7 — 코인 도형 패턴 5종 [done]
+**목표**: 수학 함수 대신 인식 가능한 도형 좌표 테이블 방식으로 교체 (IDEA-008)
+**커밋**: 7fa0848
+**피처**: IDEA-008
+
+**Acceptance Criteria**:
+- [x] 5종 도형 패턴 (↑↓♥★◆) 청크에서 등장
+- [x] 패턴이 시각적으로 인식 가능한 형태
+
+### Sprint 8 — zone별 장식 프롭 시스템 [done]
+**목표**: 청크당 0~6개 CanCollide=false 장식 프롭 자동 배치 (IDEA-009)
+**커밋**: 01d1ef1
+**피처**: IDEA-009
+
+**Acceptance Criteria**:
+- [x] Zone별 PROP_PALETTE (꽃/버섯/수정/등불 등 9종)
+- [x] CanCollide=false, 게임플레이 영향 없음
+
+### Sprint 9 — Encounter 라이브러리 + 장애물-코인 동시 설계 [done]
+**목표**: 장애물-코인 세트 5종으로 학습 루프 형성 (IDEA-010)
+**커밋**: c2a0614
+**피처**: IDEA-010
+
+**Acceptance Criteria**:
+- [x] EncounterTemplate{obstacles, coins} 5종 구현
+- [x] 장애물 이후 보상 코인 배치 확인
+
+### Sprint 10 — Phrase 기반 청크 시퀀싱 [done]
+**목표**: 2~5청크 단위 리듬 Phrase로 설계된 난이도 흐름 (IDEA-011)
+**커밋**: c1f7d24
+**피처**: IDEA-011
+
+**Acceptance Criteria**:
+- [x] Phrase 큐 기반 청크 순서 생성
+- [x] breathing/mercy 시스템 호환
