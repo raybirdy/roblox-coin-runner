@@ -213,7 +213,7 @@ function FeverController:_createSounds()
 
 	local endSound = Instance.new("Sound")
 	endSound.Name = "FeverEndSound"
-	endSound.SoundId = "rbxassetid://1848354609" -- Wind-down / 피버 종료 (차분히 마무리)
+	endSound.SoundId = "" -- TODO: 피버 종료 Wind-down 사운드 (rbxassetid 교체 필요)
 	endSound.Volume = 0.6
 	endSound.PlaybackSpeed = 0.8 -- Calm, wind-down tone
 	endSound.Parent = SoundService
@@ -222,7 +222,7 @@ function FeverController:_createSounds()
 	-- 미니 피버 사운드 (정식 피버보다 가벼운 차임 효과)
 	local miniFeverSound = Instance.new("Sound")
 	miniFeverSound.Name = "MiniFeverSound"
-	miniFeverSound.SoundId = "rbxassetid://3178040406" -- Chime / 미니 피버 (가벼운 차임)
+	miniFeverSound.SoundId = "" -- TODO: 미니 피버 Chime 사운드 (rbxassetid 교체 필요)
 	miniFeverSound.Volume = 0.6
 	miniFeverSound.PlaybackSpeed = 1.0 -- 정식 피버(1.3)보다 낮은 피치
 	miniFeverSound.Parent = SoundService

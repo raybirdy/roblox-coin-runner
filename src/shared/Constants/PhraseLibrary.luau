@@ -18,7 +18,7 @@ export type Phrase = {
 	sequence: { ChunkSpec }, -- 청크 사양 순서
 }
 
-PhraseLibrary.PHRASES: { Phrase } = {
+PhraseLibrary.PHRASES = {
 	-- ── 초반 (0~60초) ─────────────────────────────────────────────────────
 	{
 		id = "intro_gentle",

@@ -445,7 +445,7 @@ end
 function PlayerController:_createSounds()
 	local jumpSound = Instance.new("Sound")
 	jumpSound.Name = "JumpSound"
-	jumpSound.SoundId = "rbxassetid://5153006073" -- Jump Whoosh / 점프 (가벼운 공기 소리)
+	jumpSound.SoundId = "" -- TODO: 점프 Whoosh 사운드 (rbxassetid 교체 필요)
 	jumpSound.Volume = 0.4
 	jumpSound.PlaybackSpeed = 1.2
 	jumpSound.Parent = SoundService
@@ -453,7 +453,7 @@ function PlayerController:_createSounds()
 
 	local landSound = Instance.new("Sound")
 	landSound.Name = "LandSound"
-	landSound.SoundId = "rbxassetid://5153006119" -- Land Thud / 착지 (묵직한 발소리)
+	landSound.SoundId = "" -- TODO: 착지 Thud 사운드 (rbxassetid 교체 필요)
 	landSound.Volume = 0.3
 	landSound.PlaybackSpeed = 1.0
 	landSound.Parent = SoundService
