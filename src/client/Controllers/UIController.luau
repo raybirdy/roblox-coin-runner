@@ -720,7 +720,7 @@ function UIController:_createMobileControls()
 	end
 
 	local btnSize = GameConstants.UI.TOUCH_BUTTON_SIZE
-	local btnMargin = 34 -- Increased for home indicator safe area
+	local btnMargin = 50 -- Safe area margin (home indicator + buffer)
 
 	-- 점프 버튼 (오른쪽 하단)
 	local jumpButton = Instance.new("TextButton")
@@ -772,27 +772,17 @@ function UIController:_createMobileControls()
 	slideStroke.Transparency = 0.3
 	slideStroke.Parent = slideButton
 
-	-- 터치 프레스 피드백 (버튼 누를 때 축소, 뗄 때 복구)
+	-- 터치 프레스 피드백 (투명도 변화만 — Size 변경 금지: 히트 영역 변경으로 오인식 유발)
 	local function addPressFeedback(button: TextButton)
-		local originalSize = button.Size
-		local pressInfo = TweenInfo.new(0.08, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-		local releaseInfo = TweenInfo.new(0.12, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
-
-		local shrunkSize = UDim2.new(
-			originalSize.X.Scale,
-			math.floor(originalSize.X.Offset * 0.9),
-			originalSize.Y.Scale,
-			math.floor(originalSize.Y.Offset * 0.9)
-		)
+		local pressInfo = TweenInfo.new(0.06, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+		local releaseInfo = TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 
 		button.MouseButton1Down:Connect(function()
-			TweenService:Create(button, pressInfo, { Size = shrunkSize }):Play()
-			button.BackgroundTransparency = 0.1
+			TweenService:Create(button, pressInfo, { BackgroundTransparency = 0.0 }):Play()
 		end)
 
 		button.MouseButton1Up:Connect(function()
-			TweenService:Create(button, releaseInfo, { Size = originalSize }):Play()
-			button.BackgroundTransparency = 0.2
+			TweenService:Create(button, releaseInfo, { BackgroundTransparency = 0.2 }):Play()
 		end)
 	end
 
