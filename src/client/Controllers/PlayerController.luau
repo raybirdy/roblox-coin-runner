@@ -24,6 +24,7 @@ type State = "Idle" | "Running" | "Jumping" | "Sliding" | "Falling"
 local GROUND_RAYCAST_DISTANCE = 3.5 -- 바닥 감지 레이캐스트 거리
 local GROUND_HEIGHT = 2.5 -- 캐릭터 중심 높이 (바닥에 서 있을 때)
 local COYOTE_TIME = 0.25 -- 착지 직후 점프 유예 시간 (초)
+local INPUT_BUFFER_TIME = 0.2 -- 입력 버퍼 유효 시간: 착지 전 0.2s 이내 입력 허용
 
 export type PlayerController = typeof(setmetatable(
 	{} :: {
@@ -85,6 +86,12 @@ export type PlayerController = typeof(setmetatable(
 		_lastJumpTime: number,
 		_lastGroundedTime: number, -- 코요테 타임용 마지막 착지 시각
 		_slideStartTime: number, -- 슬라이드 시작 시각 (즉시 종료 방지)
+
+		-- 입력 버퍼
+		_bufferedSlide: boolean,
+		_bufferedSlideTime: number,
+		_bufferedJump: boolean,
+		_bufferedJumpTime: number,
 	},
 	PlayerController
 ))
@@ -132,6 +139,12 @@ function PlayerController.new(player: Player, character: Model): PlayerControlle
 		_gravityMultiplier = 1.0,
 		_baseSpeedBonus = 0,
 		_baseJumpBonus = 0,
+
+		-- 입력 버퍼: 공중에서 눌렀을 때 착지 직후 실행
+		_bufferedSlide = false,
+		_bufferedSlideTime = 0,
+		_bufferedJump = false,
+		_bufferedJumpTime = 0,
 	}, PlayerController)
 
 	self:_createSounds()
@@ -246,6 +259,8 @@ function PlayerController:StopGame()
 	self.verticalVelocity = 0
 	self._baseSpeedBonus = 0
 	self._baseJumpBonus = 0
+	self._bufferedSlide = false
+	self._bufferedJump = false
 
 	-- 속도 완전 정지
 	self.humanoidRootPart.AssemblyLinearVelocity = Vector3.zero
@@ -680,6 +695,16 @@ function PlayerController:_checkGrounded()
 			end
 
 			print(`[PlayerController] Landed - Y: {currentY}`)
+
+			-- 착지 직후 버퍼된 입력 처리 (공중에서 누른 jump/slide)
+			local now2 = os.clock()
+			if self._bufferedJump and (now2 - self._bufferedJumpTime) < INPUT_BUFFER_TIME then
+				self._bufferedJump = false
+				task.defer(function() self:Jump() end)
+			elseif self._bufferedSlide and (now2 - self._bufferedSlideTime) < INPUT_BUFFER_TIME then
+				self._bufferedSlide = false
+				task.defer(function() self:Slide() end)
+			end
 		end
 	end
 
@@ -711,12 +736,13 @@ function PlayerController:Jump()
 
 	-- 점프 쿨다운 (연타 방지)
 	local now = os.clock()
-	if now - self._lastJumpTime < 0.15 then
+	if now - self._lastJumpTime < 0.08 then
 		return
 	end
 
 	-- 1단 점프: Running 상태이면 무조건 허용
 	if self.state == "Running" then
+		self._bufferedJump = false
 		self:_performJump(GameConstants.PHYSICS.JUMP_HEIGHT_FIRST)
 		self.canDoubleJump = self._skillDoubleJump
 		self._lastJumpTime = now
@@ -727,6 +753,7 @@ function PlayerController:Jump()
 	if self.state == "Falling" then
 		local inCoyoteTime = (now - self._lastGroundedTime) < COYOTE_TIME
 		if inCoyoteTime then
+			self._bufferedJump = false
 			self:_performJump(GameConstants.PHYSICS.JUMP_HEIGHT_FIRST)
 			self.canDoubleJump = self._skillDoubleJump
 			self._lastJumpTime = now
@@ -737,11 +764,16 @@ function PlayerController:Jump()
 
 	-- 2단 점프 (공중에서, 더블점프 스킬 보유 시)
 	if self.canDoubleJump then
+		self._bufferedJump = false
 		self:_performJump(GameConstants.PHYSICS.JUMP_HEIGHT_SECOND)
 		self.canDoubleJump = false
 		self._lastJumpTime = now
 		return
 	end
+
+	-- 점프 불가 상태: 착지 직후 실행을 위해 버퍼에 저장
+	self._bufferedJump = true
+	self._bufferedJumpTime = now
 end
 
 -- 점프 실행 (AssemblyLinearVelocity 사용)
@@ -788,10 +820,13 @@ function PlayerController:Slide()
 		return
 	end
 
-	-- Running 상태에서만 슬라이드 허용 (점프와 동일 기준)
+	-- Running 상태에서만 슬라이드 실행; 공중이면 버퍼에 저장하고 착지 시 실행
 	if self.state ~= "Running" then
+		self._bufferedSlide = true
+		self._bufferedSlideTime = os.clock()
 		return
 	end
+	self._bufferedSlide = false
 
 	self.isSliding = true
 	self.state = "Sliding"
