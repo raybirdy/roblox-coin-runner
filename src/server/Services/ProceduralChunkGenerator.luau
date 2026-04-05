@@ -75,6 +75,17 @@ function ProceduralChunkGenerator.Generate(
 		return chunk
 	end
 
+	-- MultiLane: 전용 생성 경로 (IDEA-013)
+	if difficulty == "MultiLane" then
+		ProceduralChunkGenerator._createMultiLane(chunk, position, theme)
+		chunk:SetAttribute("Difficulty", "MultiLane")
+		chunk:SetAttribute("StartHeight", startHeight)
+		chunk:SetAttribute("EndHeight", startHeight)
+		chunk:SetAttribute("Procedural", true)
+		chunk.Parent = workspace
+		return chunk
+	end
+
 	-- 끝 높이 결정
 	local endHeight = ProceduralChunkGenerator._selectEndHeight(startHeight)
 
@@ -209,6 +220,119 @@ function ProceduralChunkGenerator._createDualFloor(chunk: Model, position: Vecto
 	chunk:SetAttribute("Floor2Y", floor2Y)
 	chunk:SetAttribute("Floor2StartX", position.X + rampLength)
 	chunk:SetAttribute("Floor2EndX", position.X + rampLength + platformLength)
+end
+
+-- 다중 높이 플랫폼 생성 (IDEA-013)
+-- LOW 레인(Y=0, 풀 너비): 안전 경로 / HIGH 레인(Y=12, 좁은): 고위험-고보상
+function ProceduralChunkGenerator._createMultiLane(chunk: Model, position: Vector3, theme: any?)
+	local ml = GameConstants.MULTI_LANE
+	local chunkLength = GameConstants.CHUNK.LENGTH
+	local fullWidth = CHUNK_CONFIG.FLOOR_WIDTH
+	local floorThick = CHUNK_CONFIG.FLOOR_THICKNESS
+	local floorColor = if theme then theme.floorColor else Color3.fromRGB(90, 90, 100)
+	local railColor = if theme then theme.railColor else Color3.fromRGB(150, 150, 160)
+	local accentColor = theme and theme.chapterAccentColor :: Color3?
+	local highColor = if accentColor then floorColor:Lerp(accentColor, 0.25) else floorColor:Lerp(Color3.fromRGB(255, 200, 80), 0.20)
+
+	-- ── LOW 레인: 풀 너비 바닥 (기본 1층, 안전 경로) ──────────────────────────
+	local floor1 = Instance.new("Part")
+	floor1.Name = "Floor"
+	floor1.Size = Vector3.new(chunkLength, floorThick, fullWidth)
+	floor1.Position = Vector3.new(position.X + chunkLength / 2, floorThick / 2, position.Z)
+	floor1.Anchored = true
+	floor1.CanCollide = true
+	floor1.Color = floorColor
+	floor1.Material = Enum.Material.Concrete
+	floor1.Parent = chunk
+	chunk.PrimaryPart = floor1
+
+	-- LOW 레인 사이드 레일
+	for _, zOffset in { -fullWidth / 2 - 0.5, fullWidth / 2 + 0.5 } do
+		local rail = Instance.new("Part")
+		rail.Name = "LowRail"
+		rail.Size = Vector3.new(chunkLength, 0.5, 0.5)
+		rail.Position = Vector3.new(position.X + chunkLength / 2, 1.25, position.Z + zOffset)
+		rail.Anchored = true
+		rail.CanCollide = false
+		rail.Color = railColor
+		rail.Material = Enum.Material.Metal
+		rail.Parent = chunk
+	end
+
+	-- ── HIGH 레인: 좁은 플랫폼 (고위험-고보상 경로) ─────────────────────────
+	local rampLength = ml.RAMP_LENGTH
+	local highY = ml.HIGH_LANE_Y
+	local platformLength = ml.PLATFORM_LENGTH
+	local platformWidth = ml.PLATFORM_WIDTH
+
+	-- HIGH 레인 진입 경사로 (WedgePart, DualFloor 패턴 재사용)
+	local ramp = Instance.new("WedgePart")
+	ramp.Name = "HighLaneRamp"
+	ramp.Size = Vector3.new(platformWidth, highY, rampLength)
+	ramp.CFrame = CFrame.new(
+		position.X + rampLength / 2,
+		highY / 2,
+		position.Z
+	) * CFrame.Angles(0, math.pi / 2, 0)
+	ramp.Anchored = true
+	ramp.CanCollide = true
+	ramp.Color = highColor
+	ramp.Material = Enum.Material.Concrete
+	ramp.Parent = chunk
+
+	-- HIGH 레인 플랫폼
+	local platform = Instance.new("Part")
+	platform.Name = "HighLanePlatform"
+	platform.Size = Vector3.new(platformLength, floorThick, platformWidth)
+	platform.Position = Vector3.new(
+		position.X + rampLength + platformLength / 2,
+		highY + floorThick / 2,
+		position.Z
+	)
+	platform.Anchored = true
+	platform.CanCollide = true
+	platform.Color = highColor
+	platform.Material = Enum.Material.Concrete
+	platform.Parent = chunk
+
+	-- HIGH 레인 사이드 레일 (좁은 레인 경계 표시)
+	for _, zOffset in { -platformWidth / 2 - 0.3, platformWidth / 2 + 0.3 } do
+		local rail = Instance.new("Part")
+		rail.Name = "HighRail"
+		rail.Size = Vector3.new(platformLength, 0.5, 0.3)
+		rail.Position = Vector3.new(
+			position.X + rampLength + platformLength / 2,
+			highY + 1.25,
+			position.Z + zOffset
+		)
+		rail.Anchored = true
+		rail.CanCollide = false
+		rail.Color = if accentColor then accentColor else Color3.fromRGB(255, 200, 50)
+		rail.Material = Enum.Material.Neon
+		rail.Parent = chunk
+	end
+
+	-- HIGH 레인 끝 낙하 표시 (DualFloor 패턴 재사용)
+	local endMarker = Instance.new("Part")
+	endMarker.Name = "HighLaneEnd"
+	endMarker.Size = Vector3.new(0.5, 3, platformWidth + 2)
+	endMarker.Position = Vector3.new(
+		position.X + rampLength + platformLength,
+		highY + 1.5,
+		position.Z
+	)
+	endMarker.Anchored = true
+	endMarker.CanCollide = false
+	endMarker.Transparency = 0.5
+	endMarker.Color = Color3.fromRGB(255, 200, 50)
+	endMarker.Material = Enum.Material.Neon
+	endMarker.Parent = chunk
+
+	-- Attributes: CoinService가 HIGH 레인 참조
+	chunk:SetAttribute("IsMultiLane", true)
+	chunk:SetAttribute("HighLaneY", highY)
+	chunk:SetAttribute("HighLaneStartX", position.X + rampLength)
+	chunk:SetAttribute("HighLaneEndX", position.X + rampLength + platformLength)
 end
 
 -- 끝 높이 선택

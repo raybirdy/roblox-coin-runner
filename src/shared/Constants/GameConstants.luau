@@ -57,6 +57,18 @@ GameConstants.DUAL_FLOOR = {
 	COIN_COUNT = 15, -- 2층 코인 개수
 }
 
+-- 다중 높이 플랫폼 (IDEA-013)
+GameConstants.MULTI_LANE = {
+	HIGH_LANE_Y = 12,       -- HIGH 레인 높이 (studs, HEIGHT_HIGH와 일치)
+	RAMP_LENGTH = 20,        -- 진입 경사로 길이 (WedgePart, DualFloor보다 약간 길게)
+	PLATFORM_LENGTH = 55,    -- HIGH 레인 플랫폼 유지 길이 (studs, 총 80 중)
+	PLATFORM_WIDTH = 12,     -- HIGH 레인 너비 (일반 바닥 20보다 좁게 — 고위험/고보상)
+	SPAWN_CHANCE = 0.07,     -- 출현 확률 (7%, DualFloor보다 낮음)
+	MIN_ELAPSED_TIME = 45,   -- 최소 경과 시간(초, DualFloor보다 늦게)
+	COIN_Y_OFFSET = 4,       -- HIGH 레인 코인 높이 오프셋
+	COIN_COUNT = 20,         -- HIGH 레인 코인 개수 (DualFloor 15보다 많음 — 위험 보상)
+}
+
 -- 청크 전환 연출 (IDEA-012)
 GameConstants.CHUNK_TRANSITION = {
 	BEZIER_SEGMENTS = 3, -- 경사로 분할 파트 수

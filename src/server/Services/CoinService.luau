@@ -723,6 +723,28 @@ function CoinService:SpawnCoinsInChunk(
 		return
 	end
 
+	-- MultiLane: HIGH 레인에 고밀도 코인 배치 (IDEA-013)
+	if difficulty == "MultiLane" or chunk:GetAttribute("IsMultiLane") then
+		local ml = GameConstants.MULTI_LANE
+		local highLaneY = (chunk:GetAttribute("HighLaneY") :: number?) or ml.HIGH_LANE_Y
+		local highLaneStartX = chunk:GetAttribute("HighLaneStartX") :: number?
+		local highLaneEndX = chunk:GetAttribute("HighLaneEndX") :: number?
+		if highLaneStartX and highLaneEndX then
+			local coinZ = chunk:GetPrimaryPartCFrame().Position.Z
+			local coinY = highLaneY + ml.COIN_Y_OFFSET
+			local span = highLaneEndX - highLaneStartX
+			for i = 1, ml.COIN_COUNT do
+				local t = (i - 0.5) / ml.COIN_COUNT
+				local coinX = highLaneStartX + t * span
+				-- 고위험 경로: Gold 비율 높음 (40% Gold, 40% Silver, 20% Bronze)
+				local r = math.random()
+				local coinType = if r < 0.40 then "Gold" elseif r < 0.80 then "Silver" else "Bronze"
+				self:_spawnCoin(Vector3.new(coinX, coinY, coinZ), coinType)
+			end
+		end
+		return
+	end
+
 	-- 코인 개수 결정
 	local coinCount = self:_getCoinCountForDifficulty(difficulty)
 

@@ -583,6 +583,14 @@ function ChunkService:_selectDifficulty(): string
 		end
 	end
 
+	-- 다중 높이 플랫폼: 45s+ 조건에서 7% 확률 (IDEA-013)
+	if elapsedTime >= GameConstants.MULTI_LANE.MIN_ELAPSED_TIME then
+		if math.random() < GameConstants.MULTI_LANE.SPAWN_CHANCE then
+			print(`[ChunkService] 🏔️ MultiLane chunk at {math.floor(elapsedTime)}s`)
+			return "MultiLane"
+		end
+	end
+
 	-- 호흡 패턴 (60초 이후: Hard 15s → Easy 10s 반복 사이클)
 	if elapsedTime >= 60 then
 		local phaseElapsed = tick() - self._breathPhaseStart

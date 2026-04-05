@@ -179,7 +179,7 @@ function CameraController:_calculateCameraPosition(): CFrame
 
 	-- Y 소프트 팔로우: 2층 구간 등 캐릭터 높이 변화 시 카메라 부드럽게 상승 (IDEA-003)
 	local BASE_CHAR_Y = 3 -- 지면 위 캐릭터 중심 기준 높이
-	local heightBonus = math.max(0, characterPosition.Y - BASE_CHAR_Y) * 0.3
+	local heightBonus = math.max(0, characterPosition.Y - BASE_CHAR_Y) * 0.4 -- IDEA-013: MultiLane HEIGHT_HIGH=12 대응 (0.3→0.4)
 	local adaptiveHeight = CAMERA_HEIGHT + heightBonus
 
 	-- 사이드뷰: 카메라를 Z축 양방향(+Z)에 배치, 캐릭터 앞쪽을 더 보여줌

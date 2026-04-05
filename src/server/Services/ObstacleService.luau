@@ -471,8 +471,8 @@ function ObstacleService:_getObstacleCountForDifficulty(difficulty: string): num
 		return math.random(1, 2) -- 보통: 1-2개
 	elseif difficulty == "Hard" then
 		return math.random(2, 4) -- 어려운 청크: 장애물 많음
-	elseif difficulty == "Bonus" then
-		return 0 -- 보너스는 장애물 없음
+	elseif difficulty == "Bonus" or difficulty == "DualFloor" or difficulty == "MultiLane" then
+		return 0 -- 보너스/분기맵 청크는 장애물 없음
 	elseif difficulty == "NPC" then
 		return math.random(0, 1) -- NPC 청크도 장애물 적게
 	end
