@@ -60,6 +60,9 @@ local _GhostService = require(ServerScriptService.Server.Services.GhostService)
 local TeamService = require(ServerScriptService.Server.Services.TeamService)
 local CoopMatchService = require(ServerScriptService.Server.Services.CoopMatchService)
 local AnalyticsService = require(ServerScriptService.Server.Services.AnalyticsService)
+
+-- Session start time tracking (for session_end duration)
+local sessionStartTimes: { [number]: number } = {}
 local TutorialService = require(ServerScriptService.Server.Services.TutorialService)
 
 print("[Server] Game Constants Loaded")
@@ -152,6 +155,7 @@ game.Players.PlayerAdded:Connect(function(player: Player)
 	print(`[Server] Player {player.Name} joined`)
 	-- Analytics: session start
 	AnalyticsService:Track(player, "session_start", { platform = "roblox" })
+	sessionStartTimes[player.UserId] = os.clock()
 
 	-- 플레이어 데이터 로드
 	local playerData = PlayerDataService:LoadPlayerData(player)
@@ -239,7 +243,11 @@ end)
 game.Players.PlayerRemoving:Connect(function(player: Player)
 	print(`[Server] Player {player.Name} leaving`)
 	-- Analytics: session end
-	AnalyticsService:Track(player, "session_end")
+	AnalyticsService:Track(player, "session_end", {
+		duration = math.floor(os.clock() - (sessionStartTimes[player.UserId] or os.clock())),
+		reason = "leave",
+	})
+	sessionStartTimes[player.UserId] = nil
 
 	-- 튜토리얼 상태 정리
 	TutorialService:OnPlayerRemoving(player)

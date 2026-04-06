@@ -16,7 +16,7 @@
 | Claude 연동 | N/A | Roblox 플랫폼 전용 |
 | 배포 | Roblox 퍼블리싱 | 소프트 론치 예정 |
 | 버전 | v3.1 (active) | v3.0 완료 후 |
-| 현재 Sprint | 13 / 16 (v3.1) | 챕터 버그 픽스 → 시각 개선 → 특수 코인 → 데드코드 정리 |
+| 현재 Sprint | 17 / 17 (v3.1) | Sprint 13~16 done, Sprint 17 analytics 와이어링 pending |
 | 레포 위치 | /Users/parkjongha/Documents/git/roblox-coin-runner | |
 | 브랜치 전략 | GitHub Flow (feature → PR → main) | 기존 유지 |
 | PMF 스테이지 | pre-pmf | 소프트 론치 전, 속도 우선 |
@@ -581,16 +581,18 @@ Sprint 0 (M5+M4+설계)
 - [x] HIGH 레인 Gold 코인 40% 고밀도 배치
 - [x] CameraController Y 팔로우 가중치 0.4 적용
 
-### Sprint 13 — 챕터 2→3 전환 버그 픽스 [pending]
+### Sprint 13 — 챕터 2→3 전환 버그 픽스 [done]
 **목표**: 챕터 2 퀘스트 완료 후 챕터 3이 언락되지 않는 버그 수정 (ISSUE-023)
-**이슈**: ISSUE-023 (P1-high)
+**이슈**: ISSUE-023 (P1-high) — 3차 재발 → 근본 원인 해결
+**수정 요지**: BossRun이 PRD-v3에서 deprecated되며 `_checkChapterCompletion`이 영구히 게이트됨. `BOSS_RUN.ENABLED=false` 플래그 + bypass 추가.
 
 **Acceptance Criteria**:
-- [ ] 챕터 2 퀘스트 전체 완료 시 챕터 3 자동 언락
-- [ ] 서버 콘솔에 `[ScenarioService] _completeChapter ch2` 로그 출력
-- [ ] 클라이언트에 `ChapterUnlocked` 이벤트 정상 수신 + UI 표시
-- [ ] 보스런 비활성화 상태에서도 챕터 완료 처리 가능 (우회 경로 확보)
-- [ ] 챕터 1 완료 플래그가 정상 설정되어 있는지 검증
+- [x] 챕터 2 퀘스트 전체 완료 시 챕터 3 자동 언락
+- [x] 서버 콘솔에 `[ScenarioService] {Player} completed chapter: ch2` 로그 출력
+- [x] 클라이언트에 `ChapterUnlocked` 이벤트 정상 수신 + UI 표시
+- [x] 보스런 비활성화 상태에서도 챕터 완료 처리 가능 (BOSS_RUN.ENABLED=false bypass)
+- [x] 챕터 1 완료 플래그 검증 (`_isChapterUnlocked` requiredCompletedChapters 경로)
+- [x] 방어적 가드: `StartBossRun` 진입부에 ENABLED 체크 추가
 
 **주요 확인 파일**:
 - `src/server/Services/ScenarioService.luau` — `_checkChapterCompletion`, `_completeChapter`
@@ -598,18 +600,22 @@ Sprint 0 (M5+M4+설계)
 - `src/shared/Constants/ScenarioConstants.luau` — ch3.unlockConditions
 - `src/client/Controllers/ScenarioController.luau` — ChapterUnlocked 구독 여부
 
-### Sprint 14 — 코인/장애물 시각 구분 + 단조로움 개선 [pending]
+### Sprint 14 — 코인/장애물 시각 구분 + 단조로움 개선 [done]
 **목표**: 코인 글로우 추가 + 장애물 위협 연출 + 존별 분위기 강화 (ISSUE-032)
 **이슈**: ISSUE-032 (P2-medium)
 
 **Acceptance Criteria**:
-- [ ] 코인 파트에 Highlight 인스턴스 추가 (OutlineColor=Gold, FillTransparency=1)
-- [ ] 코인에 PointLight 부착 (Brightness=0.5, Range=8)
-- [ ] 장애물 파트에 빨강/주황 경고 Texture 또는 Decal 추가
-- [ ] 이동 장애물(RotatingBar/FallingDebris)에 Neon 경고등 파트 깜빡임 연출
-- [ ] 최소 3개 Zone에서 환경 조명 색온도 차별화 확인
-- [ ] 코인 수집 시 소형 파티클 버스트 (10개 중 1개 확률)
-- [ ] 성능 영향 없음 (MaxParticles 합산 100 이하)
+- [x] 코인 파트에 Highlight 인스턴스 추가 (OutlineColor=Gold, FillTransparency=1)
+- [x] 코인에 PointLight 부착 (Brightness=0.5, Range=8) — Gold/Diamond 티어만 부착 (렌더 비용 관리)
+- [x] 장애물 파트에 빨강/주황 경고 Decal 추가 (Front/Back 면)
+- [x] 이동 장애물(RotatingBar/FallingDebris)에 깜빡이는 PointLight 경고등 연출
+- [x] 최소 3개 Zone에서 환경 조명 색온도 차별화 확인 (기존 ZONE_THEMES 5종 — Sprint 1)
+- [x] 코인 수집 시 소형 파티클 버스트 (10% 확률, Emit once + Debris cleanup)
+- [x] 성능 영향 없음 — PointLight 티어 게이팅 + 파티클 one-shot로 MaxParticles ≤100 유지
+
+**momus 피드백 반영**:
+- PointLight 수 과다 리스크 → Bronze/Silver 제외, Gold/Diamond만 부착
+- AC #3 literal 위반 → Highlight 외곽선 → Decal로 변경
 
 **주요 파일**:
 - `src/server/Services/CoinService.luau` — 코인 생성 시 Highlight/PointLight 추가
@@ -662,3 +668,36 @@ Sprint 0 (M5+M4+설계)
 **주의사항**:
 - `mini_game_bonus` upgrade 필드는 PlayerData 호환성 위해 유지 (사용처만 제거)
 - 추후 재논의 가능성 → git 히스토리로 복원 가능하도록 단일 PR로 정리
+
+---
+
+### Sprint 17 — Analytics 이벤트 와이어링 (출시 차단 해소) [pending]
+**목표**: `/analytics` Pre-launch Gate에서 확인된 7종 미와이어 이벤트 구현
+**근거**: docs/analytics/event-taxonomy.md — 현재 3종(session_start/end, tutorial_step)만 호출됨. PRD-v3 KPI(D1/D7/D30 리텐션, 과금 전환율, Co-op 참여율) 측정 불가 → 출시 차단 사유.
+
+**Acceptance Criteria**:
+- [ ] `AnalyticsService.VALID_EVENTS`에 7종 추가: `run_start`, `run_end`, `coin_earned`, `purchase`, `coop_match`, `battle_pass_purchase`, `feature_engaged`
+- [ ] GameManager: `run_start` 호출 (세션 시작 직후, mode/zone/chapterId 필드)
+- [ ] GameManager: `run_end` 호출 (게임오버 경로, duration/coinsCollected/maxCombo/bestZone/deathCause 필드)
+- [ ] GameManager: `coin_earned` 집계 이벤트 (run_end 시 1건, tier별 합계)
+- [ ] MonetizationService: `purchase` 호출 (ProcessReceipt 성공 분기, productId/robuxSpent/receiptKey)
+- [ ] MonetizationService: `battle_pass_purchase` 별도 이벤트 (Battle Pass GamePass 성공)
+- [ ] CoopMatchService: `coop_match` 호출 (성사 + 타임아웃/취소 케이스 각각, matchResult/waitSeconds)
+- [ ] `session_end`에 `duration`, `reason` 필드 추가 (현재 빈 payload)
+- [ ] `rg "AnalyticsService:Track" src/` 결과 10건 이상
+- [ ] Studio 퍼블리싱 후 Roblox Creator Dashboard에서 이벤트 수신 확인
+
+**주요 파일**:
+- `src/server/Services/AnalyticsService.luau` (whitelist)
+- `src/server/Services/GameManager.luau` (run lifecycle)
+- `src/server/Services/MonetizationService.luau` (purchase + battle_pass)
+- `src/server/Services/CoopMatchService.luau` (coop_match)
+- `src/server/init.server.luau` (session_end duration)
+
+**주의사항**:
+- RateLimiter 적용 유지 (플레이어당 초당 2건)
+- PII 금지: userId만 (Player.Name 등 금지)
+- DataStore 사용 금지 — AnalyticsService API 전용
+- `feature_engaged`는 P1 (출시 후 2주 내), Sprint 17에서는 제외 가능
+
+**완료 조건**: 이 Sprint 완료 시 Pre-launch Gate 2번째 차단 사유(Analytics 와이어링) 해소. 남은 차단 사유는 ProductId=0 3건 (Studio 작업 필요, M5에서 처리).

@@ -471,6 +471,13 @@ RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { 
 	-- 배경 서비스 시작
 	backgroundService:StartGame()
 
+	-- Analytics: run_start
+	AnalyticsService:Track(player, "run_start", {
+		mode = session.coopSessionId and "coop" or "solo",
+		chapterId = session.activeChapterId or "none",
+		startZone = 1,
+	})
+
 	-- 청크 서비스 시작 (Zone Skip 오프셋 적용)
 	chunkService:StartGame(timeOffset)
 
@@ -893,6 +900,13 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 	-- 배경 서비스 시작
 	backgroundService:StartGame()
 
+	-- Analytics: run_start
+	AnalyticsService:Track(player, "run_start", {
+		mode = session.coopSessionId and "coop" or "solo",
+		chapterId = session.activeChapterId or "none",
+		startZone = 1,
+	})
+
 	-- 청크 서비스 시작
 	chunkService:StartGame()
 
@@ -1117,6 +1131,25 @@ function GameManager.EndGame(player: Player)
 	-- 시나리오 퀘스트 진행도 업데이트
 	local sessionDuration = math.floor(os.clock() - session.startTime)
 	local wasNoHit = session.lastHitDistance == 0 and finalScore > 0
+
+	-- Analytics: run_end + coin_earned
+	AnalyticsService:Track(player, "run_end", {
+		mode = session.coopSessionId and "coop" or "solo",
+		duration = sessionDuration,
+		finalScore = math.floor(finalScore),
+		coinsCollected = math.floor(session.coins),
+		maxCombo = session.maxCombo,
+		bestZone = session.currentZoneIndex,
+		distance = math.floor(distance),
+		deathCause = (session :: any).deathCause or "unknown",
+		nearMissCount = session.nearMissCount,
+		feverCount = session.feverCount,
+	})
+	AnalyticsService:Track(player, "coin_earned", {
+		total = math.floor(session.coins),
+		runDuration = sessionDuration,
+	})
+
 	ScenarioService:UpdateQuestProgress(player, "play_games", 1)
 	ScenarioService:UpdateQuestProgress(player, "score_reach", finalScore)
 	ScenarioService:UpdateQuestProgress(player, "collect_coins", math.floor(session.coins))

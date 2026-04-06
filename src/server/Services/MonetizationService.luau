@@ -11,6 +11,7 @@ local GameConstants = require(ReplicatedStorage.Shared.Constants.GameConstants)
 local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)
 local PlayerDataService = require(script.Parent.PlayerDataService)
 local BattlePassService = require(script.Parent.BattlePassService)
+local AnalyticsService = require(script.Parent.AnalyticsService)
 local RateLimiter = require(ReplicatedStorage.Shared.Utils.RateLimiter)
 
 local MonetizationService = {}
@@ -223,6 +224,14 @@ local function processReceipt(
 	-- DataStore 저장 성공 후 젬 지급
 	processedReceiptsCache[receiptKey] = true
 	processGemPurchase(player, product)
+
+	-- Analytics: purchase
+	AnalyticsService:Track(player, "purchase", {
+		productId = tostring(receiptInfo.ProductId),
+		robuxSpent = product.price or 0,
+		currency = "robux",
+		receiptKey = receiptKey,
+	})
 
 	return Enum.ProductPurchaseDecision.PurchaseGranted
 end
@@ -455,6 +464,11 @@ MarketplaceService.PromptGamePassPurchaseFinished:Connect(
 			print(`[MonetizationService] {player.Name} purchased Battle Pass!`)
 			BattlePassService:UnlockPremium(player)
 			PlayerDataService:SavePlayerData(player)
+			-- Analytics: battle_pass_purchase
+			AnalyticsService:Track(player, "battle_pass_purchase", {
+				gamePassId = tostring(bpPassId),
+				seasonId = "unknown",
+			})
 		end
 	end
 )

@@ -5,8 +5,11 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local ServerScriptService = game:GetService("ServerScriptService")
+
 local GameConstants = require(ReplicatedStorage.Shared.Constants.GameConstants)
 local RemoteEvents = require(ReplicatedStorage.Shared.RemoteEvents)
+local AnalyticsService = require(ServerScriptService.Server.Services.AnalyticsService)
 
 local CoopMatchService = {}
 
@@ -30,6 +33,9 @@ local _playerSession: { [Player]: string } = {}
 
 -- Bot insertion timer handles
 local _botTimers: { [Player]: thread } = {}
+
+-- Queue entry times for wait duration tracking
+local _queueEnterTimes: { [Player]: number } = {}
 
 -- Generate a session ID
 local function makeSessionId(p1: Player, p2: Player?): string
@@ -114,6 +120,18 @@ local function tryMatch()
 		removeFromQueue(p2)
 		local session = createSession(p1, p2)
 		notifyMatch(session)
+		-- Analytics: coop_match found (per player)
+		local now = os.clock()
+		AnalyticsService:Track(p1, "coop_match", {
+			matchResult = "found",
+			waitSeconds = math.floor(now - (_queueEnterTimes[p1] or now)),
+		})
+		AnalyticsService:Track(p2, "coop_match", {
+			matchResult = "found",
+			waitSeconds = math.floor(now - (_queueEnterTimes[p2] or now)),
+		})
+		_queueEnterTimes[p1] = nil
+		_queueEnterTimes[p2] = nil
 		print(string.format("[CoopMatchService] Matched %s and %s — session %s", p1.Name, p2.Name, session.sessionId))
 	end
 end
@@ -133,6 +151,13 @@ local function scheduleBotMatch(player: Player)
 		removeFromQueue(player)
 		local session = createSession(player, nil)
 		notifyMatch(session)
+		-- Analytics: coop_match timeout (bot assigned)
+		local nowBot = os.clock()
+		AnalyticsService:Track(player, "coop_match", {
+			matchResult = "timeout",
+			waitSeconds = math.floor(nowBot - (_queueEnterTimes[player] or nowBot)),
+		})
+		_queueEnterTimes[player] = nil
 		print(string.format("[CoopMatchService] Bot match for %s — session %s", player.Name, session.sessionId))
 	end)
 end
@@ -147,6 +172,7 @@ function CoopMatchService:Init()
 		for _, p in _queue do
 			if p == player then return end
 		end
+		_queueEnterTimes[player] = os.clock()
 		table.insert(_queue, player)
 		print(string.format("[CoopMatchService] %s joined coop queue (queue size: %d)", player.Name, #_queue))
 		tryMatch()
@@ -158,6 +184,13 @@ function CoopMatchService:Init()
 
 	-- Handle queue cancel
 	RemoteEvents.CoopQueueCancel.OnServerEvent:Connect(function(player: Player)
+		-- Analytics: coop_match cancel
+		local nowCancel = os.clock()
+		AnalyticsService:Track(player, "coop_match", {
+			matchResult = "cancel",
+			waitSeconds = math.floor(nowCancel - (_queueEnterTimes[player] or nowCancel)),
+		})
+		_queueEnterTimes[player] = nil
 		removeFromQueue(player)
 		print(string.format("[CoopMatchService] %s cancelled coop queue", player.Name))
 	end)
@@ -224,6 +257,7 @@ end
 
 -- Cleanup on player leaving
 function CoopMatchService:OnPlayerRemoving(player: Player)
+	_queueEnterTimes[player] = nil
 	removeFromQueue(player)
 	local sessionId = _playerSession[player]
 	if sessionId then
