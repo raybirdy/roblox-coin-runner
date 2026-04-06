@@ -25,10 +25,10 @@ GameConstants.PHYSICS = {
 	SLIDE_DURATION = 0.6, -- 슬라이드 지속 시간 (초)
 	SLIDE_COOLDOWN = 0.2, -- 슬라이드 후 쿨다운 (초)
 
-	-- 이동 속도 (8~14세 기준, v3.1 난이도 상향)
-	SPEED_MIN = 25, -- 최소 속도 (studs/s) — 22→25 (체감 +14%)
-	SPEED_MAX = 56, -- 최대 속도 (studs/s) — 52→56 (+8%)
-	SPEED_RAMP_TIME = 120, -- 최대 속도 도달 시간 (초) — 150→120 (2.5분→2분)
+	-- 이동 속도 (8~14세 기준, 속도보다 패턴/반응 타이밍으로 난이도 조절)
+	SPEED_MIN = 24, -- 최소 속도 (studs/s)
+	SPEED_MAX = 48, -- 최대 속도 (studs/s) — 정신없음 방지 (원본 52보다 낮게)
+	SPEED_RAMP_TIME = 135, -- 최대 속도 도달 시간 (초) — 2분 15초
 }
 
 -- 청크 시스템
