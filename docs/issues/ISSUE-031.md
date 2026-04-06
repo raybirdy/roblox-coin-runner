@@ -3,11 +3,11 @@ id: ISSUE-031
 title: 피버 발동 빈도 과다 — 희귀성 하락으로 게임 재미 반감
 category: improvement
 priority: P2-medium
-status: open
+status: resolved
 related_sprint: none
 related_ac: none
 created: 2026-04-06
-resolved: null
+resolved: 2026-04-06
 ---
 
 ## 설명
