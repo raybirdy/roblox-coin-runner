@@ -1162,23 +1162,23 @@ GameConstants.NEAR_RECORD = {
 
 -- 피버 모드
 GameConstants.FEVER = {
-	COMBO_THRESHOLD = 30, -- 피버 발동 콤보 수 (저연령층 친화 조정)
+	COMBO_THRESHOLD = 40, -- 피버 발동 콤보 수 (30→40: 희귀성 회복, ISSUE-031)
 	DURATION = 6, -- 지속 시간 (초)
 	COIN_MULTIPLIER = 3, -- 코인 가치 배율
 	SPEED_BOOST = 1.5, -- 속도 배율
 	MAGNET_RADIUS = 30, -- 초강력 자석 반경 (studs)
-	COOLDOWN = 12, -- 피버 종료 후 재발동 쿨타임 (초) (15→12, 저연령층 피버 경험 빈도 향상)
+	COOLDOWN = 20, -- 피버 종료 후 재발동 쿨타임 (초) (12→20: 2분 런 최대 3~4회로 제한, ISSUE-031)
 	INVINCIBLE = true, -- 무적 여부
 }
 
--- 미니 피버 (15 콤보 - 작은 보상으로 어린이도 빠르게 달성 가능)
+-- 미니 피버 (워밍업 → 피버 흐름의 중간 단계)
 GameConstants.MINI_FEVER = {
-	COMBO_THRESHOLD = 15, -- 미니 피버 발동 콤보 수 (저연령층 도달 가능하게 하향)
+	COMBO_THRESHOLD = 20, -- 미니 피버 발동 콤보 수 (15→20: ISSUE-031)
 	DURATION = 3, -- 지속 시간 (초)
 	COIN_MULTIPLIER = 2, -- 코인 가치 2배
 	MAGNET = true, -- 자석 효과 (기본 반경)
-	MAGNET_RADIUS = 20, -- 자석 반경 (studs) - 일반 자석보다 약간 큼
-	COOLDOWN = 10, -- 재발동 쿨타임 (초) - 남발 방지
+	MAGNET_RADIUS = 20, -- 자석 반경 (studs)
+	COOLDOWN = 15, -- 재발동 쿨타임 (초) (10→15: ISSUE-031)
 }
 
 -- 퍼펙트 런 (무피격 보너스)
