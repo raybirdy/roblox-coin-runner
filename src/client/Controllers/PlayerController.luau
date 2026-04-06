@@ -87,6 +87,9 @@ export type PlayerController = typeof(setmetatable(
 		_lastGroundedTime: number, -- 코요테 타임용 마지막 착지 시각
 		_slideStartTime: number, -- 슬라이드 시작 시각 (즉시 종료 방지)
 
+		-- 낙공 판정 지연 (레이캐스트 1프레임 실패 오진 방지)
+		_airFrameCount: number,
+
 		-- 입력 버퍼
 		_bufferedSlide: boolean,
 		_bufferedSlideTime: number,
@@ -139,6 +142,9 @@ function PlayerController.new(player: Player, character: Model): PlayerControlle
 		_gravityMultiplier = 1.0,
 		_baseSpeedBonus = 0,
 		_baseJumpBonus = 0,
+
+		-- 낙공 판정 지연 카운터 (레이캐스트 1프레임 실패 오진 방지)
+		_airFrameCount = 0,
 
 		-- 입력 버퍼: 공중에서 눌렀을 때 착지 직후 실행
 		_bufferedSlide = false,
@@ -261,6 +267,7 @@ function PlayerController:StopGame()
 	self._baseJumpBonus = 0
 	self._bufferedSlide = false
 	self._bufferedJump = false
+	self._airFrameCount = 0
 
 	-- 속도 완전 정지
 	self.humanoidRootPart.AssemblyLinearVelocity = Vector3.zero
@@ -622,8 +629,12 @@ function PlayerController:_moveForward(deltaTime: number)
 		self.humanoidRootPart.CFrame = CFrame.new(newX, pos.Y, GameConstants.PLAYER.Z_POSITION)
 			* CFrame.Angles(math.rad(self._dashLeanAngle), math.rad(-90), 0)
 
-		-- 달리기 애니메이션 트리거 (Humanoid에게 이동 중임을 알림)
-		self.humanoid:Move(Vector3.new(1, 0, 0), false)
+		-- 달리기 애니메이션 트리거: Running 상태에서만 호출
+		-- 공중(Jumping/Falling)에서 humanoid:Move를 호출하면 Humanoid 지면 유지 모터가
+		-- AssemblyLinearVelocity.Y(점프 속도)를 상쇄하여 점프가 취소될 수 있음
+		if self.state == "Running" then
+			self.humanoid:Move(Vector3.new(1, 0, 0), false)
+		end
 	end
 end
 
@@ -708,8 +719,16 @@ function PlayerController:_checkGrounded()
 		end
 	end
 
-	-- 공중으로 떨어졌을 때 (점프가 아닌 자연 낙하)
-	if not self.isGrounded and wasGrounded and self.state == "Running" then
+	-- 낙공 판정 지연: 연속 2프레임 비착지여야 Falling으로 전환
+	-- (레이캐스트 1프레임 실패로 인한 오진 방지 — 청크 연결부, 경사로 경계에서 흔히 발생)
+	if not self.isGrounded then
+		self._airFrameCount = (self._airFrameCount or 0) + 1
+	else
+		self._airFrameCount = 0
+	end
+
+	-- 공중으로 떨어졌을 때 (점프가 아닌 자연 낙하) — 2프레임 연속 비착지 시 전환
+	if self._airFrameCount >= 2 and wasGrounded and self.state == "Running" then
 		self.state = "Falling"
 		self.canDoubleJump = true -- 낙하 시에도 더블 점프 허용
 

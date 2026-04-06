@@ -669,7 +669,7 @@ function ChunkService:_getChunkTemplate(difficulty: string, requiredStartHeight:
 	end
 
 	-- 매칭 실패 시 높이 조건 무시하고 재시도
-	warn(`[ChunkService] No height-compatible chunks found for {difficulty}/{requiredStartHeight}, relaxing constraint`)
+	print(`[ChunkService] No height-compatible chunks for {difficulty}/{requiredStartHeight}, relaxing to difficulty-only`)
 	for _, chunk in self._chunksFolder:GetChildren() do
 		if chunk:IsA("Model") and chunk:GetAttribute("Difficulty") == difficulty then
 			table.insert(candidates, chunk)
