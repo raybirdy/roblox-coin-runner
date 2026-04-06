@@ -1101,6 +1101,20 @@ function ObstacleService:_spawnObstacle(position: Vector3, obstacleType: string)
 		rbLbl.TextScaled = true
 		rbLbl.Parent = rbBb
 
+		-- ISSUE-032: 깜빡이는 경고등 (이동 장애물 위협 강화)
+		local rbLight = Instance.new("PointLight")
+		rbLight.Name = "WarningLight"
+		rbLight.Color = GameConstants.OBSTACLE_WARNING.MOVING_LIGHT_COLOR
+		rbLight.Brightness = GameConstants.OBSTACLE_WARNING.MOVING_LIGHT_BRIGHTNESS
+		rbLight.Range = GameConstants.OBSTACLE_WARNING.MOVING_LIGHT_RANGE
+		rbLight.Shadows = false
+		rbLight.Parent = obstacle
+		task.defer(function()
+			local halfBlink = GameConstants.OBSTACLE_WARNING.MOVING_BLINK_CYCLE / 2
+			local blinkInfo = TweenInfo.new(halfBlink, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1, true)
+			TweenService:Create(rbLight, blinkInfo, { Brightness = 0.2 }):Play()
+		end)
+
 		obstacle.Parent = workspace
 
 		-- X축 기준 회전 트윈 (수평 ↔ 수직, 1.5s 사이클, 네트워크 복제)
@@ -1144,6 +1158,21 @@ function ObstacleService:_spawnObstacle(position: Vector3, obstacleType: string)
 			warning.Anchored = true
 			warning.CanCollide = false
 			warning.Parent = workspace
+
+			-- ISSUE-032: 깜빡이는 경고등
+			local dbLight = Instance.new("PointLight")
+			dbLight.Name = "WarningLight"
+			dbLight.Color = GameConstants.OBSTACLE_WARNING.MOVING_LIGHT_COLOR
+			dbLight.Brightness = GameConstants.OBSTACLE_WARNING.MOVING_LIGHT_BRIGHTNESS
+			dbLight.Range = GameConstants.OBSTACLE_WARNING.MOVING_LIGHT_RANGE
+			dbLight.Shadows = false
+			dbLight.Parent = warning
+			task.defer(function()
+				if not warning or not warning.Parent then return end
+				local halfBlink = GameConstants.OBSTACLE_WARNING.MOVING_BLINK_CYCLE / 2
+				local blinkInfo = TweenInfo.new(halfBlink, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1, true)
+				TweenService:Create(dbLight, blinkInfo, { Brightness = 0.2 }):Play()
+			end)
 
 			-- 파편
 			local piece = Instance.new("Part")
@@ -1287,6 +1316,18 @@ function ObstacleService:_spawnObstacle(position: Vector3, obstacleType: string)
 		baseColor.G * 0.40 + zoneColor.G * 0.60,
 		baseColor.B * 0.40 + zoneColor.B * 0.60
 	)
+
+	-- ISSUE-032: 경고 Decal — 장애물 양 측면(Front/Back)에 빨강/주황 경고 표시
+	for _, face in { Enum.NormalId.Front, Enum.NormalId.Back } do
+		local decal = Instance.new("Decal")
+		decal.Name = "WarningDecal_" .. face.Name
+		decal.Face = face
+		decal.Color3 = GameConstants.OBSTACLE_WARNING.OUTLINE_COLOR
+		decal.Transparency = GameConstants.OBSTACLE_WARNING.OUTLINE_TRANSPARENCY
+		-- 빈 텍스처: 색상만으로 경고 표시 (Roblox 기본 placeholder는 흰색)
+		decal.Texture = "rbxasset://textures/whiteBkgd.png"
+		decal.Parent = obstacle
+	end
 
 	obstacle.Parent = workspace
 

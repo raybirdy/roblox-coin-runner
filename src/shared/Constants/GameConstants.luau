@@ -195,6 +195,29 @@ GameConstants.OBSTACLE = {
 	MOVING_WALL_CYCLE_TIME = 2, -- 상하 왕복 주기 (초)
 }
 
+-- 코인 시각 강조 (ISSUE-032, Sprint 14)
+GameConstants.COIN_GLOW = {
+	OUTLINE_COLOR       = Color3.fromRGB(255, 220, 80),  -- Highlight 외곽선
+	OUTLINE_TRANSPARENCY = 0,
+	FILL_TRANSPARENCY   = 1,                              -- Fill 없음 (외곽선만)
+	LIGHT_BRIGHTNESS    = 0.5,
+	LIGHT_RANGE         = 8,
+	LIGHT_COLOR         = Color3.fromRGB(255, 220, 100),
+	BURST_CHANCE        = 0.1,                            -- 수집 시 파티클 버스트 확률
+	BURST_PARTICLES     = 8,                              -- 버스트 당 파티클 수
+}
+
+-- 장애물 경고 연출 (ISSUE-032, Sprint 14)
+GameConstants.OBSTACLE_WARNING = {
+	OUTLINE_COLOR        = Color3.fromRGB(255, 80, 40),   -- 주황/빨강 경고 외곽선
+	OUTLINE_TRANSPARENCY = 0.2,
+	FILL_TRANSPARENCY    = 1,
+	MOVING_LIGHT_COLOR   = Color3.fromRGB(255, 60, 60),   -- 이동 장애물 경고등
+	MOVING_LIGHT_BRIGHTNESS = 1.5,
+	MOVING_LIGHT_RANGE   = 10,
+	MOVING_BLINK_CYCLE   = 0.6,                           -- 깜빡임 주기 (초)
+}
+
 -- 추격 NPC (Chase Mob) — 60초 이후 Hard 청크에서 등장
 -- 플레이어 뒤에서 따라오며, 피버 속도로 따돌릴 수 있음
 GameConstants.CHASE_MOB = {

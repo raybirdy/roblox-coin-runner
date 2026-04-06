@@ -925,6 +925,27 @@ function CoinService:_spawnCoin(position: Vector3, coinType: string)
 	coinModel.PrimaryPart = outerRing
 	outerRing:SetAttribute("CoinValue", value)
 	outerRing:SetAttribute("CoinType", coinType)
+
+	-- ISSUE-032: 코인 글로우 Highlight (모든 코인)
+	local highlight = Instance.new("Highlight")
+	highlight.Name = "CoinGlow"
+	highlight.OutlineColor = GameConstants.COIN_GLOW.OUTLINE_COLOR
+	highlight.OutlineTransparency = GameConstants.COIN_GLOW.OUTLINE_TRANSPARENCY
+	highlight.FillTransparency = GameConstants.COIN_GLOW.FILL_TRANSPARENCY
+	highlight.Adornee = coinModel
+	highlight.Parent = coinModel
+
+	-- ISSUE-032: PointLight는 Gold/Diamond 티어만 부착 (렌더 비용 관리, MaxLights 절약)
+	if coinType == "Gold" or coinType == "Diamond" then
+		local pointLight = Instance.new("PointLight")
+		pointLight.Name = "CoinLight"
+		pointLight.Brightness = GameConstants.COIN_GLOW.LIGHT_BRIGHTNESS
+		pointLight.Range = GameConstants.COIN_GLOW.LIGHT_RANGE
+		pointLight.Color = GameConstants.COIN_GLOW.LIGHT_COLOR
+		pointLight.Shadows = false
+		pointLight.Parent = outerRing
+	end
+
 	coinModel.Parent = workspace
 
 	self:_startCoinRotation(coinModel)
@@ -939,6 +960,40 @@ function CoinService:_spawnCoin(position: Vector3, coinType: string)
 end
 
 -- 코인 회전 애니메이션
+-- 코인 수집 파티클 버스트 (ISSUE-032)
+-- 일회성 emit 후 자동 파괴. MaxParticles 합산 100 이하 유지를 위해 Rate=0 + Emit 사용.
+function CoinService:_burstCoinParticles(position: Vector3)
+	local anchor = Instance.new("Part")
+	anchor.Name = "CoinBurstAnchor"
+	anchor.Size = Vector3.new(0.1, 0.1, 0.1)
+	anchor.Position = position
+	anchor.Anchored = true
+	anchor.CanCollide = false
+	anchor.Transparency = 1
+	anchor.Parent = workspace
+
+	local emitter = Instance.new("ParticleEmitter")
+	emitter.Name = "CoinBurst"
+	emitter.Rate = 0
+	emitter.Lifetime = NumberRange.new(0.4, 0.7)
+	emitter.Speed = NumberRange.new(6, 10)
+	emitter.SpreadAngle = Vector2.new(180, 180)
+	emitter.Color = ColorSequence.new(GameConstants.COIN_GLOW.LIGHT_COLOR)
+	emitter.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.5),
+		NumberSequenceKeypoint.new(1, 0),
+	})
+	emitter.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0),
+		NumberSequenceKeypoint.new(1, 1),
+	})
+	emitter.LightEmission = 0.8
+	emitter.Parent = anchor
+	emitter:Emit(GameConstants.COIN_GLOW.BURST_PARTICLES)
+
+	game:GetService("Debris"):AddItem(anchor, 1)
+end
+
 function CoinService:_startCoinRotation(coinModel: Model)
 	local primaryPart = coinModel.PrimaryPart
 	if not primaryPart then
@@ -1010,6 +1065,10 @@ function CoinService:CheckCoinCollection(playerPosition: Vector3, magnetRadius: 
 		if effectiveDist < baseRadius then
 			-- 일반 수집 반경 내: 즉시 수집
 			table.insert(collectedCoins, coinData)
+			-- ISSUE-032: 수집 시 파티클 버스트 (확률적 연출)
+			if math.random() < GameConstants.COIN_GLOW.BURST_CHANCE then
+				self:_burstCoinParticles(coinPos)
+			end
 			local coinModel = coinData.part.Parent
 			if coinModel and coinModel:IsA("Model") then
 				coinModel:Destroy()
