@@ -587,7 +587,7 @@ function UIController:_createUI()
 	guideLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 	guideLabel.TextSize = ResponsiveUtil.scaledTextSize(26, 18)
 	guideLabel.Font = Enum.Font.GothamBlack
-	guideLabel.Text = "➤ 포탈로 이동해서 게임 시작! ➤"
+	guideLabel.Text = "▶ 포탈로 이동해서 게임 시작! ◀"
 	guideLabel.TextStrokeTransparency = 0
 	guideLabel.TextStrokeColor3 = Color3.fromRGB(0, 100, 0)
 	guideLabel.Parent = lobbyGuide
@@ -1568,6 +1568,20 @@ function UIController:SetInviteCallback(callback: () -> ())
 end
 
 -- 최고 점수 표시 업데이트
+-- Sprint 19: 큰 숫자 축약 (1.2M, 34K 등) — MY BEST 패널 텍스트 오버플로우 방지
+local function _abbrevNumber(n: number): string
+	n = math.floor(n)
+	if n >= 1_000_000_000 then
+		return string.format("%.1fB", n / 1_000_000_000)
+	elseif n >= 1_000_000 then
+		return string.format("%.1fM", n / 1_000_000)
+	elseif n >= 10_000 then
+		return string.format("%.1fK", n / 1_000)
+	else
+		return tostring(n)
+	end
+end
+
 function UIController:UpdateHighScoreDisplay(highScore: number, coins: number)
 	if not self._highScoreDisplay then
 		return
@@ -1575,12 +1589,14 @@ function UIController:UpdateHighScoreDisplay(highScore: number, coins: number)
 
 	local scoreLabel = self._highScoreDisplay:FindFirstChild("Score") :: TextLabel?
 	if scoreLabel then
-		scoreLabel.Text = `Score: {highScore}`
+		scoreLabel.Text = `Score: {_abbrevNumber(highScore)}`
+		scoreLabel.TextTruncate = Enum.TextTruncate.AtEnd
 	end
 
 	local coinsLabel = self._highScoreDisplay:FindFirstChild("Coins") :: TextLabel?
 	if coinsLabel then
-		coinsLabel.Text = `Coins: {coins}`
+		coinsLabel.Text = `Coins: {_abbrevNumber(coins)}`
+		coinsLabel.TextTruncate = Enum.TextTruncate.AtEnd
 	end
 end
 

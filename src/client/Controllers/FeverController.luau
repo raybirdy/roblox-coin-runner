@@ -735,17 +735,10 @@ function FeverController:HideGauge()
 end
 
 -- Show gauge (game start)
+-- Sprint 18: Fever는 이제 Fever Coin 수집으로만 발동 → 콤보 게이지 표시 제거
 function FeverController:ShowGauge()
 	if self._gaugeFrame then
-		self._gaugeFrame.Visible = true
-	end
-	-- Reset gauge
-	if self._gaugeFill then
-		self._gaugeFill.Size = UDim2.new(0, 0, 1, -4)
-	end
-	if self._gaugeLabel then
-		self._gaugeLabel.Text = "FEVER 0%"
-		self._gaugeLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+		self._gaugeFrame.Visible = false
 	end
 end
 

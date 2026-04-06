@@ -256,8 +256,8 @@ function ScenarioController:_createGui()
 	-- 로비 챕터 정보 패널 (좌하단)
 	local chapterInfoPanel = Instance.new("Frame")
 	chapterInfoPanel.Name = "ChapterInfoPanel"
-	chapterInfoPanel.Size = UDim2.new(0, 240, 0, 70)
-	chapterInfoPanel.Position = UDim2.new(0, 8, 1, -90)
+	chapterInfoPanel.Size = UDim2.new(0, 260, 0, 92)
+	chapterInfoPanel.Position = UDim2.new(0, 8, 1, -112)
 	chapterInfoPanel.BackgroundColor3 = Color3.fromRGB(20, 20, 40)
 	chapterInfoPanel.BackgroundTransparency = 0.3
 	chapterInfoPanel.BorderSizePixel = 0
@@ -302,7 +302,7 @@ function ScenarioController:_createGui()
 
 	local chapterInfoDescLabel = Instance.new("TextLabel")
 	chapterInfoDescLabel.Name = "DescLabel"
-	chapterInfoDescLabel.Size = UDim2.new(1, -10, 0, 16)
+	chapterInfoDescLabel.Size = UDim2.new(1, -16, 0, 38)
 	chapterInfoDescLabel.Position = UDim2.new(0, 8, 0, 46)
 	chapterInfoDescLabel.BackgroundTransparency = 1
 	chapterInfoDescLabel.TextColor3 = Color3.fromRGB(160, 165, 195)
@@ -310,7 +310,8 @@ function ScenarioController:_createGui()
 	chapterInfoDescLabel.Font = Enum.Font.Gotham
 	chapterInfoDescLabel.Text = ""
 	chapterInfoDescLabel.TextXAlignment = Enum.TextXAlignment.Left
-	chapterInfoDescLabel.TextTruncate = Enum.TextTruncate.AtEnd
+	chapterInfoDescLabel.TextYAlignment = Enum.TextYAlignment.Top
+	chapterInfoDescLabel.TextWrapped = true
 	chapterInfoDescLabel.Parent = chapterInfoPanel
 	self._chapterInfoDescLabel = chapterInfoDescLabel
 

@@ -102,11 +102,11 @@ function WorldMapController:_createGui()
 	gui.Parent = playerGui
 	self._gui = gui
 
-	-- 🗺️ 로비 버튼 (📖 버튼 오른쪽)
+	-- 🗺️ 로비 버튼 (Sprint 19: ScenarioButton 📖 바로 아래로 이동 — 상단 Roblox chrome 중첩 회피)
 	local mapBtn = Instance.new("TextButton")
 	mapBtn.Name = "WorldMapButton"
 	mapBtn.Size = UDim2.new(0, 48, 0, 48)
-	mapBtn.Position = UDim2.new(0, 284, 0, 16)
+	mapBtn.Position = UDim2.new(0, 228, 0, 72)
 	mapBtn.BackgroundColor3 = Color3.fromRGB(40, 100, 50)
 	mapBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 	mapBtn.TextSize = ResponsiveUtil.scaledTextSize(22, 14)

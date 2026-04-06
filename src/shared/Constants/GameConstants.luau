@@ -215,6 +215,7 @@ GameConstants.SPECIAL_COINS = {
 		Star    = 0.05,
 		Magnet  = 0.04,
 		Rainbow = 0.03,
+		Fever   = 0.015, -- 희귀 — 자동 피버 발동 제거 후 유일한 피버 진입 경로
 	},
 	-- Star ⭐ — 콤보 +5 즉시 (피버 촉진)
 	STAR = {
@@ -241,6 +242,13 @@ GameConstants.SPECIAL_COINS = {
 		DURATION      = 2,
 		SCORE_MULTIPLIER = 2,
 		VALUE         = 5,
+	},
+	-- Fever 🔥 — 즉시 피버 발동 (Sprint 18, 자동 콤보 발동 대체)
+	FEVER = {
+		COLOR      = Color3.fromRGB(255, 140, 40),
+		GLOW_COLOR = Color3.fromRGB(255, 220, 120),
+		EMOJI      = "🔥",
+		VALUE      = 10,
 	},
 }
 
@@ -1222,23 +1230,23 @@ GameConstants.NEAR_RECORD = {
 
 -- 피버 모드
 GameConstants.FEVER = {
-	COMBO_THRESHOLD = 40, -- 피버 발동 콤보 수 (30→40: 희귀성 회복, ISSUE-031)
+	COMBO_THRESHOLD = 60, -- 피버 발동 콤보 수 (40→60: 희귀성 강화, 유저 플레이 감각 회복)
 	DURATION = 6, -- 지속 시간 (초)
 	COIN_MULTIPLIER = 3, -- 코인 가치 배율
 	SPEED_BOOST = 1.5, -- 속도 배율
 	MAGNET_RADIUS = 30, -- 초강력 자석 반경 (studs)
-	COOLDOWN = 0, -- 피버 쿨타임 제거 — 순수 콤보 달성 기반 (피버 종료 후 콤보 리셋, 다시 N개 연속 수집해야 재발동)
+	COOLDOWN = 3, -- Sprint 18: Fever Coin 수집 기반으로 변경. 연속 획득 방지용 최소 쿨타임
 	INVINCIBLE = true, -- 무적 여부
 }
 
 -- 미니 피버 (워밍업 → 피버 흐름의 중간 단계)
 GameConstants.MINI_FEVER = {
-	COMBO_THRESHOLD = 20, -- 미니 피버 발동 콤보 수 (15→20: ISSUE-031)
+	COMBO_THRESHOLD = 32, -- 미니 피버 발동 콤보 수 (20→32: 피버 희귀성 강화)
 	DURATION = 3, -- 지속 시간 (초)
 	COIN_MULTIPLIER = 2, -- 코인 가치 2배
 	MAGNET = true, -- 자석 효과 (기본 반경)
 	MAGNET_RADIUS = 20, -- 자석 반경 (studs)
-	COOLDOWN = 0, -- 쿨타임 제거 — 피버와 동일하게 콤보 리셋 후 재달성 방식
+	COOLDOWN = 4, -- 쿨타임 복구 (0→4초)
 }
 
 -- 퍼펙트 런 (무피격 보너스)

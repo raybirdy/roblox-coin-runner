@@ -832,6 +832,8 @@ function CoinService:_selectCoinType(difficulty: string): string
 			return "Magnet"
 		elseif specialRoll < sc.Star + sc.Magnet + sc.Rainbow then
 			return "Rainbow"
+		elseif specialRoll < sc.Star + sc.Magnet + sc.Rainbow + (sc.Fever or 0) then
+			return "Fever"
 		end
 	end
 
@@ -911,6 +913,13 @@ function CoinService:_spawnCoin(position: Vector3, coinType: string)
 		value = cfg.VALUE
 	elseif coinType == "Rainbow" then
 		local cfg = GameConstants.SPECIAL_COINS.RAINBOW
+		outerColor = cfg.COLOR
+		innerColor = cfg.GLOW_COLOR
+		specialGlowColor = cfg.GLOW_COLOR
+		specialEmoji = cfg.EMOJI
+		value = cfg.VALUE
+	elseif coinType == "Fever" then
+		local cfg = GameConstants.SPECIAL_COINS.FEVER
 		outerColor = cfg.COLOR
 		innerColor = cfg.GLOW_COLOR
 		specialGlowColor = cfg.GLOW_COLOR

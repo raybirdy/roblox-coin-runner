@@ -103,8 +103,8 @@ function RunSkillHudController:_buildGui()
 	-- ===== 스킬 선택 패널 (중앙 상단) =====
 	local selFrame = Instance.new("Frame")
 	selFrame.Name = "SkillSelection"
-	local selW = math.min(ResponsiveUtil.compactOffset(400), ResponsiveUtil.getViewportSize().X - 20)
-	local selH = ResponsiveUtil.compactOffset(140)
+	local selW = math.min(ResponsiveUtil.compactOffset(480), ResponsiveUtil.getViewportSize().X - 20)
+	local selH = ResponsiveUtil.compactOffset(210)
 	selFrame.Size = UDim2.new(0, selW, 0, selH)
 	selFrame.AnchorPoint = Vector2.new(0.5, 0)
 	selFrame.Position = UDim2.new(0.5, 0, 0, -selH - 20) -- 초기 화면 위 (숨김)
@@ -215,7 +215,7 @@ function RunSkillHudController:_showSkillSelection(skills: { any }, autoDelay: n
 	-- 카드 생성
 	for i, skill in skills do
 		local rarityColor = RARITY_COLORS[skill.rarity] or RARITY_COLORS.common
-		local cardWidth = ResponsiveUtil.compactOffset(118)
+		local cardWidth = ResponsiveUtil.compactOffset(140)
 
 		local card = Instance.new("TextButton")
 		card.Name = `Card_{i}`
@@ -235,46 +235,46 @@ function RunSkillHudController:_showSkillSelection(skills: { any }, autoDelay: n
 
 		-- 이모지
 		local emojiLabel = Instance.new("TextLabel")
-		emojiLabel.Size = UDim2.new(1, 0, 0, 36)
-		emojiLabel.Position = UDim2.new(0, 0, 0, 4)
+		emojiLabel.Size = UDim2.new(1, 0, 0, 48)
+		emojiLabel.Position = UDim2.new(0, 0, 0, 6)
 		emojiLabel.BackgroundTransparency = 1
 		emojiLabel.Text = skill.emoji
-		emojiLabel.TextSize = ResponsiveUtil.compactTextSize(26, 18)
+		emojiLabel.TextSize = ResponsiveUtil.compactTextSize(34, 24)
 		emojiLabel.Font = Enum.Font.GothamBold
 		emojiLabel.Parent = card
 
 		-- 이름
 		local nameLabel = Instance.new("TextLabel")
-		nameLabel.Size = UDim2.new(1, -4, 0, 20)
-		nameLabel.Position = UDim2.new(0, 2, 0, 40)
+		nameLabel.Size = UDim2.new(1, -6, 0, 22)
+		nameLabel.Position = UDim2.new(0, 3, 0, 58)
 		nameLabel.BackgroundTransparency = 1
 		nameLabel.Text = skill.name
 		nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-		nameLabel.TextSize = ResponsiveUtil.compactTextSize(12, 10)
+		nameLabel.TextSize = ResponsiveUtil.compactTextSize(14, 11)
 		nameLabel.Font = Enum.Font.GothamBold
 		nameLabel.TextWrapped = true
 		nameLabel.Parent = card
 
 		-- 설명
 		local descLabel = Instance.new("TextLabel")
-		descLabel.Size = UDim2.new(1, -4, 0, 30)
-		descLabel.Position = UDim2.new(0, 2, 0, 60)
+		descLabel.Size = UDim2.new(1, -6, 0, 56)
+		descLabel.Position = UDim2.new(0, 3, 0, 82)
 		descLabel.BackgroundTransparency = 1
 		descLabel.Text = skill.desc
 		descLabel.TextColor3 = Color3.fromRGB(180, 180, 200)
-		descLabel.TextSize = ResponsiveUtil.compactTextSize(10, 8)
+		descLabel.TextSize = ResponsiveUtil.compactTextSize(12, 9)
 		descLabel.Font = Enum.Font.Gotham
 		descLabel.TextWrapped = true
 		descLabel.Parent = card
 
 		-- 희귀도 라벨
 		local rarityLabel = Instance.new("TextLabel")
-		rarityLabel.Size = UDim2.new(1, 0, 0, 14)
-		rarityLabel.Position = UDim2.new(0, 0, 1, -16)
+		rarityLabel.Size = UDim2.new(1, 0, 0, 16)
+		rarityLabel.Position = UDim2.new(0, 0, 1, -18)
 		rarityLabel.BackgroundTransparency = 1
 		rarityLabel.Text = RARITY_NAMES[skill.rarity] or skill.rarity
 		rarityLabel.TextColor3 = rarityColor
-		rarityLabel.TextSize = ResponsiveUtil.compactTextSize(10, 8)
+		rarityLabel.TextSize = ResponsiveUtil.compactTextSize(11, 9)
 		rarityLabel.Font = Enum.Font.GothamBold
 		rarityLabel.Parent = card
 

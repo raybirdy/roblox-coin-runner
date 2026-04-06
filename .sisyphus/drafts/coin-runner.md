@@ -16,7 +16,7 @@
 | Claude 연동 | N/A | Roblox 플랫폼 전용 |
 | 배포 | Roblox 퍼블리싱 | 소프트 론치 예정 |
 | 버전 | v3.1 (active) | v3.0 완료 후 |
-| 현재 Sprint | 17 / 17 (v3.1) | Sprint 13~16 done, Sprint 17 analytics 와이어링 pending |
+| 현재 Sprint | 19 / 19 (v3.1) | Sprint 13~18 done, Sprint 19 로비 UI 폴리싱 진행 중 |
 | 레포 위치 | /Users/parkjongha/Documents/git/roblox-coin-runner | |
 | 브랜치 전략 | GitHub Flow (feature → PR → main) | 기존 유지 |
 | PMF 스테이지 | pre-pmf | 소프트 론치 전, 속도 우선 |
@@ -701,3 +701,62 @@ Sprint 0 (M5+M4+설계)
 - `feature_engaged`는 P1 (출시 후 2주 내), Sprint 17에서는 제외 가능
 
 **완료 조건**: 이 Sprint 완료 시 Pre-launch Gate 2번째 차단 사유(Analytics 와이어링) 해소. 남은 차단 사유는 ProductId=0 3건 (Studio 작업 필요, M5에서 처리).
+
+---
+
+### Sprint 18 — Fever 아이템화 (자동 콤보 발동 제거) [done]
+
+**목표**: 콤보 기반 자동 피버 발동을 제거하고 희귀 Fever Coin(🔥) 픽업으로 전환. 유저 주도권 회복.
+
+**배경**: v3.1 플레이테스트 피드백 — "피버가 너무 자주 나와 내가 게임을 한다는 느낌이 안 든다."
+콤보 임계값 조정만으로는 희귀성 확보와 유저 개입감 동시 달성이 어려움. 아이템화로 해결.
+
+**변경 사항**:
+- `GameConstants.SPECIAL_COINS.SPAWN_CHANCES.Fever = 0.015` (1.5%, 희귀)
+- `GameConstants.SPECIAL_COINS.FEVER` 신규 블록 (🔥 + 주황 glow)
+- `CoinService._selectCoinType`: Fever 롤 추가
+- `CoinService._spawnCoin`: Fever 타입 렌더 추가
+- `GameManager` collectedCoins 루프: `feverCoinTriggered` 플래그
+- 피버 발동 조건: `not isFever and feverCoinTriggered and now > cooldownEnd`
+  (기존 `comboCount >= feverThreshold` 제거)
+- `FEVER.COOLDOWN = 3` (연속 획득 방지용 최소값)
+- `FeverController:ShowGauge()`: 콤보 게이지 숨김 (더 이상 피버와 무관)
+
+**Acceptance Criteria**:
+- [x] Fever Coin 스폰률 1.5% — CoinService가 Bonus 청크 제외하고 생성
+- [x] Fever Coin 수집 시 즉시 FeverStart 이벤트 발동 (쿨타임 외 조건)
+- [x] 콤보가 임계값에 도달해도 피버 자동 발동하지 않음
+- [x] MINI_FEVER는 유지 (콤보 기반, 짧은 자석 보조)
+- [x] 피버 게이지 UI 숨김 (콤보 → 피버 연결 끊김 반영)
+- [x] SUPER_FEVER 체인 로직 유지 (Fever Coin 연속 획득 시 동작)
+
+**주의사항**:
+- `feverThreshold` 필드는 제거하지 않음 — RunSkill / Pet 시스템에서 참조 가능
+- Fever 관련 RunSkill(fever_extend 등)은 기존대로 동작 (DURATION 연장)
+- 퀘스트/업적 중 "피버 N회 발동" 류: 여전히 동작 (session.feverCount 유지)
+- MINI_FEVER 콤보 임계값 32 유지 (Sprint 18 조정분)
+
+**완료 조건**: Studio에서 1분 이상 플레이하면서 피버가 아이템 없이 발동되지 않음을 확인.
+
+---
+
+### Sprint 19 — 로비 UI 폴리싱 (스크린샷 피드백) [done]
+
+**배경**: v3.1 Studio 플레이 스크린샷에서 5가지 로비 UI 이슈 발견.
+
+**Acceptance Criteria**:
+- [x] `➤ 포탈로 이동해서 게임 시작! ➤` → `▶ ... ◀` (Gotham 지원 글리프로 교체, tofu 제거)
+- [x] MY BEST 패널 숫자 축약 (1.2M / 34K / 100) + TextTruncate.AtEnd — `UIController._abbrevNumber`
+- [x] 챕터 인트로 패널 높이 70→92, 설명 TextWrapped=true (한 줄 잘림 해소)
+- [x] WorldMap 버튼 위치 수정 `(284, 16)` → `(228, 72)` — ScenarioButton 아래 세로 스택
+- [x] "퀘스트 도우미" / "777 룰렛" 은 월드 NPC/파트 (UI 이슈 아님, Sprint 19 스코프 제외)
+
+**파일**:
+- `src/client/Controllers/UIController.luau` (포탈 라벨 + `_abbrevNumber` 헬퍼)
+- `src/client/Controllers/ScenarioController.luau` (챕터 인트로 패널)
+
+**주의사항**:
+- 숫자 축약은 MY BEST 로비 패널에만 적용 (게임 중 실시간 Score/Coin은 정확한 숫자 유지)
+- TextTruncate는 한글/숫자 혼합 텍스트에서 잘림 위치 주의
+
+**완료 조건**: Studio 로비 재접속 시 스크린샷 5건 모두 해소. 미확인 2건(❓ 퀘스트/777)은 Studio 인스펙트 후 결정.

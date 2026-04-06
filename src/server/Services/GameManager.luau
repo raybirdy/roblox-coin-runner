@@ -1515,6 +1515,7 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 		local hitRushMult = if hitRushActive then GameConstants.HIT_RECOVERY.COIN_MULTIPLIER else 1
 		-- 특수 코인 효과 선집계 (ISSUE-033) — 콤보 계산 전에 부스트만 적용, Star 보너스는 콤보 로직 후 가산
 		local starBonusCombo = 0
+		local feverCoinTriggered = false
 		for _, coinData in collectedCoins do
 			if coinData.type == "Star" then
 				starBonusCombo += GameConstants.SPECIAL_COINS.STAR.COMBO_BONUS or 5
@@ -1526,6 +1527,8 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 				local cfg = GameConstants.SPECIAL_COINS.RAINBOW
 				session._rainbowBoostEndTime = math.max(session._rainbowBoostEndTime, os.clock() + cfg.DURATION)
 				session._rainbowBoostMultiplier = cfg.SCORE_MULTIPLIER
+			elseif coinData.type == "Fever" then
+				feverCoinTriggered = true
 			end
 		end
 
@@ -1628,10 +1631,10 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 			-- Phase B: 최대 콤보 추적
 			session.maxCombo = math.max(session.maxCombo, session.comboCount)
 
-			-- 피버 모드 발동 체크 (fever_boost 스킬: 낮은 임계값)
+			-- 피버 모드 발동 체크 (Sprint 18: Fever Coin 수집 시에만 발동, 자동 콤보 트리거 제거)
 			if
 				not session.isFever
-				and session.comboCount >= session.feverThreshold
+				and feverCoinTriggered
 				and now > session.feverCooldownEnd
 			then
 				session.isFever = true
