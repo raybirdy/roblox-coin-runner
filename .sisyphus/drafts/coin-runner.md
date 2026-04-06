@@ -16,7 +16,7 @@
 | Claude 연동 | N/A | Roblox 플랫폼 전용 |
 | 배포 | Roblox 퍼블리싱 | 소프트 론치 예정 |
 | 버전 | v3.1 (active) | v3.0 완료 후 |
-| 현재 Sprint | 0 / ? (v3.1) | 모바일 UI 최적화 |
+| 현재 Sprint | 13 / 16 (v3.1) | 챕터 버그 픽스 → 시각 개선 → 특수 코인 → 데드코드 정리 |
 | 레포 위치 | /Users/parkjongha/Documents/git/roblox-coin-runner | |
 | 브랜치 전략 | GitHub Flow (feature → PR → main) | 기존 유지 |
 | PMF 스테이지 | pre-pmf | 소프트 론치 전, 속도 우선 |
@@ -636,3 +636,29 @@ Sprint 0 (M5+M4+설계)
 - `src/shared/Constants/GameConstants.luau` — SPECIAL_COINS 상수 블록
 - `src/server/Services/GameManager.luau` — 특수 코인 수집 이벤트 핸들러
 - `src/client/Controllers/PlayerController.luau` — Magnet 범위 임시 확대 처리
+
+### Sprint 16 — 미니게임 데드코드 정리 [pending]
+**목표**: M1(미니게임) Won't Have 전환에 따른 데드코드 제거 (PRD-v3 M5 확장)
+**근거**: 미니게임은 추후 재논의 예정이나, 현재 트리거 비활성 + 재미 부족으로 v3.1 범위에서 제외. 잔존 코드는 인지부하 + 잘못된 분석 유도.
+
+**Acceptance Criteria**:
+- [ ] `src/server/Services/MiniGameService.luau` 제거 (또는 `_archived/`로 이동)
+- [ ] `src/server/Services/MiniGames/CoinStorm.luau` 제거
+- [ ] `src/server/Services/MiniGames/ObstacleRush.luau` 제거
+- [ ] `src/client/Controllers/MiniGameController.luau` 제거
+- [ ] `GameManager.luau:1377` 미니게임 트리거 주석 + 관련 호출 제거
+- [ ] `UIVisibilityManager`의 `"minigame"` 상태 제거
+- [ ] `AnalyticsService` 미니게임 이벤트(minigame_start/end) 제거
+- [ ] RemoteEvent/init 등록 해제
+- [ ] `rg "MiniGame|minigame" src/` 결과 0건 (또는 archived 디렉토리만)
+- [ ] 빌드 + 스모크 테스트 통과 (기존 솔로/Co-op 런 정상)
+
+**주요 파일**:
+- `src/server/Services/MiniGameService.luau`, `MiniGames/*`
+- `src/server/Services/GameManager.luau` (트리거 + 호출)
+- `src/client/Controllers/MiniGameController.luau`, `UIVisibilityManager.luau`
+- `src/server/Services/AnalyticsService.luau`
+
+**주의사항**:
+- `mini_game_bonus` upgrade 필드는 PlayerData 호환성 위해 유지 (사용처만 제거)
+- 추후 재논의 가능성 → git 히스토리로 복원 가능하도록 단일 PR로 정리
