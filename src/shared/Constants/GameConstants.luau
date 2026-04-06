@@ -1167,7 +1167,7 @@ GameConstants.FEVER = {
 	COIN_MULTIPLIER = 3, -- 코인 가치 배율
 	SPEED_BOOST = 1.5, -- 속도 배율
 	MAGNET_RADIUS = 30, -- 초강력 자석 반경 (studs)
-	COOLDOWN = 20, -- 피버 종료 후 재발동 쿨타임 (초) (12→20: 2분 런 최대 3~4회로 제한, ISSUE-031)
+	COOLDOWN = 0, -- 피버 쿨타임 제거 — 순수 콤보 달성 기반 (피버 종료 후 콤보 리셋, 다시 N개 연속 수집해야 재발동)
 	INVINCIBLE = true, -- 무적 여부
 }
 
@@ -1178,7 +1178,7 @@ GameConstants.MINI_FEVER = {
 	COIN_MULTIPLIER = 2, -- 코인 가치 2배
 	MAGNET = true, -- 자석 효과 (기본 반경)
 	MAGNET_RADIUS = 20, -- 자석 반경 (studs)
-	COOLDOWN = 15, -- 재발동 쿨타임 (초) (10→15: ISSUE-031)
+	COOLDOWN = 0, -- 쿨타임 제거 — 피버와 동일하게 콤보 리셋 후 재달성 방식
 }
 
 -- 퍼펙트 런 (무피격 보너스)

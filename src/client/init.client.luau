@@ -434,7 +434,7 @@ RemoteEvents.PortalEnter.OnClientEvent:Connect(function()
 			-- Zone Skip 조건 확인 (maxZoneReached >= 2)
 			local maxZone = cachedPlayerData and cachedPlayerData.maxZoneReached or 1
 			if maxZone >= GameConstants.ZONE_SKIP.MIN_ZONE_TO_UNLOCK then
-				local skipZone = math.max(1, maxZone - 1)
+				local skipZone = maxZone -- 달성한 Zone에서 바로 시작 (maxZone-1 버그 수정)
 				local theme = GameConstants.ZONE_THEMES[skipZone]
 				local zoneName = theme and theme.displayName or `Zone {skipZone}`
 				_showZoneSkipPrompt(skipZone, zoneName, function(useZoneSkip)

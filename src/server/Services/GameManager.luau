@@ -257,7 +257,7 @@ RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { 
 		local pData = PlayerDataService:GetPlayerData(player)
 		local maxZone = pData and pData.maxZoneReached or 1
 		if maxZone >= GameConstants.ZONE_SKIP.MIN_ZONE_TO_UNLOCK then
-			skipToZone = math.max(1, maxZone - 1)
+			skipToZone = maxZone -- 달성한 Zone에서 바로 시작 (maxZone-1 버그 수정)
 			local theme = GameConstants.ZONE_THEMES[skipToZone]
 			timeOffset = theme and theme.startTime or 0
 			print(`[GameManager] Zone Skip: {player.Name} starting at Zone {skipToZone} (offset {timeOffset}s)`)
@@ -1661,7 +1661,8 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 			session.isSuperFever = false
 			session.isMiniFever = false -- 피버 종료 시 미니 피버도 해제
 			local cooldownReduction = 1 - (session.upgradeBonuses.skillCooldownReduction or 0)
-			local feverCooldown = math.max(GameConstants.FEVER.COOLDOWN * cooldownReduction, 8)
+			local feverCooldown = GameConstants.FEVER.COOLDOWN * cooldownReduction
+			-- COOLDOWN=0이면 즉시 재발동 가능 (콤보 재달성이 유일한 조건)
 			session.feverCooldownEnd = os.clock() + feverCooldown
 			session.comboCount = 0 -- 피버 종료 시 콤보 리셋
 			session.miniFeverTriggeredAt = 0 -- 피버 종료 시 미니 피버 카운터 초기화
