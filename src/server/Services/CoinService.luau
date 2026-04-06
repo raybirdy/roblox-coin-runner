@@ -822,6 +822,19 @@ end
 -- 코인 타입 선택 (가중 랜덤)
 -- lucky_coins 업그레이드: Silver 확률 += _luckyCoinsBonus, Bronze에서 차감
 function CoinService:_selectCoinType(difficulty: string): string
+	-- ISSUE-033: 특수 코인 우선 롤 (Star 12% / Magnet 6% / Rainbow 5% — Bonus 청크 제외)
+	if difficulty ~= "Bonus" then
+		local specialRoll = math.random()
+		local sc = GameConstants.SPECIAL_COINS.SPAWN_CHANCES
+		if specialRoll < sc.Star then
+			return "Star"
+		elseif specialRoll < sc.Star + sc.Magnet then
+			return "Magnet"
+		elseif specialRoll < sc.Star + sc.Magnet + sc.Rainbow then
+			return "Rainbow"
+		end
+	end
+
 	local rand = math.random()
 	local bonus = math.clamp(self._luckyCoinsBonus, 0, 0.35)
 
@@ -863,6 +876,8 @@ function CoinService:_spawnCoin(position: Vector3, coinType: string)
 	local value = GameConstants.COIN.BRONZE_VALUE
 	local outerColor: Color3
 	local innerColor: Color3
+	local specialGlowColor: Color3? = nil
+	local specialEmoji: string? = nil
 
 	if coinType == "Diamond" then
 		outerColor = Color3.fromRGB(120, 200, 255)
@@ -880,6 +895,27 @@ function CoinService:_spawnCoin(position: Vector3, coinType: string)
 		outerColor = Color3.fromRGB(205, 127, 50)
 		innerColor = Color3.fromRGB(255, 170, 80)
 		value = GameConstants.COIN.BRONZE_VALUE
+	elseif coinType == "Star" then
+		local cfg = GameConstants.SPECIAL_COINS.STAR
+		outerColor = cfg.COLOR
+		innerColor = cfg.GLOW_COLOR
+		specialGlowColor = cfg.GLOW_COLOR
+		specialEmoji = cfg.EMOJI
+		value = cfg.VALUE
+	elseif coinType == "Magnet" then
+		local cfg = GameConstants.SPECIAL_COINS.MAGNET
+		outerColor = cfg.COLOR
+		innerColor = cfg.GLOW_COLOR
+		specialGlowColor = cfg.GLOW_COLOR
+		specialEmoji = cfg.EMOJI
+		value = cfg.VALUE
+	elseif coinType == "Rainbow" then
+		local cfg = GameConstants.SPECIAL_COINS.RAINBOW
+		outerColor = cfg.COLOR
+		innerColor = cfg.GLOW_COLOR
+		specialGlowColor = cfg.GLOW_COLOR
+		specialEmoji = cfg.EMOJI
+		value = cfg.VALUE
 	else
 		outerColor = Color3.fromRGB(205, 127, 50)
 		innerColor = Color3.fromRGB(255, 170, 80)
@@ -926,24 +962,40 @@ function CoinService:_spawnCoin(position: Vector3, coinType: string)
 	outerRing:SetAttribute("CoinValue", value)
 	outerRing:SetAttribute("CoinType", coinType)
 
-	-- ISSUE-032: 코인 글로우 Highlight (모든 코인)
+	-- ISSUE-032: 코인 글로우 Highlight (모든 코인, 특수 코인은 전용 색)
 	local highlight = Instance.new("Highlight")
 	highlight.Name = "CoinGlow"
-	highlight.OutlineColor = GameConstants.COIN_GLOW.OUTLINE_COLOR
+	highlight.OutlineColor = specialGlowColor or GameConstants.COIN_GLOW.OUTLINE_COLOR
 	highlight.OutlineTransparency = GameConstants.COIN_GLOW.OUTLINE_TRANSPARENCY
 	highlight.FillTransparency = GameConstants.COIN_GLOW.FILL_TRANSPARENCY
 	highlight.Adornee = coinModel
 	highlight.Parent = coinModel
 
-	-- ISSUE-032: PointLight는 Gold/Diamond 티어만 부착 (렌더 비용 관리, MaxLights 절약)
-	if coinType == "Gold" or coinType == "Diamond" then
+	-- ISSUE-032/033: PointLight는 Gold/Diamond + 특수 코인만 부착 (렌더 비용 관리)
+	if coinType == "Gold" or coinType == "Diamond" or specialEmoji then
 		local pointLight = Instance.new("PointLight")
 		pointLight.Name = "CoinLight"
 		pointLight.Brightness = GameConstants.COIN_GLOW.LIGHT_BRIGHTNESS
 		pointLight.Range = GameConstants.COIN_GLOW.LIGHT_RANGE
-		pointLight.Color = GameConstants.COIN_GLOW.LIGHT_COLOR
+		pointLight.Color = specialGlowColor or GameConstants.COIN_GLOW.LIGHT_COLOR
 		pointLight.Shadows = false
 		pointLight.Parent = outerRing
+	end
+
+	-- ISSUE-033: 특수 코인 이모지 BillboardGui로 즉시 구분 가능
+	if specialEmoji then
+		local bb = Instance.new("BillboardGui")
+		bb.Name = "SpecialCoinLabel"
+		bb.Size = UDim2.new(0, 40, 0, 40)
+		bb.StudsOffset = Vector3.new(0, 2, 0)
+		bb.AlwaysOnTop = false
+		bb.Parent = outerRing
+		local lbl = Instance.new("TextLabel")
+		lbl.Size = UDim2.new(1, 0, 1, 0)
+		lbl.BackgroundTransparency = 1
+		lbl.Text = specialEmoji
+		lbl.TextScaled = true
+		lbl.Parent = bb
 	end
 
 	coinModel.Parent = workspace

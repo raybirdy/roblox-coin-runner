@@ -179,6 +179,11 @@ type GameSession = {
 	_dashSpeedMultiplier: number,
 	_magnetBurstActive: boolean,
 	_magnetBurstRadius: number,
+	-- Special coins (ISSUE-033)
+	_magnetBoostEndTime: number,
+	_magnetBoostMultiplier: number,
+	_rainbowBoostEndTime: number,
+	_rainbowBoostMultiplier: number,
 }
 
 local activeSessions: { [Player]: GameSession } = {}
@@ -394,6 +399,10 @@ RemoteEvents.PortalEnter.OnServerEvent:Connect(function(player: Player, data: { 
 		_dashSpeedMultiplier = 1.0,
 		_magnetBurstActive = false,
 		_magnetBurstRadius = 0,
+		_magnetBoostEndTime = 0,
+		_magnetBoostMultiplier = 1,
+		_rainbowBoostEndTime = 0,
+		_rainbowBoostMultiplier = 1,
 	}
 
 	-- 소모형 런 파워업 적용
@@ -838,6 +847,10 @@ RemoteEvents.GameStart.OnServerEvent:Connect(function(player: Player)
 		_dashSpeedMultiplier = 1.0,
 		_magnetBurstActive = false,
 		_magnetBurstRadius = 0,
+		_magnetBoostEndTime = 0,
+		_magnetBoostMultiplier = 1,
+		_rainbowBoostEndTime = 0,
+		_rainbowBoostMultiplier = 1,
 	}
 
 	-- 소모형 런 파워업 적용
@@ -1439,6 +1452,10 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 		if session._petCoinBurstActive then
 			magnetRadius = math.max(magnetRadius, 35)
 		end
+		-- 특수 코인: Magnet 부스트 (자석 반경 배율)
+		if os.clock() < session._magnetBoostEndTime then
+			magnetRadius *= session._magnetBoostMultiplier
+		end
 		-- 헤드스타트 자석 효과 (일반 자석 반경과 동등)
 		if session.headStartActive then
 			magnetRadius = math.max(magnetRadius, GameConstants.MINI_FEVER.MAGNET_RADIUS)
@@ -1466,6 +1483,10 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 		end
 		-- 콤보 실시간 배율 적용
 		coinMultiplier *= (session.comboMultiplier or 1)
+		-- 특수 코인: Rainbow 부스트 (스코어/코인 배율)
+		if os.clock() < session._rainbowBoostEndTime then
+			coinMultiplier *= session._rainbowBoostMultiplier
+		end
 		-- RandomEvent: bonus_time 활성 시 코인 배율 추가
 		if session._bonusTimeActive then
 			coinMultiplier *= (session._bonusTimeCoinMult or 1)
@@ -1483,6 +1504,22 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 
 		local hitRushActive = os.clock() < session.hitRushEndTime
 		local hitRushMult = if hitRushActive then GameConstants.HIT_RECOVERY.COIN_MULTIPLIER else 1
+		-- 특수 코인 효과 선집계 (ISSUE-033) — 콤보 계산 전에 부스트만 적용, Star 보너스는 콤보 로직 후 가산
+		local starBonusCombo = 0
+		for _, coinData in collectedCoins do
+			if coinData.type == "Star" then
+				starBonusCombo += GameConstants.SPECIAL_COINS.STAR.COMBO_BONUS or 5
+			elseif coinData.type == "Magnet" then
+				local cfg = GameConstants.SPECIAL_COINS.MAGNET
+				session._magnetBoostEndTime = math.max(session._magnetBoostEndTime, os.clock() + cfg.DURATION)
+				session._magnetBoostMultiplier = cfg.MULTIPLIER
+			elseif coinData.type == "Rainbow" then
+				local cfg = GameConstants.SPECIAL_COINS.RAINBOW
+				session._rainbowBoostEndTime = math.max(session._rainbowBoostEndTime, os.clock() + cfg.DURATION)
+				session._rainbowBoostMultiplier = cfg.SCORE_MULTIPLIER
+			end
+		end
+
 		for _, coinData in collectedCoins do
 			-- 2배 코인 적용 (파워업 + VIP 배율 + 히트 러시)
 			local actualValue = coinData.value * coinMultiplier * hitRushMult
@@ -1543,6 +1580,10 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 
 			-- 콤보 마일스톤 보너스 체크 (레거시 호환 + 추가 보상)
 			local prevCombo = session.comboCount - #collectedCoins
+			-- 특수 코인 Star 보너스는 prevCombo 계산 후 반영 (마일스톤 중복 방지)
+			if starBonusCombo > 0 then
+				session.comboCount += starBonusCombo
+			end
 			local comboBonus = 0
 			if session.comboCount >= 50 and prevCombo < 50 then
 				comboBonus = GameConstants.SCORE.COMBO_50_BONUS

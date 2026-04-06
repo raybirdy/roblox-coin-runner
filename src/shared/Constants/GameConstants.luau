@@ -207,6 +207,42 @@ GameConstants.COIN_GLOW = {
 	BURST_PARTICLES     = 8,                              -- 버스트 당 파티클 수
 }
 
+-- 특수 효과 코인 (ISSUE-033, Sprint 15) — Star/Magnet/Rainbow 3종
+GameConstants.SPECIAL_COINS = {
+	-- 스폰 확률 (일반 코인 88% : Star 5% : Magnet 4% : Rainbow 3%) — momus 조정 (콤보 시스템 보호)
+	SPAWN_CHANCES = {
+		Star    = 0.05,
+		Magnet  = 0.04,
+		Rainbow = 0.03,
+	},
+	-- Star ⭐ — 콤보 +5 즉시 (피버 촉진)
+	STAR = {
+		COLOR       = Color3.fromRGB(255, 240, 100),
+		GLOW_COLOR  = Color3.fromRGB(255, 255, 180),
+		EMOJI       = "⭐",
+		COMBO_BONUS = 5,
+		VALUE       = 5,
+	},
+	-- Magnet 🧲 — 3초간 자동수집 범위 2×
+	MAGNET = {
+		COLOR         = Color3.fromRGB(255, 90, 90),
+		GLOW_COLOR    = Color3.fromRGB(255, 140, 140),
+		EMOJI         = "🧲",
+		DURATION      = 3,
+		MULTIPLIER    = 2,
+		VALUE         = 5,
+	},
+	-- Rainbow 🌈 — 2초간 수집 코인 점수 2×
+	RAINBOW = {
+		COLOR         = Color3.fromRGB(150, 220, 255),
+		GLOW_COLOR    = Color3.fromRGB(255, 200, 255),
+		EMOJI         = "🌈",
+		DURATION      = 2,
+		SCORE_MULTIPLIER = 2,
+		VALUE         = 5,
+	},
+}
+
 -- 장애물 경고 연출 (ISSUE-032, Sprint 14)
 GameConstants.OBSTACLE_WARNING = {
 	OUTLINE_COLOR        = Color3.fromRGB(255, 80, 40),   -- 주황/빨강 경고 외곽선
