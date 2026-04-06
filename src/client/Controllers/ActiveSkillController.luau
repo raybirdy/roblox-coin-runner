@@ -91,7 +91,7 @@ function ActiveSkillController:_createUI()
 	gui.Parent = self._player.PlayerGui
 	self._gui = gui
 
-	-- Skill button (bottom-right, above MiniGame area)
+	-- Skill button (bottom-right corner)
 	local button = Instance.new("TextButton")
 	button.Name = "SkillButton"
 	local btnSize = ResponsiveUtil.compactOffset(UITokens.Touch.SKILL_BUTTON_SIZE)

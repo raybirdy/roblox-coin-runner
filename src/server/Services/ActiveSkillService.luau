@@ -68,11 +68,6 @@ function ActiveSkillService:ActivateSkill(player: Player, skillId: string, sessi
 		return false, "not_playing"
 	end
 
-	-- Check minigame state (AC-5-7)
-	if session.sessionState == "minigame" then
-		return false, "in_minigame"
-	end
-
 	-- Validate equipped
 	local playerData = PlayerDataService:GetPlayerData(player)
 	if not playerData then

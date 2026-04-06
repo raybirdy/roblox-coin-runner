@@ -21,8 +21,6 @@ local VALID_EVENTS: { [string]: boolean } = {
 	coin_earned = true,
 	purchase = true,
 	coop_match = true,
-	minigame_start = true,
-	minigame_end = true,
 	tutorial_step = true,
 }
 

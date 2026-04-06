@@ -492,7 +492,7 @@ function ObjectiveHudController:DisableReroll()
 	end
 end
 
--- §9.3: UIVisibilityManager 호환 – minigame 진입 시 아이콘만 숨김
+-- UIVisibilityManager 호환 – 필요 시 아이콘만 숨김
 function ObjectiveHudController:HideIcon()
 	if self._iconBtn then
 		self._iconBtn.Visible = false

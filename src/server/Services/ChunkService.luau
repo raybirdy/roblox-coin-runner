@@ -820,21 +820,6 @@ function ChunkService:GetActiveChunkCount(): number
 	return #self._activeChunks
 end
 
--- Unload N rear chunks (for minigame memory management)
-function ChunkService:UnloadRearChunks(count: number)
-	local removed = 0
-	while removed < count and #self._activeChunks > 1 do
-		local chunkData = table.remove(self._activeChunks, 1)
-		if chunkData and chunkData.model then
-			chunkData.model:Destroy()
-		end
-		removed += 1
-	end
-	if removed > 0 then
-		print(`[ChunkService] Unloaded {removed} rear chunks for minigame`)
-	end
-end
-
 -- 정리
 function ChunkService:Destroy()
 	-- 시작 구역 제거

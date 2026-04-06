@@ -10,7 +10,7 @@ UIVisibilityManager.__index = UIVisibilityManager
 
 -- ===== 타입 정의 =====
 
-export type GameUIState = "lobby" | "countdown" | "running" | "minigame" | "paused" | "gameover"
+export type GameUIState = "lobby" | "countdown" | "running" | "paused" | "gameover"
 
 -- §9.1: 완전한 컨트롤러 목록 (randomEventController는 토스트 전용이므로 제외)
 export type Controllers = {
@@ -25,7 +25,6 @@ export type Controllers = {
 	scenarioController: any?,
 	worldMapController: any?,
 	realtimeBattleController: any?,
-	miniGameController: any?,
 	coinKingController: any?,
 	dailyEventController: any?,
 	leaderboardController: any?,
@@ -35,14 +34,12 @@ export type Controllers = {
 -- ===== 유효 전이 테이블 (§9.2: momus P0 엣지 케이스 반영) =====
 -- lobby -> lobby : 재접속/씬 전환 시 idempotent 재진입
 -- countdown -> lobby : 카운트다운 중 연결 해제 또는 취소
--- minigame -> gameover : 미니게임 진행 중 라이프 소진
 local VALID_TRANSITIONS: { [GameUIState]: { GameUIState } } = {
 	lobby     = { "countdown", "lobby" },
 	countdown = { "running", "lobby" },
 	-- running→countdown: 캐릭터 리스폰 후 GameOver 미수신 상태에서 포탈 재진입 시 레이스 컨디션 허용
 	-- running→lobby: ReturnToLobby 수신 시 경고 없이 처리
-	running   = { "minigame", "paused", "gameover", "countdown", "lobby" },
-	minigame  = { "running", "gameover", "countdown" }, -- minigame 중 재시작 허용
+	running   = { "paused", "gameover", "countdown", "lobby" },
 	paused    = { "running", "countdown" },             -- 일시정지 중 재시작 허용
 	gameover  = { "lobby", "countdown" }, -- gameover→countdown: ReturnToLobby 전에 포탈 재진입 가능 (레이스 컨디션 허용)
 }
@@ -157,7 +154,6 @@ function UIVisibilityManager:_applyState(state: GameUIState)
 		safeCall(c.activeSkillController, "OnGameEnd")          -- 스킬 버튼 숨김
 		safeCall(c.feverController, "HideGauge")                -- 피버 게이지 숨김
 		safeCall(c.petController, "StopGame")                   -- 펫 UI 숨김
-		safeCall(c.miniGameController, "HideUI")                -- §9.3: minigame HUD 숨김
 		safeCall(c.coinKingController, "Hide")                  -- 코인킹 숨김
 		safeCall(c.scenarioController, "ShowInLobby")           -- 시나리오 오버레이
 		safeCall(c.worldMapController, "ShowInLobby")           -- 월드 맵
@@ -179,14 +175,11 @@ function UIVisibilityManager:_applyState(state: GameUIState)
 		safeCall(c.dailyEventController, "Hide")                -- 일일 이벤트 숨김
 		safeCall(c.activeSkillController, "OnGameEnd")          -- 스킬 버튼 숨김
 		safeCall(c.feverController, "HideGauge")                -- 피버 게이지 숨김
-		safeCall(c.miniGameController, "HideUI")                -- §9.3
 		-- ObjectiveHUD는 전체 모드(리롤 가능): countdown 전용 동작
 		safeCall(c.objectiveHudController, "StartGame")         -- 전체 모드 + 리롤 활성
 
 	elseif state == "running" then
 		-- §7.1 countdown -> running: 최소 HUD (activeSkill + objectiveHud 아이콘 모드)
-		-- §9.3: miniGameController는 반드시 먼저 숨김
-		safeCall(c.miniGameController, "HideUI")                -- §9.3: 복귀 시 숨김
 		safeCall(c.dailyChallengeController, "Hide")            -- 로비 전용 숨김
 		safeCall(c.progressionController, "HideForGame")        -- Lv/XP 숨김
 		safeCall(c.runSkillHudController, "StartGame")          -- XP바 숨김, 스킬 패널 대기
@@ -203,16 +196,6 @@ function UIVisibilityManager:_applyState(state: GameUIState)
 		safeCall(c.objectiveHudController, "CollapseToIcon")    -- 아이콘 모드 전환 (§6.1)
 		safeCall(c.feverController, "ShowGauge")                -- 피버 게이지 표시
 
-	elseif state == "minigame" then
-		-- §7.1 + §9.3 minigame 진입: 게임 HUD 숨기고 미니게임 HUD 표시
-		safeCall(c.objectiveHudController, "HideIcon")          -- 아이콘 숨김
-		safeCall(c.activeSkillController, "OnGameEnd")          -- 스킬 버튼 숨김
-		safeCall(c.feverController, "HideGauge")                -- 피버 게이지 숨김
-		safeCall(c.dailyChallengeController, "Hide")
-		safeCall(c.progressionController, "HideForGame")
-		safeCall(c.runSkillHudController, "EndGame")            -- 스킬 패널 닫기
-		safeCall(c.miniGameController, "ShowUI")                -- §9.3: 미니게임 HUD 활성화
-
 	elseif state == "paused" then
 		-- §7.1 paused: 스킬 선택 패널 표시 (RunSkillHud), 나머지 HUD 유지
 		-- HUD(uiController)는 계속 표시 상태 유지 — 추가 오버레이만 적용
@@ -227,7 +210,6 @@ function UIVisibilityManager:_applyState(state: GameUIState)
 		safeCall(c.objectiveHudController, "EndGame")           -- 목표 HUD 숨김
 		safeCall(c.runSkillHudController, "EndGame")            -- 런 스킬 패널 닫기
 		safeCall(c.feverController, "HideGauge")                -- 피버 게이지 숨김
-		safeCall(c.miniGameController, "HideUI")                -- §9.3: 미니게임 HUD 숨김
 		safeCall(c.petController, "StopGame")                   -- 펫 UI 숨김
 		safeCall(c.coinKingController, "Hide")                  -- 코인킹 숨김
 		safeCall(c.dailyEventController, "EndGame")             -- 이벤트 HUD 숨김

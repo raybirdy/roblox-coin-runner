@@ -34,11 +34,6 @@ end
 
 -- Check if an event should trigger (called from GameManager Heartbeat)
 function RandomEventService:Update(player: Player, session: any, _deltaTime: number)
-	-- Skip if in minigame
-	if session.sessionState ~= "running" then
-		return
-	end
-
 	-- Skip if event already active
 	if _activeEvents[player] then
 		-- Check if current event expired
@@ -153,7 +148,7 @@ function RandomEventService:_revertEffect(session: any, config: any)
 	end
 end
 
--- Force end event (e.g., game over, minigame start)
+-- Force end event (e.g., game over)
 function RandomEventService:ForceEnd(player: Player, session: any)
 	if _activeEvents[player] then
 		self:EndEvent(player, session)
@@ -170,16 +165,6 @@ end
 function RandomEventService:OnPlayerRemoving(player: Player)
 	_activeEvents[player] = nil
 	_nextEventTime[player] = nil
-end
-
--- Shift event times on minigame pause
-function RandomEventService:ShiftTimes(player: Player, pauseDelta: number)
-	if _activeEvents[player] then
-		_activeEvents[player].endTime += pauseDelta
-	end
-	if _nextEventTime[player] then
-		_nextEventTime[player] += pauseDelta
-	end
 end
 
 function RandomEventService:Init()

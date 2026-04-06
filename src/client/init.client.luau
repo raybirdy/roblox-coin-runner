@@ -108,7 +108,6 @@ local GhostController = require(script.Controllers.GhostController)
 local TeamController = require(script.Controllers.TeamController)
 local CoopController = require(script.Controllers.CoopController)
 local AnalyticsController = require(script.Controllers.AnalyticsController)
-local MiniGameController = require(script.Controllers.MiniGameController)
 local ActiveSkillController = require(script.Controllers.ActiveSkillController)
 local RandomEventController = require(script.Controllers.RandomEventController)
 local DailyChallengeController = require(script.Controllers.DailyChallengeController)
@@ -161,7 +160,6 @@ local ghostController = GhostController.new()
 local teamController = TeamController.new()
 local coopController = CoopController.new()
 local analyticsController = AnalyticsController.new()
-local miniGameController = MiniGameController.new()
 local activeSkillController = ActiveSkillController.new()
 local randomEventController = RandomEventController.new()
 local dailyChallengeController = DailyChallengeController.new()
@@ -175,7 +173,6 @@ UIVisibilityManager:Init({
 	progressionController = progressionController,
 	runSkillHudController = runSkillHudController,
 	activeSkillController = activeSkillController,
-	miniGameController = miniGameController,
 	feverController = feverController,
 	scenarioController = scenarioController,
 	worldMapController = worldMapController,
@@ -201,9 +198,6 @@ coopController:Init()
 
 -- 애널리틱스 컨트롤러 초기화
 analyticsController:Init()
-
--- 미니게임 컨트롤러 초기화
-miniGameController:Init()
 
 -- 액티브 스킬 컨트롤러 초기화
 activeSkillController:Init()
