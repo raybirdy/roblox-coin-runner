@@ -3,7 +3,7 @@ id: ISSUE-032
 title: 코인-장애물 시각적 구분 어려움 + 게임 단조로움
 category: improvement
 priority: P2-medium
-status: open
+status: in-progress
 related_sprint: none
 related_ac: none
 created: 2026-04-06

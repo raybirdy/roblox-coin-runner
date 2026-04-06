@@ -3,7 +3,7 @@ id: ISSUE-023
 title: 챕터 2 완료 후 챕터 3으로 전환되지 않음
 category: bug
 priority: P1-high
-status: open
+status: in-progress
 related_sprint: v3.1 Sprint 1 후보
 related_ac: none
 created: 2026-03-31

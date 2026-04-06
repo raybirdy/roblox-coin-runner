@@ -21,7 +21,7 @@
 | 브랜치 전략 | GitHub Flow (feature → PR → main) | 기존 유지 |
 | PMF 스테이지 | pre-pmf | 소프트 론치 전, 속도 우선 |
 | Permission 모드 | 개발 중 항상 허용 | |
-| Last updated | 2026-04-05 | |
+| Last updated | 2026-04-06 | |
 
 ---
 
@@ -560,3 +560,79 @@ Sprint 0 (M5+M4+설계)
 **Acceptance Criteria**:
 - [x] Phrase 큐 기반 청크 순서 생성
 - [x] breathing/mercy 시스템 호환
+
+### Sprint 11 — 청크 연결부 폴리싱 [done]
+**목표**: 청크 간 경사로 S-커브 + 전환 게이트 아치 (IDEA-012)
+**커밋**: 8d271a1
+**피처**: IDEA-012
+
+**Acceptance Criteria**:
+- [x] _createRamp → 3-Part 베지어 S-커브 (시작/중간/끝 파트)
+- [x] _createTransitionGate 아치 게이트 (Zone 경계 시각화)
+- [x] GameConstants.CHUNK_TRANSITION 상수 추가
+
+### Sprint 12 — 다중 높이 플랫폼 MVP [done]
+**목표**: LOW(Y=0)/HIGH(Y=12) 2-레인 멀티플랫폼 (IDEA-013)
+**커밋**: 04834e6
+**피처**: IDEA-013
+
+**Acceptance Criteria**:
+- [x] LOW(너비20)/HIGH(너비12) 2-레인 생성, 45s+ 7% 확률 등장
+- [x] HIGH 레인 Gold 코인 40% 고밀도 배치
+- [x] CameraController Y 팔로우 가중치 0.4 적용
+
+### Sprint 13 — 챕터 2→3 전환 버그 픽스 [pending]
+**목표**: 챕터 2 퀘스트 완료 후 챕터 3이 언락되지 않는 버그 수정 (ISSUE-023)
+**이슈**: ISSUE-023 (P1-high)
+
+**Acceptance Criteria**:
+- [ ] 챕터 2 퀘스트 전체 완료 시 챕터 3 자동 언락
+- [ ] 서버 콘솔에 `[ScenarioService] _completeChapter ch2` 로그 출력
+- [ ] 클라이언트에 `ChapterUnlocked` 이벤트 정상 수신 + UI 표시
+- [ ] 보스런 비활성화 상태에서도 챕터 완료 처리 가능 (우회 경로 확보)
+- [ ] 챕터 1 완료 플래그가 정상 설정되어 있는지 검증
+
+**주요 확인 파일**:
+- `src/server/Services/ScenarioService.luau` — `_checkChapterCompletion`, `_completeChapter`
+- `src/server/Services/BossRunService.luau` — 보스런 완료 → TriggerChapterCompletion
+- `src/shared/Constants/ScenarioConstants.luau` — ch3.unlockConditions
+- `src/client/Controllers/ScenarioController.luau` — ChapterUnlocked 구독 여부
+
+### Sprint 14 — 코인/장애물 시각 구분 + 단조로움 개선 [pending]
+**목표**: 코인 글로우 추가 + 장애물 위협 연출 + 존별 분위기 강화 (ISSUE-032)
+**이슈**: ISSUE-032 (P2-medium)
+
+**Acceptance Criteria**:
+- [ ] 코인 파트에 Highlight 인스턴스 추가 (OutlineColor=Gold, FillTransparency=1)
+- [ ] 코인에 PointLight 부착 (Brightness=0.5, Range=8)
+- [ ] 장애물 파트에 빨강/주황 경고 Texture 또는 Decal 추가
+- [ ] 이동 장애물(RotatingBar/FallingDebris)에 Neon 경고등 파트 깜빡임 연출
+- [ ] 최소 3개 Zone에서 환경 조명 색온도 차별화 확인
+- [ ] 코인 수집 시 소형 파티클 버스트 (10개 중 1개 확률)
+- [ ] 성능 영향 없음 (MaxParticles 합산 100 이하)
+
+**주요 파일**:
+- `src/server/Services/CoinService.luau` — 코인 생성 시 Highlight/PointLight 추가
+- `src/server/Services/ProceduralChunkGenerator.luau` — `_createObstacle()` 경고 연출
+- `src/shared/Constants/GameConstants.luau` — 시각 상수 추가 (COIN_GLOW, OBSTACLE_WARNING)
+
+### Sprint 15 — 특수 효과 코인 3종 MVP [pending]
+**목표**: Star·Magnet·Rainbow 특수 코인 구현 (ISSUE-033 1단계)
+**이슈**: ISSUE-033 (P2-medium)
+
+**스코프**: Bomb(어려움)·Crystal(경제 시스템 연계)은 제외 — 다음 버전 검토
+
+**Acceptance Criteria**:
+- [ ] **Star** ⭐ — 수집 시 콤보 +5 즉시 추가 (Fever 촉진)
+- [ ] **Magnet** 🧲 — 수집 후 3초간 자동수집 범위 2× (기존 magnetBonus와 중첩)
+- [ ] **Rainbow** 🌈 — 수집 후 2초간 수집 코인 점수 2× (서버 상태 플래그)
+- [ ] 스폰 확률: Star 12% / Magnet 6% / Rainbow 5% (나머지 77% 일반)
+- [ ] 각 타입별 고유 색상·외형으로 일반 코인과 즉시 구분 가능
+- [ ] 특수 코인 수집 시 전용 사운드 or 파티클 연출
+- [ ] `GameConstants.SPECIAL_COINS` 상수 정의 (확률·지속시간·배율)
+
+**주요 파일**:
+- `src/server/Services/CoinService.luau` — 특수 코인 타입 분기 생성 + 수집 처리
+- `src/shared/Constants/GameConstants.luau` — SPECIAL_COINS 상수 블록
+- `src/server/Services/GameManager.luau` — 특수 코인 수집 이벤트 핸들러
+- `src/client/Controllers/PlayerController.luau` — Magnet 범위 임시 확대 처리

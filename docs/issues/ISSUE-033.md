@@ -3,7 +3,7 @@ id: ISSUE-033
 title: 코인 종류 확장 — 특수 효과 코인 추가
 category: feature
 priority: P2-medium
-status: open
+status: in-progress
 related_sprint: none
 related_ac: none
 created: 2026-04-06
