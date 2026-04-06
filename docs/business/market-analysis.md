@@ -237,11 +237,14 @@
 | D7 | (유지) | 변동 없음 | 코어 루프 미변경 |
 | D30 | (유지) | 변동 없음 | 장기 콘텐츠 부재 동일 |
 
-### 출시 게이트 (CONDITIONAL GO 유지)
-- [ ] **ProductId 3건 등록** (배틀패스/MEGA/ULTRA) — **차단** 사유
-- [ ] **Analytics 최소 이벤트 구현** — **차단** 사유 (PRD M4: 코드 완료, 외부 검증 미완)
-- [ ] 사운드 에셋 4종 교체 — 권장
+### 출시 게이트 (업데이트: 2026-04-06 재확인)
+- [x] **ProductId 등록 완료** — 배틀패스(1761124660), MEGA(3559214777), ULTRA(3559214994), VIP(1720352633). market-analysis.md 원문(2026-03-17) 작성 이후 이미 해소됨
+- [x] **Analytics 최소 이벤트 와이어링** — Sprint 17에서 7종 추가 (run_start/run_end/coin_earned/purchase/battle_pass_purchase/coop_match + session_end duration)
+- [ ] 사운드 에셋 4종 교체 — Studio 작업 (권장)
 - [ ] HIGH 레인 튜토리얼 (6~8세 보호) — 권장 (Sprint 12 도입 영향)
+- [ ] Studio 퍼블리싱 후 Creator Dashboard에서 이벤트 수신 검증
+
+**판정 변경**: CONDITIONAL GO → **GO (소프트 론치 가능)**. 차단 사유 모두 해소. 잔여 항목은 권장 사항.
 
 ### 미니게임 제거 영향
 - **순긍정** (출시 시점): 데드코드 1315줄 삭제, 유지보수 비용 절감, 재미 부족 요인 제거로 세션 품질 중립~긍정.
