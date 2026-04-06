@@ -181,6 +181,14 @@ function ScenarioService:_checkChapterCompletion(player: Player, playerData: any
 		end
 
 		if allDone then
+			print(`[ScenarioService] {player.Name} chapter {chapter.id} quests done, bossEnabled={ScenarioConstants.BOSS_RUN.ENABLED}`)
+
+			-- ISSUE-023: 보스런 비활성화 시 즉시 챕터 완료 처리 (우회 경로)
+			if not ScenarioConstants.BOSS_RUN.ENABLED then
+				self:_completeChapter(player, chapter, playerData, completedChapters, completedSet)
+				continue
+			end
+
 			-- 보스 런 클리어 여부 확인
 			local bossRunCompleted = playerData.bossRunCompleted :: { [string]: boolean }?
 			local bossCleared = bossRunCompleted and bossRunCompleted[chapter.id]

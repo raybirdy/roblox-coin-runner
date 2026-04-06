@@ -31,6 +31,11 @@ local activeBossRuns: { [Player]: BossRunSession } = {}
 
 function BossRunService:StartBossRun(player: Player, chapterId: string)
 	local bossConfig = ScenarioConstants.BOSS_RUN
+	-- ISSUE-023: 보스런 비활성화 가드 (방어적). 모든 진입 경로 차단.
+	if not bossConfig.ENABLED then
+		warn(`[BossRunService] StartBossRun blocked: BOSS_RUN.ENABLED=false ({chapterId})`)
+		return
+	end
 	local targetScore = bossConfig.TARGET_SCORES[chapterId]
 	if not targetScore then
 		warn(`[BossRunService] Unknown chapterId for boss run: {chapterId}`)

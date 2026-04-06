@@ -39,6 +39,9 @@ ScenarioConstants.CHAPTER_THEMES = {
 -- ==================== 보스 런 상수 ====================
 
 ScenarioConstants.BOSS_RUN = {
+	-- PRD-v3: 미니게임 Won't Have 전환에 따라 보스런 비활성화 (ISSUE-023)
+	-- false면 챕터 퀘스트 완료 시 보스런 우회하고 즉시 _completeChapter 호출
+	ENABLED          = false,
 	TIME_LIMIT       = 90,
 	SPEED_MULTIPLIER = 1.3,
 	LIVES            = 3,
