@@ -77,69 +77,70 @@ GameConstants.CHUNK_TRANSITION = {
 }
 
 -- 난이도별 청크 출현 확률 (시간대별)
+-- v3.1 난이도 커브 상향 (spawn rate 기반) — 속도 대신 패턴 복잡도로 난이도 조절
 GameConstants.CHUNK_SPAWN_RATES = {
-	-- 0~30초 (초반 - 매우 쉬움)
+	-- 0~30초 (초반 — Normal 소량 도입, Hard 없음)
 	{
 		maxTime = 30,
-		Easy = 0.80, -- Easy 80%
-		Normal = 0.00,
+		Easy = 0.70,
+		Normal = 0.15,
 		Hard = 0.00,
-		Bonus = 0.15,
+		Bonus = 0.10,
 		NPC = 0.05,
 	},
-	-- 30~60초 (점진적 난이도 상승)
+	-- 30~60초 (Hard 조기 도입)
 	{
 		maxTime = 60,
-		Easy = 0.55, -- Easy 55%
-		Normal = 0.25,
-		Hard = 0.00, -- Hard 아직 없음
+		Easy = 0.35,
+		Normal = 0.40,
+		Hard = 0.10,
 		Bonus = 0.10,
-		NPC = 0.10,
+		NPC = 0.05,
 	},
-	-- 60~90초 (Zone 2 초반 — Normal 중심, Hard 도입 시작)
+	-- 60~90초 (Zone 2 초반 — Hard 비율 상승)
 	{
 		maxTime = 90,
-		Easy = 0.25,
-		Normal = 0.40,
-		Hard = 0.15,
-		Bonus = 0.10,
-		NPC = 0.10,
-	},
-	-- 90~120초 (Zone 2 후반 — Hard 비율 상승)
-	{
-		maxTime = 120,
 		Easy = 0.15,
 		Normal = 0.40,
-		Hard = 0.25,
+		Hard = 0.30,
 		Bonus = 0.10,
-		NPC = 0.10,
+		NPC = 0.05,
 	},
-	-- 120~180초 (Zone 3 — 신규 장애물 등장, Hard 균형)
+	-- 90~120초 (Zone 2 후반 — Hard 우세)
+	{
+		maxTime = 120,
+		Easy = 0.05,
+		Normal = 0.35,
+		Hard = 0.45,
+		Bonus = 0.10,
+		NPC = 0.05,
+	},
+	-- 120~180초 (Zone 3 — Easy 제거, Hard 압박)
 	{
 		maxTime = 180,
-		Easy = 0.10,
-		Normal = 0.35,
-		Hard = 0.35,
+		Easy = 0.00,
+		Normal = 0.30,
+		Hard = 0.55,
 		Bonus = 0.10,
-		NPC = 0.10,
+		NPC = 0.05,
 	},
-	-- 180~240초 (Zone 4 — LaserBeam 등장, Hard 강화)
+	-- 180~240초 (Zone 4)
 	{
 		maxTime = 240,
-		Easy = 0.05,
-		Normal = 0.28,
-		Hard = 0.42,
-		Bonus = 0.12,
-		NPC = 0.13,
+		Easy = 0.00,
+		Normal = 0.22,
+		Hard = 0.63,
+		Bonus = 0.10,
+		NPC = 0.05,
 	},
 	-- 240초+ (Zone 5 — 최고 난이도)
 	{
 		maxTime = math.huge,
-		Easy = 0.03,
-		Normal = 0.25,
-		Hard = 0.47,
-		Bonus = 0.12,
-		NPC = 0.13,
+		Easy = 0.00,
+		Normal = 0.18,
+		Hard = 0.67,
+		Bonus = 0.10,
+		NPC = 0.05,
 	},
 }
 

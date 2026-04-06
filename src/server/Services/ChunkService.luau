@@ -385,11 +385,11 @@ function ChunkService:SpawnNextChunk(): Model?
 	local isInSafeZone = self._chunkCounter <= GameConstants.CHUNK.SAFE_ZONE_CHUNKS
 
 	-- ── Encounter 기반 배치 (IDEA-010) ──────────────────────────────────────
-	-- Normal/Hard 30% 확률로 EncounterLibrary에서 템플릿 선택 → 장애물+코인 동시 배치
-	-- 선택 시 기존 랜덤 배치(SpawnObstaclesInChunk/SpawnCoinsInChunk)를 건너뜀
+	-- Normal/Hard 45% 확률로 EncounterLibrary에서 템플릿 선택 → 장애물+코인 동시 배치
+	-- v3.1: 패턴 다양성 강화 (30% → 45%)
 	local usedEncounter = false
 	if self._obstacleService and self._coinService and not isInSafeZone and not eventType then
-		if (difficulty == "Normal" or difficulty == "Hard") and math.random() < 0.30 then
+		if (difficulty == "Normal" or difficulty == "Hard") and math.random() < 0.45 then
 			local pool = EncounterLibrary.getByDifficulty(difficulty)
 			if #pool > 0 then
 				local enc = pool[math.random(#pool)]
