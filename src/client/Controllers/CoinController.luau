@@ -134,7 +134,9 @@ function CoinController:_showCoinPopup(value: number, coinType: string, isDouble
 	popup.TextStrokeTransparency = 0.3
 	popup.TextSize = isDoubled and ResponsiveUtil.scaledTextSize(42, 28) or ResponsiveUtil.scaledTextSize(36, 24)
 	popup.Font = Enum.Font.GothamBold
-	popup.Text = isDoubled and `+{value} x2!` or `+{value}`
+	-- 정수 강제 (부동소수점 표시 버그 방어)
+	local intValue = math.floor(value + 0.5)
+	popup.Text = isDoubled and `+{intValue} x2!` or `+{intValue}`
 	popup.Parent = self._popupGui
 
 	-- 위로 올라가면서 사라지는 애니메이션

@@ -569,10 +569,12 @@ function ScenarioController:_createQuestHud()
 	hudGui.Parent = playerGui
 	self._questHudGui = hudGui
 
+	-- 퀘스트 HUD: 우측 상단 (게임플레이 영역 방해 방지) — 1개 퀘스트만 표시
 	local panel = Instance.new("Frame")
 	panel.Name = "QuestHudPanel"
-	panel.Size = UDim2.new(0, 205, 0, 88)
-	panel.Position = UDim2.new(0, 8, 0, 160)
+	panel.Size = UDim2.new(0, 180, 0, 56)
+	panel.AnchorPoint = Vector2.new(1, 0)
+	panel.Position = UDim2.new(1, -8, 0, 210)
 	panel.BackgroundColor3 = Color3.fromRGB(10, 12, 22)
 	panel.BackgroundTransparency = 0.2
 	panel.BorderSizePixel = 0
@@ -599,7 +601,7 @@ function ScenarioController:_createQuestHud()
 	titleLabel.Parent = panel
 
 	self._questHudItems = {}
-	for i = 1, 2 do
+	for i = 1, 1 do
 		local itemFrame = Instance.new("Frame")
 		itemFrame.Name = `QuestHudItem{i}`
 		itemFrame.Size = UDim2.new(1, -12, 0, 28)

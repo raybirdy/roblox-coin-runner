@@ -58,8 +58,9 @@ function RunSkillHudController:_buildGui()
 	-- ===== XP 바 (우측 상단 작은 바) =====
 	local xpFrame = Instance.new("Frame")
 	xpFrame.Name = "XPFrame"
-	local xpW = ResponsiveUtil.compactOffset(180)
-	xpFrame.Size = UDim2.new(0, xpW, 0, ResponsiveUtil.compactOffset(28))
+	-- 가독성 개선: 폭 180→220, 높이 28→36
+	local xpW = ResponsiveUtil.compactOffset(220)
+	xpFrame.Size = UDim2.new(0, xpW, 0, ResponsiveUtil.compactOffset(36))
 	xpFrame.Position = UDim2.new(1, -xpW - ResponsiveUtil.compactOffset(10), 0, ResponsiveUtil.compactOffset(10))
 	xpFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
 	xpFrame.BackgroundTransparency = 0.3
@@ -70,7 +71,7 @@ function RunSkillHudController:_buildGui()
 
 	local xpBg = Instance.new("Frame")
 	xpBg.Name = "XPBackground"
-	xpBg.Size = UDim2.new(1, -60, 0, 8)
+	xpBg.Size = UDim2.new(1, -70, 0, 10)
 	xpBg.Position = UDim2.new(0, 4, 0.5, 2)
 	xpBg.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
 	xpBg.BorderSizePixel = 0
@@ -88,12 +89,12 @@ function RunSkillHudController:_buildGui()
 
 	local xpLabel = Instance.new("TextLabel")
 	xpLabel.Name = "XPLabel"
-	xpLabel.Size = UDim2.new(0, 56, 1, 0)
-	xpLabel.Position = UDim2.new(1, -58, 0, 0)
+	xpLabel.Size = UDim2.new(0, 64, 1, 0)
+	xpLabel.Position = UDim2.new(1, -66, 0, 0)
 	xpLabel.BackgroundTransparency = 1
 	xpLabel.Text = "Lv.1"
 	xpLabel.TextColor3 = Color3.fromRGB(200, 240, 255)
-	xpLabel.TextSize = ResponsiveUtil.compactTextSize(13, 10)
+	xpLabel.TextSize = ResponsiveUtil.compactTextSize(16, 12)
 	xpLabel.Font = Enum.Font.GothamBold
 	xpLabel.TextXAlignment = Enum.TextXAlignment.Right
 	xpLabel.Parent = xpFrame

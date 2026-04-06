@@ -1498,7 +1498,8 @@ RunService.Heartbeat:Connect(function(deltaTime: number)
 
 		for _, coinData in collectedCoins do
 			-- 2배 코인 적용 (파워업 + VIP 배율 + 히트 러시)
-			local actualValue = coinData.value * coinMultiplier * hitRushMult
+			-- 정수 강제: 부동소수점 누적 방지 (표시 "+78.75000250600001" 버그 수정)
+			local actualValue = math.floor(coinData.value * coinMultiplier * hitRushMult + 0.5)
 
 			-- 세션 데이터 업데이트
 			session.coins += actualValue
