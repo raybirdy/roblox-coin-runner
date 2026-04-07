@@ -431,9 +431,10 @@ GameConstants.LOBBY = {
 	FLOOR_POSITION = Vector3.new(-110, 0.5, 0),
 
 	-- 주요 위치
-	-- Sprint 20: 스폰을 포탈 정면 20studs 뒤로 (시야에 포탈+플라자+NPC 모두 보이도록)
-	SPAWN_POSITION = Vector3.new(-45, 2.5, 0),
-	SPAWN_ORIENTATION = Vector3.new(0, -90, 0), -- +X(포탈) 방향 향함
+	-- Sprint 20: 스폰을 로비 중앙으로 (포탈/상점/리더보드 모두 시야 안에)
+	-- 포탈(-25), 상점(-100, +28), 리더보드(-100, -28) — 중앙 X=-65
+	SPAWN_POSITION = Vector3.new(-65, 2.5, 0),
+	SPAWN_ORIENTATION = Vector3.new(0, -90, 0), -- +X(포탈) 방향 기본 향함
 	PORTAL_POSITION = Vector3.new(-25, 3, 0),
 	-- Spawn Plaza 디스크 (Sprint 20)
 	PLAZA_RADIUS = 14,
