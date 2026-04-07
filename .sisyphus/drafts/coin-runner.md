@@ -11,17 +11,17 @@
 
 | 항목 | 확정값 | 주의 |
 |------|--------|------|
-| PRD | docs/prd/PRD-v3.md | v3 첫 공식 PRD |
+| PRD | docs/prd/PRD-v3.2.md | v3.2 "Make It Feel Good" |
 | 기술 스택 | Roblox Luau + Rojo | 변경 없음 |
 | Claude 연동 | N/A | Roblox 플랫폼 전용 |
 | 배포 | Roblox 퍼블리싱 | 소프트 론치 예정 |
-| 버전 | v3.1 (active) | v3.0 완료 후 |
-| 현재 Sprint | 20 / 20 (v3.1) | Sprint 13~20 done (Sprint 20: Spawn Plaza) |
+| 버전 | v3.2 (active) | v3.1 완료 — Version Close |
+| 현재 Sprint | 21 / 25 (v3.2 pending) | Sprint 21~25 계획 완료, Sprint 21부터 시작 |
 | 레포 위치 | /Users/parkjongha/Documents/git/roblox-coin-runner | |
 | 브랜치 전략 | GitHub Flow (feature → PR → main) | 기존 유지 |
 | PMF 스테이지 | pre-pmf | 소프트 론치 전, 속도 우선 |
 | Permission 모드 | 개발 중 항상 허용 | |
-| Last updated | 2026-04-06 | |
+| Last updated | 2026-04-07 | |
 
 ---
 
@@ -44,7 +44,8 @@
 | v2.0 | done | — | 시나리오, 소셜, 수익화 |
 | v2.2 | done | — | 배틀패스, 고스트, 팀랭킹, Co-op |
 | v3.0 | done | Sprint 0~7 | 게임플레이 변주 + 성장 |
-| **v3.1** | **active** | Sprint 0~ | 모바일 UI 최적화 + 품질 개선 |
+| v3.1 | done | Sprint 0~20 | 모바일 UI + 맵 고도화 + Fever 아이템화 + Spawn Plaza |
+| **v3.2** | **active** | Sprint 21~25 | "Make It Feel Good" — 조작감 + 텐션 + 맵 의미 |
 
 ---
 
@@ -622,7 +623,7 @@ Sprint 0 (M5+M4+설계)
 - `src/server/Services/ProceduralChunkGenerator.luau` — `_createObstacle()` 경고 연출
 - `src/shared/Constants/GameConstants.luau` — 시각 상수 추가 (COIN_GLOW, OBSTACLE_WARNING)
 
-### Sprint 15 — 특수 효과 코인 3종 MVP [pending]
+### Sprint 15 — 특수 효과 코인 3종 MVP [done]
 **목표**: Star·Magnet·Rainbow 특수 코인 구현 (ISSUE-033 1단계)
 **이슈**: ISSUE-033 (P2-medium)
 
@@ -643,7 +644,7 @@ Sprint 0 (M5+M4+설계)
 - `src/server/Services/GameManager.luau` — 특수 코인 수집 이벤트 핸들러
 - `src/client/Controllers/PlayerController.luau` — Magnet 범위 임시 확대 처리
 
-### Sprint 16 — 미니게임 데드코드 정리 [pending]
+### Sprint 16 — 미니게임 데드코드 정리 [done]
 **목표**: M1(미니게임) Won't Have 전환에 따른 데드코드 제거 (PRD-v3 M5 확장)
 **근거**: 미니게임은 추후 재논의 예정이나, 현재 트리거 비활성 + 재미 부족으로 v3.1 범위에서 제외. 잔존 코드는 인지부하 + 잘못된 분석 유도.
 
@@ -671,7 +672,7 @@ Sprint 0 (M5+M4+설계)
 
 ---
 
-### Sprint 17 — Analytics 이벤트 와이어링 (출시 차단 해소) [pending]
+### Sprint 17 — Analytics 이벤트 와이어링 (출시 차단 해소) [done]
 **목표**: `/analytics` Pre-launch Gate에서 확인된 7종 미와이어 이벤트 구현
 **근거**: docs/analytics/event-taxonomy.md — 현재 3종(session_start/end, tutorial_step)만 호출됨. PRD-v3 KPI(D1/D7/D30 리텐션, 과금 전환율, Co-op 참여율) 측정 불가 → 출시 차단 사유.
 
@@ -782,3 +783,184 @@ Sprint 0 (M5+M4+설계)
 - TextTruncate는 한글/숫자 혼합 텍스트에서 잘림 위치 주의
 
 **완료 조건**: Studio 로비 재접속 시 스크린샷 5건 모두 해소. 미확인 2건(❓ 퀘스트/777)은 Studio 인스펙트 후 결정.
+
+---
+
+## v3.2 — "Make It Feel Good" (PRD-v3.2 기반)
+
+> **포커스 전환**: 시각 폴리싱(v3.1) → 조작감 × 텐션 × 맵 의미
+> **PRD**: docs/prd/PRD-v3.2.md
+> **IDEA**: docs/ideation/IDEA-014.md
+> **Sprint 수**: 5개 (Sprint 21~25)
+> **성공 지표**: 30초 이탈률 -30%p / 평균 세션 ×1.5 / D1 +10%p
+
+---
+
+### Sprint 21 — Input Polish + Juice Pass (조작감 기반 레이어) [active]
+
+> **재정의 (2026-04-07)**: 코드 분석 결과 InputBuffer/Coyote/Shake 인프라가 이미 v3.1까지 구현되어 있음.
+> 진짜 빠진 것은 (1) Hitstop, (2) 통합 JuiceController, (3) 코요테/버퍼 값 튜닝(과도한 관대함이 "느슨함" 유발).
+> 작업량 70% 축소 → 핵심 누락 요소에 집중.
+
+**목표**: 기존 입력/피드백을 모바일 AAA 수준으로 끌어올려 "반응이 있다"는 체감을 만든다.
+
+**작업** (재정의):
+- [x] PlayerController 튜닝: COYOTE_TIME 0.25→0.10, INPUT_BUFFER_TIME 0.20→0.13 (Celeste 표준)
+- [x] JuiceController 신규: Hitstop (Humanoid.WalkSpeed save/restore) + Trigger 프로파일 API + 모바일 감지 + 토글
+- [x] GameConstants.JUICE 블록: HITSTOP/SHAKE 프로파일 + MOBILE_SCALE + 누적 안전장치
+- [x] init.client.luau 통합: feverStart / hit(LifeUpdate) / Diamond 코인 → juiceController:Trigger() 연결
+- [x] 기존 cameraController:Shake() 직접 호출은 그대로 유지 (잘 작동 중, 점진 마이그레이션)
+- [ ] [deferred → 다음 Sprint] Settings UI "쉐이크 끄기" 토글 — 현재 API만 노출, UI는 Sprint 22에서 처리
+
+**Acceptance Criteria**:
+- [x] 점프 버튼 → 반응 < 50ms (PlayerController 디바운스 30ms + 직접 호출)
+- [x] 착지 130ms 전 점프 입력 시 즉시 재점프 성공 (INPUT_BUFFER_TIME=0.13)
+- [x] 발판 벗어난 100ms 이내 점프 입력 허용 (COYOTE_TIME=0.10)
+- [x] 피격 시 히트스톱(0.08s) 후 진행 재개 (LifeUpdate → Trigger("HIT"))
+- [x] 피버 발동 시 hitstop 0.10s + shake 1.0 동시 발사 (FEVER_START 프로파일)
+- [x] Diamond 코인 수집 시 hitstop 0.04s + shake 0.25 (COIN_SPECIAL 프로파일)
+- [x] 모바일 자동 감지 → hitstop/shake/파티클 강도 자동 스케일링 (GameConstants.JUICE.MOBILE_SCALE)
+- [x] `rg "screenShake.*=.*true" src/client` 0건 (확인 완료)
+- [x] Hitstop 누적 안전장치 (MAX_CONCURRENT_HITSTOP=0.15s) — 게임 정지 방지
+- [ ] [Studio 검증 필요] 모바일 30FPS 유지 (Juice 적용 후 프레임 드롭 ≤ 2)
+- [ ] [Studio 검증 필요] 체감 — "묵직함"이 생겼는지, 0.10s 코요테가 너무 짧지는 않은지
+
+**파일**:
+- `src/client/Controllers/InputBufferController.luau` (NEW)
+- `src/client/Controllers/JuiceController.luau` (NEW)
+- `src/client/Controllers/InputController.luau` (buffer 연동)
+- `src/server/Services/GameManager.luau` (피격/수집 이벤트 클라 브로드캐스트)
+- `src/shared/Constants/GameConstants.luau` (JUICE 상수 블록)
+
+**주의사항**:
+- 기존 GameManager 코드 최소 터치. InputBuffer는 클라 전용 레이어
+- 히트스톱은 Humanoid.PlatformStand가 아닌 속도 0 tween으로 구현 (서버 권위 유지)
+
+---
+
+### Sprint 22 — Dynamic Camera + 3HP Heart + Telegraph [pending]
+
+**목표**: 속도감 복구, 실패 관용 + 긴장감 생성, 위험 공정성 확보.
+
+**작업**:
+- [ ] CameraController 확장: 속도 기반 FOV(70~85), 점프 틸트 5°, 피버 tilt 10°
+- [ ] GameManager.lives 3HP 도입, 피격 시 -1 + 1초 무적, 5초 무피격 시 +1
+- [ ] HeartHUD 신규 (UIController 내 Frame)
+- [ ] TelegraphService 신규: 2초 lookahead로 다음 위험 청크 감지 → 화면 상단 아이콘 + 바닥 경고 라인
+- [ ] 모든 장애물 타입에 telegraphIcon 필드 추가
+
+**Acceptance Criteria**:
+- [ ] 플레이어 속도 50 → FOV 70, 속도 100 → FOV 85 (선형 보간)
+- [ ] 피격 1회: 하트 -1, 화면 붉은 플래시, 1초 무적
+- [ ] 3회 피격 시 게임오버, 회복 중단 시 유저 진행 지속
+- [ ] 2초 이내 접근할 장애물에 대해 BillboardGui 경고 표시
+- [ ] 경고 후 실제 장애물 등장 타이밍 오차 < 200ms
+- [ ] 모든 장애물 종류(8+종)에 telegraphIcon 정의됨
+
+**파일**:
+- `src/client/Controllers/CameraController.luau`
+- `src/client/Controllers/HeartHUDController.luau` (NEW)
+- `src/server/Services/TelegraphService.luau` (NEW)
+- `src/server/Services/GameManager.luau` (lives 필드 + 피격 로직 재설계)
+- `src/shared/Constants/GameConstants.luau` (LIVES, TELEGRAPH 상수)
+
+**주의사항**:
+- 기존 "1방 즉사" 로직 제거 시 Fever/보스런/랜덤 이벤트 경로 모두 확인
+- Telegraph는 서버에서 판정, 클라에 FireClient로 전달 (치팅 방지)
+
+---
+
+### Sprint 23 — Grazing + Chaser (텐션 루프) [pending]
+
+**목표**: 숙련자 보상(Grazing) + 러너의 근본 엔진(추격) 도입.
+
+**작업**:
+- [ ] GrazingDetector 신규: 장애물 경계 확장 Region3, 플레이어가 통과 시 grazing 감지
+- [ ] Grazing 시: 시간 스케일 0.6x 0.3s + 점수 ×2 + 골드 파티클 + SFX
+- [ ] ChaserService 신규: 플레이어 뒤 20~60 stud 추격자, 실수(피격/느린 속도) 시 거리 단계적 축소
+- [ ] Chaser 비주얼: 임시 붉은 오라 파트 (최종 비주얼은 Sprint 25에서 튜닝)
+- [ ] 거리 10 stud 이하 = 게임오버 트리거
+
+**Acceptance Criteria**:
+- [ ] 장애물 0.5 stud 이내 스침 감지 정확도 95%+
+- [ ] Grazing 1회당 점수 ×2, 화면 이펙트 재생
+- [ ] Chaser 초기 거리 50 stud, 피격 1회당 -10 stud, 5초 완전 회피 시 +5 stud
+- [ ] Chaser 거리 UI(상단 바) 항상 표시
+- [ ] 거리 10 stud 이하 3초 유지 시 게임오버
+- [ ] Grazing 감지는 서버 권위 (클라 위치 기반 금지)
+
+**파일**:
+- `src/server/Services/GrazingService.luau` (NEW)
+- `src/server/Services/ChaserService.luau` (NEW)
+- `src/client/Controllers/ChaserHUDController.luau` (NEW)
+- `src/server/Services/GameManager.luau` (Chaser distance 세션 필드)
+
+**주의사항**:
+- Chaser는 플레이어 실력과 무관한 rubber band 금지 — 거리는 순전히 실수 누적
+- Grazing Region3는 매 프레임 계산하지 말고 청크당 1회 스폰
+
+---
+
+### Sprint 24 — Zone 고유 메커닉 1 (얼음 + 사막) [pending]
+
+**목표**: Zone이 "배경 교체"가 아니라 "룰 변경"이 되도록 — 2개 Zone부터 검증.
+
+**작업**:
+- [ ] ZoneMechanicService 신규: Zone 진입/이탈 시 물리 파라미터 적용/복원
+- [ ] 얼음 Zone: Humanoid.WalkSpeed 감속 저항 0.3, 슬라이드 거리 2배, 점프 후 x축 관성 유지
+- [ ] 사막 Zone: 바람 저항 파티클 + 주기적 역풍(1.5s 주기, 이동 속도 0.85x)
+- [ ] Zone 전환 시 1 tick 무적 + 물리 보정 (vault/flicker 방지)
+- [ ] ZoneController에 activeZoneMechanic 상태 연동
+
+**Acceptance Criteria**:
+- [ ] 얼음 Zone에서 이동 키 떼도 2초간 미끄럼 유지
+- [ ] 사막 Zone에서 1.5초 주기 역풍 파티클 + 속도 감소 확인
+- [ ] Zone 전환부에서 캐릭터 위치 튐 0건
+- [ ] Zone 메커닉은 서버에서 설정, 클라는 시각/파티클만 렌더
+- [ ] Telegraph가 Zone 고유 위험 요소(얼음=미끄럼 경고)도 표시
+
+**파일**:
+- `src/server/Services/ZoneMechanicService.luau` (NEW)
+- `src/client/Controllers/ZoneController.luau` (mechanic 브로드캐스트 수신)
+- `src/shared/Constants/GameConstants.luau` (ZONE_MECHANICS 테이블)
+
+**주의사항**:
+- WalkSpeed 변경은 Humanoid 직접 조작 — 기존 SpeedBoost/Fever와 충돌 가능, 우선순위 정의 필요
+- Region3 기반 Zone 판정은 60Hz가 아닌 10Hz로 충분
+
+---
+
+### Sprint 25 — Zone 고유 메커닉 2 (숲 + 화산) + 통합 QA + 튜닝 [pending]
+
+**목표**: 나머지 2개 Zone 완성 + v3.2 전체 통합 튜닝 + 기저선 측정 준비.
+
+**작업**:
+- [ ] 숲 Zone: 중력 0.7x, 점프 높이 1.3x, 공중 체류 시간 확장
+- [ ] 화산 Zone: 용암 상승(바닥 라인 Y 증가), 플레이어가 낮은 지형 밟으면 데미지
+- [ ] 전체 통합 플레이 테스트: FEEL + TENSION + MAP 전부 동시 동작 검증
+- [ ] 밸런스 튜닝: Chaser 거리, Grazing 보너스, 3HP 회복 시간, Zone 메커닉 강도
+- [ ] 사운드 에셋 4종 rbxassetid 교체 (v3.1 이월)
+- [ ] Analytics 이벤트 추가: graze_hit, chaser_catch, zone_mechanic_transition, telegraph_shown
+- [ ] v3.2 Pre-launch 보고서 생성 (docs/reports/sprint-25-report.md)
+
+**Acceptance Criteria**:
+- [ ] 숲 Zone에서 기본 점프 높이 1.3배 체감 (수치 로그 검증)
+- [ ] 화산 Zone 용암 상승 속도 1 stud/s, 바닥 닿으면 lives -1
+- [ ] 4개 Zone 모두 Telegraph + ZoneMechanic + Chaser 동시 동작 이상 없음
+- [ ] 모바일 30FPS 유지 (전체 기능 활성 상태에서)
+- [ ] 사운드 에셋 empty string 0건 — `rg 'SoundId = ""' src/` 0건
+- [ ] 신규 Analytics 이벤트 4종 Creator Dashboard 수신 확인
+- [ ] momus 검토 통과 + Pre-launch Gate 재검증
+
+**파일**:
+- `src/server/Services/ZoneMechanicService.luau`
+- `src/shared/Constants/GameConstants.luau`
+- `src/server/Services/AnalyticsService.luau` (이벤트 4종)
+- `docs/reports/sprint-25-report.md` (NEW)
+
+**주의사항**:
+- 중력 변경은 Workspace.Gravity 전역 수정 — Zone 이탈 시 반드시 복원
+- 화산 용암은 Part 상승 tween + Touched 이벤트 (Region3 아님, 물리 충돌 필요)
+- v3.2 출시 전 사운드 4종 작업은 Studio 필수 (코드로만 해결 불가)
+
+---

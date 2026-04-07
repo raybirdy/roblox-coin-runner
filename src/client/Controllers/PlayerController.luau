@@ -23,8 +23,10 @@ type State = "Idle" | "Running" | "Jumping" | "Sliding" | "Falling"
 -- 상수
 local GROUND_RAYCAST_DISTANCE = 3.5 -- 바닥 감지 레이캐스트 거리
 local GROUND_HEIGHT = 2.5 -- 캐릭터 중심 높이 (바닥에 서 있을 때)
-local COYOTE_TIME = 0.25 -- 착지 직후 점프 유예 시간 (초)
-local INPUT_BUFFER_TIME = 0.2 -- 입력 버퍼 유효 시간: 착지 전 0.2s 이내 입력 허용
+-- Sprint 21: 조작감 튜닝 — 너무 관대한 값은 "느슨함", 너무 짧으면 "안 먹힘"
+-- 0.10/0.13 1차 시도 → 키보드 점프 누락 발생 → 0.13/0.15로 살짝 완화
+local COYOTE_TIME = 0.13 -- 착지 직후 점프 유예 시간 (초)
+local INPUT_BUFFER_TIME = 0.15 -- 입력 버퍼 유효 시간: 착지 전 0.15s 이내 입력 허용
 
 export type PlayerController = typeof(setmetatable(
 	{} :: {
@@ -130,7 +132,7 @@ function PlayerController.new(player: Player, character: Model): PlayerControlle
 		_gameConnection = nil,
 
 		_slideSessionId = 0,
-		_skillDoubleJump = false,
+		_skillDoubleJump = true, -- Sprint 21: 더블 점프 기본 제공
 		_lastDashTime = 0,
 		_jumpSound = nil,
 		_landSound = nil,

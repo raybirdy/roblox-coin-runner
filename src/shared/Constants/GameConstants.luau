@@ -1235,6 +1235,36 @@ GameConstants.NEAR_RECORD = {
 -- ==================== Phase 2: 게임성 개선 ====================
 
 -- 피버 모드
+-- Sprint 21: Juice / Game Feel 중앙 설정
+-- "Juice it or lose it" — 동일 로직에 피드백 레이어만 추가해도 체감 재미 3배
+GameConstants.JUICE = {
+	-- 히트스톱 (frame freeze on impact) — 임팩트 강도별
+	HITSTOP = {
+		COIN_NORMAL = 0.01, -- 일반 코인 (거의 없음, 시각만)
+		COIN_SPECIAL = 0.04, -- 특수 코인 (Star/Magnet/Rainbow/Fever)
+		HIT = 0.08, -- 피격 — 가장 강한 임팩트
+		FEVER_START = 0.10, -- 피버 발동 — 시네마틱
+		GRAZE = 0.05, -- Grazing (Sprint 23 대비)
+	},
+	-- 카메라 쉐이크 강도 프로파일 (CameraController:Shake() 인자)
+	SHAKE = {
+		COIN_NORMAL = 0.05,
+		COIN_SPECIAL = 0.25,
+		HIT = 0.6,
+		FEVER_START = 1.0,
+		LANDING = 0.15,
+		GRAZE = 0.15,
+	},
+	-- 모바일 감지 시 강도 자동 스케일링 (Sprint 21 AC: 모바일 30FPS 유지)
+	MOBILE_SCALE = {
+		HITSTOP = 0.7, -- 히트스톱은 프레임 손실로 모바일에서 더 거슬릴 수 있음
+		SHAKE = 0.7, -- 쉐이크 강도 70%
+		PARTICLES = 0.5, -- 파티클 50%
+	},
+	-- 동시 호출 안전장치
+	MAX_CONCURRENT_HITSTOP = 0.15, -- 누적 hitstop이 이 시간을 넘기면 무시 (게임 정지 방지)
+}
+
 GameConstants.FEVER = {
 	COMBO_THRESHOLD = 60, -- 피버 발동 콤보 수 (40→60: 희귀성 강화, 유저 플레이 감각 회복)
 	DURATION = 6, -- 지속 시간 (초)

@@ -2,7 +2,8 @@
 
 > 작성: 2026-03-18 | CRAFT /prd 스킬 자동 생성
 > 최종 수정: 2026-04-06
-> status: draft
+> status: done
+> released: 2026-04-07
 > 이전 버전: 없음 (v2.2까지 PRD 미작성, 최초 공식 PRD)
 
 ---

@@ -114,6 +114,7 @@ local DailyChallengeController = require(script.Controllers.DailyChallengeContro
 local UIVisibilityManager = require(script.Controllers.UIVisibilityManager)
 local ParallaxController = require(script.Controllers.ParallaxController)
 local WeatherController = require(script.Controllers.WeatherController)
+local JuiceController = require(script.Controllers.JuiceController) -- Sprint 21
 
 -- 컨트롤러 인스턴스 생성
 local inputController = InputController.new()
@@ -123,6 +124,7 @@ local _lifeController = LifeController.new()
 local uiController = UIController.new(player)
 local powerupController = PowerupController.new()
 local cameraController = CameraController.new(player, character)
+local juiceController = JuiceController.new(player, cameraController) -- Sprint 21: 통합 게임필 레이어
 local npcController = NPCController.new()
 local tutorialController = TutorialController.new()
 local musicController = MusicController.new()
@@ -211,7 +213,7 @@ dailyChallengeController:Init()
 -- Fever mode callbacks (speed boost + camera shake + BGM speed + P0: 카메라 줌인)
 feverController:OnFeverStart(function(speedBoost: number, duration: number)
 	playerController:SetSpeedMultiplier(speedBoost)
-	cameraController:Shake(0.8) -- strong shake on fever start
+	juiceController:Trigger("FEVER_START") -- Sprint 21: 시네마틱 임팩트 (hitstop 0.10s + shake 1.0)
 	musicController:SetFeverSpeed(true)
 	-- P0: 피버 진입 시 카메라 줌인 (피버 지속 시간 동안 유지 → 체감 강화)
 	cameraController:Zoom(-6, duration)
@@ -259,7 +261,7 @@ coinController:OnDiamondCollected(function()
 	diamondSlowmoActive = true
 	playerController:SetSpeedMultiplier(0.3)
 	cameraController:Zoom(-3, 1.0)
-	cameraController:Shake(0.3)
+	juiceController:Trigger("COIN_SPECIAL") -- Sprint 21: hitstop 0.04s + shake 0.25
 	task.delay(1.0, function()
 		diamondSlowmoActive = false
 		if playerController:IsPlaying() and not feverController:IsFever() then
@@ -833,11 +835,11 @@ RemoteEvents.NearMissChain.OnClientEvent:Connect(function(data)
 	cameraController:Shake(shakeIntensities[data.chain] or 0.05)
 end)
 
--- 라이프 감소 시 카메라 흔들림
+-- 라이프 감소 시 카메라 흔들림 + Sprint 21: Hitstop 임팩트
 local previousLives = GameConstants.LIFE.STARTING_LIVES
 RemoteEvents.LifeUpdate.OnClientEvent:Connect(function(data)
 	if data.lives < previousLives then
-		cameraController:Shake(0.5) -- hit shake
+		juiceController:Trigger("HIT") -- Sprint 21: hitstop 0.08s + shake 0.6
 	end
 	previousLives = data.lives
 end)

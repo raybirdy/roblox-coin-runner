@@ -158,8 +158,8 @@ end
 -- ==================== 스킬 적용 ====================
 
 function SkillController:_applySkills()
-	-- double_jump: PlayerController에 2단 점프 허용 설정
-	self._playerController:SetDoubleJump(self._unlockedSkills["double_jump"] == true)
+	-- Sprint 21: double_jump는 기본 제공 스킬 (잠금 해제 불필요)
+	self._playerController:SetDoubleJump(true)
 
 	-- dash: 해금 시 버튼 표시
 	if self._gui then
@@ -175,8 +175,8 @@ function SkillController:SetGameActive(active: boolean)
 		if self._gui then
 			self._gui.Enabled = false
 		end
-		-- 스킬 비활성화 (게임 종료 시 double_jump 리셋)
-		self._playerController:SetDoubleJump(false)
+		-- Sprint 21: double_jump는 기본 제공 — 게임 종료 시에도 유지 (다음 런 자동 적용)
+		self._playerController:SetDoubleJump(true)
 	else
 		self:_applySkills()
 	end
