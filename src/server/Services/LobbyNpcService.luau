@@ -15,7 +15,7 @@ local NPC_DEFS = {
 		name = "📜 퀘스트 도우미",
 		desc = "퀘스트 확인하기",
 		-- Sprint 20: Spawn Plaza 안쪽 좌측에 배치 (스폰 근처에서 즉시 발견 가능)
-		position = Vector3.new(-38, 3, -8),
+		position = Vector3.new(-40, 3, -8),
 		bodyColor = Color3.fromRGB(255, 200, 100),
 		headColor = Color3.fromRGB(255, 220, 150),
 		accentColor = Color3.fromRGB(255, 160, 40),
