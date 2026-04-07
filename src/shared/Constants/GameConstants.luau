@@ -431,8 +431,13 @@ GameConstants.LOBBY = {
 	FLOOR_POSITION = Vector3.new(-110, 0.5, 0),
 
 	-- 주요 위치
-	SPAWN_POSITION = Vector3.new(-38, 2.5, 0),
+	-- Sprint 20: 스폰을 포탈 정면 7studs 앞으로 이동 (재시작 동선 단축)
+	SPAWN_POSITION = Vector3.new(-32, 2.5, 0),
+	SPAWN_ORIENTATION = Vector3.new(0, 90, 0), -- +X(포탈) 방향 향함
 	PORTAL_POSITION = Vector3.new(-25, 3, 0),
+	-- Spawn Plaza 디스크 (Sprint 20)
+	PLAZA_RADIUS = 14,
+	PLAZA_COLOR = Color3.fromRGB(180, 220, 255),
 	PORTAL_SIZE = Vector3.new(6, 10, 18), -- 더 큰 포탈 (진입 용이)
 	SHOP_POSITION = Vector3.new(-100, 5, 28), -- 더 바깥쪽 배치
 	LEADERBOARD_POSITION = Vector3.new(-100, 5, -28), -- 상점 반대편

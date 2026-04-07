@@ -16,7 +16,7 @@
 | Claude 연동 | N/A | Roblox 플랫폼 전용 |
 | 배포 | Roblox 퍼블리싱 | 소프트 론치 예정 |
 | 버전 | v3.1 (active) | v3.0 완료 후 |
-| 현재 Sprint | 19 / 19 (v3.1) | Sprint 13~18 done, Sprint 19 로비 UI 폴리싱 진행 중 |
+| 현재 Sprint | 20 / 20 (v3.1) | Sprint 13~20 done (Sprint 20: Spawn Plaza) |
 | 레포 위치 | /Users/parkjongha/Documents/git/roblox-coin-runner | |
 | 브랜치 전략 | GitHub Flow (feature → PR → main) | 기존 유지 |
 | PMF 스테이지 | pre-pmf | 소프트 론치 전, 속도 우선 |
@@ -737,6 +737,28 @@ Sprint 0 (M5+M4+설계)
 - MINI_FEVER 콤보 임계값 32 유지 (Sprint 18 조정분)
 
 **완료 조건**: Studio에서 1분 이상 플레이하면서 피버가 아이템 없이 발동되지 않음을 확인.
+
+---
+
+### Sprint 20 — 로비 효율성 개선 (Spawn Plaza + 동선 단축) [done]
+
+**배경**: 로비 UX 비효율 — 스폰 위치가 포탈에서 13studs 떨어져 첫 진입/재시작 시 동선 부담. NPC와 상호작용 오브젝트가 흩어져 발견성 낮음.
+
+**Acceptance Criteria**:
+- [x] SPAWN_POSITION (-38, 2.5, 0) → (-32, 2.5, 0) — 포탈 정면 7studs로 단축
+- [x] SPAWN_ORIENTATION 추가 (0, 90, 0) — 캐릭터가 포탈 향함
+- [x] LobbyService._createSpawnPlaza() — 원형 디스크(반경 14) + 외곽 Neon 링 + 포탈 방향 화살표 3개
+- [x] 퀘스트 NPC 위치 (-55, 3, -18) → (-38, 3, -8) — Plaza 안쪽 좌측
+- [x] 게임오버 즉시 재시작: 기존 PLAY AGAIN 버튼이 이미 HideGameOver + GameStart:FireServer로 동작 (Sprint 19 검토 결과 추가 작업 불필요)
+- [x] 사이드바 통합: Sprint 19에서 WorldMap 버튼을 ScenarioButton 아래로 이동 완료
+- [ ] 룰렛(777) 위치: 코드 참조 없는 Studio 파트 — 별도 Studio 작업 필요 (Sprint 20 스코프 제외)
+
+**파일**:
+- `src/shared/Constants/GameConstants.luau` (SPAWN_POSITION, SPAWN_ORIENTATION, PLAZA_RADIUS, PLAZA_COLOR)
+- `src/server/Services/LobbyService.luau` (_createSpawnPlaza, _setupSpawnPoint Orientation)
+- `src/server/Services/LobbyNpcService.luau` (NPC position)
+
+**완료 조건**: Studio 재진입 시 스폰이 포탈 바로 앞 플라자 디스크 위, 캐릭터가 포탈을 바라보며, NPC가 시야 안에 있음.
 
 ---
 

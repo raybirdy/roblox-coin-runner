@@ -59,10 +59,68 @@ function LobbyService:Initialize()
 	-- Co-op 포탈 생성
 	self:_createCoopPortal()
 
+	-- Spawn Plaza 디스크 (Sprint 20)
+	self:_createSpawnPlaza()
+
 	-- 스폰 포인트 설정
 	self:_setupSpawnPoint()
 
 	print("[LobbyService] Lobby initialized with decorations, NPCs, and leaderboard")
+end
+
+-- Sprint 20: Spawn Plaza — 스폰 위치 주변 원형 디스크 + 포탈 방향 화살표
+function LobbyService:_createSpawnPlaza()
+	if not lobbyFolder then
+		return
+	end
+
+	local spawnPos = GameConstants.LOBBY.SPAWN_POSITION
+	local radius = GameConstants.LOBBY.PLAZA_RADIUS or 14
+
+	-- 원형 플라자 바닥 (Cylinder, 얇은 디스크)
+	local disc = Instance.new("Part")
+	disc.Name = "SpawnPlazaDisc"
+	disc.Shape = Enum.PartType.Cylinder
+	disc.Size = Vector3.new(0.4, radius * 2, radius * 2)
+	disc.CFrame = CFrame.new(spawnPos.X, 1.05, spawnPos.Z) * CFrame.Angles(0, 0, math.rad(90))
+	disc.Anchored = true
+	disc.CanCollide = false
+	disc.Color = GameConstants.LOBBY.PLAZA_COLOR or Color3.fromRGB(180, 220, 255)
+	disc.Material = Enum.Material.SmoothPlastic
+	disc.Transparency = 0.25
+	disc.Parent = lobbyFolder
+
+	-- 외곽 링 (Neon, 시각 강조)
+	local ring = Instance.new("Part")
+	ring.Name = "SpawnPlazaRing"
+	ring.Shape = Enum.PartType.Cylinder
+	ring.Size = Vector3.new(0.5, radius * 2 + 1, radius * 2 + 1)
+	ring.CFrame = CFrame.new(spawnPos.X, 1.0, spawnPos.Z) * CFrame.Angles(0, 0, math.rad(90))
+	ring.Anchored = true
+	ring.CanCollide = false
+	ring.Color = Color3.fromRGB(80, 200, 255)
+	ring.Material = Enum.Material.Neon
+	ring.Transparency = 0.5
+	ring.Parent = lobbyFolder
+
+	-- 포탈 방향 화살표 (스폰 → 포탈, 바닥 데칼 대신 작은 Neon 파트 3개)
+	local portalPos = GameConstants.LOBBY.PORTAL_POSITION
+	local dir = (portalPos - spawnPos).Unit
+	for i = 1, 3 do
+		local arrow = Instance.new("Part")
+		arrow.Name = `PlazaArrow{i}`
+		arrow.Size = Vector3.new(1.6, 0.2, 0.6)
+		arrow.CFrame = CFrame.new(spawnPos + dir * (3 + i * 1.6) + Vector3.new(0, -1.4, 0))
+			* CFrame.Angles(0, math.atan2(-dir.Z, dir.X), 0)
+		arrow.Anchored = true
+		arrow.CanCollide = false
+		arrow.Color = Color3.fromRGB(255, 230, 80)
+		arrow.Material = Enum.Material.Neon
+		arrow.Transparency = 0.15
+		arrow.Parent = lobbyFolder
+	end
+
+	print("[LobbyService] Spawn Plaza created at " .. tostring(spawnPos))
 end
 
 -- 로비 바닥 생성
@@ -1888,6 +1946,8 @@ function LobbyService:_setupSpawnPoint()
 
 	-- 로비 스폰 위치로 설정
 	spawnLocation.Position = GameConstants.LOBBY.SPAWN_POSITION
+	-- Sprint 20: 스폰 시 포탈을 향하도록 회전
+	spawnLocation.Orientation = GameConstants.LOBBY.SPAWN_ORIENTATION or Vector3.new(0, 0, 0)
 	spawnLocation.Anchored = true
 	spawnLocation.CanCollide = false
 	spawnLocation.Transparency = 1 -- 숨김
