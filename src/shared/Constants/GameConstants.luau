@@ -431,9 +431,9 @@ GameConstants.LOBBY = {
 	FLOOR_POSITION = Vector3.new(-110, 0.5, 0),
 
 	-- 주요 위치
-	-- Sprint 20: 스폰을 포탈 정면 9studs 앞으로 이동 (재시작 동선 단축)
-	SPAWN_POSITION = Vector3.new(-34, 2.5, 0),
-	SPAWN_ORIENTATION = Vector3.new(0, -90, 0), -- +X(포탈) 방향 향함 (Roblox 기본 LookVector -Z, Y=-90 회전 시 +X)
+	-- Sprint 20: 스폰을 포탈 정면 20studs 뒤로 (시야에 포탈+플라자+NPC 모두 보이도록)
+	SPAWN_POSITION = Vector3.new(-45, 2.5, 0),
+	SPAWN_ORIENTATION = Vector3.new(0, -90, 0), -- +X(포탈) 방향 향함
 	PORTAL_POSITION = Vector3.new(-25, 3, 0),
 	-- Spawn Plaza 디스크 (Sprint 20)
 	PLAZA_RADIUS = 14,
